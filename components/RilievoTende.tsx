@@ -85,11 +85,14 @@ export default function RilievoTende(props: Props){
   const W = 640;
   const H = 440;
 
+  const initialTende = (initial && Array.isArray(initial.tende) && initial.tende.length>0) ? initial.tende : [];
+  const initialQuote = (initial && Array.isArray(initial.quote)) ? initial.quote : [];
+
   const [img, setImg] = useState<HTMLImageElement|null>(null);
-  const [tende, setTende] = useState<Tenda[]>(initial && initial.tende ? initial.tende : []);
-  const [activeIdx, setActiveIdx] = useState<number>(initial && initial.tende && initial.tende.length ? 0 : -1);
+  const [tende, setTende] = useState<Tenda[]>(initialTende);
+  const [activeIdx, setActiveIdx] = useState<number>(initialTende.length>0 ? 0 : -1);
   const [details, setDetails] = useState<Detail[]>([]);
-  const [quote, setQuote] = useState<Quota[]>(initial && initial.quote ? initial.quote : []);
+  const [quote, setQuote] = useState<Quota[]>(initialQuote);
   const [show, setShow] = useState({ tenda:true, bracci:true, aggancio:true });
   const [tool, setTool] = useState<"select"|"quota">("select");
   const [drag, setDrag] = useState<any>(null);
@@ -100,10 +103,12 @@ export default function RilievoTende(props: Props){
   const [categoriaTab, setCategoriaTab] = useState<Categoria>("esterno");
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{x:number;y:number}>({x:0, y:0});
+  const [confermaReset, setConfermaReset] = useState<boolean>(false);
 
   const mouseRef = useRef({x:0,y:0});
   const dragRef = useRef<any>(null);
   const pinchRef = useRef<any>(null);
+  const panDragRef = useRef<any>(null);
   const zoomRef = useRef({zoom:1, pan:{x:0,y:0}});
   zoomRef.current = { zoom: zoom, pan: pan };
 
@@ -560,9 +565,17 @@ export default function RilievoTende(props: Props){
       return { x:(cx - pn.x)/z, y:(cy - pn.y)/z };
     }
 
+    function rawPos(t:Touch):{x:number;y:number}{
+      const r = cv.getBoundingClientRect();
+      const sx = cv.width/r.width;
+      const sy = cv.height/r.height;
+      return { x:(t.clientX-r.left)*sx, y:(t.clientY-r.top)*sy };
+    }
+
     let lastTap = 0;
 
     const onStart = function(e:TouchEvent){
+      // 2 dita: pinch zoom
       if(e.touches.length>=2){
         e.preventDefault();
         const t1 = e.touches[0];
@@ -572,32 +585,43 @@ export default function RilievoTende(props: Props){
         const cy = (t1.clientY+t2.clientY)/2;
         pinchRef.current = { dist:dist, cx:cx, cy:cy, startZoom: zoomRef.current.zoom, startPan: Object.assign({}, zoomRef.current.pan) };
         dragRef.current = null;
+        panDragRef.current = null;
         setDrag(null);
         return;
       }
+      // Double-tap zoom
       const now = Date.now();
       if(now - lastTap < 300){
         e.preventDefault();
-        const r = cv.getBoundingClientRect();
-        const sx = cv.width/r.width;
-        const sy = cv.height/r.height;
         const t = e.touches[0];
-        const cx = (t.clientX-r.left)*sx;
-        const cy = (t.clientY-r.top)*sy;
+        const raw = rawPos(t);
         const z = zoomRef.current.zoom;
         const newZoom = z >= 2.5 ? 1 : Math.min(3, z + 1);
-        const newPanX = newZoom===1 ? 0 : cx - (cx - zoomRef.current.pan.x) * (newZoom/z);
-        const newPanY = newZoom===1 ? 0 : cy - (cy - zoomRef.current.pan.y) * (newZoom/z);
+        const newPanX = newZoom===1 ? 0 : raw.x - (raw.x - zoomRef.current.pan.x) * (newZoom/z);
+        const newPanY = newZoom===1 ? 0 : raw.y - (raw.y - zoomRef.current.pan.y) * (newZoom/z);
         setZoom(newZoom);
         setPan({x:newPanX, y:newPanY});
         lastTap = 0;
         return;
       }
       lastTap = now;
+      // Single touch: prima provo hit handle, poi pan se zoom>1, altrimenti niente
       const p = getPosT(e);
       const h = inlineHit(p);
-      if(h) e.preventDefault();
-      handleDown(p);
+      if(h){
+        e.preventDefault();
+        handleDown(p);
+        return;
+      }
+      // Nessun hit: se zoom>1 inizio pan, altrimenti delego al sistema (lasciamo eventuale tap normale)
+      if(zoomRef.current.zoom > 1.01){
+        e.preventDefault();
+        const raw = rawPos(e.touches[0]);
+        panDragRef.current = { startX: raw.x, startY: raw.y, startPan: Object.assign({}, zoomRef.current.pan) };
+      } else {
+        // niente zoom: se in tool quota gestisci tap
+        if(tool==="quota"){ e.preventDefault(); handleDown(p); }
+      }
     };
 
     const onMoveT = function(e:TouchEvent){
@@ -621,17 +645,28 @@ export default function RilievoTende(props: Props){
         return;
       }
       const dr = dragRef.current;
-      if(!dr) return;
-      e.preventDefault();
-      const p = getPosT(e);
-      mouseRef.current = p;
-      applyDrag(p, dr);
+      if(dr){
+        e.preventDefault();
+        const p = getPosT(e);
+        mouseRef.current = p;
+        applyDrag(p, dr);
+        return;
+      }
+      const pd = panDragRef.current;
+      if(pd){
+        e.preventDefault();
+        const raw = rawPos(e.touches[0]);
+        const dx = raw.x - pd.startX;
+        const dy = raw.y - pd.startY;
+        setPan({ x: pd.startPan.x + dx, y: pd.startPan.y + dy });
+      }
     };
 
     const onEnd = function(e:TouchEvent){
       if(e.touches.length===0){
         dragRef.current = null;
         pinchRef.current = null;
+        panDragRef.current = null;
         setDrag(null);
       } else if(e.touches.length===1 && pinchRef.current){
         pinchRef.current = null;
@@ -682,6 +717,15 @@ export default function RilievoTende(props: Props){
     const nuove = tende.concat([dup]);
     setTende(nuove);
     setActiveIdx(nuove.length-1);
+  }
+  function resetTutto(){
+    setTende([]);
+    setActiveIdx(-1);
+    setQuote([]);
+    setDetails([]);
+    setZoom(1);
+    setPan({x:0,y:0});
+    setConfermaReset(false);
   }
 
   function loadFile(input:HTMLInputElement, cb:(im:HTMLImageElement, dataUrl:string)=>void){
@@ -739,6 +783,9 @@ export default function RilievoTende(props: Props){
       <div style={{padding:"10px 12px", borderBottom:"1px solid "+T.bdr, background:"#fff", display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
         <button onClick={onClose} style={{width:36, height:36, borderRadius:10, border:"none", background:"transparent", fontSize:20, cursor:"pointer"}}>{"\u2190"}</button>
         <div style={{flex:1, fontSize:15, fontWeight:700, color:T.acc}}>Rilievo Tendaggio</div>
+        {tende.length>0 && (
+          <button onClick={function(){ setConfermaReset(true); }} style={{padding:"7px 10px", borderRadius:8, border:"1px solid "+T.bdr, background:"#fff", color:T.sub, fontSize:11, cursor:"pointer"}}>Pulisci</button>
+        )}
         <button onClick={saveAndClose} style={{padding:"8px 14px", borderRadius:8, border:"none", background:T.acc, color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>Salva</button>
       </div>
 
@@ -788,7 +835,7 @@ export default function RilievoTende(props: Props){
 
       <div style={{flex:1, position:"relative", background:"#1a1a1a", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center"}}>
         <canvas ref={cvRef} width={W} height={H}
-          style={{width:"100%", height:"100%", maxWidth:"100vw", display:"block", touchAction:"none", cursor: tool==="select"?"default":"crosshair", objectFit:"contain"}}
+          style={{width:"100%", height:"100%", maxWidth:"100vw", display:"block", touchAction:"none", cursor: tool==="select"?(zoom>1?"grab":"default"):"crosshair", objectFit:"contain"}}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
         />
 
@@ -805,6 +852,12 @@ export default function RilievoTende(props: Props){
           })}
         </div>
 
+        {zoom>1.01 && (
+          <div style={{position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", padding:"4px 10px", borderRadius:999, background:"rgba(0,0,0,0.6)", color:"#fff", fontSize:11, fontWeight:600, pointerEvents:"none"}}>
+            Trascina per spostare la foto
+          </div>
+        )}
+
         {popup && (
           <div style={{position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)", zIndex:50, background:"#fff", border:"2px solid "+T.acc, borderRadius:12, padding:14, minWidth:260, boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
             <div style={{fontSize:13, color:T.acc, fontWeight:600, marginBottom:8}}>{popup.title}</div>
@@ -814,6 +867,19 @@ export default function RilievoTende(props: Props){
             <div style={{display:"flex", gap:6, marginTop:10, justifyContent:"flex-end"}}>
               <button onClick={function(){ setPopup(null); }} style={{padding:"7px 14px", borderRadius:8, border:"1px solid "+T.bdr, background:"#fff", fontSize:13, cursor:"pointer"}}>Annulla</button>
               <button onClick={commitPopup} style={{padding:"7px 14px", borderRadius:8, border:"none", background:T.acc, color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>OK</button>
+            </div>
+          </div>
+        )}
+
+        {confermaReset && (
+          <div style={{position:"absolute", inset:0, background:"rgba(0,0,0,0.5)", zIndex:60, display:"flex", alignItems:"center", justifyContent:"center"}}>
+            <div style={{background:"#fff", borderRadius:12, padding:20, maxWidth:300, boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+              <div style={{fontSize:15, fontWeight:700, color:T.warn, marginBottom:8}}>Pulire tutto?</div>
+              <div style={{fontSize:13, color:T.sub, marginBottom:14}}>Verranno rimosse tutte le tende, quote e particolari di questo rilievo.</div>
+              <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
+                <button onClick={function(){ setConfermaReset(false); }} style={{padding:"8px 14px", borderRadius:8, border:"1px solid "+T.bdr, background:"#fff", fontSize:13, cursor:"pointer"}}>Annulla</button>
+                <button onClick={resetTutto} style={{padding:"8px 14px", borderRadius:8, border:"none", background:T.warn, color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>Pulisci tutto</button>
+              </div>
             </div>
           </div>
         )}
