@@ -829,7 +829,7 @@ export default function SettingsPanel() {
                     }}>
                       <div style={{ fontSize: 28, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M6 22V4a2 2 0 012-2h8a2 2 0 012 2v18"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4"/></svg>️</div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>Configuratore Strutture</div>
-                      <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Pianta → Lati → 3D per Pergole, Verande, Box Doccia, Ferro, Tendaggi</div>
+                      <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Pianta → Lati → 3D per Pergole, Verande, Box Doccia, Ferro, Tendaggi, Tendaggi</div>
                       <div style={{
                         marginTop: 10, padding: "8px 20px", borderRadius: 8,
                         background: T.pri || "#0D7C6B", color: "#fff",
