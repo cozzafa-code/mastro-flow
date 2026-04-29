@@ -1,7 +1,9 @@
 // hooks/useHomeMobile.ts
-// Hook dati Home mobile fliwoX. Mock tipizzati pronti per cablaggio Supabase.
+// Home mobile fliwoX v2 - cablato su MastroContext.
+// Legge da useMastro() se presente, fallback a mock altrimenti.
 
 import { useMemo } from 'react'
+import { useMastro } from '../components/MastroContext'
 
 // ───────── tipi ─────────
 
@@ -14,7 +16,6 @@ export interface Operatore {
   stato: StatoOperatore
   tempo: string
   telefono?: string
-  posizione?: { lat: number; lng: number }
 }
 
 export interface AttivitaOggi {
@@ -47,7 +48,7 @@ export interface Problema {
 
 export interface EventoAgenda {
   id: string
-  data: string // 'YYYY-MM-DD'
+  data: string
   ora: string
   titolo: string
   cliente: string
@@ -55,11 +56,11 @@ export interface EventoAgenda {
 }
 
 export interface GiornoAgenda {
-  data: string         // 'YYYY-MM-DD'
-  label_giorno: string // 'lun', 'mar'
-  numero: number       // 28
+  data: string
+  label_giorno: string
+  numero: number
   oggi: boolean
-  count: number        // num eventi
+  count: number
 }
 
 export type StatoOrdine = 'IN_LAVORAZIONE' | 'IN_ATTESA' | 'FERMO'
@@ -69,13 +70,13 @@ export interface OrdineProduzione {
   codice: string
   descrizione: string
   stato: StatoOrdine
-  percentuale?: number // solo IN_LAVORAZIONE
+  percentuale?: number
 }
 
 export interface GiornoCarico {
-  data: string         // 'YYYY-MM-DD'
-  label: string        // 'lun 28'
-  abbrev: string       // 'L'
+  data: string
+  label: string
+  abbrev: string
   percentuale: number
   oggi: boolean
 }
@@ -84,7 +85,7 @@ export interface SoldiVeloce {
   fatturato_oggi: number
   fatturato_ieri: number
   in_lavorazione: number
-  in_lavorazione_var: number // delta percentuale vs settimana scorsa
+  in_lavorazione_var: number
   in_attesa: number
   clienti_non_paganti: number
 }
@@ -110,105 +111,244 @@ export interface HomeData {
   operatore_fermo: OperatoreFermo | null
 }
 
+// ───────── helpers ─────────
+
+const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre']
+const GIORNI = ['Domenica','Lunedi','Martedi','Mercoledi','Giovedi','Venerdi','Sabato']
+const GIORNI_BREVI = ['dom','lun','mar','mer','gio','ven','sab']
+
+function dataItaliana(d: Date): string {
+  return `${GIORNI[d.getDay()]} ${d.getDate()} ${MESI[d.getMonth()]}`
+}
+
+function ymd(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
+function inizialiDa(s: string): string {
+  if (!s) return '?'
+  const parts = s.trim().split(/\s+/).slice(0, 2)
+  return parts.map(p => p[0] || '').join('').toUpperCase() || '?'
+}
+
+// fasi pipeline che indicano commessa critica
+const FASI_FERMO = ['sopralluogo', 'preventivo', 'conferma_ordine', 'ordine_confermato']
+
 // ───────── hook ─────────
 
 export function useHomeMobile(): { data: HomeData; loading: boolean } {
-  const data = useMemo<HomeData>(() => MOCK_DATA, [])
+  const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
+
+  const data = useMemo<HomeData>(() => {
+    const today = new Date()
+    const userNome = (ctx?.user?.nome || ctx?.aziendaInfo?.titolare || 'TITOLARE').toString().toUpperCase()
+    const userIniziali = inizialiDa(userNome)
+
+    const cantieri: any[] = ctx?.cantieri || []
+    const fattureDB: any[] = ctx?.fattureDB || []
+    const ordiniFornDB: any[] = ctx?.ordiniFornDB || []
+    const team: any[] = ctx?.team || []
+    const tasks: any[] = ctx?.tasks || []
+    const problemiCtx: any[] = ctx?.problemi || []
+    const montaggiDB: any[] = ctx?.montaggiDB || []
+    const giorniFermaCM = ctx?.giorniFermaCM || (() => 0)
+    const sogliaDays = ctx?.sogliaDays || 7
+
+    // ── COMMESSE CRITICHE: ferma da troppo tempo o pagata in attesa
+    const commesseCritiche: CommessaCritica[] = cantieri
+      .filter((c: any) => {
+        const giorniFerma = giorniFermaCM(c)
+        return giorniFerma >= sogliaDays && c.fase !== 'chiusura' && c.fase !== 'pagata'
+      })
+      .slice(0, 3)
+      .map((c: any) => {
+        const giorni = giorniFermaCM(c)
+        const livello: LivelloCommessa =
+          giorni >= sogliaDays * 2 ? 'ritardo' :
+          c.fase === 'ordine_confermato' ? 'fermo' : 'problema'
+        const azione: 'RISOLVI' | 'GESTISCI' | 'SBLOCCA' =
+          livello === 'ritardo' ? 'RISOLVI' :
+          livello === 'fermo' ? 'SBLOCCA' : 'GESTISCI'
+        const cliente = `${c.cliente || ''}${c.cognome ? ' ' + c.cognome : ''}`.trim() || 'Cliente'
+        return {
+          id: c.id || `c${Math.random()}`,
+          cliente,
+          titolo: cliente,
+          motivo: `Ferma da ${giorni} giorni`,
+          livello,
+          azione,
+        }
+      })
+
+    // ── CASSA: aggrego da fatture e cantieri
+    let fatturatoOggi = 0
+    let inLavorazione = 0
+    let inAttesa = 0
+    let clientiNonPaganti = 0
+    const todayStr = ymd(today)
+
+    fattureDB.forEach((f: any) => {
+      const tot = Number(f.totale || f.importo || f.amount || 0)
+      const stato = (f.stato || '').toLowerCase()
+      const dataF = f.data || f.dataEmissione || f.data_emissione
+      if (stato === 'pagata' || stato === 'incassata') {
+        if (dataF && String(dataF).startsWith(todayStr)) fatturatoOggi += tot
+      } else if (stato === 'da_pagare' || stato === 'attesa' || stato === 'in_attesa' || stato === 'scaduta') {
+        inAttesa += tot
+        clientiNonPaganti += 1
+      }
+    })
+
+    cantieri.forEach((c: any) => {
+      const tot = Number(c.totale || c.importo || 0)
+      if (c.fase && c.fase !== 'chiusura' && c.fase !== 'pagata') inLavorazione += tot
+    })
+
+    // ── PROBLEMI: dal ctx.problemi
+    const problemi: Problema[] = problemiCtx.slice(0, 3).map((p: any) => ({
+      id: p.id || `p${Math.random()}`,
+      titolo: p.titolo || p.descrizione || 'Problema',
+      contesto: p.contesto || p.commessa || p.cliente || '',
+      azione: 'RISOLVI' as const,
+    }))
+
+    // ── OGGI OPERATIVO: top 3 task/montaggi di oggi
+    const attivitaOggi: AttivitaOggi[] = []
+    montaggiDB
+      .filter((m: any) => m.data && String(m.data).startsWith(todayStr))
+      .slice(0, 3)
+      .forEach((m: any) => {
+        attivitaOggi.push({
+          id: m.id || `m${Math.random()}`,
+          ora: (m.ora || '08:00').slice(0, 5),
+          titolo: m.titolo || `Montaggio ${m.cliente || ''}`.trim(),
+          indirizzo: m.indirizzo || m.luogo || '',
+          azione_primaria: 'VAI',
+          azione_secondaria: 'COMPLETA',
+        })
+      })
+
+    // ── TEAM LIVE: usa team del ctx, mappa stati
+    const operatori: Operatore[] = team.slice(0, 4).map((t: any) => ({
+      id: t.id || `o${Math.random()}`,
+      nome: t.nome || 'Operatore',
+      attivita: t.attivita || t.stato || 'Operativo',
+      stato: (t.stato as StatoOperatore) || 'attivo',
+      tempo: t.tempo || '',
+      telefono: t.telefono,
+    }))
+
+    const teamAttivi = operatori.filter(o => o.stato === 'attivo' || o.stato === 'viaggio').length
+    const teamProblemi = operatori.filter(o => o.stato === 'problema').length
+
+    // ── AGENDA: 7 giorni
+    const giorniAgenda: GiornoAgenda[] = []
+    for (let i = -1; i <= 5; i++) {
+      const d = new Date(today)
+      d.setDate(d.getDate() + i)
+      const dStr = ymd(d)
+      const eventiCount = montaggiDB.filter((m: any) => m.data && String(m.data).startsWith(dStr)).length
+      giorniAgenda.push({
+        data: dStr,
+        label_giorno: GIORNI_BREVI[d.getDay()],
+        numero: d.getDate(),
+        oggi: i === 0,
+        count: eventiCount,
+      })
+    }
+
+    const eventi: EventoAgenda[] = montaggiDB
+      .filter((m: any) => m.data && String(m.data).startsWith(todayStr))
+      .slice(0, 5)
+      .map((m: any) => ({
+        id: m.id || `e${Math.random()}`,
+        data: todayStr,
+        ora: (m.ora || '08:00').slice(0, 5),
+        titolo: m.titolo || `Montaggio ${m.cliente || ''}`.trim(),
+        cliente: m.cliente || '',
+        indirizzo: m.indirizzo || m.luogo || '',
+      }))
+
+    // ── PRODUZIONE: ordini fornitori
+    const ordini: OrdineProduzione[] = ordiniFornDB.slice(0, 3).map((o: any) => {
+      const stato: StatoOrdine =
+        o.stato === 'arrivato' || o.stato === 'consegnato' ? 'IN_LAVORAZIONE' :
+        o.stato === 'fermo' || o.stato === 'ritardo' ? 'FERMO' :
+        'IN_ATTESA'
+      return {
+        id: o.id || `op${Math.random()}`,
+        codice: o.codice || o.numero || 'ORD',
+        descrizione: o.descrizione || o.fornitore || '',
+        stato,
+        percentuale: stato === 'IN_LAVORAZIONE' ? (o.percentuale || 50) : undefined,
+      }
+    })
+
+    const produzione = {
+      in_corso: ordini.filter(o => o.stato === 'IN_LAVORAZIONE').length,
+      fermi: ordini.filter(o => o.stato === 'FERMO').length,
+      ordini,
+    }
+
+    // ── CARICO LAVORO: 7 giorni
+    const settimana: GiornoCarico[] = []
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today)
+      d.setDate(d.getDate() + i)
+      const dStr = ymd(d)
+      const eventiGiorno = montaggiDB.filter((m: any) => m.data && String(m.data).startsWith(dStr)).length
+      const taskGiorno = tasks.filter((t: any) => t.data && String(t.data).startsWith(dStr)).length
+      const totale = eventiGiorno + taskGiorno
+      const cap = 5
+      const perc = Math.min(Math.round(totale / cap * 100), 150)
+      settimana.push({
+        data: dStr,
+        label: `${GIORNI_BREVI[d.getDay()]} ${d.getDate()}`,
+        abbrev: GIORNI_BREVI[d.getDay()].charAt(0).toUpperCase(),
+        percentuale: perc,
+        oggi: i === 0,
+      })
+    }
+
+    // ── OPERATORE FERMO: pausa > 30min
+    const opFermo = operatori.find(o => o.stato === 'pausa')
+    const operatoreFermo: OperatoreFermo | null = opFermo ? {
+      id: opFermo.id,
+      nome: opFermo.nome,
+      minuti_fermo: 30,
+      motivo: opFermo.attivita || 'In pausa',
+      telefono: opFermo.telefono,
+    } : null
+
+    return {
+      user: {
+        nome: userNome,
+        iniziali: userIniziali,
+        data: dataItaliana(today),
+      },
+      oggi: {
+        lavori: cantieri.filter((c: any) => c.fase && FASI_FERMO.includes(c.fase)).length,
+        task: tasks.filter((t: any) => t.data && String(t.data).startsWith(todayStr)).length,
+        problemi: problemiCtx.length,
+        attivita: attivitaOggi,
+      },
+      team: { attivi: teamAttivi, problemi: teamProblemi, operatori },
+      commesse: commesseCritiche,
+      problemi,
+      agenda: { giorni: giorniAgenda, eventi },
+      produzione,
+      carico: { settimana },
+      soldi: {
+        fatturato_oggi: fatturatoOggi,
+        fatturato_ieri: 0,
+        in_lavorazione: inLavorazione,
+        in_lavorazione_var: 0,
+        in_attesa: inAttesa,
+        clienti_non_paganti: clientiNonPaganti,
+      },
+      operatore_fermo: operatoreFermo,
+    }
+  }, [ctx])
+
   return { data, loading: false }
-}
-
-// ───────── mock ─────────
-
-const MOCK_DATA: HomeData = {
-  user: { nome: 'FABIO', iniziali: 'FA', data: 'Martedi 28 Aprile' },
-
-  oggi: {
-    lavori: 3,
-    task: 2,
-    problemi: 1,
-    attivita: [
-      { id: 'a1', ora: '08:30', titolo: 'Montaggio infissi - Rossi', indirizzo: 'Via Roma 12, Milano', azione_primaria: 'VAI', azione_secondaria: 'COMPLETA' },
-      { id: 'a2', ora: '10:30', titolo: 'Sopralluogo - Bianchi', indirizzo: 'Via Verdi 45, Milano', azione_primaria: 'VAI', azione_secondaria: 'SPOSTA' },
-      { id: 'a3', ora: '14:00', titolo: 'Chiamare cliente Verdi', indirizzo: '+39 333 1234567', azione_primaria: 'CHIAMA', azione_secondaria: 'FATTO', telefono: '+393331234567' },
-    ],
-  },
-
-  team: {
-    attivi: 5,
-    problemi: 1,
-    operatori: [
-      { id: 'o1', nome: 'Marco Rossi', attivita: 'Montaggio Rossi', stato: 'attivo', tempo: '2h 15m', telefono: '+393331111111' },
-      { id: 'o2', nome: 'Luca Bianchi', attivita: 'Pausa', stato: 'pausa', tempo: '25m', telefono: '+393332222222' },
-      { id: 'o3', nome: 'Gianni Verdi', attivita: 'Problema vetro', stato: 'problema', tempo: '10m', telefono: '+393333333333' },
-      { id: 'o4', nome: 'Paolo Neri', attivita: 'In viaggio', stato: 'viaggio', tempo: '14:30', telefono: '+393334444444' },
-    ],
-  },
-
-  commesse: [
-    { id: 'c1', cliente: 'Rossi', titolo: 'Rossi - Montaggio infissi', motivo: 'RITARDO 2 giorni', livello: 'ritardo', azione: 'RISOLVI' },
-    { id: 'c2', cliente: 'Verdi', titolo: 'Verdi - Sostituzione vetri', motivo: 'Vetro mancante', livello: 'problema', azione: 'GESTISCI' },
-    { id: 'c3', cliente: 'Bianchi', titolo: 'Bianchi - Manutenzione', motivo: 'Fermo in attesa materiali', livello: 'fermo', azione: 'SBLOCCA' },
-  ],
-
-  problemi: [
-    { id: 'p1', titolo: 'Vetro non arrivato', contesto: 'Commessa S-0001 - Verdi', azione: 'RISOLVI' },
-    { id: 'p2', titolo: 'Ritardo fornitore', contesto: 'Ordine 9131G - Produzione', azione: 'ASSEGNA' },
-    { id: 'p3', titolo: 'Muro fuori squadra', contesto: 'Commessa S-0003 - Rossi', azione: 'APRI' },
-  ],
-
-  agenda: {
-    giorni: [
-      { data: '2026-04-26', label_giorno: 'dom', numero: 26, oggi: false, count: 0 },
-      { data: '2026-04-27', label_giorno: 'lun', numero: 27, oggi: false, count: 2 },
-      { data: '2026-04-28', label_giorno: 'mar', numero: 28, oggi: true, count: 3 },
-      { data: '2026-04-29', label_giorno: 'mer', numero: 29, oggi: false, count: 4 },
-      { data: '2026-04-30', label_giorno: 'gio', numero: 30, oggi: false, count: 1 },
-      { data: '2026-05-01', label_giorno: 'ven', numero: 1, oggi: false, count: 2 },
-      { data: '2026-05-02', label_giorno: 'sab', numero: 2, oggi: false, count: 0 },
-    ],
-    eventi: [
-      { id: 'e1', data: '2026-04-28', ora: '10:30', titolo: 'Sopralluogo', cliente: 'Cliente Verdi', indirizzo: 'Via Verdi 45, Milano' },
-      { id: 'e2', data: '2026-04-28', ora: '14:00', titolo: 'Consegna materiali', cliente: 'Cantiere Rossi', indirizzo: 'Via Roma 12, Milano' },
-      { id: 'e3', data: '2026-04-28', ora: '16:30', titolo: 'Riunione team', cliente: 'Ufficio', indirizzo: 'Sala riunioni' },
-    ],
-  },
-
-  produzione: {
-    in_corso: 3,
-    fermi: 1,
-    ordini: [
-      { id: 'op1', codice: '9131G', descrizione: 'Serramenti alluminio', stato: 'FERMO' },
-      { id: 'op2', codice: '9131H', descrizione: 'Vetri temperati', stato: 'IN_ATTESA' },
-      { id: 'op3', codice: '9131I', descrizione: 'Serramenti alluminio', stato: 'IN_LAVORAZIONE', percentuale: 65 },
-    ],
-  },
-
-  carico: {
-    settimana: [
-      { data: '2026-04-28', label: 'mar 28', abbrev: 'M', percentuale: 80, oggi: true },
-      { data: '2026-04-29', label: 'mer 29', abbrev: 'M', percentuale: 120, oggi: false },
-      { data: '2026-04-30', label: 'gio 30', abbrev: 'G', percentuale: 65, oggi: false },
-      { data: '2026-05-01', label: 'ven 01', abbrev: 'V', percentuale: 95, oggi: false },
-      { data: '2026-05-02', label: 'sab 02', abbrev: 'S', percentuale: 30, oggi: false },
-      { data: '2026-05-03', label: 'dom 03', abbrev: 'D', percentuale: 0, oggi: false },
-      { data: '2026-05-04', label: 'lun 04', abbrev: 'L', percentuale: 75, oggi: false },
-    ],
-  },
-
-  soldi: {
-    fatturato_oggi: 4250,
-    fatturato_ieri: 3800,
-    in_lavorazione: 14800,
-    in_lavorazione_var: 8,
-    in_attesa: 2100,
-    clienti_non_paganti: 3,
-  },
-
-  operatore_fermo: {
-    id: 'o2',
-    nome: 'Luca Bianchi',
-    minuti_fermo: 45,
-    motivo: 'Non ha lavoro assegnato',
-    telefono: '+393332222222',
-  },
 }
