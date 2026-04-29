@@ -497,6 +497,29 @@ function drawSchedeTecniche(doc: jsPDF, vaniCalc: any[], y: number): number {
     if (acc.persiana?.attivo) accList.push("Persiana " + clean(acc.persiana.tipo || ""));
     if (accList.length > 0) techRows.push(["Accessori", accList.join("  ·  ")]);
 
+    // ═══ DETTAGLI VANO-TENDA (settore tende) ═══
+    const tendeCodes = ["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"];
+    if (tendeCodes.includes(v.tipo) && v.tendaModelloId && tendeCatalogo.length > 0) {
+      const mod = tendeCatalogo.find((cm: any) => cm.id === v.tendaModelloId);
+      if (mod) {
+        techRows.push(["Modello", clean(mod.fornitore + " · " + mod.modello)]);
+        if (v.tendaColore || mod.colore_default) {
+          techRows.push(["Colore", clean(v.tendaColore || mod.colore_default)]);
+        }
+        if (m.sporgenza) {
+          techRows.push(["Sporgenza", m.sporgenza + " mm"]);
+        }
+        // Accessori tenda scelti
+        if (v.tendaAccessori && v.tendaAccessori.length > 0 && tendeAccessori.length > 0) {
+          const accNames: string[] = v.tendaAccessori
+            .map((sel: any) => tendeAccessori.find((a: any) => a.id === sel.id))
+            .filter((a: any) => !!a)
+            .map((a: any) => clean(a.nome) + (a.fornitore ? " (" + clean(a.fornitore) + ")" : ""));
+          if (accNames.length > 0) techRows.push(["Optional", accNames.join("  ·  ")]);
+        }
+      }
+    }
+
     // Certificazioni / CE
     const certs: string[] = [];
     if (v.classeAcustica) certs.push("Classe acustica " + clean(v.classeAcustica));
@@ -745,13 +768,15 @@ function drawFooter(doc: jsPDF, az: any): void {
    FUNZIONE PRINCIPALE
    ═══════════════════════════════════════════════════════════════════ */
 
-export async function generaPreventivoPDF(c: any, ctx: any, opts?: { returnBlob?: boolean }): Promise<void | { blob: Blob; filename: string }> {
+export async function generaPreventivoPDF(c: any, ctx: any, opts?: { returnBlob?: boolean; tendeCatalogo?: any[]; tendeAccessori?: any[] }): Promise<void | { blob: Blob; filename: string }> {
   if (!c) {
     throw new Error("Commessa mancante");
   }
 
   const az = ctx.aziendaDB || ctx.aziendaInfo || {};
   const getVaniAttivi = ctx.getVaniAttivi;
+  const tendeCatalogo: any[] = opts?.tendeCatalogo || [];
+  const tendeAccessori: any[] = opts?.tendeAccessori || [];
 
   const vani = getVaniAttivi ? getVaniAttivi(c) : (c.vani || []).filter((v: any) => !v.eliminato);
 

@@ -2706,10 +2706,30 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const renderModal = () => <ModalPanel />;
 
 
-  const generaPreventivoPDF = (c) => _generaPreventivoPDF(c, {
-    sistemiDB, vetriDB, coprifiliDB, lamiereDB, aziendaInfo, getVaniAttivi,
-    calcolaVanoPrezzo, tapparelleListino, persianeListino, zanzariereListino,
-  });
+  const generaPreventivoPDF = async (c) => {
+    // Carico catalogo tendaggi + accessori per arricchire le righe vano-tenda nel PDF
+    let tendeCatalogo: any[] = [];
+    let tendeAccessori: any[] = [];
+    try {
+      const { getAziendaId } = await import('../lib/supabase-sync');
+      const { supabase } = await import('../lib/supabase');
+      const aziendaId = await getAziendaId();
+      if (aziendaId) {
+        const [cat, acc] = await Promise.all([
+          supabase.from('catalogo_tendaggi').select('*').eq('azienda_id', aziendaId),
+          supabase.from('accessori_tendaggi').select('*').eq('azienda_id', aziendaId),
+        ]);
+        tendeCatalogo = (cat.data || []) as any[];
+        tendeAccessori = (acc.data || []) as any[];
+      }
+    } catch (e) {
+      console.warn('Catalogo tendaggi non caricato per PDF:', e);
+    }
+    return _generaPreventivoPDF(c, {
+      sistemiDB, vetriDB, coprifiliDB, lamiereDB, aziendaInfo, getVaniAttivi,
+      calcolaVanoPrezzo, tapparelleListino, persianeListino, zanzariereListino,
+    }, { tendeCatalogo, tendeAccessori });
+  };
 
 
   // PDF Misure (estratto in lib/pdf-misure.ts)
