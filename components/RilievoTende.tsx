@@ -12,11 +12,12 @@ type Pt = { x:number; y:number };
 type Braccio = { top:Pt; bot:Pt };
 type Detail = { dataUrl:string; img:HTMLImageElement|null; anchor:Pt; thumb:{x:number;y:number;w:number;h:number}; caption:string };
 type Quota = { p1:Pt; p2:Pt; label:string };
-type Props = { onClose:()=>void; onSave?:(data:any)=>void; initial?:any };
+type CatalogoItem = { id:string; tipo:string; nome:string; fornitore?:string; png_url?:string; prezzo?:number };
+type Props = { onClose:()=>void; onSave?:(data:any)=>void; initial?:any; catalogo?:CatalogoItem[] };
 
 const MODELS:[string,string][] = [["cassonetto","Cassonetto"],["bracci","Solo telo"],["capottina","Capottina"],["caduta","A caduta"],["rullo","Rullo"]];
 
-export default function RilievoTende({ onClose, onSave, initial }: Props){
+export default function RilievoTende({ onClose, onSave, initial, catalogo }: Props){
   const cvRef = useRef<HTMLCanvasElement>(null);
   const W = 640, H = 440;
 
@@ -210,6 +211,22 @@ export default function RilievoTende({ onClose, onSave, initial }: Props){
   }
   useEffect(()=>{ render(); });
 
+  // Touch listeners non-passive per preventDefault corretto
+  useEffect(()=>{
+    const cv = cvRef.current; if(!cv) return;
+    const start = (e:TouchEvent)=>{ e.preventDefault(); onDown(e as any); };
+    const move = (e:TouchEvent)=>{ e.preventDefault(); onMove(e as any); };
+    const end = ()=>{ onUp(); };
+    cv.addEventListener("touchstart", start, {passive:false});
+    cv.addEventListener("touchmove", move, {passive:false});
+    cv.addEventListener("touchend", end);
+    return ()=>{
+      cv.removeEventListener("touchstart", start);
+      cv.removeEventListener("touchmove", move);
+      cv.removeEventListener("touchend", end);
+    };
+  });
+
   function getPos(e:any):Pt{
     const cv = cvRef.current!;
     const r = cv.getBoundingClientRect();
@@ -346,7 +363,6 @@ export default function RilievoTende({ onClose, onSave, initial }: Props){
         <canvas ref={cvRef} width={W} height={H}
           style={{width:"100%", height:"100%", maxWidth:"100vw", display:"block", touchAction:"none", cursor: tool==="select"?"default":"crosshair", objectFit:"contain"}}
           onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
-          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
         />
 
         {/* Layer toggle floating */}
