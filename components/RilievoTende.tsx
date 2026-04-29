@@ -251,7 +251,7 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
       ctx.restore();
     }
   }
-  useEffect(()=>{ render(); });
+  useEffect(()=>{ render(); }, [img, tende, activeIdx, details, quote, show, zoom, pan, quotaPending, dbg]);
 
   // --- HIT TEST: cerca su tutte le tende, ma drag solo se è la attiva o passa attiva ---
   function getPos(e:any):Pt{
@@ -384,13 +384,15 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
     const start = (e:TouchEvent)=>{
       e.preventDefault();
       e.stopPropagation();
-      // Pinch zoom: 2 dita
-      if(e.touches.length===2){
+      // Pinch zoom: 2 dita (anche se drag attivo, abortiscilo)
+      if(e.touches.length>=2){
         const t1 = e.touches[0], t2 = e.touches[1];
         const dist = Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY);
         const cx = (t1.clientX+t2.clientX)/2, cy = (t1.clientY+t2.clientY)/2;
         pinchRef.current = { dist, cx, cy, startZoom: zoomRef.current.zoom, startPan:{...zoomRef.current.pan} };
         dragRef.current = null;
+        setDrag(null);
+        setDbg(`pinch start zoom=${zoomRef.current.zoom.toFixed(2)}`);
         return;
       }
       const p = getPosT(e);
@@ -426,13 +428,48 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
         return copy;
       });
     };
-    const end = ()=>{ dragRef.current=null; pinchRef.current=null; setDrag(null); };
-    cv.addEventListener("touchstart", start, {passive:false});
+    const end = (e:TouchEvent)=>{
+      if(e.touches.length===0){
+        dragRef.current=null;
+        pinchRef.current=null;
+        setDrag(null);
+      } else if(e.touches.length===1 && pinchRef.current){
+        // un dito sollevato dopo pinch: termina pinch
+        pinchRef.current = null;
+      }
+    };
+    let lastTap = 0;
+    const doubleTapStart = (e:TouchEvent)=>{
+      const now = Date.now();
+      if(e.touches.length===1 && now - lastTap < 300){
+        e.preventDefault();
+        const r = cv!.getBoundingClientRect();
+        const sx = cv!.width/r.width, sy = cv!.height/r.height;
+        const t = e.touches[0];
+        const cx = (t.clientX-r.left)*sx, cy = (t.clientY-r.top)*sy;
+        const z = zoomRef.current.zoom;
+        const newZoom = z >= 2.5 ? 1 : Math.min(3, z + 1);
+        const newPanX = cx - (cx - zoomRef.current.pan.x) * (newZoom/z);
+        const newPanY = cy - (cy - zoomRef.current.pan.y) * (newZoom/z);
+        setZoom(newZoom);
+        setPan(newZoom===1 ? {x:0,y:0} : {x:newPanX, y:newPanY});
+        setDbg(`double-tap zoom ${newZoom}x`);
+        lastTap = 0;
+        return true;
+      }
+      lastTap = now;
+      return false;
+    };
+    const startWrapper = (e:TouchEvent)=>{
+      if(doubleTapStart(e)) return;
+      start(e);
+    };
+    cv.addEventListener("touchstart", startWrapper, {passive:false});
     cv.addEventListener("touchmove", move, {passive:false});
     cv.addEventListener("touchend", end);
     cv.addEventListener("touchcancel", end);
     return ()=>{
-      cv.removeEventListener("touchstart", start);
+      cv.removeEventListener("touchstart", startWrapper);
       cv.removeEventListener("touchmove", move);
       cv.removeEventListener("touchend", end);
       cv.removeEventListener("touchcancel", end);
