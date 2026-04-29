@@ -18,7 +18,7 @@ export default function HomePanelMobileV2(_props: any) {
   const { data } = useHomeMobile()
 
   return (
-    <div style={{ background: T.bg, minHeight: '100vh' }}>
+    <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 110 }}>
       <Header user={data.user} />
 
       <div style={{ padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
