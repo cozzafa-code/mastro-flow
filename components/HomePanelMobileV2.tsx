@@ -1,6 +1,5 @@
 // components/HomePanelMobileV2.tsx
 // Home mobile fliwoX v2. Statica, 10 widget operativi.
-// Drop-in: export name = HomePanelMobileV2. Prop onNavigate compatibile.
 
 'use client'
 
