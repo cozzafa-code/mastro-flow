@@ -8,6 +8,7 @@ import React, { useState } from 'react'
 import { useMastro } from './MastroContext'
 import { T } from './home-mobile/HomeUI'
 import SettingsProfiliMobile from './settings-mobile/SettingsProfiliMobile'
+import SettingsVetriMobile from './settings-mobile/SettingsVetriMobile'
 
 type Sezione = null | 'profili' | 'vetri' | 'accessori' | 'nodi' | 'sistemi' | 'importa'
 
@@ -21,7 +22,7 @@ export default function SettingsMobile() {
   const torna = () => setSezione(null)
 
   if (sezione === 'profili') return <SettingsProfiliMobile onBack={torna} />
-  if (sezione === 'vetri') return <Placeholder titolo="VETRI" onBack={torna} />
+  if (sezione === 'vetri') return <SettingsVetriMobile onBack={torna} />
   if (sezione === 'accessori') return <Placeholder titolo="ACCESSORI" onBack={torna} />
   if (sezione === 'nodi') return <Placeholder titolo="NODI TECNICI" onBack={torna} />
   if (sezione === 'sistemi') return <Placeholder titolo="SISTEMI" onBack={torna} />
