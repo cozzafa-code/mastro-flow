@@ -1,6 +1,5 @@
-// components/mobile/home/HomeWidgets.tsx
-// 10 widget operativi Home mobile fliwoX v2.
-// Numeri nitidi (700, tnum, letter-spacing -0.02em), palette desaturata, azioni reali.
+// components/home-mobile/HomeWidgets.tsx
+// 10 widget operativi con navigazioni cablate.
 
 'use client'
 
@@ -16,63 +15,75 @@ import {
 import type {
   AttivitaOggi, GiornoCarico, CommessaCritica, EventoAgenda, GiornoAgenda,
   Operatore, OperatoreFermo, OrdineProduzione, Problema, SoldiVeloce,
-} from '@/hooks/useHomeMobile'
+} from '../../hooks/useHomeMobile'
 import { iniziali, caricoColor } from './homeUtils'
 
 // ───────── 1. OGGI OPERATIVO ─────────
 
 export function CardOggiOperativo({
-  lavori, task, problemi, attivita,
+  lavori, task, problemi, attivita, onVedi,
 }: {
-  lavori: number; task: number; problemi: number; attivita: AttivitaOggi[]
+  lavori: number; task: number; problemi: number; attivita: AttivitaOggi[]; onVedi?: () => void
 }) {
   return (
     <Card>
-      <CardHeader index={1} title="OGGI OPERATIVO" link="vedi tutte" indexBg={T.acc} />
+      <CardHeader index={1} title="OGGI OPERATIVO" link="vedi tutte" indexBg={T.acc} onLink={onVedi} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
         <Kpi value={lavori} label="lavori" />
         <Kpi value={task} label="task" />
         <Kpi value={problemi} label="problema" statusColor={problemi > 0 ? T.numRed : undefined} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {attivita.map(a => (
-          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ ...numStyle(13, T.text), minWidth: 44, fontWeight: 700 }}>{a.ora}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.titolo}</div>
-              <div style={{ fontSize: 11, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.indirizzo}</div>
+      {attivita.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {attivita.map(a => (
+            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ ...numStyle(13, T.text), minWidth: 44, fontWeight: 700 }}>{a.ora}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.titolo}</div>
+                <div style={{ fontSize: 11, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.indirizzo}</div>
+              </div>
+              <BtnPrimary label={a.azione_primaria} onClick={onVedi} />
+              <BtnSecondary label={a.azione_secondaria} onClick={onVedi} />
             </div>
-            <BtnPrimary label={a.azione_primaria} />
-            <BtnSecondary label={a.azione_secondaria} />
-          </div>
-        ))}
-      </div>
-      <BtnFull label="VAI A TUTTE LE ATTIVITA" />
+          ))}
+        </div>
+      ) : (
+        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
+          Nessuna attivita pianificata oggi
+        </div>
+      )}
+      <BtnFull label="VAI A TUTTE LE ATTIVITA" onClick={onVedi} />
     </Card>
   )
 }
 
-// ───────── 2. TEAM LIVE (azioni contestuali per stato) ─────────
+// ───────── 2. TEAM LIVE ─────────
 
 export function CardTeamLive({
-  operatori, attivi, problemi,
-}: { operatori: Operatore[]; attivi: number; problemi: number }) {
+  operatori, attivi, problemi, onApri,
+}: { operatori: Operatore[]; attivi: number; problemi: number; onApri?: () => void }) {
   return (
     <Card>
-      <CardHeader index={2} title="TEAM LIVE" link="vedi tutto" indexBg={T.acc} />
+      <CardHeader index={2} title="TEAM LIVE" link="vedi tutto" indexBg={T.acc} onLink={onApri} />
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <Pill bg={T.tealSoft} fg={T.numTeal} dot={T.numTeal} text={`${attivi} attivi`} />
         {problemi > 0 && <Pill bg={T.redSoft} fg={T.numRed} dot={T.numRed} text={`${problemi} problema`} />}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {operatori.map(o => <RigaOperatore key={o.id} o={o} />)}
-      </div>
-      <BtnFull label="APRI TEAM COMPLETO" />
+      {operatori.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {operatori.map(o => <RigaOperatore key={o.id} o={o} onApri={onApri} />)}
+        </div>
+      ) : (
+        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
+          Nessun operatore attivo
+        </div>
+      )}
+      <BtnFull label="APRI TEAM COMPLETO" onClick={onApri} />
     </Card>
   )
 }
 
-function RigaOperatore({ o }: { o: Operatore }) {
+function RigaOperatore({ o, onApri }: { o: Operatore; onApri?: () => void }) {
   const palette =
     o.stato === 'attivo' ? { bg: '#F8FCFC', bdr: '#E6F0EC', tempoCol: T.numTeal, attCol: T.muted } :
     o.stato === 'pausa' ? { bg: T.amberSoft, bdr: '#F4DDB8', tempoCol: T.numAmber, attCol: T.numAmber } :
@@ -83,14 +94,10 @@ function RigaOperatore({ o }: { o: Operatore }) {
     o.stato === 'pausa' ? { label: 'ASSEGNA', bg: T.acc, fg: '#FFF', bdr: 'none' } :
     o.stato === 'problema' ? { label: 'RISOLVI', bg: T.numRed, fg: '#FFF', bdr: 'none' } :
     o.stato === 'viaggio' ? { label: 'MAPPA', bg: '#FFF', fg: T.numBlue, bdr: `1px solid ${palette.bdr}` } :
-    null // attivo: nessun bottone, solo tap-to-open
+    null
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      padding: 8, borderRadius: 10,
-      background: palette.bg, border: `1px solid ${palette.bdr}`,
-    }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8, borderRadius: 10, background: palette.bg, border: `1px solid ${palette.bdr}` }}>
       <Avatar text={iniziali(o.nome)} bg={T.acc} size={36} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{o.nome}</div>
@@ -102,14 +109,9 @@ function RigaOperatore({ o }: { o: Operatore }) {
         </div>
       </div>
       {azione ? (
-        <button style={{
-          background: azione.bg, color: azione.fg, border: azione.bdr,
-          borderRadius: 8, padding: '6px 10px',
-          fontSize: 10, fontWeight: 600, height: 30,
-          cursor: 'pointer',
-        }}>{azione.label}</button>
+        <button onClick={onApri} style={{ background: azione.bg, color: azione.fg, border: azione.bdr, borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>{azione.label}</button>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+        <div onClick={onApri} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, cursor: 'pointer' }}>
           <span style={{ ...numStyle(13, palette.tempoCol), fontWeight: 700 }}>{o.tempo}</span>
           <span style={{ fontSize: 9, color: T.muted }}>tap › azioni</span>
         </div>
@@ -120,61 +122,77 @@ function RigaOperatore({ o }: { o: Operatore }) {
 
 // ───────── 3. COMMESSE CRITICHE ─────────
 
-export function CardCommesseCritiche({ commesse }: { commesse: CommessaCritica[] }) {
+export function CardCommesseCritiche({
+  commesse, onApri,
+}: { commesse: CommessaCritica[]; onApri?: (id: string) => void }) {
   return (
     <Card>
-      <CardHeader index={3} title="COMMESSE CRITICHE" link="vedi tutte" indexBg={T.numRed} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {commesse.map(c => {
-          const palette =
-            c.livello === 'ritardo' ? { bg: T.redSoft, dot: T.numRed, label: T.numRed } :
-            c.livello === 'problema' ? { bg: T.amberSoft, dot: T.numAmber, label: T.numAmber } :
-            { bg: '#FEF9C3', dot: '#854F0B', label: '#854F0B' }
-          return (
-            <div key={c.id} style={{ background: palette.bg, borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: palette.dot, flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{c.titolo}</div>
-                <div style={{ fontSize: 11, color: palette.label, fontWeight: 500 }}>{c.motivo}</div>
+      <CardHeader index={3} title="COMMESSE CRITICHE" link="vedi tutte" indexBg={T.numRed} onLink={() => onApri && onApri('')} />
+      {commesse.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {commesse.map(c => {
+            const palette =
+              c.livello === 'ritardo' ? { bg: T.redSoft, dot: T.numRed, label: T.numRed } :
+              c.livello === 'problema' ? { bg: T.amberSoft, dot: T.numAmber, label: T.numAmber } :
+              { bg: '#FEF9C3', dot: '#854F0B', label: '#854F0B' }
+            return (
+              <div key={c.id} style={{ background: palette.bg, borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: palette.dot, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{c.titolo}</div>
+                  <div style={{ fontSize: 11, color: palette.label, fontWeight: 500 }}>{c.motivo}</div>
+                </div>
+                <BtnPrimary label={c.azione} onClick={() => onApri && onApri(c.id)} />
               </div>
-              <BtnPrimary label={c.azione} />
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
+          Nessuna commessa critica
+        </div>
+      )}
     </Card>
   )
 }
 
 // ───────── 4. PROBLEMI ─────────
 
-export function CardProblemi({ problemi }: { problemi: Problema[] }) {
+export function CardProblemi({
+  problemi, onApri,
+}: { problemi: Problema[]; onApri?: () => void }) {
   return (
     <Card>
-      <CardHeader index={4} title="PROBLEMI" link="vedi tutti" indexBg={T.numRed} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {problemi.map(p => (
-          <div key={p.id} style={{ background: T.redSoft, borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 24, height: 24, borderRadius: 6, background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <IconAlert color={T.numRed} size={14} />
+      <CardHeader index={4} title="PROBLEMI" link="vedi tutti" indexBg={T.numRed} onLink={onApri} />
+      {problemi.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {problemi.map(p => (
+            <div key={p.id} style={{ background: T.redSoft, borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 24, height: 24, borderRadius: 6, background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconAlert color={T.numRed} size={14} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{p.titolo}</div>
+                <div style={{ fontSize: 11, color: T.muted }}>{p.contesto}</div>
+              </div>
+              <BtnPrimary label={p.azione} onClick={onApri} />
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{p.titolo}</div>
-              <div style={{ fontSize: 11, color: T.muted }}>{p.contesto}</div>
-            </div>
-            <BtnPrimary label={p.azione} />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
+          Nessun problema aperto
+        </div>
+      )}
     </Card>
   )
 }
 
-// ───────── 5. AGENDA LIVE (strisciatina giorni + eventi) ─────────
+// ───────── 5. AGENDA LIVE ─────────
 
 export function CardAgendaLive({
-  giorni, eventi,
-}: { giorni: GiornoAgenda[]; eventi: EventoAgenda[] }) {
+  giorni, eventi, onApri,
+}: { giorni: GiornoAgenda[]; eventi: EventoAgenda[]; onApri?: () => void }) {
   const [selezionato, setSelezionato] = useState<string>(
     giorni.find(g => g.oggi)?.data ?? giorni[0]?.data ?? ''
   )
@@ -182,16 +200,16 @@ export function CardAgendaLive({
 
   return (
     <Card>
-      <CardHeader index={5} title="AGENDA LIVE" link="vedi agenda" indexBg={T.acc} />
+      <CardHeader index={5} title="AGENDA LIVE" link="vedi agenda" indexBg={T.acc} onLink={onApri} />
       <StripGiorni giorni={giorni} selezionato={selezionato} onSelect={setSelezionato} />
       {eventiGiorno.length > 0 ? (
-        <ListaEventi eventi={eventiGiorno} />
+        <ListaEventi eventi={eventiGiorno} onApri={onApri} />
       ) : (
         <div style={{ padding: '20px 8px', textAlign: 'center', color: T.muted, fontSize: 12 }}>
           Nessun evento in questo giorno
         </div>
       )}
-      <BtnFull label="VAI ALL AGENDA COMPLETA" />
+      <BtnFull label="VAI ALL AGENDA COMPLETA" onClick={onApri} />
     </Card>
   )
 }
@@ -200,11 +218,7 @@ function StripGiorni({
   giorni, selezionato, onSelect,
 }: { giorni: GiornoAgenda[]; selezionato: string; onSelect: (d: string) => void }) {
   return (
-    <div style={{
-      display: 'flex', gap: 6, overflowX: 'auto',
-      paddingBottom: 8, marginBottom: 12,
-      scrollbarWidth: 'none',
-    }}>
+    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 12, scrollbarWidth: 'none' }}>
       {giorni.map(g => {
         const sel = g.data === selezionato
         const evCol = g.count >= 4 ? T.numAmber : g.count > 0 ? T.numTeal : T.muted
@@ -213,8 +227,7 @@ function StripGiorni({
             key={g.data}
             onClick={() => onSelect(g.data)}
             style={{
-              minWidth: 50, textAlign: 'center', padding: '8px 6px',
-              borderRadius: 10,
+              minWidth: 50, textAlign: 'center', padding: '8px 6px', borderRadius: 10,
               background: sel ? T.acc : '#FFF',
               border: `1px solid ${sel ? T.acc : T.bdr}`,
               cursor: 'pointer',
@@ -234,7 +247,7 @@ function StripGiorni({
   )
 }
 
-function ListaEventi({ eventi }: { eventi: EventoAgenda[] }) {
+function ListaEventi({ eventi, onApri }: { eventi: EventoAgenda[]; onApri?: () => void }) {
   return (
     <div style={{ position: 'relative', paddingLeft: 20 }}>
       <div style={{ position: 'absolute', left: 4, top: 8, bottom: 8, width: 2, background: T.bdr }} />
@@ -247,12 +260,12 @@ function ListaEventi({ eventi }: { eventi: EventoAgenda[] }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{e.titolo}</div>
                 <div style={{ fontSize: 11, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {e.cliente} · {e.indirizzo}
+                  {e.cliente}{e.indirizzo ? ' · ' + e.indirizzo : ''}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 4 }}>
-                <BtnPrimary label="VAI" small />
-                <BtnSecondary label="SPOSTA" small />
+                <BtnPrimary label="VAI" small onClick={onApri} />
+                <BtnSecondary label="SPOSTA" small onClick={onApri} />
               </div>
             </div>
           </div>
@@ -262,27 +275,33 @@ function ListaEventi({ eventi }: { eventi: EventoAgenda[] }) {
   )
 }
 
-// ───────── 6. PRODUZIONE (azioni per riga) ─────────
+// ───────── 6. PRODUZIONE ─────────
 
 export function CardProduzione({
-  ordini, inCorso, fermi,
-}: { ordini: OrdineProduzione[]; inCorso: number; fermi: number }) {
+  ordini, inCorso, fermi, onApri,
+}: { ordini: OrdineProduzione[]; inCorso: number; fermi: number; onApri?: () => void }) {
   return (
     <Card>
-      <CardHeader index={6} title="PRODUZIONE" link="vedi produzione" indexBg={T.numAmber} />
+      <CardHeader index={6} title="PRODUZIONE" link="vedi produzione" indexBg={T.numAmber} onLink={onApri} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         <Kpi value={inCorso} label="in corso" statusColor={T.numTeal} icon="check" />
         <Kpi value={fermi} label="fermo" statusColor={fermi > 0 ? T.numRed : undefined} icon="clock" />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {ordini.map(o => <RigaOrdine key={o.id} o={o} />)}
-      </div>
-      <BtnFull label="VAI ALLA PRODUZIONE" />
+      {ordini.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {ordini.map(o => <RigaOrdine key={o.id} o={o} onApri={onApri} />)}
+        </div>
+      ) : (
+        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
+          Nessun ordine in produzione
+        </div>
+      )}
+      <BtnFull label="VAI ALLA PRODUZIONE" onClick={onApri} />
     </Card>
   )
 }
 
-function RigaOrdine({ o }: { o: OrdineProduzione }) {
+function RigaOrdine({ o, onApri }: { o: OrdineProduzione; onApri?: () => void }) {
   if (o.stato === 'FERMO') {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: T.redSoft, border: '1px solid #F5C8C8' }}>
@@ -291,7 +310,7 @@ function RigaOrdine({ o }: { o: OrdineProduzione }) {
           <div style={{ fontSize: 11, color: T.muted }}>{o.descrizione}</div>
         </div>
         <PillStatus text="FERMO" kind="danger" />
-        <button style={{ background: T.numRed, color: '#FFF', border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>SBLOCCA</button>
+        <button onClick={onApri} style={{ background: T.numRed, color: '#FFF', border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>SBLOCCA</button>
       </div>
     )
   }
@@ -303,11 +322,10 @@ function RigaOrdine({ o }: { o: OrdineProduzione }) {
           <div style={{ fontSize: 11, color: T.muted }}>{o.descrizione}</div>
         </div>
         <PillStatus text="IN ATTESA" kind="warn" />
-        <button style={{ background: '#FFF', color: T.numAmber, border: '1px solid #F4DDB8', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>VERIFICA</button>
+        <button onClick={onApri} style={{ background: '#FFF', color: T.numAmber, border: '1px solid #F4DDB8', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>VERIFICA</button>
       </div>
     )
   }
-  // IN LAVORAZIONE
   const p = o.percentuale ?? 0
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: T.tealSoft, border: '1px solid #C5E5D9' }}>
@@ -321,28 +339,26 @@ function RigaOrdine({ o }: { o: OrdineProduzione }) {
           <div style={{ width: `${p}%`, height: '100%', background: T.numTeal }} />
         </div>
       </div>
-      <button style={{ background: '#FFF', color: T.numTeal, border: '1px solid #C5E5D9', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>TRACCIA</button>
+      <button onClick={onApri} style={{ background: '#FFF', color: T.numTeal, border: '1px solid #C5E5D9', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>TRACCIA</button>
     </div>
   )
 }
 
-// ───────── 7. CARICO LAVORO (settimana 7 barre + bilancia) ─────────
+// ───────── 7. CARICO LAVORO ─────────
 
-export function CardCaricoLavoro({ settimana }: { settimana: GiornoCarico[] }) {
+export function CardCaricoLavoro({
+  settimana, onApri,
+}: { settimana: GiornoCarico[]; onApri?: () => void }) {
   const sovraccarichi = settimana.filter(g => g.percentuale >= 100)
   const leggeri = settimana.filter(g => g.percentuale > 0 && g.percentuale < 50)
   const showAlert = sovraccarichi.length > 0 && leggeri.length > 0
 
   return (
     <Card>
-      <CardHeader index={7} title="CARICO LAVORO" link="vedi piano" indexBg={T.acc} />
+      <CardHeader index={7} title="CARICO LAVORO" link="vedi piano" indexBg={T.acc} onLink={onApri} />
       <Istogramma giorni={settimana} />
       {showAlert && (
-        <div style={{
-          background: T.redSoft, border: '1px solid #F5C8C8',
-          borderRadius: 10, padding: '10px 12px',
-          display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8,
-        }}>
+        <div style={{ background: T.redSoft, border: '1px solid #F5C8C8', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           <IconAlert color={T.numRed} size={16} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>
@@ -352,37 +368,25 @@ export function CardCaricoLavoro({ settimana }: { settimana: GiornoCarico[] }) {
               {leggeri.map(g => g.label.split(' ')[0]).join(', ')} sono leggeri
             </div>
           </div>
-          <button style={{ background: T.acc, color: '#FFF', border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>BILANCIA</button>
+          <button onClick={onApri} style={{ background: T.acc, color: '#FFF', border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>BILANCIA</button>
         </div>
       )}
-      <BtnFull label="PIANIFICA SETTIMANA" />
+      <BtnFull label="PIANIFICA SETTIMANA" onClick={onApri} />
     </Card>
   )
 }
 
 function Istogramma({ giorni }: { giorni: GiornoCarico[] }) {
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6,
-      marginBottom: 14, alignItems: 'end',
-      height: 120, padding: '0 4px',
-    }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 14, alignItems: 'end', height: 120, padding: '0 4px' }}>
       {giorni.map(g => {
         const c = caricoColor(g.percentuale)
         const h = Math.min(g.percentuale, 130) / 130 * 100
-        const dataLabel = g.label.split(' ')[1] // '28' da 'mar 28'
+        const dataLabel = g.label.split(' ')[1]
         return (
-          <button key={g.data} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-            border: 'none', background: 'transparent', cursor: 'pointer', padding: 0,
-          }}>
+          <button key={g.data} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, border: 'none', background: 'transparent', cursor: 'pointer', padding: 0 }}>
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column-reverse', height: 80 }}>
-              <div style={{
-                height: `${h}%`,
-                background: g.percentuale > 0 ? c.bar : T.bdr,
-                borderRadius: 4,
-                minHeight: g.percentuale > 0 ? 4 : 2,
-              }} />
+              <div style={{ height: `${h}%`, background: g.percentuale > 0 ? c.bar : T.bdr, borderRadius: 4, minHeight: g.percentuale > 0 ? 4 : 2 }} />
             </div>
             <div style={{ ...numStyle(10, g.oggi ? T.text : T.muted), fontWeight: g.oggi ? 700 : 600 }}>
               {g.abbrev}{dataLabel}
@@ -395,60 +399,43 @@ function Istogramma({ giorni }: { giorni: GiornoCarico[] }) {
   )
 }
 
-// ───────── 8. CASSA (rinominato) ─────────
+// ───────── 8. CASSA ─────────
 
-export function CardCassa({ soldi }: { soldi: SoldiVeloce }) {
+export function CardCassa({
+  soldi, onApri,
+}: { soldi: SoldiVeloce; onApri?: () => void }) {
   const deltaIeri = soldi.fatturato_ieri > 0
     ? Math.round((soldi.fatturato_oggi - soldi.fatturato_ieri) / soldi.fatturato_ieri * 100)
     : 0
 
   return (
     <Card>
-      <CardHeader index={8} title="CASSA" link="contabilita" indexBg={T.acc} />
+      <CardHeader index={8} title="CASSA" link="contabilita" indexBg={T.acc} onLink={onApri} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 12 }}>
-        <Importo
-          label="Fatturato oggi"
-          value={soldi.fatturato_oggi}
-          variazione={{ delta: deltaIeri, testo: 'vs ieri' }}
-        />
-        <Importo
-          label="In lavorazione"
-          value={soldi.in_lavorazione}
-          variazione={{ delta: soldi.in_lavorazione_var, testo: 'sett' }}
-        />
-        <Importo
-          label="In attesa pagamento"
-          value={soldi.in_attesa}
-          alertSoft
-        />
+        <Importo label="Fatturato oggi" value={soldi.fatturato_oggi} variazione={soldi.fatturato_ieri > 0 ? { delta: deltaIeri, testo: 'vs ieri' } : undefined} />
+        <Importo label="In lavorazione" value={soldi.in_lavorazione} />
+        <Importo label="In attesa pagamento" value={soldi.in_attesa} alertSoft />
       </div>
       {soldi.clienti_non_paganti > 0 && (
-        <div style={{
-          background: T.amberSoft, border: '1px solid #F4DDB8',
-          borderRadius: 10, padding: '10px 12px',
-          display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8,
-        }}>
+        <div style={{ background: T.amberSoft, border: '1px solid #F4DDB8', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           <IconAlert color={T.numAmber} size={16} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{soldi.clienti_non_paganti} clienti non hanno pagato</div>
-            <div style={{ fontSize: 10, color: T.muted }}>Solleciti gia inviati 2</div>
+            <div style={{ fontSize: 10, color: T.muted }}>Da contattare</div>
           </div>
-          <button style={{ background: T.acc, color: '#FFF', border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>CONTATTA</button>
+          <button onClick={onApri} style={{ background: T.acc, color: '#FFF', border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>CONTATTA</button>
         </div>
       )}
-      <BtnFull label="VAI ALLA CONTABILITA" />
+      <BtnFull label="VAI ALLA CONTABILITA" onClick={onApri} />
     </Card>
   )
 }
 
 // ───────── 9. OPERATORE FERMO ─────────
 
-export function CardOperatoreFermo({ op }: { op: OperatoreFermo }) {
+export function CardOperatoreFermo({ op, onApri }: { op: OperatoreFermo; onApri?: () => void }) {
   return (
-    <div style={{
-      background: T.redSoft, border: '1px solid #F5C8C8',
-      borderRadius: 16, padding: 16, boxShadow: T.shadow,
-    }}>
+    <div style={{ background: T.redSoft, border: '1px solid #F5C8C8', borderRadius: 16, padding: 16, boxShadow: T.shadow }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <span style={{ background: T.numRed, color: '#FFF', fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6 }}>9</span>
         <div style={{ flex: 1, fontSize: 12, fontWeight: 700, color: T.text, letterSpacing: 0.4 }}>OPERATORE FERMO</div>
@@ -463,8 +450,8 @@ export function CardOperatoreFermo({ op }: { op: OperatoreFermo }) {
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button style={{ ...btnBaseStyle, background: T.acc, color: '#FFF', flex: 1 }}>ASSEGNA LAVORO</button>
-        <button style={{ ...btnBaseStyle, background: '#FFF', color: T.text, border: `1px solid ${T.bdr}`, flex: 1 }}>CHIAMA</button>
+        <button onClick={onApri} style={{ ...btnBaseStyle, background: T.acc, color: '#FFF', flex: 1 }}>ASSEGNA LAVORO</button>
+        <button onClick={() => op.telefono && window.open('tel:' + op.telefono)} style={{ ...btnBaseStyle, background: '#FFF', color: T.text, border: `1px solid ${T.bdr}`, flex: 1 }}>CHIAMA</button>
       </div>
     </div>
   )
@@ -472,29 +459,31 @@ export function CardOperatoreFermo({ op }: { op: OperatoreFermo }) {
 
 // ───────── 10. AZIONI RAPIDE ─────────
 
-export function CardAzioniRapide() {
+export function CardAzioniRapide({
+  onTask, onCommessa, onMappa, onFoto, onFirma, onPreventivo,
+}: {
+  onTask?: () => void; onCommessa?: () => void; onMappa?: () => void;
+  onFoto?: () => void; onFirma?: () => void; onPreventivo?: () => void;
+}) {
   const azioni = [
-    { id: 'a1', icon: <IconTask />, titolo: 'Nuovo task', sub: 'Assegna lavoro' },
-    { id: 'a2', icon: <IconFolder />, titolo: 'Nuova commessa', sub: 'Crea commessa' },
-    { id: 'a3', icon: <IconPin />, titolo: 'Apri mappa team', sub: 'Vedi tutti' },
-    { id: 'a4', icon: <IconCamera />, titolo: 'Scatta foto', sub: 'Carica foto' },
-    { id: 'a5', icon: <IconPen />, titolo: 'Firma documento', sub: 'Richiedi firma' },
-    { id: 'a6', icon: <IconDoc />, titolo: 'Nuovo preventivo', sub: 'Crea preventivo' },
+    { id: 'a1', icon: <IconTask />, titolo: 'Nuovo task', sub: 'Assegna lavoro', onClick: onTask },
+    { id: 'a2', icon: <IconFolder />, titolo: 'Nuova commessa', sub: 'Crea commessa', onClick: onCommessa },
+    { id: 'a3', icon: <IconPin />, titolo: 'Apri mappa team', sub: 'Vedi tutti', onClick: onMappa },
+    { id: 'a4', icon: <IconCamera />, titolo: 'Scatta foto', sub: 'Carica foto', onClick: onFoto },
+    { id: 'a5', icon: <IconPen />, titolo: 'Firma documento', sub: 'Richiedi firma', onClick: onFirma },
+    { id: 'a6', icon: <IconDoc />, titolo: 'Nuovo preventivo', sub: 'Crea preventivo', onClick: onPreventivo },
   ]
   return (
     <Card>
       <CardHeader index={10} title="AZIONI RAPIDE" indexBg={T.acc} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
         {azioni.map(a => (
-          <button key={a.id} style={{
+          <button key={a.id} onClick={a.onClick} style={{
             background: '#FFF', border: `1px solid ${T.bdr}`, borderRadius: 12,
             padding: '14px 8px', display: 'flex', flexDirection: 'column',
             alignItems: 'center', gap: 6, cursor: 'pointer',
           }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 10, background: T.tealSoft,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>{a.icon}</div>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: T.tealSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{a.icon}</div>
             <div style={{ fontSize: 11, fontWeight: 600, color: T.text, textAlign: 'center' }}>{a.titolo}</div>
             <div style={{ fontSize: 9, color: T.muted, textAlign: 'center' }}>{a.sub}</div>
           </button>
