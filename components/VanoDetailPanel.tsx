@@ -6,6 +6,7 @@
 // ═══════════════════════════════════════════════════════════
 import DisegnoTecnico from "./DisegnoTecnico";
 import { useDay } from "@/hooks/useDay";
+import { useCatalogoTendaggi } from "@/hooks/useCatalogoTendaggi";
 import ConfiguratoreControtelaio from "./ConfiguratoreControtelaio";
 import RilievoTende from "./RilievoTende";
 import SkizzoTecnico from "./SkizzoTecnico";
@@ -162,6 +163,19 @@ export default function VanoDetailPanel() {
     showTendaggi, setShowTendaggi,
     spCanvasRef, canvasRef, fotoVanoRef, videoVanoRef, openCamera,
   } = useMastro();
+  // Catalogo tendaggi aziendale (per RilievoTende)
+  const ctxAny: any = useMastro() as any;
+  const aziendaIdCat: string | null = ctxAny?.aziendaIdReal || ctxAny?.aziendaInfo?.id || null;
+  const { items: catalogoTendaggiRaw } = useCatalogoTendaggi(aziendaIdCat);
+  const catalogoTendePerRilievo = React.useMemo(() => catalogoTendaggiRaw.map((c) => ({
+    id: c.id,
+    tipo: c.tipo_modello,
+    nome: c.modello,
+    fornitore: c.fornitore,
+    categoria: c.categoria as ('esterno' | 'interno'),
+    prezzo: c.prezzo_base_eur || undefined,
+    colore_default: c.colore_default || undefined,
+  })), [catalogoTendaggiRaw]);
 
   const STEPS = [
     { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "" },
@@ -1595,6 +1609,7 @@ export default function VanoDetailPanel() {
                 onSave={(data)=>{ updateV("rilievoTende", data); }}
                 initial={v.rilievoTende}
                 vanoId={v.id}
+                catalogo={catalogoTendePerRilievo}
               />
             )}
           </div>

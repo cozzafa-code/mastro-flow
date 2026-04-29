@@ -27,27 +27,41 @@ type Tenda = {
   modello?:string;
   colore?:string;
 };
-type CatalogoItem = { id:string; tipo:string; nome:string; categoria?:Categoria; fornitore?:string; png_url?:string; prezzo?:number };
+type CatalogoItem = { id:string; tipo:string; nome:string; categoria?:Categoria; fornitore?:string; png_url?:string; prezzo?:number; colore_default?:string };
 type Props = { onClose:()=>void; onSave?:(data:any)=>void; initial?:any; catalogo?:CatalogoItem[]; vanoId?:string };
 
 const MODELS_ESTERNO:Array<[string,string]> = [
-  ["cassonetto","Cassonetto"],
+  ["cassonetto","Cassonetto chiuso"],
+  ["semicassonetto","Semi-cassonetto"],
   ["bracci","Solo telo"],
-  ["capottina","Capottina"],
-  ["caduta","A caduta"],
-  ["pergola","Pergola/Tetto"],
-  ["veranda","Veranda"]
+  ["trapezio","A trapezio"],
+  ["doppiolivello","Doppio livello"],
+  ["capottina","Capottina tonda"],
+  ["capottinapunta","Capottina a punta"],
+  ["veranda","Veranda vetrata"],
+  ["verandatenda","Veranda+tenda esterna"],
+  ["caduta","A caduta verticale"],
+  ["pergola","Pergola lame"],
+  ["pergolatelo","Pergola telo fisso"],
+  ["tettopiramide","Tetto piramide"],
+  ["pergolabox","Pergola+cassonetto"]
 ];
 
 const MODELS_INTERNO:Array<[string,string]> = [
+  ["classica","Classica 2 teli"],
+  ["classicaplisse","Classica plissé"],
+  ["mantovana","Con mantovana"],
+  ["drappeggio","Drappeggio raccolto"],
+  ["voile","Voile/Velo trasparente"],
   ["rullo","Rullo"],
   ["pacchetto","Pacchetto"],
-  ["plisse","Plisse"],
-  ["veneziana","Veneziana"],
-  ["romana","Romana"],
-  ["pannello","A pannello"],
-  ["oscurante","Oscurante"],
-  ["classica","Classica"]
+  ["plisse","Plissé"],
+  ["veneziana","Veneziana orizzontale"],
+  ["venezianavert","Veneziana verticale"],
+  ["pannello","Pannello giapponese"],
+  ["oscurante","Oscurante blackout"],
+  ["doppiostrato","Giorno/Notte"],
+  ["venezianalegno","Veneziana in legno"]
 ];
 
 const ALL_MODELS:Array<[string,string]> = MODELS_ESTERNO.concat(MODELS_INTERNO);
@@ -209,82 +223,336 @@ export default function RilievoTende(props: Props){
     if(!x) return c;
     const W2 = c.width;
     const H2 = c.height;
+
+    // ============ ESTERNO ============
     if(m==="cassonetto"){
-      x.fillStyle="#E2DDCF"; x.fillRect(0,0,W2,18);
-      x.strokeStyle="rgba(80,75,65,0.7)"; x.strokeRect(0,0,W2,18);
-      const colori=["#E5D7B0","#D4C29A"];
-      for(let i=0;i<10;i++){
-        x.fillStyle=colori[i%2];
-        x.beginPath();
-        x.moveTo(W2*i/10,18);
-        x.lineTo(W2*(i+1)/10,18);
-        x.lineTo(W2*0.06+W2*0.88*(i+1)/10,H2-8);
-        x.lineTo(W2*0.06+W2*0.88*i/10,H2-8);
-        x.closePath();
-        x.fill();
+      // Box scuro + telo a doghe in caduta
+      x.fillStyle="#3a3a3a"; x.fillRect(0,0,W2,Math.max(11,H2*0.14));
+      x.fillStyle="#1a1a1a"; x.fillRect(0,Math.max(11,H2*0.14)-2,W2,2);
+      const top=Math.max(11,H2*0.14);
+      x.fillStyle="#D4C29A";
+      x.beginPath();
+      x.moveTo(0,top); x.lineTo(W2,top);
+      x.lineTo(W2*0.93,H2); x.lineTo(W2*0.07,H2);
+      x.closePath(); x.fill();
+      x.strokeStyle="rgba(0,0,0,0.35)"; x.lineWidth=0.5;
+      for(let i=1;i<9;i++){
+        const u=i/9;
+        const xT=W2*u, xB=W2*0.07+W2*0.86*u;
+        x.beginPath(); x.moveTo(xT,top); x.lineTo(xB,H2); x.stroke();
       }
+    } else if(m==="semicassonetto"){
+      x.fillStyle="#5a5a5a"; x.fillRect(0,0,W2,Math.max(7,H2*0.08));
+      x.fillStyle="#3a3a3a"; x.fillRect(0,Math.max(7,H2*0.08)-2,W2,2);
+      const top=Math.max(7,H2*0.08);
+      x.fillStyle="#3F6E8A";
+      x.beginPath();
+      x.moveTo(0,top); x.lineTo(W2,top);
+      x.lineTo(W2*0.93,H2); x.lineTo(W2*0.07,H2);
+      x.closePath(); x.fill();
     } else if(m==="bracci"){
       x.fillStyle="#3F6E8A";
       x.beginPath();
       x.moveTo(0,2); x.lineTo(W2,2);
-      x.lineTo(W2*0.93,H2-8); x.lineTo(W2*0.07,H2-8);
+      x.lineTo(W2*0.93,H2-2); x.lineTo(W2*0.07,H2-2);
+      x.closePath(); x.fill();
+      x.fillStyle="#5a8aaa";
+      x.fillRect(0,2,W2,Math.max(3,H2*0.04));
+    } else if(m==="trapezio"){
+      x.fillStyle="#D4C29A";
+      x.beginPath();
+      x.moveTo(W2*0.14,0); x.lineTo(W2*0.86,0);
+      x.lineTo(W2,H2); x.lineTo(0,H2);
+      x.closePath(); x.fill();
+      x.strokeStyle="rgba(0,0,0,0.35)"; x.lineWidth=0.5;
+      for(let i=1;i<5;i++){
+        const u=i/5;
+        const xT=W2*0.14+(W2*0.72)*u, xB=W2*u;
+        x.beginPath(); x.moveTo(xT,0); x.lineTo(xB,H2); x.stroke();
+      }
+    } else if(m==="doppiolivello"){
+      x.fillStyle="#3a3a3a"; x.fillRect(0,0,W2,Math.max(9,H2*0.11));
+      const top=Math.max(9,H2*0.11);
+      const mid=top+(H2-top)*0.55;
+      x.fillStyle="#D4C29A";
+      x.beginPath();
+      x.moveTo(0,top); x.lineTo(W2,top);
+      x.lineTo(W2*0.92,mid); x.lineTo(W2*0.08,mid);
+      x.closePath(); x.fill();
+      x.fillStyle="#c4b08a";
+      x.beginPath();
+      x.moveTo(W2*0.08,mid); x.lineTo(W2*0.92,mid);
+      x.lineTo(W2*0.86,H2); x.lineTo(W2*0.14,H2);
       x.closePath(); x.fill();
     } else if(m==="capottina"){
-      x.fillStyle="#2A8C8C";
+      x.fillStyle="#0F6E56";
       x.beginPath();
       x.moveTo(0,0); x.lineTo(W2,0); x.lineTo(W2,H2*0.4);
       x.quadraticCurveTo(W2/2,H2*1.05,0,H2*0.4);
       x.closePath(); x.fill();
+      x.strokeStyle="rgba(255,255,255,0.25)"; x.lineWidth=0.5;
+      for(let i=1;i<5;i++){
+        const u=i/5;
+        x.beginPath(); x.moveTo(W2*u,0);
+        x.quadraticCurveTo(W2*u, H2*0.7, W2*(u-0.04+u*0.08), H2*0.7);
+        x.stroke();
+      }
+    } else if(m==="capottinapunta"){
+      x.fillStyle="#0F6E56";
+      x.beginPath();
+      x.moveTo(0,0); x.lineTo(W2,0);
+      x.lineTo(W2,H2*0.36); x.lineTo(W2/2,H2*0.85); x.lineTo(0,H2*0.36);
+      x.closePath(); x.fill();
+      x.strokeStyle="rgba(255,255,255,0.25)"; x.lineWidth=0.5;
+      x.beginPath(); x.moveTo(W2*0.25,0); x.lineTo(W2*0.42,H2*0.7); x.stroke();
+      x.beginPath(); x.moveTo(W2/2,0); x.lineTo(W2/2,H2*0.85); x.stroke();
+      x.beginPath(); x.moveTo(W2*0.75,0); x.lineTo(W2*0.58,H2*0.7); x.stroke();
+    } else if(m==="veranda"){
+      x.fillStyle="#5A6B6B"; x.fillRect(0,0,W2,Math.max(9,H2*0.12));
+      const top=Math.max(9,H2*0.12);
+      x.fillStyle="#5A6B6B"; x.fillRect(0,top,Math.max(4,W2*0.04),H2-top);
+      x.fillStyle="#5A6B6B"; x.fillRect(W2-Math.max(4,W2*0.04),top,Math.max(4,W2*0.04),H2-top);
+      x.fillStyle="rgba(170,196,221,0.55)";
+      x.fillRect(Math.max(4,W2*0.04),top,W2-2*Math.max(4,W2*0.04),H2-top);
+      x.strokeStyle="#5A6B6B"; x.lineWidth=2;
+      x.beginPath(); x.moveTo(W2/2,top); x.lineTo(W2/2,H2); x.stroke();
+    } else if(m==="verandatenda"){
+      x.fillStyle="#5A6B6B"; x.fillRect(0,0,W2,Math.max(9,H2*0.12));
+      const top=Math.max(9,H2*0.12);
+      const mid=top+(H2-top)*0.55;
+      x.fillStyle="#5A6B6B"; x.fillRect(0,top,Math.max(4,W2*0.04),mid-top);
+      x.fillStyle="#5A6B6B"; x.fillRect(W2-Math.max(4,W2*0.04),top,Math.max(4,W2*0.04),mid-top);
+      x.fillStyle="rgba(170,196,221,0.55)";
+      x.fillRect(Math.max(4,W2*0.04),top,W2-2*Math.max(4,W2*0.04),mid-top);
+      x.fillStyle="#D4C29A";
+      x.beginPath();
+      x.moveTo(0,mid); x.lineTo(W2,mid);
+      x.lineTo(W2*0.93,H2); x.lineTo(W2*0.07,H2);
+      x.closePath(); x.fill();
     } else if(m==="caduta"){
-      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,12);
-      x.fillStyle="#D5BE82"; x.fillRect(3,12,W2-6,H2-12);
-      x.fillStyle="#3A332A"; x.fillRect(0,12,3,H2-12); x.fillRect(W2-3,12,3,H2-12);
-    } else if(m==="pergola" || m==="veranda"){
-      x.fillStyle="#5A6B6B"; x.fillRect(0,0,W2,16);
-      x.fillStyle="#D8D2C2"; x.fillRect(2,16,W2-4,H2-18);
-      x.strokeStyle="rgba(0,0,0,0.15)"; x.lineWidth=1;
-      for(let i=1;i<6;i++){ x.beginPath(); x.moveTo(W2*i/6, 16); x.lineTo(W2*i/6, H2-2); x.stroke(); }
+      x.fillStyle="#2A2620"; x.fillRect(0,0,W2,Math.max(8,H2*0.11));
+      const guida=Math.max(3,W2*0.025);
+      x.fillStyle="#2A2620"; x.fillRect(0,Math.max(8,H2*0.11),guida,H2);
+      x.fillStyle="#2A2620"; x.fillRect(W2-guida,Math.max(8,H2*0.11),guida,H2);
+      x.fillStyle="#D5BE82";
+      x.fillRect(guida,Math.max(8,H2*0.11),W2-2*guida,H2);
+    } else if(m==="pergola"){
+      x.fillStyle="#5A6B6B"; x.fillRect(0,0,W2,Math.max(9,H2*0.11));
+      x.fillRect(0,H2-Math.max(7,H2*0.09),W2,Math.max(7,H2*0.09));
+      x.fillRect(0,Math.max(9,H2*0.11),Math.max(4,W2*0.04),H2-Math.max(9,H2*0.11)-Math.max(7,H2*0.09));
+      x.fillRect(W2-Math.max(4,W2*0.04),Math.max(9,H2*0.11),Math.max(4,W2*0.04),H2-Math.max(9,H2*0.11)-Math.max(7,H2*0.09));
+      const lameTop=Math.max(9,H2*0.11)+3;
+      const lameBot=H2-Math.max(7,H2*0.09)-3;
+      const lameSpace=(lameBot-lameTop)/6;
+      x.fillStyle="#7a8a8a";
+      for(let i=0;i<6;i++){
+        const yy=lameTop+i*lameSpace;
+        x.fillRect(Math.max(6,W2*0.06),yy,W2-2*Math.max(6,W2*0.06),Math.max(2,lameSpace*0.5));
+      }
+    } else if(m==="pergolatelo"){
+      x.fillStyle="#5A6B6B"; x.fillRect(0,0,W2,Math.max(9,H2*0.11));
+      x.fillRect(0,H2-Math.max(7,H2*0.09),W2,Math.max(7,H2*0.09));
+      x.fillRect(0,Math.max(9,H2*0.11),Math.max(4,W2*0.04),H2-Math.max(9,H2*0.11)-Math.max(7,H2*0.09));
+      x.fillRect(W2-Math.max(4,W2*0.04),Math.max(9,H2*0.11),Math.max(4,W2*0.04),H2-Math.max(9,H2*0.11)-Math.max(7,H2*0.09));
+      x.fillStyle="#D4C29A";
+      x.fillRect(Math.max(4,W2*0.04),Math.max(9,H2*0.11),W2-2*Math.max(4,W2*0.04),H2-Math.max(9,H2*0.11)-Math.max(7,H2*0.09));
+      x.strokeStyle="rgba(0,0,0,0.35)"; x.lineWidth=0.5;
+      for(let i=1;i<4;i++){
+        const u=i/4;
+        const xx=Math.max(4,W2*0.04)+(W2-2*Math.max(4,W2*0.04))*u;
+        x.beginPath(); x.moveTo(xx,Math.max(9,H2*0.11)); x.lineTo(xx-3+u*6,H2-Math.max(7,H2*0.09)); x.stroke();
+      }
+    } else if(m==="tettopiramide"){
+      x.fillStyle="#5A6B6B"; x.fillRect(0,0,W2,Math.max(6,H2*0.07));
+      x.fillRect(0,Math.max(6,H2*0.07),Math.max(4,W2*0.04),H2-Math.max(6,H2*0.07));
+      x.fillRect(W2-Math.max(4,W2*0.04),Math.max(6,H2*0.07),Math.max(4,W2*0.04),H2-Math.max(6,H2*0.07));
+      x.fillStyle="#D4C29A";
+      x.beginPath();
+      x.moveTo(Math.max(4,W2*0.04),Math.max(6,H2*0.07)); x.lineTo(W2-Math.max(4,W2*0.04),Math.max(6,H2*0.07));
+      x.lineTo(W2-Math.max(4,W2*0.04),H2*0.55); x.lineTo(W2/2,H2);
+      x.lineTo(Math.max(4,W2*0.04),H2*0.55);
+      x.closePath(); x.fill();
+    } else if(m==="pergolabox"){
+      x.fillStyle="#5A6B6B"; x.fillRect(0,0,W2,Math.max(9,H2*0.11));
+      x.fillRect(0,Math.max(9,H2*0.11),Math.max(4,W2*0.04),H2-Math.max(9,H2*0.11));
+      x.fillRect(W2-Math.max(4,W2*0.04),Math.max(9,H2*0.11),Math.max(4,W2*0.04),H2-Math.max(9,H2*0.11));
+      x.fillRect(W2/2-2,Math.max(9,H2*0.11),4,H2-Math.max(9,H2*0.11));
+      x.fillStyle="#D5BE82";
+      x.fillRect(Math.max(4,W2*0.04),Math.max(9,H2*0.11),W2/2-Math.max(4,W2*0.04)-2,H2-Math.max(9,H2*0.11));
+      x.fillStyle="rgba(170,196,221,0.55)";
+      x.fillRect(W2/2+2,Math.max(9,H2*0.11),W2/2-Math.max(4,W2*0.04)-2,H2-Math.max(9,H2*0.11));
+
+    // ============ INTERNO ============
+    } else if(m==="classica"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      x.beginPath(); x.arc(Math.max(5,H2*0.07)/2,Math.max(5,H2*0.07)/2,Math.max(5,H2*0.07)/2,0,Math.PI*2); x.fill();
+      x.beginPath(); x.arc(W2-Math.max(5,H2*0.07)/2,Math.max(5,H2*0.07)/2,Math.max(5,H2*0.07)/2,0,Math.PI*2); x.fill();
+      const top=Math.max(5,H2*0.07);
+      const wT=W2*0.43;
+      x.fillStyle="#E8DEC4";
+      x.beginPath();
+      x.moveTo(W2*0.04,top); x.bezierCurveTo(W2*0.06,H2*0.4,W2*0.04,H2*0.85,W2*0.07,H2);
+      x.lineTo(W2*0.04+wT,H2);
+      x.bezierCurveTo(W2*0.04+wT-W2*0.03,H2*0.85,W2*0.04+wT,H2*0.4,W2*0.04+wT,top);
+      x.closePath(); x.fill();
+      x.fillStyle="#E8DEC4";
+      x.beginPath();
+      x.moveTo(W2-W2*0.04-wT,top); x.bezierCurveTo(W2-W2*0.04-wT,H2*0.4,W2-W2*0.04-wT+W2*0.03,H2*0.85,W2-W2*0.07,H2);
+      x.lineTo(W2-W2*0.04,H2);
+      x.bezierCurveTo(W2-W2*0.04-W2*0.02,H2*0.85,W2-W2*0.04,H2*0.4,W2-W2*0.04,top);
+      x.closePath(); x.fill();
+    } else if(m==="classicaplisse"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      const top=Math.max(5,H2*0.07);
+      x.fillStyle="#D9C5A0";
+      const np=12;
+      for(let i=0;i<np;i++){
+        const u=i/np;
+        const xL=W2*0.03+W2*0.94*u;
+        const xR=W2*0.03+W2*0.94*(u+1/np);
+        x.beginPath();
+        x.moveTo(xL,top);
+        x.bezierCurveTo(xL+1,H2*0.4,xL,H2*0.85,xL+(xR-xL)*0.15,H2);
+        x.lineTo(xR-(xR-xL)*0.15,H2);
+        x.bezierCurveTo(xR,H2*0.85,xR-1,H2*0.4,xR,top);
+        x.closePath();
+        x.fillStyle = i%2===0 ? "#D9C5A0" : "#cdb892";
+        x.fill();
+      }
+    } else if(m==="mantovana"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      const top=Math.max(5,H2*0.07);
+      // Mantovana decorata in alto
+      x.fillStyle="#a02020";
+      x.beginPath();
+      x.moveTo(0,top); x.lineTo(W2,top);
+      x.lineTo(W2,top+H2*0.18);
+      x.bezierCurveTo(W2*0.75,top+H2*0.13,W2*0.5,top+H2*0.22,W2*0.25,top+H2*0.13);
+      x.bezierCurveTo(W2*0.1,top+H2*0.18,0,top+H2*0.13,0,top+H2*0.18);
+      x.closePath(); x.fill();
+      // Tende ai lati
+      x.fillStyle="#a02020";
+      const yMant=top+H2*0.18;
+      x.fillRect(W2*0.03,yMant,W2*0.2,H2-yMant);
+      x.fillRect(W2*0.77,yMant,W2*0.2,H2-yMant);
+      x.strokeStyle="rgba(0,0,0,0.3)"; x.lineWidth=0.5;
+      for(let i=0;i<5;i++){
+        x.beginPath(); x.moveTo(W2*0.03+W2*0.04*i,yMant); x.lineTo(W2*0.03+W2*0.04*i,H2); x.stroke();
+        x.beginPath(); x.moveTo(W2*0.77+W2*0.04*i,yMant); x.lineTo(W2*0.77+W2*0.04*i,H2); x.stroke();
+      }
+    } else if(m==="drappeggio"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      const top=Math.max(5,H2*0.07);
+      x.fillStyle="#E8DEC4";
+      // sinistra: diagonale raccolta
+      x.beginPath();
+      x.moveTo(W2*0.03,top);
+      x.bezierCurveTo(W2*0.2,H2*0.4,W2*0.03,H2*0.7,W2*0.03,H2*0.85);
+      x.bezierCurveTo(W2*0.13,H2,W2*0.25,H2*0.95,W2*0.30,H2*0.7);
+      x.lineTo(W2*0.43,top);
+      x.closePath(); x.fill();
+      // destra
+      x.beginPath();
+      x.moveTo(W2-W2*0.43,top);
+      x.lineTo(W2-W2*0.30,H2*0.7);
+      x.bezierCurveTo(W2-W2*0.25,H2*0.95,W2-W2*0.13,H2,W2-W2*0.03,H2*0.85);
+      x.bezierCurveTo(W2-W2*0.03,H2*0.7,W2-W2*0.2,H2*0.4,W2-W2*0.03,top);
+      x.closePath(); x.fill();
+    } else if(m==="voile"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      const top=Math.max(5,H2*0.07);
+      x.fillStyle="rgba(242,242,240,0.8)";
+      x.fillRect(0,top,W2,H2-top);
+      x.strokeStyle="rgba(0,0,0,0.12)"; x.lineWidth=0.5;
+      for(let i=1;i<11;i++){
+        const xx=W2*i/11;
+        x.beginPath(); x.moveTo(xx,top); x.lineTo(xx,H2); x.stroke();
+      }
     } else if(m==="rullo"){
-      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,14);
-      x.fillStyle="#F0DCB2"; x.fillRect(2,14,W2-4,H2-14);
+      x.fillStyle="#3A332A";
+      x.beginPath(); x.arc(W2/2,Math.max(8,H2*0.12),Math.max(8,H2*0.12),0,Math.PI*2); x.fill();
+      x.fillStyle="#3A332A";
+      x.fillRect(W2/2-Math.max(8,H2*0.12),0,Math.max(16,H2*0.24),Math.max(8,H2*0.12));
+      x.fillStyle="#F0DCB2";
+      x.fillRect(Math.max(7,W2*0.07),Math.max(8,H2*0.12),W2-2*Math.max(7,W2*0.07),H2-Math.max(8,H2*0.12));
     } else if(m==="pacchetto"){
       x.fillStyle="#E8DEC4";
-      x.fillRect(2,2,W2-4,H2-4);
-      x.strokeStyle="rgba(80,60,40,0.3)";
-      for(let i=1;i<5;i++){ x.beginPath(); x.moveTo(2,(H2-4)*i/5+2); x.lineTo(W2-2,(H2-4)*i/5+2); x.stroke(); }
+      x.fillRect(W2*0.03,W2*0.03,W2*0.94,H2-W2*0.06);
+      x.strokeStyle="rgba(160,136,88,0.7)"; x.lineWidth=0.6;
+      for(let i=1;i<5;i++){
+        const yy=H2*0.05+(H2*0.9)*i/5;
+        x.beginPath();
+        x.moveTo(W2*0.05,yy);
+        x.quadraticCurveTo(W2/2,yy+H2*0.04,W2*0.95,yy);
+        x.stroke();
+      }
+      x.fillStyle="rgba(212,196,152,0.6)";
+      x.beginPath();
+      x.moveTo(W2*0.03,W2*0.03); x.lineTo(W2*0.97,W2*0.03);
+      x.lineTo(W2*0.97,H2*0.16);
+      x.quadraticCurveTo(W2/2,H2*0.10,W2*0.03,H2*0.16);
+      x.closePath(); x.fill();
     } else if(m==="plisse"){
       x.fillStyle="#F2EAD8";
-      x.fillRect(2,2,W2-4,H2-4);
-      x.strokeStyle="rgba(80,60,40,0.4)";
-      for(let i=0;i<H2;i+=5){ x.beginPath(); x.moveTo(2,i); x.lineTo(W2-2,i); x.stroke(); }
+      x.fillRect(W2*0.03,0,W2*0.94,H2);
+      x.strokeStyle="rgba(184,160,112,0.7)"; x.lineWidth=0.5;
+      const step=Math.max(4,H2*0.06);
+      for(let yy=step;yy<H2;yy+=step){
+        x.beginPath(); x.moveTo(W2*0.03,yy); x.lineTo(W2*0.97,yy); x.stroke();
+      }
     } else if(m==="veneziana"){
-      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,8);
-      x.fillStyle="#C8B998";
-      for(let i=10;i<H2;i+=8){ x.fillRect(4,i,W2-8,5); }
-    } else if(m==="romana"){
-      x.fillStyle="#D9C5A0";
-      x.fillRect(2,2,W2-4,H2-4);
-      x.strokeStyle="rgba(80,60,40,0.4)"; x.lineWidth=1.5;
-      for(let i=1;i<4;i++){
-        const yy = (H2-4)*i/4+2;
-        x.beginPath(); x.moveTo(2,yy); x.quadraticCurveTo(W2/2,yy+8,W2-2,yy); x.stroke();
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      const top=Math.max(5,H2*0.07)+2;
+      const sH=Math.max(4,H2*0.06);
+      let yy=top;
+      let alt=0;
+      while(yy<H2-1){
+        x.fillStyle = alt%2===0 ? "#C8B998" : "#B8A988";
+        x.fillRect(W2*0.03,yy,W2*0.94,Math.min(sH-1,H2-yy));
+        yy+=sH; alt++;
+      }
+    } else if(m==="venezianavert"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      const top=Math.max(5,H2*0.07);
+      const sW=Math.max(4,W2*0.07);
+      let xx=W2*0.03;
+      let alt=0;
+      while(xx<W2-1){
+        x.fillStyle = alt%2===0 ? "#C8B998" : "#B8A988";
+        x.fillRect(xx,top,Math.min(sW-1,W2-xx),H2-top);
+        xx+=sW; alt++;
       }
     } else if(m==="pannello"){
-      x.fillStyle="#E8DBB8";
-      const pw = (W2-4)/3;
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      const top=Math.max(5,H2*0.07);
+      const pw=(W2-W2*0.06)/3;
+      const colori=["#E8DBB8","#DBC9A0","#E8DBB8"];
       for(let i=0;i<3;i++){
-        x.fillRect(2+i*pw,2,pw-2,H2-4);
-        x.strokeStyle="rgba(0,0,0,0.2)"; x.strokeRect(2+i*pw,2,pw-2,H2-4);
+        x.fillStyle=colori[i];
+        x.fillRect(W2*0.03+i*pw,top,pw-2,H2-top);
+        x.strokeStyle="rgba(160,136,88,0.7)"; x.lineWidth=0.5;
+        x.strokeRect(W2*0.03+i*pw,top,pw-2,H2-top);
       }
     } else if(m==="oscurante"){
-      x.fillStyle="#2A2620"; x.fillRect(0,0,W2,14);
-      x.fillStyle="#1A1612"; x.fillRect(2,14,W2-4,H2-14);
-    } else if(m==="classica"){
-      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,8);
-      const fold = 12;
-      for(let i=0;i<W2;i+=fold){
-        x.fillStyle = (i/fold)%2 ? "#A8906A" : "#B8A07A";
-        x.fillRect(i,8,fold,H2-8);
+      x.fillStyle="#1a1612"; x.fillRect(0,0,W2,Math.max(11,H2*0.13));
+      x.fillStyle="#15110d"; x.fillRect(W2*0.03,Math.max(11,H2*0.13),W2*0.94,H2-Math.max(11,H2*0.13));
+    } else if(m==="doppiostrato"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      const top=Math.max(5,H2*0.07);
+      const mid=top+(H2-top)*0.6;
+      x.fillStyle="#D5BE82";
+      x.fillRect(W2*0.03,top,W2*0.94,mid-top);
+      x.fillStyle="#1a1612";
+      x.fillRect(W2*0.03,mid,W2*0.94,H2-mid);
+    } else if(m==="venezianalegno"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,Math.max(5,H2*0.07));
+      const top=Math.max(5,H2*0.07)+2;
+      const sH=Math.max(7,H2*0.10);
+      let yy=top;
+      while(yy<H2-1){
+        x.fillStyle="#a08858";
+        x.fillRect(W2*0.03,yy,W2*0.94,Math.min(sH-1,H2-yy));
+        yy+=sH;
       }
     }
     return c;
@@ -802,6 +1070,14 @@ export default function RilievoTende(props: Props){
     setTende(nuoveTende);
     setActiveIdx(nuoveTende.length - 1);
   }
+  function aggiungiTendaConCatalogo(model:string, categoria:Categoria, fornitore:string, modello:string, colore:string){
+    const offset = tende.length * 30;
+    const nuova = newTenda(model, categoria, offset);
+    const arricchita = Object.assign({}, nuova, { fornitore: fornitore, modello: modello, colore: colore });
+    const nuoveTende = tende.concat([arricchita]);
+    setTende(nuoveTende);
+    setActiveIdx(nuoveTende.length - 1);
+  }
   function selezionaModello(m:string, categoria:Categoria){
     if(activeIdx<0){ aggiungiTenda(m, categoria); return; }
     updateActive({ model: m, categoria: categoria });
@@ -1115,10 +1391,12 @@ export default function RilievoTende(props: Props){
             </div>
             {catalogoCorrente.length>0 && (
               <div style={{marginTop:10, paddingTop:10, borderTop:"1px solid "+T.bdr}}>
-                <div style={{fontSize:11, color:T.sub, marginBottom:6, fontWeight:600}}>Catalogo aziendale</div>
+                <div style={{fontSize:11, color:T.sub, marginBottom:6, fontWeight:600}}>Dal mio catalogo aziendale</div>
                 <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
-                  {catalogoCorrente.map(function(c){
-                    return <button key={c.id} onClick={function(){ selezionaModello(c.tipo, categoriaTab); }} style={chip(false)}>{c.nome}{c.fornitore?" - "+c.fornitore:""}</button>;
+                  {catalogoCorrente.map(function(c:any){
+                    return <button key={c.id} onClick={function(){
+                      aggiungiTendaConCatalogo(c.tipo, categoriaTab, c.fornitore||"", c.nome||"", c.colore_default||"");
+                    }} style={chip(false)}>{c.fornitore?c.fornitore+" · ":""}{c.nome}</button>;
                   })}
                 </div>
               </div>
