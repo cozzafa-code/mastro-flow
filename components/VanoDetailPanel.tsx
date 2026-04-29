@@ -9,6 +9,7 @@ import { useDay } from "@/hooks/useDay";
 import { useCatalogoTendaggi } from "@/hooks/useCatalogoTendaggi";
 import ConfiguratoreControtelaio from "./ConfiguratoreControtelaio";
 import RilievoTende from "./RilievoTende";
+import SezioneModelloTenda from "./SezioneModelloTenda";
 import SkizzoTecnico from "./SkizzoTecnico";
 import OrdineControtelaiPanel from "./OrdineControtelaiPanel";
 import CassonettoEditor from "./CassonettoEditor";
@@ -164,7 +165,9 @@ export default function VanoDetailPanel() {
     spCanvasRef, canvasRef, fotoVanoRef, videoVanoRef, openCamera,
   } = useMastro();
   // Catalogo tendaggi aziendale (per RilievoTende)
-  const { items: catalogoTendaggiRaw } = useCatalogoTendaggi();
+  const ctxAny: any = useMastro() as any;
+  const aziendaIdCat: string | null = ctxAny?.aziendaIdReal || ctxAny?.aziendaInfo?.id || null;
+  const { items: catalogoTendaggiRaw } = useCatalogoTendaggi(aziendaIdCat);
   const catalogoTendePerRilievo = React.useMemo(() => catalogoTendaggiRaw.map((c) => ({
     id: c.id,
     tipo: c.tipo_modello,
@@ -1887,6 +1890,21 @@ export default function VanoDetailPanel() {
                       </div>
                     )}
                   </div>
+                );
+              })()}
+
+              {/* ═══ MODELLO TENDA + PREZZO (vani settore tende) ═══ */}
+              {(() => {
+                const tendeCodes = ["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"];
+                if (!tendeCodes.includes(v.tipo)) return null;
+                return (
+                  <SezioneModelloTenda
+                    vano={v as any}
+                    onUpdate={(patch: any) => {
+                      Object.keys(patch).forEach(k => updateV(k, (patch as any)[k]));
+                    }}
+                    T={T} ICO={ICO} I={I}
+                  />
                 );
               })()}
 

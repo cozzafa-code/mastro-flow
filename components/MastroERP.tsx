@@ -973,6 +973,21 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     const lmm = m.lCentro || 0, hmm = m.hCentro || 0;
     const mq = lc * hc, perim = 2 * (lc + hc);
     if (mq <= 0) return 0; // niente misure = niente prezzo
+
+    // === BRANCH VANO-TENDA ===
+    // Per vani di settore "tende", il prezzo viene calcolato in SezioneModelloTenda.tsx
+    // (ha bisogno di catalogo_tendaggi + accessori_tendaggi caricati async) e salvato in v.prezzoTendaCalcolato.
+    const tendeCodes = ["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"];
+    if (tendeCodes.includes(v.tipo)) {
+      let tot = parseFloat(v.prezzoTendaCalcolato || 0);
+      // Voci libere se aggiunte
+      if (v.vociLibere?.length > 0) v.vociLibere.forEach(vl => { tot += (vl.prezzo || 0) * (vl.qta || 1); });
+      // Sconto globale azienda
+      const sconto = parseFloat(aziendaInfo?.scontoGlobale || 0);
+      if (sconto !== 0) tot = tot * (1 + sconto / 100);
+      return Math.round(tot * 100) / 100;
+    }
+
     const sysRec = sistemiDB.find(s => (s.marca + " " + s.sistema) === v.sistema || s.sistema === v.sistema);
     // Minimo mq
     const minCat = tipoToMinCat ? tipoToMinCat(v.tipo || "F1A") : "";
