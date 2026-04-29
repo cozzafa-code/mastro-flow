@@ -1,4 +1,4 @@
-// HomePanelMobileV2 v3 - home cablata + navigazioni
+// HomePanelMobileV2 v4 - tasto menu cablato a settings
 
 'use client'
 
@@ -26,10 +26,11 @@ export default function HomePanelMobileV2(props: any) {
     if (ctx?.setSelectedCM) ctx.setSelectedCM(id)
     goto('commesse')
   }
+  const apriSettings = () => goto('settings')
 
   return (
     <div style={{ background: palette.bg, minHeight: '100vh', paddingBottom: 110 }}>
-      <Header user={data.user} palette={palette} />
+      <Header user={data.user} palette={palette} onMenu={apriSettings} />
 
       <div style={{ padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <CardOggiOperativo
@@ -45,14 +46,8 @@ export default function HomePanelMobileV2(props: any) {
           problemi={data.team.problemi}
           onApri={() => goto('team')}
         />
-        <CardCommesseCritiche
-          commesse={data.commesse}
-          onApri={apriCommessa}
-        />
-        <CardProblemi
-          problemi={data.problemi}
-          onApri={() => goto('problemi')}
-        />
+        <CardCommesseCritiche commesse={data.commesse} onApri={apriCommessa} />
+        <CardProblemi problemi={data.problemi} onApri={() => goto('problemi')} />
         <CardAgendaLive
           giorni={data.agenda.giorni}
           eventi={data.agenda.eventi}
@@ -64,19 +59,10 @@ export default function HomePanelMobileV2(props: any) {
           fermi={data.produzione.fermi}
           onApri={() => goto('produzione')}
         />
-        <CardCaricoLavoro
-          settimana={data.carico.settimana}
-          onApri={() => goto('agenda')}
-        />
-        <CardCassa
-          soldi={data.soldi}
-          onApri={() => goto('contabilita')}
-        />
+        <CardCaricoLavoro settimana={data.carico.settimana} onApri={() => goto('agenda')} />
+        <CardCassa soldi={data.soldi} onApri={() => goto('contabilita')} />
         {data.operatore_fermo && (
-          <CardOperatoreFermo
-            op={data.operatore_fermo}
-            onApri={() => goto('team')}
-          />
+          <CardOperatoreFermo op={data.operatore_fermo} onApri={() => goto('team')} />
         )}
         <CardAzioniRapide
           onTask={() => goto('team')}
@@ -91,7 +77,7 @@ export default function HomePanelMobileV2(props: any) {
   )
 }
 
-function Header({ user, palette }: { user: any; palette: any }) {
+function Header({ user, palette, onMenu }: { user: any; palette: any; onMenu?: () => void }) {
   return (
     <div style={{
       background: `linear-gradient(160deg, ${palette.acc} 0%, ${palette.accDeep} 100%)`,
@@ -104,7 +90,7 @@ function Header({ user, palette }: { user: any; palette: any }) {
         <div style={{ fontWeight: 600, fontSize: 18, letterSpacing: 0.3 }}>filwoX</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <DayBadge palette={palette} />
-          <UI.IconBtn><IconMenu /></UI.IconBtn>
+          <UI.IconBtn onClick={onMenu}><IconMenu /></UI.IconBtn>
           <UI.Avatar text={user.iniziali} bg="rgba(255,255,255,0.18)" size={36} />
         </div>
       </div>
