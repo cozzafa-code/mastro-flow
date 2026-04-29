@@ -1581,7 +1581,26 @@ export default function VanoDetailPanel() {
               )}
             </div>
 
-            {/* TENDAGGI: card rimossa - rilievo grafico ora attivato da SezioneModelloTenda solo per vani-tenda */}
+            {/* TENDAGGI: rilievo grafico + sezione modello (se vano-tenda) */}
+            <div style={{marginTop:8,borderRadius:10,border:`1px solid ${T.acc}30`,overflow:"hidden"}}>
+              <div onClick={()=>setVanoInfoOpen(vanoInfoOpen==="tendaggi"?null:"tendaggi")}
+                style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:T.accLt,cursor:"pointer"}}>
+                <span style={{fontSize:12,fontWeight:600,color:vanoInfoOpen==="tendaggi"?T.acc:T.text}}>Tendaggi</span>
+                <span style={{fontSize:9,color:T.sub,fontStyle:"italic"}}>Tende interno, esterno, motorizzate</span>
+                <span style={{marginLeft:"auto",fontSize:9,color:T.sub,transform:vanoInfoOpen==="tendaggi"?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▼</span>
+              </div>
+              {vanoInfoOpen==="tendaggi" && (
+                <div style={{padding:12,background:T.bg,borderTop:"1px solid "+T.bdr}}>
+                  <div style={{textAlign:"center",padding:"20px 10px"}}>
+                    <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:4}}>Rilievo Tendaggi</div>
+                    <div style={{fontSize:11,color:T.sub,marginBottom:12}}>Foto → Modello → 4 punti → Bracci → Aggancio</div>
+                    <div onClick={()=>setShowTendaggi(true)} style={{padding:"12px 20px",borderRadius:8,background:T.acc,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
+                      Apri Rilievo Tende →
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {showTendaggi && (
               <RilievoTende
