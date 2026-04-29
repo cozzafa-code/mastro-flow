@@ -1549,7 +1549,7 @@ export default function VanoDetailPanel() {
                 style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:T.accLt,cursor:"pointer"}}>
                 <span style={{fontSize:14}}><I d={ICO.building} />️</span>
                 <span style={{fontSize:12,fontWeight:600,color:vanoInfoOpen==="strutture"?T.acc:T.text}}>Strutture</span>
-                <span style={{fontSize:9,color:T.sub,fontStyle:"italic"}}>Pergole, Verande, Box</span>
+                <span style={{fontSize:9,color:T.sub,fontStyle:"italic"}}>Pergole, Verande, Box, Tendaggi</span>
                 <span style={{marginLeft:"auto",fontSize:9,color:T.sub,transform:vanoInfoOpen==="strutture"?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▼</span>
               </div>
               {vanoInfoOpen==="strutture" && (
