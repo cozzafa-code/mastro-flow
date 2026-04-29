@@ -134,7 +134,10 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
   function render(){
     const cv = cvRef.current; if(!cv) return;
     const ctx = cv.getContext("2d")!;
+    ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0,0,W,H);
+    ctx.fillStyle="#000"; ctx.fillRect(0,0,W,H);
+    ctx.setTransform(zoom,0,0,zoom,pan.x,pan.y);
     if(img){
       const ir=img.width/img.height, cr=W/H;
       let dw,dh,ox,oy;
@@ -255,9 +258,9 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
     const cv = cvRef.current!;
     const r = cv.getBoundingClientRect();
     const sx = cv.width/r.width, sy = cv.height/r.height;
-    const cx = (e.clientX!=null?e.clientX:e.touches[0].clientX)-r.left;
-    const cy = (e.clientY!=null?e.clientY:e.touches[0].clientY)-r.top;
-    return {x:cx*sx, y:cy*sy};
+    const rx = ((e.clientX!=null?e.clientX:e.touches[0].clientX)-r.left)*sx;
+    const ry = ((e.clientY!=null?e.clientY:e.touches[0].clientY)-r.top)*sy;
+    return { x:(rx - pan.x)/zoom, y:(ry - pan.y)/zoom };
   }
   function hitTest(p:Pt){
     // 1. handle dell'attiva (priorità max)
@@ -336,6 +339,11 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
   sRef.current = { tende, activeIdx, drag, popup, tool, quotaPending, details, show };
   const dragRef = useRef<any>(null);
   const [dbg, setDbg] = useState<string>("");
+  const [zoom, setZoom] = useState<number>(1);
+  const [pan, setPan] = useState<{x:number;y:number}>({x:0, y:0});
+  const zoomRef = useRef({zoom:1, pan:{x:0,y:0}});
+  zoomRef.current = { zoom, pan };
+  const pinchRef = useRef<any>(null);
 
   useEffect(()=>{
     const cv = cvRef.current; if(!cv) return;
@@ -343,7 +351,9 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
       const r = cv!.getBoundingClientRect();
       const sx = cv!.width/r.width, sy = cv!.height/r.height;
       const t = e.touches[0] || e.changedTouches[0];
-      return { x:(t.clientX-r.left)*sx, y:(t.clientY-r.top)*sy };
+      const cx = (t.clientX-r.left)*sx, cy = (t.clientY-r.top)*sy;
+      const z = zoomRef.current.zoom, pn = zoomRef.current.pan;
+      return { x:(cx - pn.x)/z, y:(cy - pn.y)/z };
     }
     function inlineHit(p:Pt){
       const s = sRef.current;
@@ -374,6 +384,15 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
     const start = (e:TouchEvent)=>{
       e.preventDefault();
       e.stopPropagation();
+      // Pinch zoom: 2 dita
+      if(e.touches.length===2){
+        const t1 = e.touches[0], t2 = e.touches[1];
+        const dist = Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY);
+        const cx = (t1.clientX+t2.clientX)/2, cy = (t1.clientY+t2.clientY)/2;
+        pinchRef.current = { dist, cx, cy, startZoom: zoomRef.current.zoom, startPan:{...zoomRef.current.pan} };
+        dragRef.current = null;
+        return;
+      }
       const p = getPosT(e);
       const s = sRef.current;
       if(s.popup){ setDbg(`tap ${p.x.toFixed(0)},${p.y.toFixed(0)} popup-aperto`); return; }
@@ -391,12 +410,7 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
       setDrag(h);
       setDbg(`tap -> drag ${h.what}#${h.i+1}`);
     };
-    const move = (e:TouchEvent)=>{
-      e.preventDefault();
-      const p = getPosT(e);
-      const s = sRef.current;
-      const dr = dragRef.current;
-      if(!dr) return;
+    
       const a = s.activeIdx>=0 ? s.tende[s.activeIdx] : null;
       if(!a) return;
       // aggiorna direttamente l'array tende mutando una copia immutabile via setTende
@@ -412,7 +426,7 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
         return copy;
       });
     };
-    const end = ()=>{ dragRef.current=null; setDrag(null); };
+    const end = ()=>{ dragRef.current=null; pinchRef.current=null; setDrag(null); };
     cv.addEventListener("touchstart", start, {passive:false});
     cv.addEventListener("touchmove", move, {passive:false});
     cv.addEventListener("touchend", end);
@@ -542,6 +556,12 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
           style={{width:"100%", height:"100%", maxWidth:"100vw", display:"block", touchAction:"none", cursor: tool==="select"?"default":"crosshair", objectFit:"contain"}}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
         />
+        <div style={{position:"absolute", bottom:10, left:10, display:"flex", gap:6, zIndex:5}}>
+          <button onClick={()=>{ const z=Math.max(0.5, zoom-0.25); setZoom(z); }} style={{width:36, height:36, borderRadius:8, border:"none", background:"rgba(255,255,255,0.9)", color:T.text, fontSize:18, fontWeight:700, cursor:"pointer"}}>-</button>
+          <div style={{minWidth:48, padding:"6px 10px", borderRadius:8, background:"rgba(255,255,255,0.9)", color:T.text, fontSize:12, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"center"}}>{Math.round(zoom*100)}%</div>
+          <button onClick={()=>{ const z=Math.min(5, zoom+0.25); setZoom(z); }} style={{width:36, height:36, borderRadius:8, border:"none", background:"rgba(255,255,255,0.9)", color:T.text, fontSize:18, fontWeight:700, cursor:"pointer"}}>+</button>
+          <button onClick={()=>{ setZoom(1); setPan({x:0,y:0}); }} style={{padding:"6px 10px", borderRadius:8, border:"none", background:"rgba(255,255,255,0.9)", color:T.text, fontSize:11, fontWeight:600, cursor:"pointer"}}>Reset</button>
+        </div>
         <div style={{position:"absolute", top:10, right:10, display:"flex", flexDirection:"column", gap:6}}>
           {[
             {k:"tenda" as const, lab:"Tenda"},
