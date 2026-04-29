@@ -7,6 +7,7 @@
 import DisegnoTecnico from "./DisegnoTecnico";
 import { useDay } from "@/hooks/useDay";
 import ConfiguratoreControtelaio from "./ConfiguratoreControtelaio";
+import RilievoTende from "./RilievoTende";
 import SkizzoTecnico from "./SkizzoTecnico";
 import OrdineControtelaiPanel from "./OrdineControtelaiPanel";
 import CassonettoEditor from "./CassonettoEditor";
@@ -158,6 +159,7 @@ export default function VanoDetailPanel() {
     porteColoreDB, porteControtelaioDB, porteManiglia, porteClasseEI, porteClasseRC,
     settoriAttivi,
     showStrutture, setShowStrutture,
+    showTendaggi, setShowTendaggi,
     spCanvasRef, canvasRef, fotoVanoRef, videoVanoRef, openCamera,
   } = useMastro();
 

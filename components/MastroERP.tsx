@@ -188,6 +188,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const [problemaForm, setProblemaForm] = useState({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
   const [showProblemiView, setShowProblemiView] = useState(false);
   const [showStrutture, setShowStrutture] = useState(false);
+  const [showTendaggi, setShowTendaggi] = useState(false);
   // Save problemi to localStorage
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "problemi", problemi), [problemi]);
   const [team, setTeam] = useState<any[]>([]);
@@ -3508,6 +3509,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     squadreDB, setSquadreDB, montaggiDB, setMontaggiDB,
     settoriAttivi, setSettoriAttivi, showOnboarding, setShowOnboarding,
     showStrutture, setShowStrutture,
+    showTendaggi, setShowTendaggi,
     pianoAttivo, setPianoAttivo,
     calMontaggiWeek, setCalMontaggiWeek, showCalMontaggi, setShowCalMontaggi,
     calMontaggiTarget, setCalMontaggiTarget,
