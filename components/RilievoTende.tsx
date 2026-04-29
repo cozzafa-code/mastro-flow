@@ -12,24 +12,45 @@ type Pt = { x:number; y:number };
 type Braccio = { top:Pt; bot:Pt };
 type Detail = { dataUrl:string; img:HTMLImageElement|null; anchor:Pt; thumb:{x:number;y:number;w:number;h:number}; caption:string };
 type Quota = { p1:Pt; p2:Pt; label:string };
+type Categoria = "esterno"|"interno";
 type Tenda = {
   id:string;
+  categoria:Categoria;
   model:string;
   corners:Pt[];
   bracci:Braccio[];
   aggancio:Pt[];
   misure:{ L?:string; S?:string; A?:string; muro?:string; note?:string };
 };
-type CatalogoItem = { id:string; tipo:string; nome:string; fornitore?:string; png_url?:string; prezzo?:number };
+type CatalogoItem = { id:string; tipo:string; nome:string; categoria?:Categoria; fornitore?:string; png_url?:string; prezzo?:number };
 type Props = { onClose:()=>void; onSave?:(data:any)=>void; initial?:any; catalogo?:CatalogoItem[] };
 
-const MODELS:Array<[string,string]> = [
+const MODELS_ESTERNO:Array<[string,string]> = [
   ["cassonetto","Cassonetto"],
   ["bracci","Solo telo"],
   ["capottina","Capottina"],
   ["caduta","A caduta"],
-  ["rullo","Rullo"]
+  ["pergola","Pergola/Tetto"],
+  ["veranda","Veranda"]
 ];
+
+const MODELS_INTERNO:Array<[string,string]> = [
+  ["rullo","Rullo"],
+  ["pacchetto","Pacchetto"],
+  ["plisse","Plisse"],
+  ["veneziana","Veneziana"],
+  ["romana","Romana"],
+  ["pannello","A pannello"],
+  ["oscurante","Oscurante"],
+  ["classica","Classica"]
+];
+
+const ALL_MODELS:Array<[string,string]> = MODELS_ESTERNO.concat(MODELS_INTERNO);
+
+function modelLabel(id:string):string{
+  const found = ALL_MODELS.find(function(m){ return m[0]===id; });
+  return found ? found[1] : id;
+}
 
 function uid(){ return "t_"+Math.random().toString(36).slice(2,9); }
 
@@ -49,9 +70,9 @@ function defaultAggancio(c:Pt[]):Pt[]{
     {x:c[1].x-25,y:c[1].y-8}
   ];
 }
-function newTenda(model:string, offset:number):Tenda{
+function newTenda(model:string, categoria:Categoria, offset:number):Tenda{
   const c = defaultCorners(offset);
-  return { id: uid(), model, corners: c, bracci: defaultBracci(c), aggancio: defaultAggancio(c), misure:{} };
+  return { id: uid(), categoria: categoria, model: model, corners: c, bracci: defaultBracci(c), aggancio: defaultAggancio(c), misure:{} };
 }
 
 export default function RilievoTende(props: Props){
@@ -76,9 +97,9 @@ export default function RilievoTende(props: Props){
   const [popup, setPopup] = useState<any>(null);
   const [lightbox, setLightbox] = useState<Detail|null>(null);
   const [sheetOpen, setSheetOpen] = useState<"modello"|"misure"|null>("modello");
+  const [categoriaTab, setCategoriaTab] = useState<Categoria>("esterno");
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{x:number;y:number}>({x:0, y:0});
-  const [dbg, setDbg] = useState<string>("");
 
   const mouseRef = useRef({x:0,y:0});
   const dragRef = useRef<any>(null);
@@ -134,9 +155,53 @@ export default function RilievoTende(props: Props){
       x.fillStyle="#3A332A"; x.fillRect(0,0,W2,12);
       x.fillStyle="#D5BE82"; x.fillRect(3,12,W2-6,H2-12);
       x.fillStyle="#3A332A"; x.fillRect(0,12,3,H2-12); x.fillRect(W2-3,12,3,H2-12);
+    } else if(m==="pergola" || m==="veranda"){
+      x.fillStyle="#5A6B6B"; x.fillRect(0,0,W2,16);
+      x.fillStyle="#D8D2C2"; x.fillRect(2,16,W2-4,H2-18);
+      x.strokeStyle="rgba(0,0,0,0.15)"; x.lineWidth=1;
+      for(let i=1;i<6;i++){ x.beginPath(); x.moveTo(W2*i/6, 16); x.lineTo(W2*i/6, H2-2); x.stroke(); }
     } else if(m==="rullo"){
       x.fillStyle="#3A332A"; x.fillRect(0,0,W2,14);
       x.fillStyle="#F0DCB2"; x.fillRect(2,14,W2-4,H2-14);
+    } else if(m==="pacchetto"){
+      x.fillStyle="#E8DEC4";
+      x.fillRect(2,2,W2-4,H2-4);
+      x.strokeStyle="rgba(80,60,40,0.3)";
+      for(let i=1;i<5;i++){ x.beginPath(); x.moveTo(2,(H2-4)*i/5+2); x.lineTo(W2-2,(H2-4)*i/5+2); x.stroke(); }
+    } else if(m==="plisse"){
+      x.fillStyle="#F2EAD8";
+      x.fillRect(2,2,W2-4,H2-4);
+      x.strokeStyle="rgba(80,60,40,0.4)";
+      for(let i=0;i<H2;i+=5){ x.beginPath(); x.moveTo(2,i); x.lineTo(W2-2,i); x.stroke(); }
+    } else if(m==="veneziana"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,8);
+      x.fillStyle="#C8B998";
+      for(let i=10;i<H2;i+=8){ x.fillRect(4,i,W2-8,5); }
+    } else if(m==="romana"){
+      x.fillStyle="#D9C5A0";
+      x.fillRect(2,2,W2-4,H2-4);
+      x.strokeStyle="rgba(80,60,40,0.4)"; x.lineWidth=1.5;
+      for(let i=1;i<4;i++){
+        const yy = (H2-4)*i/4+2;
+        x.beginPath(); x.moveTo(2,yy); x.quadraticCurveTo(W2/2,yy+8,W2-2,yy); x.stroke();
+      }
+    } else if(m==="pannello"){
+      x.fillStyle="#E8DBB8";
+      const pw = (W2-4)/3;
+      for(let i=0;i<3;i++){
+        x.fillRect(2+i*pw,2,pw-2,H2-4);
+        x.strokeStyle="rgba(0,0,0,0.2)"; x.strokeRect(2+i*pw,2,pw-2,H2-4);
+      }
+    } else if(m==="oscurante"){
+      x.fillStyle="#2A2620"; x.fillRect(0,0,W2,14);
+      x.fillStyle="#1A1612"; x.fillRect(2,14,W2-4,H2-14);
+    } else if(m==="classica"){
+      x.fillStyle="#3A332A"; x.fillRect(0,0,W2,8);
+      const fold = 12;
+      for(let i=0;i<W2;i+=fold){
+        x.fillStyle = (i/fold)%2 ? "#A8906A" : "#B8A07A";
+        x.fillRect(i,8,fold,H2-8);
+      }
     }
     return c;
   }
@@ -209,7 +274,9 @@ export default function RilievoTende(props: Props){
       ctx.fillStyle=T.sub;
       ctx.font="13px sans-serif";
       ctx.textAlign="center";
-      ctx.fillText("Tocca 'Foto' per iniziare", W/2, H/2);
+      ctx.fillText("Tocca 'Foto' per iniziare", W/2, H/2 - 10);
+      ctx.font="11px sans-serif";
+      ctx.fillText("poi scegli un modello dal menu sotto", W/2, H/2 + 12);
       ctx.textAlign="start";
     }
     tende.forEach(function(t, idx){
@@ -448,11 +515,10 @@ export default function RilievoTende(props: Props){
       return;
     }
     const h = inlineHit(p);
-    if(!h){ setDbg("tap "+p.x.toFixed(0)+","+p.y.toFixed(0)+" -> NESSUN HIT"); return; }
-    if(h.what==="selectTenda"){ setActiveIdx(h.i); setDbg("seleziona tenda "+(h.i+1)); return; }
+    if(!h) return;
+    if(h.what==="selectTenda"){ setActiveIdx(h.i); return; }
     dragRef.current = h;
     setDrag(h);
-    setDbg("drag "+h.what+"#"+(h.i+1));
   }
 
   function applyDrag(p:Pt, dr:any){
@@ -469,7 +535,6 @@ export default function RilievoTende(props: Props){
     });
   }
 
-  // Mouse handlers
   function onMouseDown(e:any){ handleDown(getPosE(e)); }
   function onMouseMove(e:any){
     const p = getPosE(e);
@@ -479,7 +544,6 @@ export default function RilievoTende(props: Props){
   }
   function onMouseUp(){ dragRef.current=null; setDrag(null); }
 
-  // Touch handlers via useEffect (passive:false)
   useEffect(function(){
     const cv = cvRef.current;
     if(!cv) return;
@@ -499,9 +563,8 @@ export default function RilievoTende(props: Props){
     let lastTap = 0;
 
     const onStart = function(e:TouchEvent){
-      e.preventDefault();
-      // Pinch start
       if(e.touches.length>=2){
+        e.preventDefault();
         const t1 = e.touches[0];
         const t2 = e.touches[1];
         const dist = Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY);
@@ -510,12 +573,11 @@ export default function RilievoTende(props: Props){
         pinchRef.current = { dist:dist, cx:cx, cy:cy, startZoom: zoomRef.current.zoom, startPan: Object.assign({}, zoomRef.current.pan) };
         dragRef.current = null;
         setDrag(null);
-        setDbg("pinch start");
         return;
       }
-      // Double-tap zoom
       const now = Date.now();
       if(now - lastTap < 300){
+        e.preventDefault();
         const r = cv.getBoundingClientRect();
         const sx = cv.width/r.width;
         const sy = cv.height/r.height;
@@ -528,18 +590,19 @@ export default function RilievoTende(props: Props){
         const newPanY = newZoom===1 ? 0 : cy - (cy - zoomRef.current.pan.y) * (newZoom/z);
         setZoom(newZoom);
         setPan({x:newPanX, y:newPanY});
-        setDbg("double-tap zoom "+newZoom+"x");
         lastTap = 0;
         return;
       }
       lastTap = now;
-      handleDown(getPosT(e));
+      const p = getPosT(e);
+      const h = inlineHit(p);
+      if(h) e.preventDefault();
+      handleDown(p);
     };
 
     const onMoveT = function(e:TouchEvent){
-      e.preventDefault();
-      // Pinch move
       if(e.touches.length>=2 && pinchRef.current){
+        e.preventDefault();
         const pi = pinchRef.current;
         const t1 = e.touches[0];
         const t2 = e.touches[1];
@@ -559,6 +622,7 @@ export default function RilievoTende(props: Props){
       }
       const dr = dragRef.current;
       if(!dr) return;
+      e.preventDefault();
       const p = getPosT(e);
       mouseRef.current = p;
       applyDrag(p, dr);
@@ -586,16 +650,16 @@ export default function RilievoTende(props: Props){
     };
   });
 
-  function aggiungiTenda(model:string){
+  function aggiungiTenda(model:string, categoria:Categoria){
     const offset = tende.length * 30;
-    const nuova = newTenda(model, offset);
+    const nuova = newTenda(model, categoria, offset);
     const nuoveTende = tende.concat([nuova]);
     setTende(nuoveTende);
     setActiveIdx(nuoveTende.length - 1);
   }
-  function selezionaModello(m:string){
-    if(activeIdx<0){ aggiungiTenda(m); return; }
-    updateActive({ model: m });
+  function selezionaModello(m:string, categoria:Categoria){
+    if(activeIdx<0){ aggiungiTenda(m, categoria); return; }
+    updateActive({ model: m, categoria: categoria });
   }
   function eliminaTendaAttiva(){
     if(activeIdx<0) return;
@@ -608,6 +672,7 @@ export default function RilievoTende(props: Props){
     const off = 30;
     const dup:Tenda = {
       id: uid(),
+      categoria: active.categoria,
       model: active.model,
       corners: active.corners.map(function(p){ return {x:p.x+off, y:p.y+off}; }),
       bracci: active.bracci.map(function(b){ return {top:{x:b.top.x+off,y:b.top.y+off}, bot:{x:b.bot.x+off,y:b.bot.y+off}}; }),
@@ -666,6 +731,9 @@ export default function RilievoTende(props: Props){
   const lbl:React.CSSProperties = { fontSize:11, color:T.sub, display:"block", marginBottom:4, fontWeight:500 };
   const inp:React.CSSProperties = { width:"100%", fontSize:14, padding:"9px 10px", border:"1px solid "+T.bdr, borderRadius:8, background:"#fff", color:T.text, boxSizing:"border-box" };
 
+  const modelsCorrenti = categoriaTab==="esterno" ? MODELS_ESTERNO : MODELS_INTERNO;
+  const catalogoCorrente = catalogo ? catalogo.filter(function(c){ return (c.categoria||"esterno")===categoriaTab; }) : [];
+
   return (
     <div style={{position:"fixed", inset:0, background:"#fff", zIndex:9000, display:"flex", flexDirection:"column", paddingTop:"env(safe-area-inset-top)", paddingBottom:"env(safe-area-inset-bottom)", paddingLeft:"env(safe-area-inset-left)", paddingRight:"env(safe-area-inset-right)"}}>
       <div style={{padding:"10px 12px", borderBottom:"1px solid "+T.bdr, background:"#fff", display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
@@ -674,26 +742,27 @@ export default function RilievoTende(props: Props){
         <button onClick={saveAndClose} style={{padding:"8px 14px", borderRadius:8, border:"none", background:T.acc, color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>Salva</button>
       </div>
 
-      <div style={{padding:"6px 8px", display:"flex", gap:4, alignItems:"center", borderBottom:"1px solid "+T.bdr, background:"#FAFBFB", overflowX:"auto", flexShrink:0}}>
-        {tende.map(function(t, i){ return (
-          <button key={t.id} onClick={function(){ setActiveIdx(i); }}
-            style={{padding:"6px 10px", borderRadius:8, border:"1px solid "+(i===activeIdx?T.acc:T.bdr),
-              background: i===activeIdx?T.acc:"#fff", color: i===activeIdx?"#fff":T.text,
-              fontSize:12, fontWeight:600, cursor:"pointer", flexShrink:0,
-              display:"flex", alignItems:"center", gap:6}}>
-            <span style={{width:18, height:18, borderRadius:"50%", background: i===activeIdx?"#fff":T.accLt, color:T.acc, fontSize:11, display:"inline-flex", alignItems:"center", justifyContent:"center", fontWeight:700}}>{i+1}</span>
-            {(MODELS.find(function(m){ return m[0]===t.model; }) || ["",""])[1] || t.model}
-          </button>
-        );})}
-        <button onClick={function(){ aggiungiTenda("cassonetto"); }}
-          style={{padding:"6px 12px", borderRadius:8, border:"1px dashed "+T.acc, background:T.accLt, color:T.acc, fontSize:12, fontWeight:700, cursor:"pointer", flexShrink:0}}>+ Tenda</button>
-        {active && (
-          <>
-            <button onClick={duplicaTendaAttiva} style={{padding:"6px 10px", borderRadius:8, border:"1px solid "+T.bdr, background:"#fff", fontSize:11, cursor:"pointer", flexShrink:0}}>{"\u29C9"}</button>
-            <button onClick={eliminaTendaAttiva} style={{padding:"6px 10px", borderRadius:8, border:"1px solid "+T.warn, background:"#fff", color:T.warn, fontSize:11, cursor:"pointer", flexShrink:0}}>{"\u00D7"}</button>
-          </>
-        )}
-      </div>
+      {tende.length>0 && (
+        <div style={{padding:"6px 8px", display:"flex", gap:4, alignItems:"center", borderBottom:"1px solid "+T.bdr, background:"#FAFBFB", overflowX:"auto", flexShrink:0}}>
+          {tende.map(function(t, i){ return (
+            <button key={t.id} onClick={function(){ setActiveIdx(i); }}
+              style={{padding:"6px 10px", borderRadius:8, border:"1px solid "+(i===activeIdx?T.acc:T.bdr),
+                background: i===activeIdx?T.acc:"#fff", color: i===activeIdx?"#fff":T.text,
+                fontSize:12, fontWeight:600, cursor:"pointer", flexShrink:0,
+                display:"flex", alignItems:"center", gap:6}}>
+              <span style={{width:18, height:18, borderRadius:"50%", background: i===activeIdx?"#fff":T.accLt, color:T.acc, fontSize:11, display:"inline-flex", alignItems:"center", justifyContent:"center", fontWeight:700}}>{i+1}</span>
+              {modelLabel(t.model)}
+              <span style={{fontSize:9, opacity:0.7}}>{t.categoria==="esterno"?"EST":"INT"}</span>
+            </button>
+          );})}
+          {active && (
+            <>
+              <button onClick={duplicaTendaAttiva} style={{padding:"6px 10px", borderRadius:8, border:"1px solid "+T.bdr, background:"#fff", fontSize:11, cursor:"pointer", flexShrink:0}}>{"\u29C9"}</button>
+              <button onClick={eliminaTendaAttiva} style={{padding:"6px 10px", borderRadius:8, border:"1px solid "+T.warn, background:"#fff", color:T.warn, fontSize:11, cursor:"pointer", flexShrink:0}}>{"\u00D7"}</button>
+            </>
+          )}
+        </div>
+      )}
 
       <div style={{padding:"8px 12px", display:"flex", gap:6, alignItems:"center", borderBottom:"1px solid "+T.bdr, background:"#fff", flexShrink:0, overflowX:"auto"}}>
         <input ref={fileMain} type="file" accept="image/*" capture="environment" style={{display:"none"}}
@@ -712,6 +781,9 @@ export default function RilievoTende(props: Props){
         <div style={{width:1, height:24, background:T.bdr, margin:"0 4px"}}/>
         <button onClick={function(){ setTool("select"); }} style={chip(tool==="select")}>Sposta</button>
         <button onClick={function(){ setTool("quota"); }} style={chip(tool==="quota")}>Quota</button>
+        <div style={{width:1, height:24, background:T.bdr, margin:"0 4px"}}/>
+        <button onClick={function(){ setZoom(1); setPan({x:0,y:0}); }} style={chip(false)}>1:1</button>
+        <span style={{fontSize:11, color:T.sub, padding:"0 6px"}}>{Math.round(zoom*100)}%</span>
       </div>
 
       <div style={{flex:1, position:"relative", background:"#1a1a1a", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center"}}>
@@ -719,13 +791,6 @@ export default function RilievoTende(props: Props){
           style={{width:"100%", height:"100%", maxWidth:"100vw", display:"block", touchAction:"none", cursor: tool==="select"?"default":"crosshair", objectFit:"contain"}}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
         />
-
-        <div style={{position:"absolute", bottom:10, left:10, display:"flex", gap:6, zIndex:5}}>
-          <button onClick={function(){ const z=Math.max(0.5, zoom-0.25); setZoom(z); }} style={{width:36, height:36, borderRadius:8, border:"none", background:"rgba(255,255,255,0.9)", color:T.text, fontSize:18, fontWeight:700, cursor:"pointer"}}>-</button>
-          <div style={{minWidth:48, padding:"6px 10px", borderRadius:8, background:"rgba(255,255,255,0.9)", color:T.text, fontSize:12, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"center"}}>{Math.round(zoom*100)}%</div>
-          <button onClick={function(){ const z=Math.min(5, zoom+0.25); setZoom(z); }} style={{width:36, height:36, borderRadius:8, border:"none", background:"rgba(255,255,255,0.9)", color:T.text, fontSize:18, fontWeight:700, cursor:"pointer"}}>+</button>
-          <button onClick={function(){ setZoom(1); setPan({x:0,y:0}); }} style={{padding:"6px 10px", borderRadius:8, border:"none", background:"rgba(255,255,255,0.9)", color:T.text, fontSize:11, fontWeight:600, cursor:"pointer"}}>Reset</button>
-        </div>
 
         <div style={{position:"absolute", top:10, right:10, display:"flex", flexDirection:"column", gap:6}}>
           {[{k:"tenda",lab:"Tenda"},{k:"bracci",lab:"Bracci"},{k:"aggancio",lab:"Aggancio"}].map(function(o){
@@ -773,20 +838,37 @@ export default function RilievoTende(props: Props){
 
         {sheetOpen==="modello" && (
           <div style={{padding:"10px 12px 14px"}}>
-            <div style={{fontSize:12, color:T.sub, marginBottom:8}}>{!active ? "Tocca un modello per aggiungere la prima tenda:" : "Cambia modello tenda T"+(activeIdx+1)+":"}</div>
-            <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
-              {MODELS.map(function(m){
-                const id = m[0];
-                const lab = m[1];
-                return <button key={id} onClick={function(){ selezionaModello(id); }} style={chip(active && active.model===id)}>{lab}</button>;
+            <div style={{display:"flex", gap:0, marginBottom:10, borderBottom:"1px solid "+T.bdr}}>
+              {[["esterno","Esterno"],["interno","Interno"]].map(function(item){
+                const k = item[0] as Categoria;
+                return (
+                  <button key={k} onClick={function(){ setCategoriaTab(k); }}
+                    style={{flex:1, padding:"8px 10px", border:"none", background:"transparent",
+                      borderBottom:"2px solid "+(categoriaTab===k?T.acc:"transparent"),
+                      marginBottom:"-1px",
+                      color: categoriaTab===k?T.acc:T.sub,
+                      fontSize:12, fontWeight:700, cursor:"pointer"}}>{item[1]}</button>
+                );
               })}
             </div>
-            {catalogo && catalogo.length>0 && (
+            <div style={{fontSize:12, color:T.sub, marginBottom:8}}>{!active ? "Tocca un modello per aggiungere la prima tenda:" : "Cambia modello tenda T"+(activeIdx+1)+":"}</div>
+            <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
+              {modelsCorrenti.map(function(m){
+                const id = m[0];
+                const lab = m[1];
+                return <button key={id} onClick={function(){ selezionaModello(id, categoriaTab); }} style={chip(active && active.model===id)}>{lab}</button>;
+              })}
+              {tende.length>0 && (
+                <button onClick={function(){ aggiungiTenda(modelsCorrenti[0][0], categoriaTab); }}
+                  style={{padding:"7px 12px", borderRadius:999, border:"1px dashed "+T.acc, background:T.accLt, color:T.acc, fontSize:12, fontWeight:700, cursor:"pointer"}}>+ Tenda</button>
+              )}
+            </div>
+            {catalogoCorrente.length>0 && (
               <div style={{marginTop:10, paddingTop:10, borderTop:"1px solid "+T.bdr}}>
                 <div style={{fontSize:11, color:T.sub, marginBottom:6, fontWeight:600}}>Catalogo aziendale</div>
                 <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
-                  {catalogo.map(function(c){
-                    return <button key={c.id} onClick={function(){ selezionaModello(c.tipo); }} style={chip(false)}>{c.nome}{c.fornitore?" - "+c.fornitore:""}</button>;
+                  {catalogoCorrente.map(function(c){
+                    return <button key={c.id} onClick={function(){ selezionaModello(c.tipo, categoriaTab); }} style={chip(false)}>{c.nome}{c.fornitore?" - "+c.fornitore:""}</button>;
                   })}
                 </div>
               </div>
@@ -796,15 +878,21 @@ export default function RilievoTende(props: Props){
 
         {sheetOpen==="misure" && active && (
           <div style={{padding:"10px 12px 14px"}}>
-            <div style={{fontSize:11, color:T.sub, marginBottom:8}}>Misure tenda T{activeIdx+1}</div>
+            <div style={{fontSize:11, color:T.sub, marginBottom:8}}>Misure tenda T{activeIdx+1} ({modelLabel(active.model)})</div>
             <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8}}>
               <div><label style={lbl}>Larghezza</label><input style={inp} type="number" placeholder="cm" value={active.misure.L||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {L:e.target.value})}); }} /></div>
-              <div><label style={lbl}>Sporgenza</label><input style={inp} type="number" placeholder="cm" value={active.misure.S||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {S:e.target.value})}); }} /></div>
-              <div><label style={lbl}>H attacco</label><input style={inp} type="number" placeholder="cm" value={active.misure.A||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {A:e.target.value})}); }} /></div>
-              <div><label style={lbl}>Tipo muro</label>
-                <select style={inp} value={active.misure.muro||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {muro:e.target.value})}); }}>
-                  <option value="">---</option><option>Pieno</option><option>Forato</option><option>Cemento</option><option>Cappotto</option>
-                </select>
+              <div><label style={lbl}>{active.categoria==="esterno"?"Sporgenza":"Profondita"}</label><input style={inp} type="number" placeholder="cm" value={active.misure.S||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {S:e.target.value})}); }} /></div>
+              <div><label style={lbl}>{active.categoria==="esterno"?"H attacco":"Altezza"}</label><input style={inp} type="number" placeholder="cm" value={active.misure.A||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {A:e.target.value})}); }} /></div>
+              <div><label style={lbl}>{active.categoria==="esterno"?"Tipo muro":"Posa"}</label>
+                {active.categoria==="esterno" ? (
+                  <select style={inp} value={active.misure.muro||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {muro:e.target.value})}); }}>
+                    <option value="">---</option><option>Pieno</option><option>Forato</option><option>Cemento</option><option>Cappotto</option>
+                  </select>
+                ) : (
+                  <select style={inp} value={active.misure.muro||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {muro:e.target.value})}); }}>
+                    <option value="">---</option><option>Soffitto</option><option>Parete</option><option>Vetro</option><option>Anta</option>
+                  </select>
+                )}
               </div>
             </div>
             <div style={{marginTop:8}}>
@@ -816,12 +904,6 @@ export default function RilievoTende(props: Props){
           <div style={{padding:"10px 12px 14px", fontSize:12, color:T.sub}}>Aggiungi prima una tenda dal tab Modello.</div>
         )}
       </div>
-
-      {dbg && (
-        <div style={{position:"fixed", bottom:8, left:8, right:8, zIndex:9998, background:"rgba(0,0,0,0.85)", color:"#9FE1CB", padding:"6px 10px", borderRadius:6, fontSize:11, fontFamily:"monospace", pointerEvents:"none"}}>
-          DBG: {dbg}
-        </div>
-      )}
 
       {lightbox && (
         <div onClick={function(e){ if((e.target as any).id==="lb") setLightbox(null); }} id="lb"
