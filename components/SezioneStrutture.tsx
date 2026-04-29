@@ -6,7 +6,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 /* ══════════════════════════════════════════════════════════════
    MASTRO STRUTTURE — Componente per MASTRO ERP
    Va sotto la sezione "Disegno Tecnico" esistente
-   Pianta → Lati → 3D per Pergole, Verande, Box, Ferro, Tendaggi, Tendaggi
+   Pianta → Lati → 3D per Pergole, Verande, Box, Ferro, Tendaggi
    ══════════════════════════════════════════════════════════════ */
 
 /* ─── Design System MASTRO ─────────────────────────────────── */

@@ -676,7 +676,7 @@ export const SETTORI = [
   { id: "tende", label: "Tende da Sole", icon: "sun", desc: "Bracci, caduta, cappottine, pergole, ZIP, veneziane" },
   { id: "boxdoccia", label: "Box Doccia", icon: "droplets", desc: "Nicchia, angolari, walk-in, pareti vasca" },
   { id: "cancelli", label: "Cancelli e Recinzioni", icon: "building", desc: "Battenti, scorrevoli, recinzioni, ringhiere, automazioni" },
-  { id: "strutture", label: "Strutture", icon: "building", desc: "Pergole, verande, pensiline, box alluminio, ferro" },
+  { id: "strutture", label: "Strutture", icon: "building", desc: "Pergole, verande, pensiline, box alluminio, ferro, tendaggi" },
 ];
 
 export const SETTORI_DEFAULT = ["serramenti", "persiane", "tapparelle", "zanzariere"]; // serramentista classico
