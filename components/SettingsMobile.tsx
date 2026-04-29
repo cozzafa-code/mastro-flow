@@ -1,5 +1,5 @@
 // components/SettingsMobile.tsx
-// Settings mobile fliwoX. 6 card grandi cliccabili, ognuna apre full-screen.
+// Settings mobile fliwoX. 7 card grandi cliccabili, ognuna apre full-screen.
 // Cablato Supabase diretto.
 
 'use client'
@@ -10,8 +10,11 @@ import { T } from './home-mobile/HomeUI'
 import SettingsProfiliMobile from './settings-mobile/SettingsProfiliMobile'
 import SettingsVetriMobile from './settings-mobile/SettingsVetriMobile'
 import SettingsAccessoriMobile from './settings-mobile/SettingsAccessoriMobile'
+import MastroWinMobile from './settings-mobile/MastroWinMobile'
 
-type Sezione = null | 'profili' | 'vetri' | 'accessori' | 'nodi' | 'sistemi' | 'importa'
+const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29'
+
+type Sezione = null | 'profili' | 'vetri' | 'accessori' | 'win' | 'nodi' | 'sistemi' | 'importa'
 
 export default function SettingsMobile() {
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
@@ -22,12 +25,15 @@ export default function SettingsMobile() {
   }
   const torna = () => setSezione(null)
 
-  if (sezione === 'profili') return <SettingsProfiliMobile onBack={torna} />
-  if (sezione === 'vetri') return <SettingsVetriMobile onBack={torna} />
+  const azienda_id = ctx?.azienda?.id || ctx?.aziendaId || AZIENDA_ID
+
+  if (sezione === 'profili')   return <SettingsProfiliMobile onBack={torna} />
+  if (sezione === 'vetri')     return <SettingsVetriMobile onBack={torna} />
   if (sezione === 'accessori') return <SettingsAccessoriMobile onBack={torna} />
-  if (sezione === 'nodi') return <Placeholder titolo="NODI TECNICI" onBack={torna} />
-  if (sezione === 'sistemi') return <Placeholder titolo="SISTEMI" onBack={torna} />
-  if (sezione === 'importa') return <Placeholder titolo="IMPORTA EXCEL" onBack={torna} />
+  if (sezione === 'win')       return <MastroWinMobile azienda_id={azienda_id} onBack={torna} />
+  if (sezione === 'nodi')      return <Placeholder titolo="NODI TECNICI" onBack={torna} />
+  if (sezione === 'sistemi')   return <Placeholder titolo="SISTEMI" onBack={torna} />
+  if (sezione === 'importa')   return <Placeholder titolo="IMPORTA EXCEL" onBack={torna} />
 
   return (
     <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 100 }}>
@@ -53,6 +59,14 @@ export default function SettingsMobile() {
           sub="41 accessori in catalogo"
           colore={T.numAmber}
           onClick={() => setSezione('accessori')}
+        />
+        <CardSezione
+          icona="⚡"
+          titolo="Ferramenta WIN"
+          sub="Selezione automatica per anta"
+          colore={T.accDeep}
+          onClick={() => setSezione('win')}
+          badge="NEW"
         />
         <CardSezione
           icona="🔗"
@@ -110,8 +124,8 @@ function Header({ onBack }: { onBack: () => void }) {
 }
 
 function CardSezione({
-  icona, titolo, sub, colore, onClick,
-}: { icona: string; titolo: string; sub: string; colore: string; onClick: () => void }) {
+  icona, titolo, sub, colore, onClick, badge,
+}: { icona: string; titolo: string; sub: string; colore: string; onClick: () => void; badge?: string }) {
   return (
     <button onClick={onClick} style={{
       background: '#FFF',
@@ -135,7 +149,16 @@ function CardSezione({
         flexShrink: 0,
       }}>{icona}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 2 }}>{titolo}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {titolo}
+          {badge && (
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
+              padding: '2px 6px', borderRadius: 4,
+              background: T.acc, color: '#FFF',
+            }}>{badge}</span>
+          )}
+        </div>
         <div style={{ fontSize: 12, color: T.muted }}>{sub}</div>
       </div>
       <div style={{ color: T.acc, fontSize: 22, fontWeight: 700 }}>›</div>

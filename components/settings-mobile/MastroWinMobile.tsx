@@ -1,100 +1,96 @@
 // components/settings-mobile/MastroWinMobile.tsx
-// Shell del modulo MASTRO WIN: 4 tab (Calcolo, Articoli, Cremonesi, Dim/Portate).
+// Modulo MASTRO WIN: 4 tab (Calcolo / Articoli / Cremonesi / Dim+Portate).
+// Stile fliwoX coerente con SettingsAccessoriMobile / SettingsProfiliMobile.
 
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useMastroWin } from '@/hooks/useMastroWin';
-import type { WinTab } from '@/lib/types/mastro-win';
-import CalcoloLive from './mastro-win/CalcoloLive';
-import CrudArticoli from './mastro-win/CrudArticoli';
-import CrudCremonesi from './mastro-win/CrudCremonesi';
-import CrudDimensioniPortate from './mastro-win/CrudDimensioniPortate';
+import React, { useState } from 'react'
+import { T } from '../home-mobile/HomeUI'
+import { useMastroWin } from '@/hooks/useMastroWin'
+import type { WinTab } from '@/lib/types/mastro-win'
+import CalcoloLive from './mastro-win/CalcoloLive'
+import CrudArticoli from './mastro-win/CrudArticoli'
+import CrudCremonesi from './mastro-win/CrudCremonesi'
+import CrudDimensioniPortate from './mastro-win/CrudDimensioniPortate'
 
 interface Props {
-  azienda_id: string;
-  onBack?: () => void;
+  azienda_id: string
+  onBack: () => void
 }
 
-const TABS: { key: WinTab; label: string; icon: string }[] = [
-  { key: 'calcolo', label: 'Calcolo', icon: '⚙' },
-  { key: 'articoli', label: 'Articoli', icon: '◉' },
-  { key: 'cremonesi', label: 'Cremonesi', icon: '⌐' },
-  { key: 'dimensioni', label: 'Dim/Portate', icon: '⊞' },
-];
+const TABS: { key: WinTab; label: string }[] = [
+  { key: 'calcolo',    label: 'Calcolo' },
+  { key: 'articoli',   label: 'Articoli' },
+  { key: 'cremonesi',  label: 'Cremonesi' },
+  { key: 'dimensioni', label: 'Dim/Port' },
+]
 
 export default function MastroWinMobile({ azienda_id, onBack }: Props) {
-  const [tab, setTab] = useState<WinTab>('calcolo');
-  const win = useMastroWin(azienda_id);
+  const [tab, setTab] = useState<WinTab>('calcolo')
+  const win = useMastroWin(azienda_id)
 
   return (
-    <div
-      className="flex flex-col h-full"
-      style={{ background: '#EEF8F8', color: '#0D1F1F' }}
-    >
+    <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 100 }}>
       {/* HEADER */}
-      <div
-        className="flex items-center gap-3 px-4 py-3 border-b"
-        style={{
-          background: '#0D1F1F',
-          borderColor: '#28A0A0',
-          color: '#EEF8F8',
-        }}
-      >
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="text-2xl leading-none"
-            style={{ color: '#28A0A0' }}
-            aria-label="Indietro"
-          >
-            ‹
-          </button>
-        )}
-        <div className="flex-1">
-          <div className="text-xs opacity-70 tracking-wider">MASTRO</div>
-          <div className="text-lg font-bold tracking-tight">WIN</div>
+      <div style={{
+        background: `linear-gradient(160deg, ${T.acc} 0%, ${T.accDeep} 100%)`,
+        padding: '14px 16px 20px',
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
+        color: '#FFF',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+          <button onClick={onBack} style={{
+            background: 'rgba(255,255,255,0.18)', border: 'none',
+            width: 36, height: 36, borderRadius: 10,
+            color: '#FFF', fontSize: 18, fontWeight: 700, cursor: 'pointer',
+          }}>‹</button>
+          <div style={{ fontWeight: 600, fontSize: 13, letterSpacing: 0.3, opacity: 0.85 }}>filwoX</div>
         </div>
-        <div
-          className="text-[10px] px-2 py-1 rounded font-mono"
-          style={{ background: '#28A0A0', color: '#0D1F1F' }}
-        >
-          {win.articoli.length} art · {win.cremonesi.length} crem
+        <div style={{
+          fontSize: 32, fontWeight: 700,
+          letterSpacing: '-0.02em', lineHeight: 1,
+          WebkitFontSmoothing: 'antialiased',
+        }}>MASTRO WIN</div>
+        <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
+          {win.articoli.length} articoli · {win.cremonesi.length} cremonesi
         </div>
       </div>
 
       {/* TAB BAR */}
-      <div
-        className="flex border-b"
-        style={{ background: '#FFFFFF', borderColor: '#C8E4E4' }}
-      >
-        {TABS.map((t) => {
-          const active = tab === t.key;
+      <div style={{
+        display: 'flex',
+        gap: 6,
+        padding: '12px 16px 4px',
+        overflowX: 'auto',
+      }}>
+        {TABS.map(t => {
+          const active = tab === t.key
           return (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className="flex-1 py-3 text-xs font-medium relative transition-all"
               style={{
-                color: active ? '#28A0A0' : '#0D1F1F',
-                opacity: active ? 1 : 0.55,
+                padding: '8px 14px',
+                borderRadius: 10,
+                border: `1px solid ${active ? T.acc : T.bdr}`,
+                background: active ? T.acc : '#FFF',
+                color: active ? '#FFF' : T.text,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
-              <div className="text-base">{t.icon}</div>
-              <div>{t.label}</div>
-              {active && (
-                <div
-                  className="absolute bottom-0 left-2 right-2 h-[2px]"
-                  style={{ background: '#28A0A0' }}
-                />
-              )}
+              {t.label}
             </button>
-          );
+          )
         })}
       </div>
 
       {/* CONTENT */}
-      <div className="flex-1 overflow-y-auto">
+      <div style={{ padding: '8px 0' }}>
         {tab === 'calcolo' && (
           <CalcoloLive
             articoli={win.articoli}
@@ -135,5 +131,5 @@ export default function MastroWinMobile({ azienda_id, onBack }: Props) {
         )}
       </div>
     </div>
-  );
+  )
 }
