@@ -85,6 +85,22 @@ export default function CalcoloLive({ articoli, cremonesi, azienda_id }: Props) 
 
   return (
     <div className="p-4 space-y-4">
+      {/* BANNER BANCO DI PROVA */}
+      <div
+        className="rounded-lg p-3 text-xs"
+        style={{
+          background: '#FFF8E1',
+          border: '1px solid #E0C870',
+          color: '#5C4500',
+        }}
+      >
+        <div className="font-bold mb-1">Banco di prova</div>
+        <div className="opacity-80">
+          Qui testi le regole del motore. In produzione la ferramenta viene
+          calcolata automaticamente dentro al vano (CAD / Misure / Preventivo).
+        </div>
+      </div>
+
       {/* CARD INPUT */}
       <div
         className="rounded-xl p-4 space-y-3"

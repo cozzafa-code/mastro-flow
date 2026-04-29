@@ -298,14 +298,6 @@ export async function selezionaFerramenta(
     if (input.fornitore) qCrem = qCrem.eq('fornitore', input.fornitore);
     if (input.sistema) qCrem = qCrem.eq('sistema', input.sistema);
 
-    // tipo cremonese in base a apertura
-    const tipoCrem =
-      input.tipo_apertura === 'anta_ribalta' ||
-      input.tipo_apertura === 'anta_anta_ribalta'
-        ? 'anta_ribalta'
-        : 'anta';
-    qCrem = qCrem.in('tipo', [tipoCrem, 'universale']);
-
     const { data: cremoneses, error: errC } = await qCrem;
     if (errC) {
       errors.push({
@@ -316,16 +308,46 @@ export async function selezionaFerramenta(
       return finalize(false);
     }
 
+    // Filtro tipo lato client: agnostico al naming.
+    // Anta+ribalta -> tipi che contengono 'ar' o 'anta_ribalta' o 'dk'.
+    // Anta semplice -> tutto il resto (escluso 'porta' / 'porte').
+    const conRibalta =
+      input.tipo_apertura === 'anta_ribalta' ||
+      input.tipo_apertura === 'anta_anta_ribalta';
+
+    const matchTipo = (t: string): boolean => {
+      const tx = t.toLowerCase();
+      const isPorta = tx.includes('porta') || tx.includes('porte');
+      if (isPorta) return false;
+      if (conRibalta) {
+        return (
+          tx.startsWith('ar_') ||
+          tx.includes('anta_ribalta') ||
+          tx.includes('anta-ribalta') ||
+          tx === 'dk' ||
+          tx === 'universale'
+        );
+      }
+      // Anta semplice: niente AR
+      return !tx.startsWith('ar_') && !tx.includes('anta_ribalta') && !tx.includes('anta-ribalta');
+    };
+
     const cremoneseRow =
-      ((cremoneses ?? []) as CremoneseRow[]).sort((a, b) => {
-        // priorita: stesso fornitore, poi prima cremonese disponibile
-        return a.codice.localeCompare(b.codice);
-      })[0] ?? null;
+      ((cremoneses ?? []) as CremoneseRow[])
+        .filter((c) => matchTipo(c.tipo))
+        .sort((a, b) => a.codice.localeCompare(b.codice))[0] ?? null;
+
+    trace.push(
+      `Cremonesi candidate (HBB ok): ${cremoneses?.length ?? 0}, ` +
+        `dopo filtro tipo (conRibalta=${conRibalta}): ${cremoneseRow ? '1+' : 0}`
+    );
 
     if (!cremoneseRow) {
+      const tipiTrovati = (cremoneses ?? []).map((c: any) => c.tipo).join(', ') || 'nessuno';
       errors.push({
         codice: 'NESSUNA_CREMONESE',
-        messaggio: `Nessuna cremonese disponibile per HBB=${input.HBB}mm e tipo ${tipoCrem}.`,
+        messaggio: `Nessuna cremonese ${conRibalta ? 'anta-ribalta' : 'anta'} per HBB=${input.HBB}mm.`,
+        dettaglio: `Tipi trovati nel range HBB: ${tipiTrovati}`,
       });
       return finalize(false);
     }
