@@ -166,7 +166,11 @@ export default function RilievoTende(props: Props){
   const [quotaPending, setQuotaPending] = useState<Pt|null>(null);
   const [popup, setPopup] = useState<any>(null);
   const [lightbox, setLightbox] = useState<Detail|null>(null);
-  const [sheetOpen, setSheetOpen] = useState<"modello"|"misure"|null>("modello");
+  const [sheetOpen, setSheetOpen] = useState<"modello"|"misure"|null>(null);
+  // Modal fullscreen scelta modello (separato da sheetOpen)
+  const [showModelloModal, setShowModelloModal] = useState(false);
+  const [showGenerici, setShowGenerici] = useState(false);
+  const [searchModello, setSearchModello] = useState("");
   const [categoriaTab, setCategoriaTab] = useState<Categoria>("esterno");
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{x:number;y:number}>({x:0, y:0});
@@ -1273,6 +1277,9 @@ export default function RilievoTende(props: Props){
           {uploadingDetail?"Caric...":"+ Particolare"}
         </button>
         <div style={{width:1, height:24, background:T.bdr, margin:"0 4px"}}/>
+        <button onClick={function(){ setShowModelloModal(true); }} style={Object.assign({}, chip(!!active), {fontWeight:active?700:600})}>
+          {active ? "Modello: " + (modelLabel(active.model)) : "+ Modello"}
+        </button>
         <button onClick={function(){ setTool("select"); }} style={chip(tool==="select")}>Sposta</button>
         <button onClick={function(){ setTool("quota"); }} style={chip(tool==="quota")}>Quota</button>
         <div style={{width:1, height:24, background:T.bdr, margin:"0 4px"}}/>
@@ -1347,7 +1354,7 @@ export default function RilievoTende(props: Props){
 
       <div style={{borderTop:"1px solid "+T.bdr, background:"#fff", flexShrink:0}}>
         <div style={{display:"flex", padding:"6px 8px 0", gap:4}}>
-          {[["modello","Modello"],["misure","Misure"]].map(function(item){
+          {[["misure","Misure tenda"]].map(function(item){
             const k = item[0] as "modello"|"misure";
             const lab = item[1];
             return (
@@ -1361,48 +1368,6 @@ export default function RilievoTende(props: Props){
             );
           })}
         </div>
-
-        {sheetOpen==="modello" && (
-          <div style={{padding:"10px 12px 14px"}}>
-            <div style={{display:"flex", gap:0, marginBottom:10, borderBottom:"1px solid "+T.bdr}}>
-              {[["esterno","Esterno"],["interno","Interno"]].map(function(item){
-                const k = item[0] as Categoria;
-                return (
-                  <button key={k} onClick={function(){ setCategoriaTab(k); }}
-                    style={{flex:1, padding:"8px 10px", border:"none", background:"transparent",
-                      borderBottom:"2px solid "+(categoriaTab===k?T.acc:"transparent"),
-                      marginBottom:"-1px",
-                      color: categoriaTab===k?T.acc:T.sub,
-                      fontSize:12, fontWeight:700, cursor:"pointer"}}>{item[1]}</button>
-                );
-              })}
-            </div>
-            <div style={{fontSize:12, color:T.sub, marginBottom:8}}>{!active ? "Tocca un modello per aggiungere la prima tenda:" : "Cambia modello tenda T"+(activeIdx+1)+":"}</div>
-            <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
-              {modelsCorrenti.map(function(m){
-                const id = m[0];
-                const lab = m[1];
-                return <button key={id} onClick={function(){ selezionaModello(id, categoriaTab); }} style={chip(active && active.model===id)}>{lab}</button>;
-              })}
-              {tende.length>0 && (
-                <button onClick={function(){ aggiungiTenda(modelsCorrenti[0][0], categoriaTab); }}
-                  style={{padding:"7px 12px", borderRadius:999, border:"1px dashed "+T.acc, background:T.accLt, color:T.acc, fontSize:12, fontWeight:700, cursor:"pointer"}}>+ Tenda</button>
-              )}
-            </div>
-            {catalogoCorrente.length>0 && (
-              <div style={{marginTop:10, paddingTop:10, borderTop:"1px solid "+T.bdr}}>
-                <div style={{fontSize:11, color:T.sub, marginBottom:6, fontWeight:600}}>Dal mio catalogo aziendale</div>
-                <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
-                  {catalogoCorrente.map(function(c:any){
-                    return <button key={c.id} onClick={function(){
-                      aggiungiTendaConCatalogo(c.tipo, categoriaTab, c.fornitore||"", c.nome||"", c.colore_default||"");
-                    }} style={chip(false)}>{c.fornitore?c.fornitore+" · ":""}{c.nome}</button>;
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {sheetOpen==="misure" && active && (
           <div style={{padding:"10px 12px 14px"}}>
@@ -1440,6 +1405,108 @@ export default function RilievoTende(props: Props){
           <div style={{padding:"10px 12px 14px", fontSize:12, color:T.sub}}>Aggiungi prima una tenda dal tab Modello.</div>
         )}
       </div>
+
+      {/* MODAL FULLSCREEN SCELTA MODELLO */}
+      {showModelloModal && (
+        <div onClick={function(e){ if((e.target as any).id==="mm-bg") setShowModelloModal(false); }} id="mm-bg"
+          style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:9998, display:"flex", alignItems:"flex-end"}}>
+          <div style={{background:"#fff", width:"100%", maxHeight:"90vh", overflowY:"auto", borderTopLeftRadius:18, borderTopRightRadius:18, display:"flex", flexDirection:"column"}}>
+            {/* Header sticky */}
+            <div style={{padding:"14px 16px", borderBottom:"1px solid "+T.bdr, position:"sticky", top:0, background:"#fff", zIndex:1, display:"flex", alignItems:"center", gap:10}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:16, fontWeight:800, color:T.text}}>Scegli modello tenda</div>
+                <div style={{fontSize:11, color:T.sub, marginTop:2}}>{!active ? "Aggiungi la prima tenda" : "Modifica modello (T"+(activeIdx+1)+")"}</div>
+              </div>
+              <button onClick={function(){ setShowModelloModal(false); }} style={{background:"transparent", border:"none", fontSize:22, color:T.sub, cursor:"pointer", padding:4}}>{"\u2715"}</button>
+            </div>
+
+            {/* Search + Tab Esterno/Interno */}
+            <div style={{padding:"10px 16px", borderBottom:"1px solid "+T.bdr, display:"flex", flexDirection:"column", gap:8, position:"sticky", top:60, background:"#fff", zIndex:1}}>
+              <input value={searchModello} onChange={function(e){ setSearchModello(e.target.value); }}
+                placeholder="Cerca per nome modello..." 
+                style={{width:"100%", padding:"10px 12px", border:"1px solid "+T.bdr, borderRadius:10, fontSize:13, outline:"none", boxSizing:"border-box"}} />
+              <div style={{display:"flex", gap:0, borderBottom:"1px solid "+T.bdr}}>
+                {[["esterno","Esterno"],["interno","Interno"]].map(function(item){
+                  const k = item[0] as Categoria;
+                  return (
+                    <button key={k} onClick={function(){ setCategoriaTab(k); }}
+                      style={{flex:1, padding:"8px 10px", border:"none", background:"transparent",
+                        borderBottom:"2px solid "+(categoriaTab===k?T.acc:"transparent"),
+                        marginBottom:"-1px",
+                        color: categoriaTab===k?T.acc:T.sub,
+                        fontSize:13, fontWeight:700, cursor:"pointer"}}>{item[1]}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* SEZIONE 1: Catalogo aziendale (priorita) */}
+            <div style={{padding:"14px 16px"}}>
+              {catalogoCorrente.length > 0 ? (
+                <>
+                  <div style={{fontSize:11, color:"#28A0A0", fontWeight:800, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:10}}>★ Dal mio catalogo aziendale</div>
+                  <div style={{display:"grid", gridTemplateColumns:"1fr", gap:6}}>
+                    {catalogoCorrente
+                      .filter(function(c:any){ return !searchModello || (c.nome||"").toLowerCase().includes(searchModello.toLowerCase()) || (c.fornitore||"").toLowerCase().includes(searchModello.toLowerCase()); })
+                      .map(function(c:any){
+                        return (
+                          <button key={c.id} onClick={function(){
+                            aggiungiTendaConCatalogo(c.tipo, categoriaTab, c.fornitore||"", c.nome||"", c.colore_default||"");
+                            setShowModelloModal(false);
+                          }} style={{
+                            padding:"12px 14px", borderRadius:10, border:"1px solid "+T.bdr, background:"#fff",
+                            display:"flex", alignItems:"center", gap:10, cursor:"pointer", textAlign:"left", width:"100%",
+                          }}>
+                            <div style={{width:34, height:34, borderRadius:8, background:"#28A0A015", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#28A0A0", flexShrink:0}}>{(c.fornitore||"?").charAt(0)}</div>
+                            <div style={{flex:1, minWidth:0}}>
+                              <div style={{fontSize:13, fontWeight:700, color:T.text}}>{c.fornitore || "Generico"} · {c.nome}</div>
+                              <div style={{fontSize:10, color:T.sub, marginTop:2}}>{c.colore_default || ""}</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                  </div>
+                </>
+              ) : (
+                <div style={{padding:"14px", borderRadius:10, background:"#FEF3C7", border:"1px solid #FCD34D", fontSize:12, color:"#92400E"}}>
+                  Catalogo aziendale vuoto. Vai in <b>Impostazioni → Tendaggi</b> e aggiungi i modelli che vendi (o importa il demo Pratic/Gibus/KE/Mottura).
+                </div>
+              )}
+
+              {/* SEZIONE 2: Generici (collassati) */}
+              <div style={{marginTop:18, paddingTop:14, borderTop:"1px solid "+T.bdr}}>
+                <button onClick={function(){ setShowGenerici(!showGenerici); }} style={{
+                  width:"100%", padding:"10px 12px", borderRadius:10, border:"1px dashed "+T.bdr,
+                  background:"transparent", color:T.sub, fontSize:12, fontWeight:600, cursor:"pointer",
+                  display:"flex", alignItems:"center", justifyContent:"space-between",
+                }}>
+                  <span>Modelli generici (senza marca)</span>
+                  <span>{showGenerici ? "▲ Nascondi" : "▼ Mostra " + modelsCorrenti.length}</span>
+                </button>
+                {showGenerici && (
+                  <div style={{display:"flex", gap:6, flexWrap:"wrap", marginTop:10}}>
+                    {modelsCorrenti
+                      .filter(function(m){ return !searchModello || (m[1] as string).toLowerCase().includes(searchModello.toLowerCase()); })
+                      .map(function(m){
+                        const id = m[0];
+                        const lab = m[1];
+                        return <button key={id} onClick={function(){ selezionaModello(id, categoriaTab); setShowModelloModal(false); }}
+                          style={chip(active && active.model===id)}>{lab}</button>;
+                      })}
+                  </div>
+                )}
+              </div>
+
+              {/* Bottone +Altra tenda quando ce ne sono gia altre */}
+              {tende.length > 0 && (
+                <div style={{marginTop:18, paddingTop:14, borderTop:"1px solid "+T.bdr, fontSize:11, color:T.sub, textAlign:"center"}}>
+                  Stai aggiungendo a {tende.length} tenda{tende.length>1?"e":""} gia rilevata{tende.length>1?"e":""}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {lightbox && (
         <div onClick={function(e){ if((e.target as any).id==="lb") setLightbox(null); }} id="lb"
