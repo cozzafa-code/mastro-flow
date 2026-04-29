@@ -6,7 +6,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 /* ══════════════════════════════════════════════════════════════
    MASTRO STRUTTURE — Componente per MASTRO ERP
    Va sotto la sezione "Disegno Tecnico" esistente
-   Pianta → Lati → 3D per Pergole, Verande, Box, Ferro
+   Pianta → Lati → 3D per Pergole, Verande, Box, Ferro, Tendaggi
    ══════════════════════════════════════════════════════════════ */
 
 /* ─── Design System MASTRO ─────────────────────────────────── */
@@ -156,7 +156,7 @@ export default function SezioneStrutture({ commessaId, onSave }: { commessaId?: 
         <span style={{ fontSize: 20 }}>🏗️</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: C.blue, fontFamily: FB }}>Strutture</div>
-          <div style={{ fontSize: 11, color: C.sub }}>Pergole, Verande, Box, Ferro — Pianta + Lati + 3D</div>
+          <div style={{ fontSize: 11, color: C.sub }}>Pergole, Verande, Box, Ferro, Tendaggi — Pianta + Lati + 3D</div>
         </div>
         {str && tipoSel && (
           <span style={{
