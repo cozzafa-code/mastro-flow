@@ -1,5 +1,5 @@
 // components/settings-mobile/SettingsVetriMobile.tsx
-// Catalogo Vetri mobile cablato Supabase tabella catalogo_vetri.
+// Catalogo Vetri mobile + Costruttore Vetri integrato
 
 'use client'
 
@@ -7,6 +7,10 @@ import React, { useEffect, useState } from 'react'
 import { T, numStyle } from '../home-mobile/HomeUI'
 import { useMastro } from '../MastroContext'
 import { parseComposizione, generaSvgVetro } from '@/lib/vetri-section'
+import {
+  VetroLayer, calcolaVetro, generaSvgSezione, gid,
+} from '@/lib/vetri-engine'
+import CostruttoreVetriMobile from './CostruttoreVetriMobile'
 
 interface Vetro {
   id: string
@@ -38,12 +42,43 @@ function pulisci(p: any): any {
   return out
 }
 
+// Carica strati da JSONB salvati o ricostruisce da composizione
+function loadLayers(v: Vetro): VetroLayer[] {
+  if (Array.isArray(v.strati) && v.strati.length > 0) {
+    return v.strati.map((s: any) => ({
+      id: gid(),
+      tipo: s.tipo,
+      spessore: s.spessore,
+      vetro_tipo: s.vetro_tipo,
+      gas: s.gas,
+      canalina_tipo: s.canalina_tipo,
+    }))
+  }
+  // Fallback: ricostruisce da composizione tramite parser semplice
+  if (v.composizione) {
+    const parsed = parseComposizione(v.composizione)
+    return parsed.map(p => {
+      if (p.isGas) {
+        return { id: gid(), tipo: 'canalina', spessore: p.spessore, gas: (p.tipo === 'argon' || p.tipo === 'kripton' ? p.tipo : 'aria') as any, canalina_tipo: 'warm_edge' }
+      }
+      let vt: any = 'float'
+      if (p.tipo === 'BE') vt = 'basso_emissivo'
+      else if (p.tipo === 'tempera') vt = 'temperato'
+      return { id: gid(), tipo: 'vetro', spessore: p.spessore, vetro_tipo: vt }
+    })
+  }
+  return []
+}
+
+type View = 'lista' | 'dettaglio' | 'costruttore'
+
 export default function SettingsVetriMobile({ onBack }: { onBack: () => void }) {
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const [vetri, setVetri] = useState<Vetro[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Vetro | null>(null)
+  const [view, setView] = useState<View>('lista')
 
   useEffect(() => {
     let mounted = true
@@ -68,7 +103,7 @@ export default function SettingsVetriMobile({ onBack }: { onBack: () => void }) 
       if (error) { alert('Errore: ' + error.message); return }
       const aggiornato = (data || v) as Vetro
       setVetri(prev => prev.map(x => x.id === v.id ? aggiornato : x))
-      setSelected(null)
+      setView('lista'); setSelected(null)
     } catch (e: any) { alert('Errore: ' + (e?.message || e)) }
   }
 
@@ -79,19 +114,67 @@ export default function SettingsVetriMobile({ onBack }: { onBack: () => void }) 
       const { error } = await sb.from('catalogo_vetri').delete().eq('id', id)
       if (error) { alert('Errore: ' + error.message); return }
       setVetri(prev => prev.filter(x => x.id !== id))
-      setSelected(null)
+      setView('lista'); setSelected(null)
     } catch (e: any) { alert('Errore: ' + (e?.message || e)) }
   }
 
-  const aggiungi = async () => {
+  const aggiungiCostruttore = () => {
+    setSelected(null)
+    setView('costruttore')
+  }
+
+  const apriCostruttoreEsistente = () => {
+    if (!selected) return
+    setView('costruttore')
+  }
+
+  const salvaCostruttore = async (data: {
+    nome: string; codice: string; fornitore: string | null; prezzo: number | null;
+    layers: VetroLayer[]; svg: string; calc: any;
+  }) => {
     try {
       const { supabase: sb } = await import('@/lib/supabase')
       const azienda_id = ctx?.aziendaIdReal || ctx?.aziendaInfo?.id || null
-      const nuovo = { nome: 'Nuovo vetro', codice: 'VT-' + Date.now(), composizione: '4float+16argon+4BE', ug: 1.1, spessore: 24, attivo: true, azienda_id }
-      const { data, error } = await sb.from('catalogo_vetri').insert([nuovo]).select().single()
-      if (error) { alert('Errore: ' + error.message); return }
-      setVetri(prev => [...prev, data as Vetro])
-      setSelected(data as Vetro)
+      const stratiJson = data.layers.map(l => ({
+        tipo: l.tipo, spessore: l.spessore,
+        vetro_tipo: l.vetro_tipo, gas: l.gas, canalina_tipo: l.canalina_tipo,
+      }))
+      const payload: any = {
+        codice: data.codice,
+        nome: data.nome,
+        composizione: data.calc.comp,
+        ug: data.calc.Ug,
+        spessore: data.calc.sp,
+        peso_mq: data.calc.peso,
+        trasmittanza_solare: data.calc.g,
+        abbattimento_acustico: data.calc.Rw,
+        prezzo_mq: data.prezzo,
+        fornitore: data.fornitore,
+        sezione_svg: data.svg,
+        strati: stratiJson,
+        attivo: true,
+        azienda_id,
+      }
+
+      if (selected) {
+        // Update
+        const { data: out, error } = await sb.from('catalogo_vetri').update(pulisci(payload)).eq('id', selected.id).select().single()
+        if (error) { alert('Errore: ' + error.message); return }
+        const aggiornato = out as Vetro
+        setVetri(prev => prev.map(x => x.id === selected.id ? aggiornato : x))
+        setSelected(null)
+      } else {
+        // Insert (upsert su codice)
+        const { data: out, error } = await sb.from('catalogo_vetri')
+          .upsert(payload, { onConflict: 'codice' }).select().single()
+        if (error) { alert('Errore: ' + error.message); return }
+        const nuovo = out as Vetro
+        setVetri(prev => {
+          const filtered = prev.filter(x => x.id !== nuovo.id)
+          return [...filtered, nuovo]
+        })
+      }
+      setView('lista')
     } catch (e: any) { alert('Errore: ' + (e?.message || e)) }
   }
 
@@ -101,15 +184,33 @@ export default function SettingsVetriMobile({ onBack }: { onBack: () => void }) 
     return (v.nome || '').toLowerCase().includes(q) || (v.codice || '').toLowerCase().includes(q) || (v.composizione || '').toLowerCase().includes(q)
   })
 
-  if (selected) {
+  // VIEW: COSTRUTTORE
+  if (view === 'costruttore') {
+    return (
+      <CostruttoreVetriMobile
+        initialLayers={selected ? loadLayers(selected) : []}
+        initialNome={selected?.nome || ''}
+        initialCodice={selected?.codice || ''}
+        initialFornitore={selected?.fornitore || ''}
+        initialPrezzo={selected?.prezzo_mq ?? null}
+        onBack={() => { setView(selected ? 'dettaglio' : 'lista') }}
+        onSave={salvaCostruttore}
+      />
+    )
+  }
+
+  // VIEW: DETTAGLIO
+  if (view === 'dettaglio' && selected) {
     return <DettaglioVetro
       vetro={selected}
-      onBack={() => setSelected(null)}
+      onBack={() => { setView('lista'); setSelected(null) }}
       onSave={aggiorna}
       onDelete={() => elimina(selected.id)}
+      onApriCostruttore={apriCostruttoreEsistente}
     />
   }
 
+  // VIEW: LISTA
   return (
     <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 100 }}>
       <Header onBack={onBack} totale={vetri.length} />
@@ -131,10 +232,10 @@ export default function SettingsVetriMobile({ onBack }: { onBack: () => void }) 
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {filtrati.map(v => <RigaVetro key={v.id} v={v} onClick={() => setSelected(v)} />)}
+            {filtrati.map(v => <RigaVetro key={v.id} v={v} onClick={() => { setSelected(v); setView('dettaglio') }} />)}
           </div>
         )}
-        <button onClick={aggiungi} style={{ width: '100%', marginTop: 14, background: T.acc, color: '#FFF', border: 'none', borderRadius: 12, padding: '14px', fontSize: 13, fontWeight: 700, letterSpacing: 0.4, cursor: 'pointer', boxShadow: '0 4px 12px rgba(15,118,110,0.15)' }}>+ AGGIUNGI VETRO</button>
+        <button onClick={aggiungiCostruttore} style={{ width: '100%', marginTop: 14, background: T.acc, color: '#FFF', border: 'none', borderRadius: 12, padding: '14px', fontSize: 13, fontWeight: 700, letterSpacing: 0.4, cursor: 'pointer', boxShadow: '0 4px 12px rgba(15,118,110,0.15)' }}>+ NUOVO VETRO (COSTRUTTORE)</button>
       </div>
     </div>
   )
@@ -164,20 +265,22 @@ function Kpi({ value, label, color }: { value: number; label: string; color: str
 
 function RigaVetro({ v, onClick }: { v: Vetro; onClick: () => void }) {
   const inattivo = v.attivo === false
-  const strati = parseComposizione(v.composizione || '')
+  const layers = loadLayers(v)
+  const sezioneSvg = v.sezione_svg || (layers.length ? generaSvgSezione(layers, 1.5) : '')
   return (
     <button onClick={onClick} style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', width: '100%', textAlign: 'left', opacity: inattivo ? 0.5 : 1 }}>
-      <div style={{ width: 60, height: 40, borderRadius: 8, background: T.blueSoft, padding: 4, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: generaMiniSvg(strati) }} />
+      <div style={{ width: 60, height: 40, borderRadius: 8, background: T.blueSoft, padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {sezioneSvg ? <div dangerouslySetInnerHTML={{ __html: sezioneSvg }} style={{ width: '100%', height: '100%' }} /> : null}
+      </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.nome}</div>
         <div style={{ fontSize: 11, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {v.codice ? v.codice + ' - ' : ''}
-          {v.composizione || 'Senza composizione'}
+          {v.codice ? v.codice + ' · ' : ''}{v.composizione || 'Senza composizione'}
         </div>
         <div style={{ fontSize: 10, color: T.numBlue, marginTop: 2, fontWeight: 600 }}>
           {v.ug != null ? 'Ug ' + v.ug : ''}
-          {v.spessore != null ? ' - ' + v.spessore + 'mm' : ''}
-          {v.prezzo_mq != null ? ' - EUR ' + v.prezzo_mq + '/m2' : ''}
+          {v.spessore != null ? ' · ' + v.spessore + 'mm' : ''}
+          {v.prezzo_mq != null ? ' · €' + v.prezzo_mq + '/m²' : ''}
         </div>
       </div>
       <div style={{ color: T.acc, fontSize: 18, fontWeight: 700 }}>&rsaquo;</div>
@@ -185,33 +288,16 @@ function RigaVetro({ v, onClick }: { v: Vetro; onClick: () => void }) {
   )
 }
 
-function generaMiniSvg(strati: any[]): string {
-  if (strati.length === 0) return ''
-  const totale = strati.reduce((s, x) => s + x.spessore, 0)
-  const w = 60, h = 40
-  let x = 4
-  const drawW = w - 8
-  const scaleX = drawW / totale
-  const parts: string[] = []
-  strati.forEach((s) => {
-    const ww = s.spessore * scaleX
-    const fill = s.isGas ? '#E8F4F4' : (s.tipo === 'BE' ? '#D6F0F8' : (s.tipo === 'stratificato' ? '#C4E0F0' : '#DCE8E8'))
-    const stroke = s.isGas ? '#9DC8C8' : (s.tipo === 'BE' ? '#5A8FA0' : '#7090A0')
-    parts.push('<rect x="' + x + '" y="6" width="' + ww + '" height="28" fill="' + fill + '" stroke="' + stroke + '" stroke-width="0.5"/>')
-    x += ww
-  })
-  return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:100%" xmlns="http://www.w3.org/2000/svg">' + parts.join('') + '</svg>'
-}
-
-function DettaglioVetro({ vetro, onBack, onSave, onDelete }: {
-  vetro: Vetro; onBack: () => void; onSave: (v: Vetro) => void; onDelete: () => void
+function DettaglioVetro({ vetro, onBack, onSave, onDelete, onApriCostruttore }: {
+  vetro: Vetro; onBack: () => void; onSave: (v: Vetro) => void; onDelete: () => void; onApriCostruttore: () => void
 }) {
   const [v, setV] = useState<Vetro>(vetro)
   const [tabAttiva, setTabAttiva] = useState<'base' | 'sezione' | 'note'>('base')
   const f = (k: keyof Vetro) => (val: any) => setV(prev => ({ ...prev, [k]: val }))
 
-  const strati = parseComposizione(v.composizione || '')
-  const svgSezione = v.sezione_svg || generaSvgVetro(strati, 200)
+  const layers = loadLayers(v)
+  const calc = calcolaVetro(layers)
+  const svgSezione = v.sezione_svg || (layers.length ? generaSvgSezione(layers, 3) : generaSvgVetro(parseComposizione(v.composizione || ''), 200))
 
   return (
     <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 120 }}>
@@ -235,52 +321,46 @@ function DettaglioVetro({ vetro, onBack, onSave, onDelete }: {
 
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {tabAttiva === 'base' && <>
-          <div style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 12, padding: 8, height: 120 }}
+          <div style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 12, padding: 12, minHeight: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             dangerouslySetInnerHTML={{ __html: svgSezione }} />
           <Field label="Nome" value={v.nome || ''} onChange={f('nome')} />
           <Field label="Codice" value={v.codice || ''} onChange={f('codice')} />
           <Field label="Composizione" value={v.composizione || ''} onChange={f('composizione')} placeholder="es. 4float+16argon+4BE" />
           <Row>
-            <Field label="Ug (W/m2K)" value={v.ug ?? ''} onChange={val => f('ug')(val === '' ? null : Number(val))} type="number" step="0.01" />
+            <Field label="Ug (W/m²K)" value={v.ug ?? ''} onChange={val => f('ug')(val === '' ? null : Number(val))} type="number" step="0.01" />
             <Field label="Spessore mm" value={v.spessore ?? ''} onChange={val => f('spessore')(val === '' ? null : Number(val))} type="number" />
           </Row>
           <Row>
-            <Field label="Peso kg/m2" value={v.peso_mq ?? ''} onChange={val => f('peso_mq')(val === '' ? null : Number(val))} type="number" step="0.1" />
-            <Field label="Prezzo EUR/m2" value={v.prezzo_mq ?? ''} onChange={val => f('prezzo_mq')(val === '' ? null : Number(val))} type="number" step="0.01" />
+            <Field label="Peso kg/m²" value={v.peso_mq ?? ''} onChange={val => f('peso_mq')(val === '' ? null : Number(val))} type="number" step="0.1" />
+            <Field label="Prezzo €/m²" value={v.prezzo_mq ?? ''} onChange={val => f('prezzo_mq')(val === '' ? null : Number(val))} type="number" step="0.01" />
           </Row>
           <Row>
-            <Field label="Trasm. solare g" value={v.trasmittanza_solare ?? ''} onChange={val => f('trasmittanza_solare')(val === '' ? null : Number(val))} type="number" step="0.01" />
+            <Field label="g solare" value={v.trasmittanza_solare ?? ''} onChange={val => f('trasmittanza_solare')(val === '' ? null : Number(val))} type="number" step="0.01" />
             <Field label="Acust. dB" value={v.abbattimento_acustico ?? ''} onChange={val => f('abbattimento_acustico')(val === '' ? null : Number(val))} type="number" />
           </Row>
           <Row>
-            <Field label="Sicurezza" value={v.sicurezza || ''} onChange={f('sicurezza')} placeholder="P1A, P2A, P4A, P5A..." />
+            <Field label="Sicurezza" value={v.sicurezza || ''} onChange={f('sicurezza')} placeholder="P1A, P2A, P4A..." />
             <Field label="Fornitore" value={v.fornitore || ''} onChange={f('fornitore')} />
           </Row>
         </>}
 
         {tabAttiva === 'sezione' && <>
           <div style={{ background: T.tealSoft, border: '1px solid ' + T.bdr, borderRadius: 10, padding: '10px 12px', fontSize: 11, color: T.text }}>
-            Sezione stratigrafica generata dalla composizione. Modifica la composizione in tab Base per cambiare la sezione.
+            Sezione stratigrafica. Per modificare struttura, gas, vetri e calcoli usa il Costruttore.
           </div>
-          <div style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 12, padding: 14, minHeight: 240 }}
+          <div style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 12, padding: 14, minHeight: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             dangerouslySetInnerHTML={{ __html: svgSezione }} />
-          {strati.length > 0 && (
-            <div style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 12, padding: 12 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.muted, marginBottom: 8, letterSpacing: 0.4, textTransform: 'uppercase' }}>Strati riconosciuti</div>
-              {strati.map((s, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < strati.length - 1 ? '1px solid ' + T.bdr : 'none' }}>
-                  <span style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{i + 1}. {s.raw}</span>
-                  <span style={{ fontSize: 11, color: s.isGas ? T.numBlue : T.numTeal, fontWeight: 600 }}>
-                    {s.spessore}mm {s.isGas ? '(camera ' + s.tipo + ')' : '(' + s.tipo + ')'}
-                  </span>
-                </div>
-              ))}
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '2px solid ' + T.acc, display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: T.acc }}>SPESSORE TOTALE</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: T.acc }}>{strati.reduce((s, x) => s + x.spessore, 0)} mm</span>
-              </div>
+          {calc && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <KpiSm label="Ug" value={calc.Ug} unit="W/m²K" color={calc.Ug <= 1.1 ? T.numTeal : T.numAmber} />
+              <KpiSm label="Spessore" value={calc.sp} unit="mm" color={T.text} />
+              <KpiSm label="Peso" value={calc.peso} unit="kg/m²" color={T.text} />
+              <KpiSm label="Rw" value={calc.Rw} unit="dB" color={calc.Rw >= 35 ? T.numTeal : T.numAmber} />
             </div>
           )}
+          <button onClick={onApriCostruttore} style={{ width: '100%', background: T.acc, color: '#FFF', border: 'none', borderRadius: 12, padding: 14, fontSize: 13, fontWeight: 700, letterSpacing: 0.4, cursor: 'pointer' }}>
+            APRI COSTRUTTORE VETRI
+          </button>
         </>}
 
         {tabAttiva === 'note' && <>
@@ -325,4 +405,13 @@ function Field({ label, value, onChange, placeholder, type = 'text', step }: {
 
 function Row({ children }: { children: React.ReactNode }) {
   return <div style={{ display: 'flex', gap: 10 }}>{children}</div>
+}
+
+function KpiSm({ label, value, unit, color }: { label: string; value: any; unit: string; color: string }) {
+  return (
+    <div style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 10, padding: 10, textAlign: 'center' }}>
+      <div style={{ fontSize: 9, color: T.muted, fontWeight: 700, textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ marginTop: 4, fontSize: 18, fontWeight: 800, color, fontFamily: 'monospace' }}>{value} <span style={{ fontSize: 9, color: T.muted, fontWeight: 500 }}>{unit}</span></div>
+    </div>
+  )
 }
