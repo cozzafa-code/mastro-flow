@@ -331,9 +331,11 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
     else if(drag.what==="thumbResize"){ const d=[...details]; d[drag.i]={...d[drag.i], thumb:{...d[drag.i].thumb, w:Math.max(60,p.x-d[drag.i].thumb.x), h:Math.max(45,p.y-d[drag.i].thumb.y)}}; setDetails(d); }
   }
 
-  // --- TOUCH NATIVO con stateRef ---
+  // --- TOUCH NATIVO con stateRef + hit test inline (no stale closure) ---
   const sRef = useRef<any>(null);
   sRef.current = { tende, activeIdx, drag, popup, tool, quotaPending, details, show };
+  const dragRef = useRef<any>(null);
+  const [dbg, setDbg] = useState<string>("");
 
   useEffect(()=>{
     const cv = cvRef.current; if(!cv) return;
@@ -343,24 +345,85 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
       const t = e.touches[0] || e.changedTouches[0];
       return { x:(t.clientX-r.left)*sx, y:(t.clientY-r.top)*sy };
     }
+    function inlineHit(p:Pt){
+      const s = sRef.current;
+      const a = s.activeIdx>=0 ? s.tende[s.activeIdx] : null;
+      if(a){
+        if(s.show.tenda) for(let i=0;i<4;i++){
+          if(Math.hypot(p.x-a.corners[i].x, p.y-a.corners[i].y)<=30) return {what:"tCorner", i};
+        }
+        if(s.show.bracci) for(let i=0;i<a.bracci.length;i++){
+          if(Math.hypot(p.x-a.bracci[i].top.x, p.y-a.bracci[i].top.y)<=24) return {what:"bTop", i};
+          if(Math.hypot(p.x-a.bracci[i].bot.x, p.y-a.bracci[i].bot.y)<=24) return {what:"bBot", i};
+        }
+        if(s.show.aggancio) for(let i=0;i<a.aggancio.length;i++){
+          if(Math.hypot(p.x-a.aggancio[i].x, p.y-a.aggancio[i].y)<=26) return {what:"agg", i};
+        }
+      }
+      for(let ti=0; ti<s.tende.length; ti++){
+        if(ti===s.activeIdx) continue;
+        const t = s.tende[ti];
+        const xs=t.corners.map((p:Pt)=>p.x), ys=t.corners.map((p:Pt)=>p.y);
+        if(p.x>=Math.min(...xs) && p.x<=Math.max(...xs) && p.y>=Math.min(...ys) && p.y<=Math.max(...ys)){
+          return {what:"selectTenda", i:ti};
+        }
+      }
+      return null;
+    }
+
     const start = (e:TouchEvent)=>{
       e.preventDefault();
-      handleDown(getPosT(e));
+      e.stopPropagation();
+      const p = getPosT(e);
+      const s = sRef.current;
+      if(s.popup){ setDbg(`tap ${p.x.toFixed(0)},${p.y.toFixed(0)} popup-aperto`); return; }
+      if(s.tool==="quota"){
+        if(!s.quotaPending){ setQuotaPending(p); setDbg(`quota1 ${p.x.toFixed(0)},${p.y.toFixed(0)}`); return; }
+        const mx=(s.quotaPending.x+p.x)/2, my=(s.quotaPending.y+p.y)/2;
+        setPopup({ kind:"quota", title:"Misura (es. 300 cm)", value:"", x:mx, y:my, payload:{p1:s.quotaPending, p2:p} });
+        setQuotaPending(null);
+        return;
+      }
+      const h = inlineHit(p);
+      if(!h){ setDbg(`tap ${p.x.toFixed(0)},${p.y.toFixed(0)} -> NESSUN HIT`); return; }
+      if(h.what==="selectTenda"){ setActiveIdx(h.i); setDbg(`tap -> seleziona tenda ${h.i+1}`); return; }
+      dragRef.current = h;
+      setDrag(h);
+      setDbg(`tap -> drag ${h.what}#${h.i+1}`);
     };
     const move = (e:TouchEvent)=>{
       e.preventDefault();
-      handleMove(getPosT(e));
+      const p = getPosT(e);
+      const s = sRef.current;
+      const dr = dragRef.current;
+      if(!dr) return;
+      const a = s.activeIdx>=0 ? s.tende[s.activeIdx] : null;
+      if(!a) return;
+      // aggiorna direttamente l'array tende mutando una copia immutabile via setTende
+      setTende((prev:Tenda[])=>{
+        const copy = prev.map((t,i)=>{
+          if(i!==s.activeIdx) return t;
+          if(dr.what==="tCorner"){ const c=[...t.corners]; c[dr.i]=p; return {...t, corners:c}; }
+          if(dr.what==="bTop"){ const b=[...t.bracci]; b[dr.i]={...b[dr.i], top:p}; return {...t, bracci:b}; }
+          if(dr.what==="bBot"){ const b=[...t.bracci]; b[dr.i]={...b[dr.i], bot:p}; return {...t, bracci:b}; }
+          if(dr.what==="agg"){ const ag=[...t.aggancio]; ag[dr.i]=p; return {...t, aggancio:ag}; }
+          return t;
+        });
+        return copy;
+      });
     };
-    const end = ()=>{ setDrag(null); };
+    const end = ()=>{ dragRef.current=null; setDrag(null); };
     cv.addEventListener("touchstart", start, {passive:false});
     cv.addEventListener("touchmove", move, {passive:false});
     cv.addEventListener("touchend", end);
+    cv.addEventListener("touchcancel", end);
     return ()=>{
       cv.removeEventListener("touchstart", start);
       cv.removeEventListener("touchmove", move);
       cv.removeEventListener("touchend", end);
+      cv.removeEventListener("touchcancel", end);
     };
-  });
+  },[]);
 
   function onMouseDown(e:any){ handleDown(getPos(e)); }
   function onMouseMove(e:any){ handleMove(getPos(e)); }
@@ -566,6 +629,12 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
           <div style={{padding:"10px 12px 14px", fontSize:12, color:T.sub}}>Aggiungi prima una tenda dal tab Modello.</div>
         )}
       </div>
+
+      {dbg && (
+        <div style={{position:"fixed", bottom:8, left:8, right:8, zIndex:9998, background:"rgba(0,0,0,0.85)", color:"#9FE1CB", padding:"6px 10px", borderRadius:6, fontSize:11, fontFamily:"monospace", pointerEvents:"none"}}>
+          DBG: {dbg}
+        </div>
+      )}
 
       {lightbox && (
         <div onClick={e=>{ if((e.target as any).id==="lb") setLightbox(null); }} id="lb"
