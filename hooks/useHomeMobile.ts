@@ -1,6 +1,5 @@
 // hooks/useHomeMobile.ts
-// Home mobile fliwoX v2 - cablato su MastroContext.
-// Legge da useMastro() se presente, fallback a mock altrimenti.
+// Home mobile fliwoX v2 - cablato su MastroContext con campi reali del repo.
 
 import { useMemo } from 'react'
 import { useMastro } from '../components/MastroContext'
@@ -131,7 +130,6 @@ function inizialiDa(s: string): string {
   return parts.map(p => p[0] || '').join('').toUpperCase() || '?'
 }
 
-// fasi pipeline che indicano commessa critica
 const FASI_FERMO = ['sopralluogo', 'preventivo', 'conferma_ordine', 'ordine_confermato']
 
 // ───────── hook ─────────
@@ -141,7 +139,7 @@ export function useHomeMobile(): { data: HomeData; loading: boolean } {
 
   const data = useMemo<HomeData>(() => {
     const today = new Date()
-    const userNome = (ctx?.user?.nome || ctx?.aziendaInfo?.titolare || 'TITOLARE').toString().toUpperCase()
+    const userNome = (ctx?.user?.nome || ctx?.aziendaInfo?.titolare || ctx?.aziendaInfo?.ragioneSociale || 'TITOLARE').toString().toUpperCase()
     const userIniziali = inizialiDa(userNome)
 
     const cantieri: any[] = ctx?.cantieri || []
@@ -154,7 +152,7 @@ export function useHomeMobile(): { data: HomeData; loading: boolean } {
     const giorniFermaCM = ctx?.giorniFermaCM || (() => 0)
     const sogliaDays = ctx?.sogliaDays || 7
 
-    // ── COMMESSE CRITICHE: ferma da troppo tempo o pagata in attesa
+    // ── COMMESSE CRITICHE
     const commesseCritiche: CommessaCritica[] = cantieri
       .filter((c: any) => {
         const giorniFerma = giorniFermaCM(c)
@@ -180,61 +178,85 @@ export function useHomeMobile(): { data: HomeData; loading: boolean } {
         }
       })
 
-    // ── CASSA: aggrego da fatture e cantieri
-    let fatturatoOggi = 0
-    let inLavorazione = 0
-    let inAttesa = 0
-    let clientiNonPaganti = 0
+    // ── CASSA con campi reali (importo, pagata, scadenza)
     const todayStr = ymd(today)
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = ymd(yesterday)
+
+    let fatturatoOggi = 0
+    let fatturatoIeri = 0
+    let inAttesa = 0
+    const clientiAttesa = new Set<string>()
 
     fattureDB.forEach((f: any) => {
-      const tot = Number(f.totale || f.importo || f.amount || 0)
-      const stato = (f.stato || '').toLowerCase()
-      const dataF = f.data || f.dataEmissione || f.data_emissione
-      if (stato === 'pagata' || stato === 'incassata') {
-        if (dataF && String(dataF).startsWith(todayStr)) fatturatoOggi += tot
-      } else if (stato === 'da_pagare' || stato === 'attesa' || stato === 'in_attesa' || stato === 'scaduta') {
-        inAttesa += tot
-        clientiNonPaganti += 1
+      const importo = Number(f.importo || 0)
+      const dataPagamento = f.dataPagamento || f.data_pagamento || f.dataIncasso
+      if (f.pagata) {
+        if (dataPagamento && String(dataPagamento).startsWith(todayStr)) fatturatoOggi += importo
+        if (dataPagamento && String(dataPagamento).startsWith(yesterdayStr)) fatturatoIeri += importo
+      } else {
+        inAttesa += importo
+        const cli = f.cmId || f.cliente || f.cmNome
+        if (cli) clientiAttesa.add(String(cli))
       }
     })
 
+    // in lavorazione: somma totali commesse non chiuse/non pagate
+    let inLavorazione = 0
     cantieri.forEach((c: any) => {
-      const tot = Number(c.totale || c.importo || 0)
+      const tot = Number(c.totale || c.importo || c.preventivoTotale || 0)
       if (c.fase && c.fase !== 'chiusura' && c.fase !== 'pagata') inLavorazione += tot
     })
 
-    // ── PROBLEMI: dal ctx.problemi
+    // ── PROBLEMI
     const problemi: Problema[] = problemiCtx.slice(0, 3).map((p: any) => ({
       id: p.id || `p${Math.random()}`,
       titolo: p.titolo || p.descrizione || 'Problema',
-      contesto: p.contesto || p.commessa || p.cliente || '',
+      contesto: p.contesto || p.commessa || p.cliente || p.cmId || '',
       azione: 'RISOLVI' as const,
     }))
 
-    // ── OGGI OPERATIVO: top 3 task/montaggi di oggi
+    // ── OGGI OPERATIVO
     const attivitaOggi: AttivitaOggi[] = []
     montaggiDB
-      .filter((m: any) => m.data && String(m.data).startsWith(todayStr))
+      .filter((m: any) => {
+        const d = m.data || m.dataMontaggio || m.data_montaggio
+        return d && String(d).startsWith(todayStr)
+      })
       .slice(0, 3)
       .forEach((m: any) => {
         attivitaOggi.push({
           id: m.id || `m${Math.random()}`,
-          ora: (m.ora || '08:00').slice(0, 5),
-          titolo: m.titolo || `Montaggio ${m.cliente || ''}`.trim(),
+          ora: (m.ora || m.oraInizio || '08:00').toString().slice(0, 5),
+          titolo: m.titolo || `Montaggio ${m.cliente || m.cmNome || ''}`.trim(),
           indirizzo: m.indirizzo || m.luogo || '',
           azione_primaria: 'VAI',
           azione_secondaria: 'COMPLETA',
         })
       })
 
-    // ── TEAM LIVE: usa team del ctx, mappa stati
+    tasks
+      .filter((t: any) => t.data && String(t.data).startsWith(todayStr))
+      .slice(0, Math.max(0, 3 - attivitaOggi.length))
+      .forEach((t: any) => {
+        attivitaOggi.push({
+          id: t.id || `t${Math.random()}`,
+          ora: (t.ora || '12:00').toString().slice(0, 5),
+          titolo: t.titolo || t.descrizione || 'Task',
+          indirizzo: t.cliente || t.luogo || '',
+          azione_primaria: 'VAI',
+          azione_secondaria: 'FATTO',
+        })
+      })
+
+    // ── TEAM LIVE
     const operatori: Operatore[] = team.slice(0, 4).map((t: any) => ({
       id: t.id || `o${Math.random()}`,
-      nome: t.nome || 'Operatore',
-      attivita: t.attivita || t.stato || 'Operativo',
+      nome: t.nome || t.fullName || 'Operatore',
+      attivita: t.attivita || t.statoTesto || 'Operativo',
       stato: (t.stato as StatoOperatore) || 'attivo',
-      tempo: t.tempo || '',
+      tempo: t.tempo || t.tempoCorrente || '',
       telefono: t.telefono,
     }))
 
@@ -247,7 +269,10 @@ export function useHomeMobile(): { data: HomeData; loading: boolean } {
       const d = new Date(today)
       d.setDate(d.getDate() + i)
       const dStr = ymd(d)
-      const eventiCount = montaggiDB.filter((m: any) => m.data && String(m.data).startsWith(dStr)).length
+      const eventiCount = montaggiDB.filter((m: any) => {
+        const md = m.data || m.dataMontaggio
+        return md && String(md).startsWith(dStr)
+      }).length
       giorniAgenda.push({
         data: dStr,
         label_giorno: GIORNI_BREVI[d.getDay()],
@@ -258,22 +283,26 @@ export function useHomeMobile(): { data: HomeData; loading: boolean } {
     }
 
     const eventi: EventoAgenda[] = montaggiDB
-      .filter((m: any) => m.data && String(m.data).startsWith(todayStr))
+      .filter((m: any) => {
+        const d = m.data || m.dataMontaggio
+        return d && String(d).startsWith(todayStr)
+      })
       .slice(0, 5)
       .map((m: any) => ({
         id: m.id || `e${Math.random()}`,
         data: todayStr,
-        ora: (m.ora || '08:00').slice(0, 5),
+        ora: (m.ora || m.oraInizio || '08:00').toString().slice(0, 5),
         titolo: m.titolo || `Montaggio ${m.cliente || ''}`.trim(),
-        cliente: m.cliente || '',
+        cliente: m.cliente || m.cmNome || '',
         indirizzo: m.indirizzo || m.luogo || '',
       }))
 
     // ── PRODUZIONE: ordini fornitori
     const ordini: OrdineProduzione[] = ordiniFornDB.slice(0, 3).map((o: any) => {
+      const s = (o.stato || '').toString().toLowerCase()
       const stato: StatoOrdine =
-        o.stato === 'arrivato' || o.stato === 'consegnato' ? 'IN_LAVORAZIONE' :
-        o.stato === 'fermo' || o.stato === 'ritardo' ? 'FERMO' :
+        s === 'arrivato' || s === 'consegnato' || s === 'in_lavorazione' ? 'IN_LAVORAZIONE' :
+        s === 'fermo' || s === 'ritardo' ? 'FERMO' :
         'IN_ATTESA'
       return {
         id: o.id || `op${Math.random()}`,
@@ -296,11 +325,14 @@ export function useHomeMobile(): { data: HomeData; loading: boolean } {
       const d = new Date(today)
       d.setDate(d.getDate() + i)
       const dStr = ymd(d)
-      const eventiGiorno = montaggiDB.filter((m: any) => m.data && String(m.data).startsWith(dStr)).length
+      const eventiGiorno = montaggiDB.filter((m: any) => {
+        const md = m.data || m.dataMontaggio
+        return md && String(md).startsWith(dStr)
+      }).length
       const taskGiorno = tasks.filter((t: any) => t.data && String(t.data).startsWith(dStr)).length
       const totale = eventiGiorno + taskGiorno
       const cap = 5
-      const perc = Math.min(Math.round(totale / cap * 100), 150)
+      const perc = totale === 0 ? 0 : Math.min(Math.round(totale / cap * 100), 150)
       settimana.push({
         data: dStr,
         label: `${GIORNI_BREVI[d.getDay()]} ${d.getDate()}`,
@@ -310,7 +342,7 @@ export function useHomeMobile(): { data: HomeData; loading: boolean } {
       })
     }
 
-    // ── OPERATORE FERMO: pausa > 30min
+    // ── OPERATORE FERMO
     const opFermo = operatori.find(o => o.stato === 'pausa')
     const operatoreFermo: OperatoreFermo | null = opFermo ? {
       id: opFermo.id,
@@ -320,14 +352,13 @@ export function useHomeMobile(): { data: HomeData; loading: boolean } {
       telefono: opFermo.telefono,
     } : null
 
+    // calcolo oggi.lavori da cantieri attivi
+    const lavoriOggi = cantieri.filter((c: any) => c.fase && FASI_FERMO.includes(c.fase)).length
+
     return {
-      user: {
-        nome: userNome,
-        iniziali: userIniziali,
-        data: dataItaliana(today),
-      },
+      user: { nome: userNome, iniziali: userIniziali, data: dataItaliana(today) },
       oggi: {
-        lavori: cantieri.filter((c: any) => c.fase && FASI_FERMO.includes(c.fase)).length,
+        lavori: lavoriOggi,
         task: tasks.filter((t: any) => t.data && String(t.data).startsWith(todayStr)).length,
         problemi: problemiCtx.length,
         attivita: attivitaOggi,
@@ -340,11 +371,11 @@ export function useHomeMobile(): { data: HomeData; loading: boolean } {
       carico: { settimana },
       soldi: {
         fatturato_oggi: fatturatoOggi,
-        fatturato_ieri: 0,
+        fatturato_ieri: fatturatoIeri,
         in_lavorazione: inLavorazione,
         in_lavorazione_var: 0,
         in_attesa: inAttesa,
-        clienti_non_paganti: clientiNonPaganti,
+        clienti_non_paganti: clientiAttesa.size,
       },
       operatore_fermo: operatoreFermo,
     }
