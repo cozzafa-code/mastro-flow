@@ -6,6 +6,7 @@
 import React, { useEffect, useState } from 'react'
 import { T, numStyle } from '../home-mobile/HomeUI'
 import { useMastro } from '../MastroContext'
+import DxfViewer from './DxfViewer'
 
 const BUCKET = 'profili-files'
 
@@ -331,6 +332,7 @@ function DettaglioProfilo({ profilo, sistemi, onBack, onSave, onDelete }: {
         {tabAttiva === 'file' && <>
           <FileBox label="IMMAGINE" url={p.immagine_url} accept="image/*" onChange={uploadCampo('immagine_url')} preview busy={uploading === 'immagine_url'} />
           <FileBox label="FILE DXF" url={p.dxf_url} accept=".dxf,.dwg" onChange={uploadCampo('dxf_url')} busy={uploading === 'dxf_url'} />
+          {isUrl(p.dxf_url) && <DxfViewer url={p.dxf_url} filename={p.codice || p.nome || 'profilo.dxf'} />}
           <FileBox label="FILE PDF" url={p.pdf_url} accept=".pdf" onChange={uploadCampo('pdf_url')} busy={uploading === 'pdf_url'} />
         </>}
 
