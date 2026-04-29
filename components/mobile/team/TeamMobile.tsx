@@ -80,22 +80,13 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   const [photoTargetOp, setPhotoTargetOp] = useState<Operator | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   // FASE 5G: tracking ultima visita per banner notifiche
+  // FIX 5I: niente useEffect su mount (causava render extra). lastSeenAt si aggiorna solo on click banner.
   const [lastSeenAt, setLastSeenAt] = useState<number>(() => {
     try {
       const v = typeof window !== "undefined" ? window.localStorage.getItem("mastro:team:lastSeen") : null;
       return v ? Number(v) : Date.now();
     } catch { return Date.now(); }
   });
-  // Marca come "visto" dopo 3s dal mount (altrimenti il banner non comparirebbe mai)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        const now = Date.now();
-        window.localStorage.setItem("mastro:team:lastSeen", String(now));
-      } catch {}
-    }, 3000);
-    return () => clearTimeout(t);
-  }, []);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
@@ -384,6 +375,11 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
           background: `linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)`,
           padding: "18px 18px 20px", borderRadius: 22,
           boxShadow: "0 4px 16px rgba(40,160,160,0.18)",
+          // FIX 5I: forza layer separato su iOS Safari per evitare flicker/black
+          transform: "translateZ(0)",
+          WebkitTransform: "translateZ(0)",
+          WebkitBackfaceVisibility: "hidden",
+          backfaceVisibility: "hidden",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
             <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "6px 12px", display: "flex", alignItems: "center", gap: 6 }}>

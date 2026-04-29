@@ -4,6 +4,8 @@
 
 * {
   -webkit-tap-highlight-color: transparent;
+  /* FIX 5I: elimina 300ms tap delay su iOS Safari + migliora reattivita' touch */
+  touch-action: manipulation;
 }
 
 body {
