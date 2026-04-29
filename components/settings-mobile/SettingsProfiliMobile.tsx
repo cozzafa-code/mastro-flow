@@ -1,11 +1,13 @@
 // components/settings-mobile/SettingsProfiliMobile.tsx
-// Catalogo Profili mobile cablato Supabase. Tutti i campi del desktop.
+// Catalogo Profili mobile cablato Supabase + Storage upload.
 
 'use client'
 
 import React, { useEffect, useState } from 'react'
 import { T, numStyle } from '../home-mobile/HomeUI'
 import { useMastro } from '../MastroContext'
+
+const BUCKET = 'profili-files'
 
 interface Profilo {
   id: number
@@ -36,6 +38,7 @@ interface Profilo {
   spessore_lama: number | null
   quota_fusione: number | null
   sviluppo: number | null
+  created_at?: string
 }
 
 interface SistemaProfilo { id: string; marca: string; sistema: string; materiale: string }
@@ -43,6 +46,31 @@ interface SistemaProfilo { id: string; marca: string; sistema: string; materiale
 const TIPI_PROFILO = ['telaio', 'anta', 'traverso', 'montante', 'fermavetro', 'coprifilo', 'davanzale', 'soglia']
 const MATERIALI = ['PVC', 'Alluminio', 'Legno', 'Misto']
 const UTILIZZI = ['finestra', 'porta', 'porta-finestra', 'scorrevole', 'alzante-scorrevole']
+
+// Campi che non si mandano in UPDATE (postgres errore se li tocchi)
+const CAMPI_NON_UPDATABILI = ['id', 'created_at']
+
+function pulisci(p: any): any {
+  const out: any = {}
+  for (const k of Object.keys(p)) {
+    if (!CAMPI_NON_UPDATABILI.includes(k)) out[k] = p[k]
+  }
+  return out
+}
+
+async function uploadStorage(sb: any, file: File, profiloId: number, tipo: string): Promise<string | null> {
+  try {
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
+    const path = 'profilo_' + profiloId + '/' + tipo + '_' + Date.now() + '.' + ext
+    const { error: upErr } = await sb.storage.from(BUCKET).upload(path, file, { upsert: true })
+    if (upErr) { alert('Errore upload: ' + upErr.message); return null }
+    const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(path)
+    return urlData?.publicUrl || null
+  } catch (e: any) {
+    alert('Errore upload: ' + (e?.message || e))
+    return null
+  }
+}
 
 export default function SettingsProfiliMobile({ onBack }: { onBack: () => void }) {
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
@@ -73,9 +101,11 @@ export default function SettingsProfiliMobile({ onBack }: { onBack: () => void }
   const aggiorna = async (p: Profilo) => {
     try {
       const { supabase: sb } = await import('@/lib/supabase')
-      const { error } = await sb.from('profili_catalogo').update(p).eq('id', p.id)
+      const dati = pulisci(p)
+      const { data, error } = await sb.from('profili_catalogo').update(dati).eq('id', p.id).select().single()
       if (error) { alert('Errore salvataggio: ' + error.message); return }
-      setProfili(prev => prev.map(x => x.id === p.id ? p : x))
+      const aggiornato = (data || p) as Profilo
+      setProfili(prev => prev.map(x => x.id === p.id ? aggiornato : x))
       setSelected(null)
     } catch (e: any) { alert('Errore: ' + (e?.message || e)) }
   }
@@ -171,13 +201,18 @@ function Kpi({ value, label, color }: { value: number; label: string; color: str
   )
 }
 
+function isUrl(s: string | null): boolean {
+  if (!s) return false
+  return s.startsWith('http://') || s.startsWith('https://')
+}
+
 function RigaProfilo({ p, onClick }: { p: Profilo; onClick: () => void }) {
   const haFile = !!(p.dxf_url || p.pdf_url || p.immagine_url)
   const inattivo = p.attivo === false
   return (
     <button onClick={onClick} style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', width: '100%', textAlign: 'left', opacity: inattivo ? 0.5 : 1 }}>
-      {p.immagine_url ? (
-        <img src={p.immagine_url} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+      {isUrl(p.immagine_url) ? (
+        <img src={p.immagine_url!} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
       ) : (
         <div style={{ width: 40, height: 40, borderRadius: 10, background: T.tealSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: T.numTeal, flexShrink: 0 }}>
           {p.materiale ? p.materiale.slice(0, 3).toUpperCase() : '???'}
@@ -202,14 +237,26 @@ function DettaglioProfilo({ profilo, sistemi, onBack, onSave, onDelete }: {
 }) {
   const [p, setP] = useState<Profilo>(profilo)
   const [tabAttiva, setTabAttiva] = useState<'base' | 'sezione' | 'file' | 'note'>('base')
+  const [uploading, setUploading] = useState<string | null>(null)
   const f = (k: keyof Profilo) => (v: any) => setP(prev => ({ ...prev, [k]: v }))
 
-  const uploadFile = (campo: 'immagine_url' | 'dxf_url' | 'pdf_url') => (e: any) => {
-    const file = e.target.files?.[0]
+  const uploadCampo = (campo: 'immagine_url' | 'dxf_url' | 'pdf_url') => async (e: any) => {
+    const file: File | undefined = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => f(campo)(ev.target?.result)
-    reader.readAsDataURL(file)
+    setUploading(campo)
+    try {
+      const { supabase: sb } = await import('@/lib/supabase')
+      const url = await uploadStorage(sb, file, p.id, campo.replace('_url', ''))
+      if (url) {
+        const aggiornato = { ...p, [campo]: url }
+        setP(aggiornato)
+        // salvo subito su DB (cosi anche se chiudi senza SALVA il file rimane)
+        const dati = pulisci(aggiornato)
+        await sb.from('profili_catalogo').update(dati).eq('id', p.id)
+      }
+    } finally {
+      setUploading(null)
+    }
   }
 
   return (
@@ -234,9 +281,9 @@ function DettaglioProfilo({ profilo, sistemi, onBack, onSave, onDelete }: {
 
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {tabAttiva === 'base' && <>
-          {p.immagine_url && (
+          {isUrl(p.immagine_url) && (
             <div style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 12, padding: 8, textAlign: 'center' }}>
-              <img src={p.immagine_url} alt="" style={{ maxWidth: '100%', maxHeight: 180, objectFit: 'contain' }} />
+              <img src={p.immagine_url!} alt="" style={{ maxWidth: '100%', maxHeight: 180, objectFit: 'contain' }} />
             </div>
           )}
           <Field label="Nome" value={p.nome || ''} onChange={f('nome')} />
@@ -246,7 +293,8 @@ function DettaglioProfilo({ profilo, sistemi, onBack, onSave, onDelete }: {
           <Select label="Tipo profilo" value={p.tipo || 'telaio'} onChange={f('tipo')} options={TIPI_PROFILO} />
           <Select label="Sistema profilo" value={p.sistema_id || ''} onChange={v => f('sistema_id')(v || null)}
             options={[{ v: '', l: 'Nessuno' }, ...sistemi.map(s => ({ v: s.id, l: s.marca + ' ' + s.sistema }))]} />
-          <Select label="Utilizzo" value={p.utilizzo || ''} onChange={v => f('utilizzo')(v || null)} options={['', ...UTILIZZI]} />
+          <Select label="Utilizzo" value={p.utilizzo || ''} onChange={v => f('utilizzo')(v || null)}
+            options={[{ v: '', l: 'Nessuno' }, ...UTILIZZI.map(u => ({ v: u, l: u }))]} />
           <Row>
             <Field label="Profondita mm" value={p.profondita_mm ?? ''} onChange={v => f('profondita_mm')(v === '' ? null : Number(v))} type="number" />
             <Field label="Camere" value={p.camere ?? ''} onChange={v => f('camere')(v === '' ? null : Number(v))} type="number" />
@@ -281,9 +329,9 @@ function DettaglioProfilo({ profilo, sistemi, onBack, onSave, onDelete }: {
         </>}
 
         {tabAttiva === 'file' && <>
-          <FileBox label="IMMAGINE" url={p.immagine_url} accept="image/*" onChange={uploadFile('immagine_url')} preview />
-          <FileBox label="FILE DXF" url={p.dxf_url} accept=".dxf,.dwg" onChange={uploadFile('dxf_url')} />
-          <FileBox label="FILE PDF" url={p.pdf_url} accept=".pdf" onChange={uploadFile('pdf_url')} />
+          <FileBox label="IMMAGINE" url={p.immagine_url} accept="image/*" onChange={uploadCampo('immagine_url')} preview busy={uploading === 'immagine_url'} />
+          <FileBox label="FILE DXF" url={p.dxf_url} accept=".dxf,.dwg" onChange={uploadCampo('dxf_url')} busy={uploading === 'dxf_url'} />
+          <FileBox label="FILE PDF" url={p.pdf_url} accept=".pdf" onChange={uploadCampo('pdf_url')} busy={uploading === 'pdf_url'} />
         </>}
 
         {tabAttiva === 'note' && <>
@@ -349,26 +397,26 @@ function Row({ children }: { children: React.ReactNode }) {
   return <div style={{ display: 'flex', gap: 10 }}>{children}</div>
 }
 
-function FileBox({ label, url, accept, onChange, preview }: {
-  label: string; url: string | null; accept: string; onChange: (e: any) => void; preview?: boolean;
+function FileBox({ label, url, accept, onChange, preview, busy }: {
+  label: string; url: string | null; accept: string; onChange: (e: any) => void; preview?: boolean; busy?: boolean;
 }) {
-  const ha = !!url
+  const ha = isUrl(url)
   return (
     <div>
-      {preview && ha && url && (
+      {preview && ha && (
         <div style={{ background: '#FFF', border: '1px solid ' + T.bdr, borderRadius: 12, padding: 8, textAlign: 'center', marginBottom: 8 }}>
-          <img src={url} alt="" style={{ maxWidth: '100%', maxHeight: 200, objectFit: 'contain' }} />
+          <img src={url!} alt="" style={{ maxWidth: '100%', maxHeight: 200, objectFit: 'contain' }} />
         </div>
       )}
-      <label style={{ background: ha ? T.tealSoft : '#FFF', border: '1px solid ' + (ha ? T.numTeal + '40' : T.bdr), borderRadius: 12, padding: 14, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: ha ? T.numTeal : T.bdr, color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>{ha ? '+' : '+'}</div>
+      <label style={{ background: ha ? T.tealSoft : '#FFF', border: '1px solid ' + (ha ? T.numTeal + '40' : T.bdr), borderRadius: 12, padding: 14, display: 'flex', alignItems: 'center', gap: 10, cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 8, background: ha ? T.numTeal : T.bdr, color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>+</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 0.4 }}>{label}</div>
           <div style={{ fontSize: 12, color: ha ? T.numTeal : T.muted, fontWeight: 500 }}>
-            {ha ? 'Caricato - tap per cambiare' : 'Tocca per caricare'}
+            {busy ? 'Caricamento in corso...' : (ha ? 'Caricato - tap per cambiare' : 'Tocca per caricare')}
           </div>
         </div>
-        <input type="file" accept={accept} onChange={onChange} style={{ display: 'none' }} />
+        <input type="file" accept={accept} onChange={onChange} disabled={busy} style={{ display: 'none' }} />
       </label>
     </div>
   )
