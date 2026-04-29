@@ -2871,22 +2871,38 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
 
   // Crea nuovo ordine fornitore da commessa
-  const creaOrdineFornitore = (c, fornitoreNome = "", noteGenerali = "") => {
-    const vani = getVaniAttivi(c);
+  const creaOrdineFornitore = (c, fornitoreNome = "", noteGenerali = "", vaniSubset?: any[], tendeCatLookup?: any[]) => {
+    const vani = vaniSubset && vaniSubset.length > 0 ? vaniSubset : getVaniAttivi(c);
+    const tendeCodes = ["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"];
     // Auto-genera righe da vani commessa con prezzi
     const righe = vani.map(v => {
       const tipLabel = TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.label || v.tipo || " - ";
       const m = v.misure || {};
       const lmm = m.lCentro || 0, hmm = m.hCentro || 0;
       const prezzo = calcolaVanoPrezzo(v, c);
+      // Se è un vano-tenda e ho il catalogo, arricchisco descrizione + note
+      let desc = `${tipLabel} - ${v.stanza || ""} ${v.piano || ""}`.trim();
+      let noteRiga = v.coloreEst ? `Colore: ${v.coloreEst}` : "";
+      let misureStr = lmm > 0 && hmm > 0 ? `${lmm}x${hmm}` : "da definire";
+      if (tendeCodes.includes(v.tipo) && v.tendaModelloId && tendeCatLookup && tendeCatLookup.length > 0) {
+        const mod = tendeCatLookup.find((cm: any) => cm.id === v.tendaModelloId);
+        if (mod) {
+          desc = `${mod.fornitore} ${mod.modello} - ${tipLabel}${v.stanza ? ' - ' + v.stanza : ''}`;
+          const noteParts: string[] = [];
+          if (v.tendaColore || mod.colore_default) noteParts.push("Colore: " + (v.tendaColore || mod.colore_default));
+          if (m.sporgenza) noteParts.push("Sporgenza: " + m.sporgenza + "mm");
+          noteRiga = noteParts.join(" | ");
+          if (m.sporgenza) misureStr = `${lmm}x${hmm}x${m.sporgenza}`;
+        }
+      }
       return {
         id: "r_" + Math.random().toString(36).slice(2, 8),
-        desc: `${tipLabel} - ${v.stanza || ""} ${v.piano || ""}`.trim(),
-        misure: lmm > 0 && hmm > 0 ? `${lmm}Ã—${hmm}` : "da definire",
+        desc,
+        misure: misureStr,
         qta: v.pezzi || 1,
         prezzoUnit: Math.round(prezzo * 100) / 100,
         totale: Math.round(prezzo * (v.pezzi || 1) * 100) / 100,
-        note: v.coloreEst ? `Colore: ${v.coloreEst}` : "",
+        note: noteRiga,
       };
     });
 
@@ -3027,6 +3043,48 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   ];
 
   // === PIANIFICAZIONE MONTAGGIO ===
+  // Crea automaticamente N ordini separati raggruppando i vani per fornitore.
+  // Per i vani-tenda con tendaModelloId usa fornitore dal catalogo.
+  // Per i serramenti usa il sistema (Aluplast, Schuco, etc).
+  const creaOrdiniSplitFornitori = async (c, noteGenerali = "") => {
+    const vani = getVaniAttivi(c);
+    if (!vani.length) return [];
+    // Carico catalogo tendaggi per lookup fornitore
+    let tendeCat: any[] = [];
+    try {
+      const { getAziendaId } = await import('../lib/supabase-sync');
+      const { supabase } = await import('../lib/supabase');
+      const aziendaId = await getAziendaId();
+      if (aziendaId) {
+        const { data } = await supabase.from('catalogo_tendaggi').select('*').eq('azienda_id', aziendaId);
+        tendeCat = data || [];
+      }
+    } catch (e) { console.warn('Catalogo tendaggi non disponibile per split ordini:', e); }
+    const tendeCodes = ["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"];
+    // Raggruppa vani per fornitore inferito
+    const gruppi: Record<string, any[]> = {};
+    for (const v of vani) {
+      let fornitore = "";
+      if (tendeCodes.includes(v.tipo) && v.tendaModelloId) {
+        const mod = tendeCat.find((cm: any) => cm.id === v.tendaModelloId);
+        if (mod?.fornitore) fornitore = mod.fornitore;
+      } else {
+        // Serramento: prima parola del sistema (es. "Aluplast Ideal 7000" → "Aluplast")
+        fornitore = (v.sistema || c.sistema || "").split(" ")[0] || "Generico";
+      }
+      if (!fornitore) fornitore = "Generico";
+      if (!gruppi[fornitore]) gruppi[fornitore] = [];
+      gruppi[fornitore].push(v);
+    }
+    // Crea un ordine per gruppo
+    const ordiniCreati: any[] = [];
+    for (const [forn, vaniGruppo] of Object.entries(gruppi)) {
+      const ord = creaOrdineFornitore(c, forn, noteGenerali, vaniGruppo, tendeCat);
+      if (ord) ordiniCreati.push(ord);
+    }
+    return ordiniCreati;
+  };
+
   const creaMontaggio = (c) => {
     const m = {
       id: "mont_" + Date.now(),
@@ -3636,7 +3694,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     // Refs/computed
     filtered, calDays, today, confirm, toast, exportAllData, formErrors, setFormErrors, FormErrors, FieldError,
     // Business logic functions
-    generaPreventivoPDF, generaPDFMisure, creaFattura, generaFatturaPDF, inviaWhatsApp, inviaEmail, creaOrdineFornitore, ricalcolaOrdine, updateOrdine, calcolaScadenzaPagamento, generaOrdinePDF, generaConfermaFirmataPDF, inviaOrdineFornitore, creaMontaggio, getWeekDays, generaPreventivoCondivisibile, uploadConfermaFornitore, estraiDatiPDF, confermaInboxDoc, assegnaDocUniversale, generaTrackingCliente, generaXmlSDI, nextNumFattura,
+    generaPreventivoPDF, generaPDFMisure, creaFattura, generaFatturaPDF, inviaWhatsApp, inviaEmail, creaOrdineFornitore, creaOrdiniSplitFornitori, ricalcolaOrdine, updateOrdine, calcolaScadenzaPagamento, generaOrdinePDF, generaConfermaFirmataPDF, inviaOrdineFornitore, creaMontaggio, getWeekDays, generaPreventivoCondivisibile, uploadConfermaFornitore, estraiDatiPDF, confermaInboxDoc, assegnaDocUniversale, generaTrackingCliente, generaXmlSDI, nextNumFattura,
  ORDINE_STATI, activePlan, trialDaysLeft, drag,
     clientiSearch, setClientiSearch, clientiFilter, setClientiFilter,
     selectedCliente, setSelectedCliente,

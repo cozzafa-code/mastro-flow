@@ -239,7 +239,7 @@ export default function CMDetailPanel() {
     // Navigation
     setSelectedVano, setVanoStep,
     // Business logic
-    generaPreventivoPDF, creaFattura, creaOrdineFornitore,
+    generaPreventivoPDF, creaFattura, creaOrdineFornitore, creaOrdiniSplitFornitori,
     generaPreventivoCondivisibile,
     apriInboxDocumento,
     aziendaInfo,
@@ -5733,17 +5733,28 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                 <textarea value={noteOrdine} onChange={e => setNoteOrdine(e.target.value)} placeholder="Consegna urgente, RAL, riferimento..." rows={2} style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.bg, color: T.text, fontSize: 11, resize: "none" as any, boxSizing: "border-box" as any, fontFamily: "inherit" }} />
                               </div>
                               {/* Bottoni */}
-                              <div style={{ display: "flex", gap: 8 }}>
-                                <button onClick={() => setShowOrdinePreview(false)} style={{ flex: 1, padding: 13, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                              <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
+                                <button onClick={async () => {
+                                  const ordini = await creaOrdiniSplitFornitori?.(c, noteOrdine || "");
+                                  setNoteOrdine("");
+                                  setSelectedCM((prev: any) => ({ ...prev }));
+                                  setShowOrdinePreview(false);
+                                  const n = ordini?.length || 0;
+                                  setCcDone(n > 1 ? `✓ ${n} ordini creati (uno per fornitore)` : "✓ Ordine creato!");
+                                  setTimeout(() => setCcDone(null), 4000);
+                                }} style={{ width: "100%", padding: 13, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                                  <I d={ICO.package} /> CREA ORDINI (split per fornitore)
+                                </button>
                                 <button onClick={() => {
                                   creaOrdineFornitore(c, c.sistema?.split(" ")[0] || "", noteOrdine || ""); setNoteOrdine("");
                                   setSelectedCM((prev: any) => ({ ...prev }));
                                   setShowOrdinePreview(false);
-                                  setCcDone("✓ Ordine creato!");
+                                  setCcDone("✓ Ordine unico creato!");
                                   setTimeout(() => setCcDone(null), 3000);
-                                }} style={{ flex: 2, padding: 13, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                                  <I d={ICO.package} /> CONFERMA E CREA ORDINE
+                                }} style={{ width: "100%", padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                                  Crea ordine unico (vecchia modalità)
                                 </button>
+                                <button onClick={() => setShowOrdinePreview(false)} style={{ width: "100%", padding: 10, borderRadius: 10, border: `1px solid ${T.bdr}`, background: "transparent", color: T.sub, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                               </div>
                             </div>
                           </div>
