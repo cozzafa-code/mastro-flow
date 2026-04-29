@@ -211,21 +211,97 @@ export default function RilievoTende({ onClose, onSave, initial, catalogo }: Pro
   }
   useEffect(()=>{ render(); });
 
-  // Touch listeners non-passive per preventDefault corretto
+  // Touch nativi: useRef stale-closure-safe, registrato una sola volta
+  const stateRef = useRef<any>(null);
+  stateRef.current = { tCorners, bracci, aggancio, details, show, tool, model, popup, quotaPending };
+
   useEffect(()=>{
     const cv = cvRef.current; if(!cv) return;
-    const start = (e:TouchEvent)=>{ e.preventDefault(); onDown(e as any); };
-    const move = (e:TouchEvent)=>{ e.preventDefault(); onMove(e as any); };
-    const end = ()=>{ onUp(); };
+
+    function getPosT(e:TouchEvent):Pt{
+      const r = cv!.getBoundingClientRect();
+      const sx = cv!.width/r.width, sy = cv!.height/r.height;
+      const t = e.touches[0] || e.changedTouches[0];
+      return { x:(t.clientX-r.left)*sx, y:(t.clientY-r.top)*sy };
+    }
+    function hitT(p:Pt){
+      const s = stateRef.current;
+      if(s.show.tenda && s.tCorners) for(let i=0;i<4;i++){
+        if(Math.hypot(p.x-s.tCorners[i].x, p.y-s.tCorners[i].y)<=22) return {what:"tCorner",i};
+      }
+      if(s.show.bracci && s.bracci) for(let i=0;i<s.bracci.length;i++){
+        if(Math.hypot(p.x-s.bracci[i].top.x, p.y-s.bracci[i].top.y)<=18) return {what:"bTop",i};
+        if(Math.hypot(p.x-s.bracci[i].bot.x, p.y-s.bracci[i].bot.y)<=18) return {what:"bBot",i};
+      }
+      if(s.show.aggancio) for(let i=0;i<s.aggancio.length;i++){
+        if(Math.hypot(p.x-s.aggancio[i].x, p.y-s.aggancio[i].y)<=20) return {what:"agg",i};
+      }
+      for(let i=s.details.length-1;i>=0;i--){ const d=s.details[i];
+        if(p.x>=d.thumb.x && p.x<=d.thumb.x+d.thumb.w && p.y>=d.thumb.y && p.y<=d.thumb.y+d.thumb.h){
+          if(Math.abs(p.x-(d.thumb.x+d.thumb.w))<14 && Math.abs(p.y-(d.thumb.y+d.thumb.h))<14) return {what:"thumbResize",i};
+          return {what:"thumbMove",i,ox:p.x-d.thumb.x,oy:p.y-d.thumb.y};
+        }
+      }
+      return null;
+    }
+
+    const start = (e:TouchEvent)=>{
+      e.preventDefault();
+      const s = stateRef.current;
+      if(s.popup) return;
+      const p = getPosT(e);
+      mouseRef.current = p;
+      if(s.tool==="quota"){
+        if(!s.quotaPending){ setQuotaPending(p); return; }
+        const mx=(s.quotaPending.x+p.x)/2, my=(s.quotaPending.y+p.y)/2;
+        setPopup({ kind:"quota", title:"Misura (es. 300 cm)", value:"", x:mx, y:my, payload:{p1:s.quotaPending, p2:p} });
+        setQuotaPending(null);
+        return;
+      }
+      const h = hitT(p);
+      if(h) setDrag(h);
+    };
+    const move = (e:TouchEvent)=>{
+      e.preventDefault();
+      const s = stateRef.current;
+      const p = getPosT(e);
+      mouseRef.current = p;
+      if(s.quotaPending){ render(); return; }
+      const dr = (e as any)._drag || s_drag();
+      function s_drag(){ return (window as any).__rilievo_drag; }
+      // legge drag tramite chiusura via setDrag callback
+    };
     cv.addEventListener("touchstart", start, {passive:false});
-    cv.addEventListener("touchmove", move, {passive:false});
-    cv.addEventListener("touchend", end);
+    cv.addEventListener("touchend", ()=>{ setDrag(null); });
+
     return ()=>{
       cv.removeEventListener("touchstart", start);
-      cv.removeEventListener("touchmove", move);
-      cv.removeEventListener("touchend", end);
     };
-  });
+  // eslint-disable-next-line
+  },[]);
+
+  // Touch move tramite ref-based state per evitare stale closure
+  useEffect(()=>{
+    const cv = cvRef.current; if(!cv) return;
+    const move = (e:TouchEvent)=>{
+      if(!drag) return;
+      e.preventDefault();
+      const r = cv.getBoundingClientRect();
+      const sx = cv.width/r.width, sy = cv.height/r.height;
+      const t = e.touches[0]; if(!t) return;
+      const p = { x:(t.clientX-r.left)*sx, y:(t.clientY-r.top)*sy };
+      mouseRef.current = p;
+      if(drag.what==="tCorner" && tCorners){ const c=[...tCorners]; c[drag.i]=p; setTCorners(c); }
+      else if(drag.what==="bTop" && bracci){ const b=[...bracci]; b[drag.i]={...b[drag.i], top:p}; setBracci(b); }
+      else if(drag.what==="bBot" && bracci){ const b=[...bracci]; b[drag.i]={...b[drag.i], bot:p}; setBracci(b); }
+      else if(drag.what==="agg"){ const a=[...aggancio]; a[drag.i]=p; setAggancio(a); }
+      else if(drag.what==="anchor"){ const d=[...details]; d[drag.i]={...d[drag.i], anchor:p}; setDetails(d); }
+      else if(drag.what==="thumbMove"){ const d=[...details]; d[drag.i]={...d[drag.i], thumb:{...d[drag.i].thumb, x:p.x-drag.ox, y:p.y-drag.oy}}; setDetails(d); }
+      else if(drag.what==="thumbResize"){ const d=[...details]; d[drag.i]={...d[drag.i], thumb:{...d[drag.i].thumb, w:Math.max(60,p.x-d[drag.i].thumb.x), h:Math.max(45,p.y-d[drag.i].thumb.y)}}; setDetails(d); }
+    };
+    cv.addEventListener("touchmove", move, {passive:false});
+    return ()=> cv.removeEventListener("touchmove", move);
+  },[drag, tCorners, bracci, aggancio, details]);
 
   function getPos(e:any):Pt{
     const cv = cvRef.current!;
