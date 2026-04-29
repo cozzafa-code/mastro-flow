@@ -39,6 +39,7 @@ import { usePreventivoNotifier } from "../lib/preventivo-notifier";
 import PreventivoRispostaToast from "./PreventivoRispostaToast";
 import { MastroUpdateBanner } from "./MastroUpdateBanner";
 import SettingsPanel from "./SettingsPanel";
+import SettingsMobile from "./SettingsMobile";
 import PreventivoModal from "./PreventivoModal";
 import RilieviListPanel from "./RilieviListPanel";
 import VanoDetailPanel from "./VanoDetailPanel";
@@ -2678,7 +2679,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const renderContabilita = () => <ContabilitaPanel />;
 
 
-  const renderSettings = () => <SettingsPanel />;
+  const renderSettings = () => (winW < 768 ? <SettingsMobile /> : <SettingsPanel />);
 
 // =======================================================
 // MASTRO ERP v2 - PARTE 5/5
