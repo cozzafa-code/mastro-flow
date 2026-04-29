@@ -73,7 +73,7 @@ export default function SettingsProfiliMobile({ onBack }: { onBack: () => void }
   const aggiungi = async () => {
     try {
       const { supabase: sb } = await import('@/lib/supabase')
-      const azienda_id = ctx?.aziendaInfo?.id || ctx?.user?.azienda_id || null
+      const azienda_id = ctx?.aziendaIdReal || ctx?.aziendaInfo?.id || "demo"
       const nuovo = { nome: 'Nuovo profilo', materiale: 'PVC', tipo: 'telaio', attivo: true, azienda_id }
       const { data, error } = await sb.from('profili_catalogo').insert([nuovo]).select().single()
       if (error) { alert('Errore: ' + error.message); return }
@@ -157,8 +157,8 @@ function HeaderProfili({ onBack, totale }: { onBack: () => void; totale: number 
           background: 'rgba(255,255,255,0.18)', border: 'none',
           width: 36, height: 36, borderRadius: 10,
           color: '#FFF', fontSize: 18, fontWeight: 700, cursor: 'pointer',
-        }}>‹</button>
-        <div style={{ fontSize: 12, opacity: 0.85 }}>Impostazioni › Catalogo</div>
+        }}>â€¹</button>
+        <div style={{ fontSize: 12, opacity: 0.85 }}>Impostazioni â€º Catalogo</div>
       </div>
       <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', WebkitFontSmoothing: 'antialiased' }}>Profili</div>
       <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>{totale} {totale === 1 ? 'profilo' : 'profili'} in catalogo</div>
@@ -197,12 +197,12 @@ function RigaProfilo({ p, onClick }: { p: Profilo; onClick: () => void }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nome}</div>
         <div style={{ fontSize: 11, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {p.codice ? `${p.codice} · ` : ''}{p.tipo || 'Senza tipo'}
-          {p.profondita_mm ? ` · ${p.profondita_mm}mm` : ''}
+          {p.codice ? `${p.codice} Â· ` : ''}{p.tipo || 'Senza tipo'}
+          {p.profondita_mm ? ` Â· ${p.profondita_mm}mm` : ''}
         </div>
       </div>
       {haFile && <span style={{ background: T.blueSoft, color: T.numBlue, fontSize: 9, fontWeight: 700, padding: '3px 6px', borderRadius: 5 }}>FILE</span>}
-      <div style={{ color: T.acc, fontSize: 18, fontWeight: 700 }}>›</div>
+      <div style={{ color: T.acc, fontSize: 18, fontWeight: 700 }}>â€º</div>
     </button>
   )
 }
@@ -234,8 +234,8 @@ function DettaglioProfilo({ profilo, onBack, onSave, onDelete }: {
             background: 'rgba(255,255,255,0.18)', border: 'none',
             width: 36, height: 36, borderRadius: 10,
             color: '#FFF', fontSize: 18, fontWeight: 700, cursor: 'pointer',
-          }}>‹</button>
-          <div style={{ fontSize: 12, opacity: 0.85 }}>Profili › Dettaglio</div>
+          }}>â€¹</button>
+          <div style={{ fontSize: 12, opacity: 0.85 }}>Profili â€º Dettaglio</div>
         </div>
         <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{p.nome || 'Senza nome'}</div>
       </div>
@@ -337,11 +337,11 @@ function FileBox({ label, url, accept, onChange }: {
         background: ha ? T.numTeal : T.bdr, color: '#FFF',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 14, fontWeight: 700,
-      }}>{ha ? '✓' : '+'}</div>
+      }}>{ha ? 'âœ“' : '+'}</div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 0.4 }}>{label}</div>
         <div style={{ fontSize: 12, color: ha ? T.numTeal : T.muted, fontWeight: 500 }}>
-          {ha ? 'Caricato · tap per cambiare' : 'Tocca per caricare'}
+          {ha ? 'Caricato Â· tap per cambiare' : 'Tocca per caricare'}
         </div>
       </div>
       <input type="file" accept={accept} onChange={onChange} style={{ display: 'none' }} />
