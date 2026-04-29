@@ -9,6 +9,7 @@ import { useMastro } from './MastroContext'
 import { T } from './home-mobile/HomeUI'
 import SettingsProfiliMobile from './settings-mobile/SettingsProfiliMobile'
 import SettingsVetriMobile from './settings-mobile/SettingsVetriMobile'
+import SettingsAccessoriMobile from './settings-mobile/SettingsAccessoriMobile'
 
 type Sezione = null | 'profili' | 'vetri' | 'accessori' | 'nodi' | 'sistemi' | 'importa'
 
@@ -23,7 +24,7 @@ export default function SettingsMobile() {
 
   if (sezione === 'profili') return <SettingsProfiliMobile onBack={torna} />
   if (sezione === 'vetri') return <SettingsVetriMobile onBack={torna} />
-  if (sezione === 'accessori') return <Placeholder titolo="ACCESSORI" onBack={torna} />
+  if (sezione === 'accessori') return <SettingsAccessoriMobile onBack={torna} />
   if (sezione === 'nodi') return <Placeholder titolo="NODI TECNICI" onBack={torna} />
   if (sezione === 'sistemi') return <Placeholder titolo="SISTEMI" onBack={torna} />
   if (sezione === 'importa') return <Placeholder titolo="IMPORTA EXCEL" onBack={torna} />

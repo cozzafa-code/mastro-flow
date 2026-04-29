@@ -10,7 +10,8 @@ const T = {
 
 type Pt = { x:number; y:number };
 type Braccio = { top:Pt; bot:Pt };
-type Detail = { dataUrl:string; img:HTMLImageElement|null; anchor:Pt; thumb:{x:number;y:number;w:number;h:number}; caption:string };
+type Detail = { url:string; path?:string; img:HTMLImageElement|null; anchor:Pt; thumb:{x:number;y:number;w:number;h:number}; caption:string };
+type DetailSaved = { url:string; path?:string; anchor:Pt; thumb:{x:number;y:number;w:number;h:number}; caption:string };
 type Quota = { p1:Pt; p2:Pt; label:string };
 type Categoria = "esterno"|"interno";
 type Tenda = {
@@ -23,7 +24,7 @@ type Tenda = {
   misure:{ L?:string; S?:string; A?:string; muro?:string; note?:string };
 };
 type CatalogoItem = { id:string; tipo:string; nome:string; categoria?:Categoria; fornitore?:string; png_url?:string; prezzo?:number };
-type Props = { onClose:()=>void; onSave?:(data:any)=>void; initial?:any; catalogo?:CatalogoItem[] };
+type Props = { onClose:()=>void; onSave?:(data:any)=>void; initial?:any; catalogo?:CatalogoItem[]; vanoId?:string };
 
 const MODELS_ESTERNO:Array<[string,string]> = [
   ["cassonetto","Cassonetto"],
@@ -75,11 +76,43 @@ function newTenda(model:string, categoria:Categoria, offset:number):Tenda{
   return { id: uid(), categoria: categoria, model: model, corners: c, bracci: defaultBracci(c), aggancio: defaultAggancio(c), misure:{} };
 }
 
+function getToken():string{
+  if(typeof window === "undefined") return "";
+  return localStorage.getItem("sb-access-token") || "";
+}
+
+async function uploadFotoApi(file:File, vanoId:string):Promise<{url:string;path:string}>{
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("vano_id", vanoId);
+  const res = await fetch("/api/rilievo-tende/foto", {
+    method: "POST",
+    headers: { Authorization: "Bearer "+getToken() },
+    body: fd
+  });
+  if(!res.ok){
+    const txt = await res.text();
+    throw new Error("Upload fallito: "+txt);
+  }
+  return res.json();
+}
+
+function loadImageFromUrl(url:string):Promise<HTMLImageElement>{
+  return new Promise(function(resolve, reject){
+    const im = new Image();
+    im.crossOrigin = "anonymous";
+    im.onload = function(){ resolve(im); };
+    im.onerror = function(e){ reject(e); };
+    im.src = url;
+  });
+}
+
 export default function RilievoTende(props: Props){
   const onClose = props.onClose;
   const onSave = props.onSave;
   const initial = props.initial;
   const catalogo = props.catalogo;
+  const vanoId = props.vanoId || (initial && initial.vano_id) || "";
 
   const cvRef = useRef<HTMLCanvasElement>(null);
   const W = 640;
@@ -87,8 +120,15 @@ export default function RilievoTende(props: Props){
 
   const initialTende = (initial && Array.isArray(initial.tende) && initial.tende.length>0) ? initial.tende : [];
   const initialQuote = (initial && Array.isArray(initial.quote)) ? initial.quote : [];
+  const initialDetailsSaved:DetailSaved[] = (initial && Array.isArray(initial.details)) ? initial.details : [];
 
   const [img, setImg] = useState<HTMLImageElement|null>(null);
+  const [imgUrl, setImgUrl] = useState<string>(initial && initial.imgUrl ? initial.imgUrl : "");
+  const [imgPath, setImgPath] = useState<string>(initial && initial.imgPath ? initial.imgPath : "");
+  const [uploadingMain, setUploadingMain] = useState<boolean>(false);
+  const [uploadingDetail, setUploadingDetail] = useState<boolean>(false);
+  const [errore, setErrore] = useState<string>("");
+
   const [tende, setTende] = useState<Tenda[]>(initialTende);
   const [activeIdx, setActiveIdx] = useState<number>(initialTende.length>0 ? 0 : -1);
   const [details, setDetails] = useState<Detail[]>([]);
@@ -114,8 +154,34 @@ export default function RilievoTende(props: Props){
 
   const fileMain = useRef<HTMLInputElement>(null);
   const fileDetail = useRef<HTMLInputElement>(null);
+  const initialLoadDone = useRef<boolean>(false);
 
   const active = activeIdx>=0 && activeIdx<tende.length ? tende[activeIdx] : null;
+
+  // Carica foto principale dall'URL salvato (al primo render)
+  useEffect(function(){
+    if(initialLoadDone.current) return;
+    initialLoadDone.current = true;
+    if(imgUrl){
+      loadImageFromUrl(imgUrl).then(function(im){
+        setImg(im);
+      }).catch(function(){
+        setErrore("Impossibile caricare la foto principale");
+      });
+    }
+    if(initialDetailsSaved.length>0){
+      Promise.all(initialDetailsSaved.map(function(d){
+        return loadImageFromUrl(d.url).then(function(im):Detail{
+          return { url:d.url, path:d.path, img:im, anchor:d.anchor, thumb:d.thumb, caption:d.caption };
+        }).catch(function():Detail{
+          return { url:d.url, path:d.path, img:null, anchor:d.anchor, thumb:d.thumb, caption:d.caption };
+        });
+      })).then(function(loaded){
+        setDetails(loaded);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function updateActive(patch: Partial<Tenda>){
     if(activeIdx<0) return;
@@ -575,7 +641,6 @@ export default function RilievoTende(props: Props){
     let lastTap = 0;
 
     const onStart = function(e:TouchEvent){
-      // 2 dita: pinch zoom
       if(e.touches.length>=2){
         e.preventDefault();
         const t1 = e.touches[0];
@@ -589,7 +654,6 @@ export default function RilievoTende(props: Props){
         setDrag(null);
         return;
       }
-      // Double-tap zoom
       const now = Date.now();
       if(now - lastTap < 300){
         e.preventDefault();
@@ -605,7 +669,6 @@ export default function RilievoTende(props: Props){
         return;
       }
       lastTap = now;
-      // Single touch: prima provo hit handle, poi pan se zoom>1, altrimenti niente
       const p = getPosT(e);
       const h = inlineHit(p);
       if(h){
@@ -613,13 +676,11 @@ export default function RilievoTende(props: Props){
         handleDown(p);
         return;
       }
-      // Nessun hit: se zoom>1 inizio pan, altrimenti delego al sistema (lasciamo eventuale tap normale)
       if(zoomRef.current.zoom > 1.01){
         e.preventDefault();
         const raw = rawPos(e.touches[0]);
         panDragRef.current = { startX: raw.x, startY: raw.y, startPan: Object.assign({}, zoomRef.current.pan) };
       } else {
-        // niente zoom: se in tool quota gestisci tap
         if(tool==="quota"){ e.preventDefault(); handleDown(p); }
       }
     };
@@ -723,21 +784,77 @@ export default function RilievoTende(props: Props){
     setActiveIdx(-1);
     setQuote([]);
     setDetails([]);
+    setImg(null);
+    setImgUrl("");
+    setImgPath("");
     setZoom(1);
     setPan({x:0,y:0});
     setConfermaReset(false);
   }
 
-  function loadFile(input:HTMLInputElement, cb:(im:HTMLImageElement, dataUrl:string)=>void){
-    if(!input.files || !input.files[0]) return;
-    const f = input.files[0];
+  function handleFotoMain(e:React.ChangeEvent<HTMLInputElement>){
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    setErrore("");
+    // Preview locale immediato
     const r = new FileReader();
     r.onload = function(ev){
       const im = new Image();
-      im.onload = function(){ cb(im, ev.target!.result as string); };
+      im.onload = function(){ setImg(im); };
       im.src = ev.target!.result as string;
     };
     r.readAsDataURL(f);
+    // Upload async
+    if(!vanoId){
+      setErrore("vano_id mancante: la foto non sara' salvata");
+      e.target.value = "";
+      return;
+    }
+    setUploadingMain(true);
+    uploadFotoApi(f, vanoId).then(function(res){
+      setImgUrl(res.url);
+      setImgPath(res.path);
+    }).catch(function(err){
+      setErrore("Upload foto fallito: "+(err.message||"errore"));
+    }).finally(function(){
+      setUploadingMain(false);
+    });
+    e.target.value = "";
+  }
+
+  function handleFotoDetail(e:React.ChangeEvent<HTMLInputElement>){
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    setErrore("");
+    if(!vanoId){
+      setErrore("vano_id mancante: il particolare non sara' salvato");
+      e.target.value = "";
+      return;
+    }
+    const r = new FileReader();
+    r.onload = function(ev){
+      const im = new Image();
+      im.onload = function(){
+        const idx = details.length;
+        setUploadingDetail(true);
+        uploadFotoApi(f, vanoId).then(function(res){
+          const draft:Detail = {
+            url: res.url, path: res.path, img: im,
+            anchor:{x:320,y:200},
+            thumb:{x:20+idx*30, y:20+idx*20, w:110, h:80},
+            caption:""
+          };
+          setPopup({ kind:"caption", title:"Etichetta del particolare", value:"Particolare "+(idx+1), x:320, y:200, payload:draft });
+        }).catch(function(err){
+          setErrore("Upload particolare fallito: "+(err.message||"errore"));
+        }).finally(function(){
+          setUploadingDetail(false);
+        });
+      };
+      im.src = ev.target!.result as string;
+    };
+    r.readAsDataURL(f);
+    e.target.value = "";
   }
 
   function commitPopup(){
@@ -754,11 +871,17 @@ export default function RilievoTende(props: Props){
   }
 
   function saveAndClose(){
+    if(uploadingMain || uploadingDetail){
+      setErrore("Caricamento foto in corso, attendi qualche secondo");
+      return;
+    }
     if(onSave) onSave({
+      imgUrl: imgUrl,
+      imgPath: imgPath,
       tende: tende,
       quote: quote,
-      details: details.map(function(d){
-        return { dataUrl:d.dataUrl, anchor:d.anchor, thumb:d.thumb, caption:d.caption };
+      details: details.map(function(d):DetailSaved{
+        return { url:d.url, path:d.path, anchor:d.anchor, thumb:d.thumb, caption:d.caption };
       })
     });
     onClose();
@@ -777,16 +900,20 @@ export default function RilievoTende(props: Props){
 
   const modelsCorrenti = categoriaTab==="esterno" ? MODELS_ESTERNO : MODELS_INTERNO;
   const catalogoCorrente = catalogo ? catalogo.filter(function(c){ return (c.categoria||"esterno")===categoriaTab; }) : [];
+  const uploading = uploadingMain || uploadingDetail;
 
   return (
     <div style={{position:"fixed", inset:0, background:"#fff", zIndex:9000, display:"flex", flexDirection:"column", paddingTop:"env(safe-area-inset-top)", paddingBottom:"env(safe-area-inset-bottom)", paddingLeft:"env(safe-area-inset-left)", paddingRight:"env(safe-area-inset-right)"}}>
       <div style={{padding:"10px 12px", borderBottom:"1px solid "+T.bdr, background:"#fff", display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
         <button onClick={onClose} style={{width:36, height:36, borderRadius:10, border:"none", background:"transparent", fontSize:20, cursor:"pointer"}}>{"\u2190"}</button>
         <div style={{flex:1, fontSize:15, fontWeight:700, color:T.acc}}>Rilievo Tendaggio</div>
-        {tende.length>0 && (
+        {(tende.length>0 || img || quote.length>0 || details.length>0) && (
           <button onClick={function(){ setConfermaReset(true); }} style={{padding:"7px 10px", borderRadius:8, border:"1px solid "+T.bdr, background:"#fff", color:T.sub, fontSize:11, cursor:"pointer"}}>Pulisci</button>
         )}
-        <button onClick={saveAndClose} style={{padding:"8px 14px", borderRadius:8, border:"none", background:T.acc, color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>Salva</button>
+        <button onClick={saveAndClose} disabled={uploading}
+          style={{padding:"8px 14px", borderRadius:8, border:"none", background: uploading?"#9CC2BC":T.acc, color:"#fff", fontSize:13, fontWeight:600, cursor: uploading?"wait":"pointer"}}>
+          {uploading?"Caricam...":"Salva"}
+        </button>
       </div>
 
       {tende.length>0 && (
@@ -812,19 +939,14 @@ export default function RilievoTende(props: Props){
       )}
 
       <div style={{padding:"8px 12px", display:"flex", gap:6, alignItems:"center", borderBottom:"1px solid "+T.bdr, background:"#fff", flexShrink:0, overflowX:"auto"}}>
-        <input ref={fileMain} type="file" accept="image/*" capture="environment" style={{display:"none"}}
-          onChange={function(e){ loadFile(e.target as HTMLInputElement, function(im){ setImg(im); }); }} />
-        <input ref={fileDetail} type="file" accept="image/*" capture="environment" style={{display:"none"}}
-          onChange={function(e){
-            loadFile(e.target as HTMLInputElement, function(im, url){
-              const idx = details.length;
-              const draft:Detail = { img:im, dataUrl:url, anchor:{x:320,y:200}, thumb:{x:20+idx*30, y:20+idx*20, w:110, h:80}, caption:"" };
-              setPopup({ kind:"caption", title:"Etichetta del particolare", value:"Particolare "+(idx+1), x:320, y:200, payload:draft });
-              (e.target as HTMLInputElement).value="";
-            });
-          }} />
-        <button onClick={function(){ fileMain.current && fileMain.current.click(); }} style={chip(false)}>Foto</button>
-        <button onClick={function(){ fileDetail.current && fileDetail.current.click(); }} style={chip(false)}>+ Particolare</button>
+        <input ref={fileMain} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={handleFotoMain} />
+        <input ref={fileDetail} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={handleFotoDetail} />
+        <button onClick={function(){ fileMain.current && fileMain.current.click(); }} style={chip(false)}>
+          {uploadingMain?"Caric...":"Foto"}
+        </button>
+        <button onClick={function(){ fileDetail.current && fileDetail.current.click(); }} style={chip(false)}>
+          {uploadingDetail?"Caric...":"+ Particolare"}
+        </button>
         <div style={{width:1, height:24, background:T.bdr, margin:"0 4px"}}/>
         <button onClick={function(){ setTool("select"); }} style={chip(tool==="select")}>Sposta</button>
         <button onClick={function(){ setTool("quota"); }} style={chip(tool==="quota")}>Quota</button>
@@ -832,6 +954,13 @@ export default function RilievoTende(props: Props){
         <button onClick={function(){ setZoom(1); setPan({x:0,y:0}); }} style={chip(false)}>1:1</button>
         <span style={{fontSize:11, color:T.sub, padding:"0 6px"}}>{Math.round(zoom*100)}%</span>
       </div>
+
+      {errore && (
+        <div style={{padding:"6px 12px", background:"#FEF2F2", color:T.warn, fontSize:11, borderBottom:"1px solid "+T.bdr, flexShrink:0}}>
+          {errore}
+          <button onClick={function(){ setErrore(""); }} style={{float:"right", background:"none", border:"none", color:T.warn, cursor:"pointer"}}>{"\u2715"}</button>
+        </div>
+      )}
 
       <div style={{flex:1, position:"relative", background:"#1a1a1a", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center"}}>
         <canvas ref={cvRef} width={W} height={H}
@@ -858,6 +987,12 @@ export default function RilievoTende(props: Props){
           </div>
         )}
 
+        {uploadingMain && (
+          <div style={{position:"absolute", top:10, left:10, padding:"6px 12px", borderRadius:8, background:"rgba(15,118,110,0.92)", color:"#fff", fontSize:12, fontWeight:600}}>
+            Caricamento foto principale...
+          </div>
+        )}
+
         {popup && (
           <div style={{position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)", zIndex:50, background:"#fff", border:"2px solid "+T.acc, borderRadius:12, padding:14, minWidth:260, boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
             <div style={{fontSize:13, color:T.acc, fontWeight:600, marginBottom:8}}>{popup.title}</div>
@@ -875,7 +1010,7 @@ export default function RilievoTende(props: Props){
           <div style={{position:"absolute", inset:0, background:"rgba(0,0,0,0.5)", zIndex:60, display:"flex", alignItems:"center", justifyContent:"center"}}>
             <div style={{background:"#fff", borderRadius:12, padding:20, maxWidth:300, boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
               <div style={{fontSize:15, fontWeight:700, color:T.warn, marginBottom:8}}>Pulire tutto?</div>
-              <div style={{fontSize:13, color:T.sub, marginBottom:14}}>Verranno rimosse tutte le tende, quote e particolari di questo rilievo.</div>
+              <div style={{fontSize:13, color:T.sub, marginBottom:14}}>Verranno rimossi foto, tende, quote e particolari di questo rilievo.</div>
               <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
                 <button onClick={function(){ setConfermaReset(false); }} style={{padding:"8px 14px", borderRadius:8, border:"1px solid "+T.bdr, background:"#fff", fontSize:13, cursor:"pointer"}}>Annulla</button>
                 <button onClick={resetTutto} style={{padding:"8px 14px", borderRadius:8, border:"none", background:T.warn, color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>Pulisci tutto</button>
@@ -975,7 +1110,7 @@ export default function RilievoTende(props: Props){
         <div onClick={function(e){ if((e.target as any).id==="lb") setLightbox(null); }} id="lb"
           style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:20}}>
           <div style={{position:"relative", maxWidth:"95vw", maxHeight:"95vh"}}>
-            <img src={lightbox.dataUrl} style={{maxWidth:"95vw", maxHeight:"85vh", display:"block", borderRadius:10}} />
+            <img src={lightbox.url} style={{maxWidth:"95vw", maxHeight:"85vh", display:"block", borderRadius:10}} />
             <div style={{color:"#fff", fontSize:14, textAlign:"center", marginTop:10}}>{lightbox.caption}</div>
             <button onClick={function(){ setLightbox(null); }} style={{position:"absolute", top:-12, right:-12, width:40, height:40, borderRadius:"50%", background:"#fff", border:"none", fontSize:20, cursor:"pointer"}}>X</button>
           </div>
