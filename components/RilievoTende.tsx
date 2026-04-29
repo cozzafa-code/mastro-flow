@@ -670,14 +670,21 @@ export default function RilievoTende(props: Props){
         ctx.textAlign="start";
         if(isActive){
           t.corners.forEach(function(p, i){
+            // Bordo bianco esterno (anello)
+            ctx.fillStyle="#fff";
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,20,0,Math.PI*2);
+            ctx.fill();
+            // Pallino interno teal
             ctx.fillStyle=T.acc;
             ctx.beginPath();
-            ctx.arc(p.x,p.y,12,0,Math.PI*2);
+            ctx.arc(p.x,p.y,17,0,Math.PI*2);
             ctx.fill();
+            // Etichetta T1/T2/T3/T4
             ctx.fillStyle="#fff";
-            ctx.font="bold 10px sans-serif";
+            ctx.font="bold 12px sans-serif";
             ctx.textAlign="center";
-            ctx.fillText("T"+(i+1), p.x, p.y+3);
+            ctx.fillText("T"+(i+1), p.x, p.y+4);
             ctx.textAlign="start";
           });
         }
@@ -694,15 +701,24 @@ export default function RilievoTende(props: Props){
         ctx.lineTo(b.bot.x,b.bot.y);
         ctx.stroke();
         if(isActive){
+          // Bordo bianco per stacco visivo
+          ctx.fillStyle="#fff";
+          ctx.beginPath();
+          ctx.arc(b.top.x,b.top.y,16,0,Math.PI*2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(b.bot.x,b.bot.y,16,0,Math.PI*2);
+          ctx.fill();
+          // Pallino interno arancione
           ctx.fillStyle=T.arrow;
           ctx.beginPath();
-          ctx.arc(b.top.x,b.top.y,10,0,Math.PI*2);
+          ctx.arc(b.top.x,b.top.y,13,0,Math.PI*2);
           ctx.fill();
           ctx.beginPath();
-          ctx.arc(b.bot.x,b.bot.y,10,0,Math.PI*2);
+          ctx.arc(b.bot.x,b.bot.y,13,0,Math.PI*2);
           ctx.fill();
           ctx.fillStyle="#fff";
-          ctx.font="bold 9px sans-serif";
+          ctx.font="bold 10px sans-serif";
           ctx.textAlign="center";
           ctx.fillText("B"+(i+1), b.top.x, b.top.y+3);
           ctx.fillText("B"+(i+1), b.bot.x, b.bot.y+3);
@@ -713,25 +729,33 @@ export default function RilievoTende(props: Props){
       if(show.aggancio) t.aggancio.forEach(function(a, i){
         ctx.save();
         ctx.globalAlpha = isActive ? 1 : 0.5;
+        // Bordo bianco di stacco
+        if(isActive){
+          ctx.fillStyle="#fff";
+          ctx.beginPath();
+          ctx.arc(a.x,a.y,18,0,Math.PI*2);
+          ctx.fill();
+        }
         ctx.strokeStyle=T.warn;
         ctx.lineWidth=2.5;
         ctx.beginPath();
-        ctx.arc(a.x,a.y,12,0,Math.PI*2);
+        ctx.arc(a.x,a.y,15,0,Math.PI*2);
         ctx.stroke();
         ctx.beginPath();
-        ctx.moveTo(a.x-9,a.y);
-        ctx.lineTo(a.x+9,a.y);
-        ctx.moveTo(a.x,a.y-9);
-        ctx.lineTo(a.x,a.y+9);
+        ctx.moveTo(a.x-11,a.y);
+        ctx.lineTo(a.x+11,a.y);
+        ctx.moveTo(a.x,a.y-11);
+        ctx.lineTo(a.x,a.y+11);
         ctx.stroke();
         ctx.fillStyle=T.warn;
         ctx.beginPath();
-        ctx.arc(a.x,a.y,3,0,Math.PI*2);
+        ctx.arc(a.x,a.y,4,0,Math.PI*2);
         ctx.fill();
         if(isActive){
           ctx.font="bold 11px sans-serif";
           ctx.textAlign="center";
-          ctx.fillText("A"+(i+1), a.x+22, a.y-10);
+          ctx.fillStyle=T.warn;
+          ctx.fillText("A"+(i+1), a.x+24, a.y-12);
           ctx.textAlign="start";
         }
         ctx.restore();
@@ -831,14 +855,14 @@ export default function RilievoTende(props: Props){
     const a = activeIdx>=0 ? tende[activeIdx] : null;
     if(a){
       if(show.tenda) for(let i=0;i<4;i++){
-        if(Math.hypot(p.x-a.corners[i].x, p.y-a.corners[i].y)<=30) return {what:"tCorner", i:i};
+        if(Math.hypot(p.x-a.corners[i].x, p.y-a.corners[i].y)<=40) return {what:"tCorner", i:i};
       }
       if(show.bracci) for(let i=0;i<a.bracci.length;i++){
-        if(Math.hypot(p.x-a.bracci[i].top.x, p.y-a.bracci[i].top.y)<=24) return {what:"bTop", i:i};
-        if(Math.hypot(p.x-a.bracci[i].bot.x, p.y-a.bracci[i].bot.y)<=24) return {what:"bBot", i:i};
+        if(Math.hypot(p.x-a.bracci[i].top.x, p.y-a.bracci[i].top.y)<=32) return {what:"bTop", i:i};
+        if(Math.hypot(p.x-a.bracci[i].bot.x, p.y-a.bracci[i].bot.y)<=32) return {what:"bBot", i:i};
       }
       if(show.aggancio) for(let i=0;i<a.aggancio.length;i++){
-        if(Math.hypot(p.x-a.aggancio[i].x, p.y-a.aggancio[i].y)<=26) return {what:"agg", i:i};
+        if(Math.hypot(p.x-a.aggancio[i].x, p.y-a.aggancio[i].y)<=32) return {what:"agg", i:i};
       }
     }
     for(let ti=0; ti<tende.length; ti++){
