@@ -1,0 +1,146 @@
+{
+  "_meta": {
+    "version": 1,
+    "data_creazione": "2026-04-29",
+    "note": "Catalogo demo per MASTRO Suite - Modulo Tendaggi. Fornitori, modelli e prezzi medi mercato italiano 2026 al netto IVA. Pronto per import in Settings → Catalogo Tendaggi (Step C).",
+    "schema_atteso_db": "tabella catalogo_tendaggi: id (uuid), azienda_id (uuid), fornitore (text), modello (text), categoria (text), tipo_modello (text → match con id MODELS_ESTERNO/INTERNO), colore_default (text), prezzo_base_eur (numeric), unita_prezzo (text: 'mq' o 'pz'), note (text), png_url (text nullable)"
+  },
+  "fornitori": [
+    {
+      "fornitore": "Pratic",
+      "url": "https://www.pratic.it",
+      "descrizione": "Pratic F.lli Orioli - Sistemi di copertura outdoor di alta gamma. Made in Italy, specialista pergole bioclimatiche e tende su misura.",
+      "modelli": [
+        {
+          "modello": "Med Twist",
+          "categoria": "esterno",
+          "tipo_modello": "pergola",
+          "colore_default": "RAL 7016 Antracite",
+          "prezzo_base_eur": 480,
+          "unita_prezzo": "mq",
+          "note": "Pergola bioclimatica con lame orientabili 0-135°, motorizzata. Top di gamma."
+        },
+        {
+          "modello": "Vela Plus",
+          "categoria": "esterno",
+          "tipo_modello": "pergolatelo",
+          "colore_default": "RAL 9016 Bianco traffico",
+          "prezzo_base_eur": 380,
+          "unita_prezzo": "mq",
+          "note": "Pergola con telo in PVC tensionato impermeabile, scorrevole."
+        },
+        {
+          "modello": "Tecnic Drop",
+          "categoria": "esterno",
+          "tipo_modello": "caduta",
+          "colore_default": "RAL 9016 Bianco traffico",
+          "prezzo_base_eur": 195,
+          "unita_prezzo": "mq",
+          "note": "Tenda a caduta verticale con guide laterali. Ideale per logge."
+        },
+        {
+          "modello": "Slim Star",
+          "categoria": "esterno",
+          "tipo_modello": "semicassonetto",
+          "colore_default": "RAL 7016 Antracite",
+          "prezzo_base_eur": 240,
+          "unita_prezzo": "mq",
+          "note": "Tenda a bracci con semi-cassonetto compatto. Profondità ridotta 18 cm."
+        }
+      ]
+    },
+    {
+      "fornitore": "Gibus",
+      "url": "https://www.gibus.com",
+      "descrizione": "Gibus - Pergole bioclimatiche, tende e vele tecniche premium. Atelier dei colori personalizzati.",
+      "modelli": [
+        {
+          "modello": "Med Varia",
+          "categoria": "esterno",
+          "tipo_modello": "pergola",
+          "colore_default": "Bronzo metallizzato",
+          "prezzo_base_eur": 520,
+          "unita_prezzo": "mq",
+          "note": "Pergola bioclimatica con lame Twin (rotazione+traslazione). Brevettata."
+        },
+        {
+          "modello": "Twin Sail",
+          "categoria": "esterno",
+          "tipo_modello": "tettopiramide",
+          "colore_default": "Bianco perla",
+          "prezzo_base_eur": 420,
+          "unita_prezzo": "mq",
+          "note": "Vela tensionata a 4 punti. Versione fissa o richiudibile."
+        },
+        {
+          "modello": "Ametista",
+          "categoria": "esterno",
+          "tipo_modello": "cassonetto",
+          "colore_default": "RAL 7016 Antracite",
+          "prezzo_base_eur": 285,
+          "unita_prezzo": "mq",
+          "note": "Cassonetto totalmente chiuso, design lineare. Comando motorizzato."
+        }
+      ]
+    },
+    {
+      "fornitore": "KE Outdoor Design",
+      "url": "https://www.keoutdoor.com",
+      "descrizione": "KE - Specialista tende da sole tecniche e pergole, distribuzione capillare in Italia.",
+      "modelli": [
+        {
+          "modello": "Kaptura R",
+          "categoria": "esterno",
+          "tipo_modello": "cassonetto",
+          "colore_default": "RAL 9010 Bianco",
+          "prezzo_base_eur": 220,
+          "unita_prezzo": "mq",
+          "note": "Cassonetto pieno con bracci a snodo invisibili. Modello entry-level."
+        },
+        {
+          "modello": "Tendabox",
+          "categoria": "esterno",
+          "tipo_modello": "doppiolivello",
+          "colore_default": "RAL 7016 Antracite",
+          "prezzo_base_eur": 310,
+          "unita_prezzo": "mq",
+          "note": "Cassonetto con mantovana frontale motorizzata + telo a caduta."
+        }
+      ]
+    },
+    {
+      "fornitore": "Mottura",
+      "url": "https://www.mottura.com",
+      "descrizione": "Mottura - Sistemi tende da interno tecniche, leader italiano oscuranti motorizzati.",
+      "modelli": [
+        {
+          "modello": "Free Roll Up 64",
+          "categoria": "interno",
+          "tipo_modello": "rullo",
+          "colore_default": "Tessuto Sunworker SilverScreen 8783",
+          "prezzo_base_eur": 145,
+          "unita_prezzo": "mq",
+          "note": "Tenda a rullo motorizzata con tubo Ø 64 mm. Tessuti tecnici filtranti/oscuranti."
+        },
+        {
+          "modello": "Veneziana 25",
+          "categoria": "interno",
+          "tipo_modello": "veneziana",
+          "colore_default": "Alluminio bianco satinato",
+          "prezzo_base_eur": 95,
+          "unita_prezzo": "mq",
+          "note": "Veneziana lame in alluminio 25 mm, comando a cordone."
+        },
+        {
+          "modello": "Plissé Day&Night",
+          "categoria": "interno",
+          "tipo_modello": "doppiostrato",
+          "colore_default": "Tessuto duo beige/bianco",
+          "prezzo_base_eur": 165,
+          "unita_prezzo": "mq",
+          "note": "Plissé giorno/notte con doppio tessuto. Per finestre con scuretti interni."
+        }
+      ]
+    }
+  ]
+}
