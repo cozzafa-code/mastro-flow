@@ -20,12 +20,14 @@ type Vano = {
 type Props = {
   vano: Vano
   onUpdate: (patch: Partial<Vano>) => void
+  onApriRilievo?: () => void
+  hasRilievo?: boolean
   T: any
   ICO: any
   I: any
 }
 
-export default function SezioneModelloTenda({ vano, onUpdate, T, ICO, I }: Props) {
+export default function SezioneModelloTenda({ vano, onUpdate, onApriRilievo, hasRilievo, T, ICO, I }: Props) {
   const { catalogo, accessori, loading } = useCatalogoTendaggi()
   const m = vano.misure || {}
   const lMm = m.lCentro || 0
@@ -78,6 +80,28 @@ export default function SezioneModelloTenda({ vano, onUpdate, T, ICO, I }: Props
         <div style={{ fontSize: 11, fontWeight: 700, color: "#28A0A0" }}>MODELLO E PREZZO</div>
         <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>Scegli dal tuo catalogo aziendale, poi accessori. Prezzo automatico.</div>
       </div>
+
+      {/* Bottone rilievo grafico (foto + disegno tenda + particolari) */}
+      {onApriRilievo && (
+        <button onClick={onApriRilievo} style={{
+          width: "100%",
+          padding: "12px 14px",
+          borderRadius: 10,
+          border: hasRilievo ? "1.5px solid #28A0A0" : `1.5px dashed ${T.bdr}`,
+          background: hasRilievo ? "#28A0A012" : T.card,
+          color: hasRilievo ? "#28A0A0" : T.text,
+          fontSize: 13, fontWeight: 700, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+          marginBottom: 14,
+        }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {hasRilievo ? "✓" : "📐"} Rilievo grafico (foto + disegno)
+          </span>
+          <span style={{ fontSize: 11, color: T.sub, fontWeight: 500 }}>
+            {hasRilievo ? "Modifica" : "Apri"} →
+          </span>
+        </button>
+      )}
 
       {loading && <div style={{ padding: 12, fontSize: 12, color: T.sub }}>Caricamento catalogo…</div>}
 
