@@ -2992,6 +2992,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       } else {
                                         onUpdate({ ...dw, _penActive: false, _penPath: null });
                                       }
+                                      return;
+                                    }
+                                    var _dwNow = dwRef.current;
+                                    var _dm = _dwNow.drawMode || null;
+                                    var _isPlace = _dm && (_dm === "place-mont" || _dm === "place-trav" || _dm === "place-mont-free" || _dm === "place-trav-free" || _dm === "place-anta" || _dm === "place-porta" || _dm === "place-vetro" || _dm === "place-persiana" || _dm === "place-ap" || _dm === "place-profile-free" || _dm === "line" || _dm === "apertura" || _dm === "righello" || _dm === "junction");
+                                    if (_isPlace && e2.changedTouches && e2.changedTouches.length === 1 && e2.touches.length === 0) {
+                                      var _t = e2.changedTouches[0];
+                                      var _svg = e2.currentTarget;
+                                      var _synth = { currentTarget: _svg, clientX: _t.clientX, clientY: _t.clientY, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, preventDefault: function(){}, stopPropagation: function(){} };
+                                      try { e2.preventDefault(); onSvgClick(_synth); } catch (_err) {}
                                     }
                                   }}
                                   onTouchStart={(e2) => {
@@ -3120,6 +3130,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       } else {
                                         onUpdate({ ...dw, _penActive: false, _penPath: null });
                                       }
+                                      return;
+                                    }
+                                    var _dwNow = dwRef.current;
+                                    var _dm = _dwNow.drawMode || null;
+                                    var _isPlace = _dm && (_dm === "place-mont" || _dm === "place-trav" || _dm === "place-mont-free" || _dm === "place-trav-free" || _dm === "place-anta" || _dm === "place-porta" || _dm === "place-vetro" || _dm === "place-persiana" || _dm === "place-ap" || _dm === "place-profile-free" || _dm === "line" || _dm === "apertura" || _dm === "righello" || _dm === "junction");
+                                    if (_isPlace && e2.changedTouches && e2.changedTouches.length === 1 && e2.touches.length === 0) {
+                                      var _t = e2.changedTouches[0];
+                                      var _svg = e2.currentTarget;
+                                      var _synth = { currentTarget: _svg, clientX: _t.clientX, clientY: _t.clientY, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, preventDefault: function(){}, stopPropagation: function(){} };
+                                      try { e2.preventDefault(); onSvgClick(_synth); } catch (_err) {}
                                     }
                                   }}
                                   onMouseLeave={() => { if (dw._guideX != null) onUpdate({ ...dw, _guideX: null, _guideY: null }); }}>
