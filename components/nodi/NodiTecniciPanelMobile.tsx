@@ -376,26 +376,60 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     if (tool === 'quota' && svgRef.current) {
       const rect = svgRef.current.getBoundingClientRect()
       const raw = screenToCanvas(t.x, t.y, rect, panX, panY, zoom)
-      const snapped = findNearestSnap(raw.x, raw.y, editingNodo, zoom)
-      const pt = snapped || { x: raw.x, y: raw.y, layerId: '__canvas__' }
-      let bestLayerId = pt.layerId
-      if (!snapped && editingNodo) {
-        let bestD = Infinity
-        editingNodo.layers.filter(l => l.visible).forEach(l => {
-          const d = Math.sqrt((raw.x - l.x) ** 2 + (raw.y - l.y) ** 2)
-          if (d < bestD) { bestD = d; bestLayerId = l.id }
-        })
+
+      // PRIORITÀ 1: RefPoint vicino (entro 12mm) - snap ai punti che HAI MESSO TU
+      let pt: { x: number; y: number; layerId: string } | null = null
+      let snapType: 'point' | 'vertex' | 'free' = 'free'
+      let snapBadgeText = ''
+      const POINT_THRESHOLD = 12
+
+      for (const rp of refPoints) {
+        const ancorLayer = editingNodo?.layers.find(l => l.id === rp.layerId)
+        if (!ancorLayer) continue
+        const px = ancorLayer.x + rp.offX
+        const py = ancorLayer.y + rp.offY
+        const d = Math.sqrt((raw.x - px) ** 2 + (raw.y - py) ** 2)
+        if (d < POINT_THRESHOLD) {
+          pt = { x: px, y: py, layerId: rp.layerId }
+          snapType = 'point'
+          snapBadgeText = '📍 ' + rp.label
+          break
+        }
       }
-      const layer = editingNodo?.layers.find(l => l.id === bestLayerId)
+
+      // PRIORITÀ 2: vertice profilo (entro 8mm - SOGLIA STRETTA)
+      if (!pt) {
+        const snapped = findNearestSnap(raw.x, raw.y, editingNodo, zoom, 8)
+        if (snapped) {
+          pt = snapped
+          snapType = 'vertex'
+        }
+      }
+
+      // PRIORITÀ 3: dove tappi esattamente (LIBERO)
+      if (!pt) {
+        let bestLayerId = '__canvas__'
+        if (editingNodo) {
+          let bestD = Infinity
+          editingNodo.layers.filter(l => l.visible).forEach(l => {
+            const d = Math.sqrt((raw.x - l.x) ** 2 + (raw.y - l.y) ** 2)
+            if (d < bestD) { bestD = d; bestLayerId = l.id }
+          })
+        }
+        pt = { x: raw.x, y: raw.y, layerId: bestLayerId }
+        snapType = 'free'
+      }
+
+      const layer = editingNodo?.layers.find(l => l.id === pt!.layerId)
       const offX = pt.x - (layer?.x || 0)
       const offY = pt.y - (layer?.y || 0)
 
       if (!quotePt1) {
-        setQuotePt1({ x: pt.x, y: pt.y, layerId: bestLayerId, offX, offY })
+        setQuotePt1({ x: pt.x, y: pt.y, layerId: pt.layerId, offX, offY })
       } else {
         setQuotes([...quotes, {
           layerId1: quotePt1.layerId, offX1: quotePt1.offX, offY1: quotePt1.offY,
-          layerId2: bestLayerId, offX2: offX, offY2: offY,
+          layerId2: pt.layerId, offX2: offX, offY2: offY,
         }])
         setQuotePt1(null)
       }
@@ -989,7 +1023,11 @@ function EditorView(p: any) {
             : tool === 'points'
             ? `🎯 Tappa sul canvas per piazzare punti (${refPoints.length} attivi) · I profili si aggancieranno entro 3mm`
             : tool === 'quota'
-            ? (quotePt1 ? '➡ Tappa il SECONDO punto' : '➡ Tappa il PRIMO punto da quotare')
+            ? (quotePt1
+                ? `➡ Tappa il SECONDO punto · Snap: 📍 punti P → vertici → libero`
+                : refPoints.length > 0
+                  ? `📏 Tappa PRIMO punto · 🎯 ${refPoints.length} punti P disponibili (priorità snap)`
+                  : `📏 Tappa PRIMO punto · ⚠️ Nessun punto P piazzato — aggiungi punti per misure precise`)
             : selectedLayer ? '➡ Tappa un altro profilo per legarlo' : '➡ Seleziona il primo profilo'}
           <button onClick={() => { setTool('select'); setAlignMode(null); }} style={{
             marginLeft: 12, padding: '2px 8px', borderRadius: 4, border: 'none',
