@@ -23,6 +23,17 @@ export interface QuoteRef {
   layerId2: string; offX2: number; offY2: number;
 }
 
+// Punto di riferimento ancorato a un layer (offset relativo)
+// Si muove con il layer al quale è ancorato.
+export interface RefPoint {
+  id: string;
+  layerId: string;     // a quale layer è ancorato
+  offX: number;        // offset world rispetto a layer.x
+  offY: number;        // offset world rispetto a layer.y
+  label: string;       // P1, P2, P3, oppure custom (es. "battuta_dx")
+  color?: string;      // colore del marker (default ambra)
+}
+
 export interface QuoteResolved {
   x1: number; y1: number;
   x2: number; y2: number;
@@ -45,7 +56,7 @@ export interface SnapPoint {
   layerId: string;
 }
 
-export type ToolMode = 'select' | 'quota' | 'link';
+export type ToolMode = 'select' | 'quota' | 'link' | 'points';
 
 export const NODO_TIPI = [
   'orizzontale_alto',
