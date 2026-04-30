@@ -642,6 +642,32 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
 
 // ============ EDITOR VIEW ============
 function EditorView(p: any) {
+  // Al mount: nasconde TUTTI gli elementi fixed in fondo che non siano nostri (navbar mastro)
+  React.useEffect(() => {
+    const styleId = 'nodi-mobile-hide-shell'
+    const existing = document.getElementById(styleId)
+    if (!existing) {
+      const style = document.createElement('style')
+      style.id = styleId
+      // Nasconde la bottom nav MASTRO durante editing nodi
+      style.textContent = `
+        body.nodi-editor-open > div:not(.nodi-editor-portal) [class*="bottom-nav" i],
+        body.nodi-editor-open > div:not(.nodi-editor-portal) [class*="BottomNav" i],
+        body.nodi-editor-open > div:not(.nodi-editor-portal) nav,
+        body.nodi-editor-open > div:not(.nodi-editor-portal) > div > div[style*="position: fixed"][style*="bottom"]:not([style*="top"]),
+        body.nodi-editor-open > div:not(.nodi-editor-portal) > div[style*="position: fixed"][style*="bottom"]:not([style*="top"]) {
+          display: none !important;
+        }
+        body.nodi-editor-open { overflow: hidden !important; }
+      `
+      document.head.appendChild(style)
+    }
+    document.body.classList.add('nodi-editor-open')
+    return () => {
+      document.body.classList.remove('nodi-editor-open')
+    }
+  }, [])
+
   const {
     editingNodo, setEditingNodo, zoom, setZoom, panX, setPanX, panY, setPanY,
     tool, setTool, selectedLayer, setSelectedLayer, svgRef,
@@ -659,7 +685,7 @@ function EditorView(p: any) {
                 : 'calc(100vh - 110px - 78vh)'
 
   return (
-    <div style={{
+    <div className="nodi-editor-portal" style={{
       position: 'fixed',
       inset: 0,
       background: DS.light,
