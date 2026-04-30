@@ -534,10 +534,21 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   const onLayerTouchStart = (e: React.TouchEvent, layer: NodoLayer) => {
     e.stopPropagation()
 
-    // Modalità ALIGN: tappi target → apri sheet allinea
-    if (alignMode && alignMode.sourceLayerId !== layer.id) {
-      setAlignSheet({ sourceId: alignMode.sourceLayerId, targetId: layer.id })
-      setAlignMode(null)
+    // Modalità ALIGN: 1° tap = source, 2° tap = target → apri sheet
+    if (alignMode) {
+      if (!alignMode.sourceLayerId) {
+        // Primo tap: memorizza source (telaio)
+        setAlignMode({ sourceLayerId: layer.id })
+        setSelectedLayer(layer.id)
+        return
+      }
+      if (alignMode.sourceLayerId !== layer.id) {
+        // Secondo tap: target (anta) - apri sheet
+        setAlignSheet({ sourceId: alignMode.sourceLayerId, targetId: layer.id })
+        setAlignMode(null)
+        return
+      }
+      // Stesso profilo: ignora
       return
     }
 
@@ -941,7 +952,9 @@ function EditorView(p: any) {
           flexShrink: 0,
         }}>
           {alignMode
-            ? '➡ Tappa il profilo target per allineare'
+            ? (alignMode.sourceLayerId
+                ? '➡ Tappa il SECONDO profilo (anta)'
+                : '➡ Tappa il PRIMO profilo (telaio)')
             : tool === 'points'
             ? `🎯 Tappa sul canvas per piazzare punti (${refPoints.length} attivi) · I profili si aggancieranno entro 3mm`
             : tool === 'quota'
@@ -1303,15 +1316,11 @@ function EditorView(p: any) {
           color={DS.amber}
           active={alignMode !== null}
           onClick={() => {
-            // Avvia modalità allinea: tappi target, poi source, si combaciano
             setSheetState('collapsed')
             setToolCategory(null)
-            // Se c'è già un layer selezionato lo uso come source
-            if (selectedLayer) {
-              setAlignMode({ sourceLayerId: selectedLayer })
-            } else {
-              alert('Tocca prima un profilo, poi premi Allinea')
-            }
+            setSelectedLayer(null)
+            // Modalità: aspetta primo tap su un profilo (sourceLayerId vuoto)
+            setAlignMode({ sourceLayerId: '' })
           }}
         />
         <CatBtn
