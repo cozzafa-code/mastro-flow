@@ -12,7 +12,7 @@ import { LAYER_COLORS } from '@/lib/nodi/nodi-types'
 import {
   transformPoint, getSnapPoints, findNearestSnap, projectOnSegment,
   resolveQuote, generateCombinedSVG, extractSVGContent, screenToCanvas,
-  calcAlignedPosition,
+  calcAlignedPosition, getLayerBBox,
 } from '@/lib/nodi/nodi-geometry'
 import NodiBottomSheet from './NodiBottomSheet'
 import NodiCatalogModal from './NodiCatalogModal'
@@ -78,6 +78,9 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   // Quando attivo, l'utente tappa un secondo profilo target → si apre AlignSheet
   const [alignMode, setAlignMode] = useState<{ sourceLayerId: string } | null>(null)
   const [alignSheet, setAlignSheet] = useState<{ sourceId: string; targetId: string } | null>(null)
+
+  // Magic snap durante drag: badge che mostra "↔ 4mm" quando 2 profili si agganciano
+  const [snapBadge, setSnapBadge] = useState<{ x: number; y: number; mm: number; dir: string } | null>(null)
 
   // Double tap detection
   const lastTapRef = useRef<{ time: number; layerId: string | null }>({ time: 0, layerId: null })
@@ -513,15 +516,102 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
 
     const dx = dx_screen / zoom
     const dy = dy_screen / zoom
-    const newX = (dragRef.current.origLayerX || 0) + dx
-    const newY = (dragRef.current.origLayerY || 0) + dy
+    let newX = (dragRef.current.origLayerX || 0) + dx
+    let newY = (dragRef.current.origLayerY || 0) + dy
+
+    // ────── MAGIC SNAP: aggancia ai preset 0/4/6/8/12mm dei profili vicini ──
+    const dragLayer = editingNodo.layers.find(l => l.id === dragRef.current.layerId)
+    if (!dragLayer) return
+
+    // Bbox del source con la nuova posizione (simulata)
+    const simSource: NodoLayer = { ...dragLayer, x: newX, y: newY }
+    const sBox = getLayerBBox(simSource)
+    if (sBox) {
+      const SNAP_THRESHOLD = 25 // mm: oltre questa distanza dal target il snap si disattiva
+      const PRESETS = [0, 4, 6, 8, 12]
+      let bestSnap: { dx: number; dy: number; mm: number; dir: string; badgeX: number; badgeY: number } | null = null
+      let bestDist = SNAP_THRESHOLD
+
+      editingNodo.layers.forEach(other => {
+        if (other.id === dragLayer.id || !other.visible) return
+        const tBox = getLayerBBox(other)
+        if (!tBox) return
+
+        // Verticalmente sovrapposti? (per snap orizzontale)
+        const yOverlap = !(sBox.y + sBox.h < tBox.y || sBox.y > tBox.y + tBox.h)
+        // Orizzontalmente sovrapposti? (per snap verticale)
+        const xOverlap = !(sBox.x + sBox.w < tBox.x || sBox.x > tBox.x + tBox.w)
+
+        if (yOverlap) {
+          // Snap a destra del target: bordo sx del source = bordo dx del target + offset
+          const gapRight = sBox.x - (tBox.x + tBox.w)
+          for (const p of PRESETS) {
+            const dist = Math.abs(gapRight - p)
+            if (dist < bestDist) {
+              bestDist = dist
+              bestSnap = {
+                dx: p - gapRight, dy: 0, mm: p, dir: '→',
+                badgeX: tBox.x + tBox.w + p / 2,
+                badgeY: (Math.max(sBox.y, tBox.y) + Math.min(sBox.y + sBox.h, tBox.y + tBox.h)) / 2,
+              }
+            }
+          }
+          // Snap a sinistra del target: bordo dx del source = bordo sx del target - offset
+          const gapLeft = tBox.x - (sBox.x + sBox.w)
+          for (const p of PRESETS) {
+            const dist = Math.abs(gapLeft - p)
+            if (dist < bestDist) {
+              bestDist = dist
+              bestSnap = {
+                dx: -(p - gapLeft), dy: 0, mm: p, dir: '←',
+                badgeX: tBox.x - p / 2,
+                badgeY: (Math.max(sBox.y, tBox.y) + Math.min(sBox.y + sBox.h, tBox.y + tBox.h)) / 2,
+              }
+            }
+          }
+        }
+        if (xOverlap) {
+          // Snap sotto il target
+          const gapBottom = sBox.y - (tBox.y + tBox.h)
+          for (const p of PRESETS) {
+            const dist = Math.abs(gapBottom - p)
+            if (dist < bestDist) {
+              bestDist = dist
+              bestSnap = {
+                dx: 0, dy: p - gapBottom, mm: p, dir: '↓',
+                badgeX: (Math.max(sBox.x, tBox.x) + Math.min(sBox.x + sBox.w, tBox.x + tBox.w)) / 2,
+                badgeY: tBox.y + tBox.h + p / 2,
+              }
+            }
+          }
+          // Snap sopra il target
+          const gapTop = tBox.y - (sBox.y + sBox.h)
+          for (const p of PRESETS) {
+            const dist = Math.abs(gapTop - p)
+            if (dist < bestDist) {
+              bestDist = dist
+              bestSnap = {
+                dx: 0, dy: -(p - gapTop), mm: p, dir: '↑',
+                badgeX: (Math.max(sBox.x, tBox.x) + Math.min(sBox.x + sBox.w, tBox.x + tBox.w)) / 2,
+                badgeY: tBox.y - p / 2,
+              }
+            }
+          }
+        }
+      })
+
+      if (bestSnap) {
+        newX += bestSnap.dx
+        newY += bestSnap.dy
+        setSnapBadge({ x: bestSnap.badgeX, y: bestSnap.badgeY, mm: bestSnap.mm, dir: bestSnap.dir })
+      } else {
+        setSnapBadge(null)
+      }
+    }
 
     pendingPosRef.current = { layerId: dragRef.current.layerId, x: newX, y: newY }
 
     // Applica transform DIRETTAMENTE al DOM (no setState - mantiene touch capture)
-    const dragLayer = editingNodo.layers.find(l => l.id === dragRef.current.layerId)
-    if (!dragLayer) return
-
     const updateLayerDOM = (layerId: string, x: number, y: number, layerObj: NodoLayer) => {
       const el = document.getElementById('nodo-layer-' + layerId)
       if (el) {
@@ -546,8 +636,10 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     }
   }
 
+  // Reset snap badge a touchEnd
   const onLayerTouchEnd = (e: React.TouchEvent) => {
     e.stopPropagation()
+    setSnapBadge(null)
     onCanvasTouchEnd()
   }
 
@@ -666,6 +758,7 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       quotes={quotes} setQuotes={setQuotes}
       quotePt1={quotePt1} setQuotePt1={setQuotePt1}
       hoverPt={hoverPt}
+      snapBadge={snapBadge}
       sheetState={sheetState} setSheetState={setSheetState}
       sheetTab={sheetTab} setSheetTab={setSheetTab}
       toolCategory={toolCategory} setToolCategory={setToolCategory}
@@ -727,7 +820,7 @@ function EditorView(p: any) {
   const {
     editingNodo, setEditingNodo, zoom, setZoom, panX, setPanX, panY, setPanY,
     tool, setTool, selectedLayer, setSelectedLayer, svgRef,
-    quotes, setQuotes, quotePt1, hoverPt,
+    quotes, setQuotes, quotePt1, hoverPt, snapBadge,
     sheetState, setSheetState, sheetTab, setSheetTab,
     toolCategory, setToolCategory,
     onCanvasTouchStart, onCanvasTouchMove, onCanvasTouchEnd,
@@ -916,6 +1009,23 @@ function EditorView(p: any) {
             )}
             {quotePt1 && (
               <circle cx={quotePt1.x} cy={quotePt1.y} r={6 / zoom} fill={DS.green} opacity={0.9} />
+            )}
+
+            {/* MAGIC SNAP BADGE durante drag - mostra distanza agganciata */}
+            {snapBadge && (
+              <g pointerEvents="none">
+                <rect
+                  x={snapBadge.x - 22 / zoom} y={snapBadge.y - 12 / zoom}
+                  width={44 / zoom} height={20 / zoom}
+                  rx={4 / zoom}
+                  fill={DS.amber} opacity={0.95}
+                />
+                <text
+                  x={snapBadge.x} y={snapBadge.y + 4 / zoom}
+                  textAnchor="middle"
+                  fontSize={12 / zoom} fontFamily={M} fontWeight="800" fill="#FFF"
+                >{snapBadge.dir} {snapBadge.mm}mm</text>
+              </g>
             )}
           </g>
         </svg>
