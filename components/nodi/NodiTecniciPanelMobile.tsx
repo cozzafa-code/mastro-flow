@@ -738,10 +738,7 @@ function EditorView(p: any) {
     showCatalog, profili, onCatalogSelect, onCatalogClose,
   } = p
 
-  const canvasH = sheetState === 'collapsed' ? 'calc(100vh - 110px - 52px)'
-                : sheetState === 'mid' ? 'calc(100vh - 110px - 38vh)'
-                : 'calc(100vh - 110px - 78vh)'
-
+  // Canvas occupa lo spazio disponibile (toolbar + sheet sono fixed sopra)
   return (
     <div className="nodi-editor-portal" style={{
       position: 'fixed',
@@ -750,6 +747,10 @@ function EditorView(p: any) {
       display: 'flex', flexDirection: 'column',
       overflow: 'hidden',
       zIndex: 9999,
+      paddingBottom: sheetState === 'collapsed' ? 64 + 52
+                    : sheetState === 'mid' ? `calc(64px + 55vh)`
+                    : `calc(64px + 92vh)`,
+      transition: 'padding-bottom 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
     }}>
       {/* TOP BAR */}
       <div style={{
@@ -800,7 +801,7 @@ function EditorView(p: any) {
       )}
 
       {/* CANVAS */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', height: canvasH }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
         <svg ref={svgRef}
           width="100%" height="100%"
           style={{ display: 'block', background: '#F5F5F0', touchAction: 'none' }}
