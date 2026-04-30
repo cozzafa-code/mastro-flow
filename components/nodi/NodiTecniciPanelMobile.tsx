@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@supabase/supabase-js'
-import type { NodoLayer, NodoTecnico, QuoteRef, ToolMode } from '@/lib/nodi/nodi-types'
+import type { NodoLayer, NodoTecnico, QuoteRef, ToolMode, RefPoint } from '@/lib/nodi/nodi-types'
 import { LAYER_COLORS } from '@/lib/nodi/nodi-types'
 import {
   transformPoint, getSnapPoints, findNearestSnap, projectOnSegment,
@@ -66,6 +66,11 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   const [quotes, setQuotes] = useState<QuoteRef[]>([])
   const [quotePt1, setQuotePt1] = useState<{ x: number; y: number; layerId: string; offX: number; offY: number } | null>(null)
   const [hoverPt, setHoverPt] = useState<{ x: number; y: number; layerId: string } | null>(null)
+
+  // Punti di riferimento (sticky, ancorati ai layer) - per snap e quotatura live durante drag
+  const [refPoints, setRefPoints] = useState<RefPoint[]>([])
+  // Quotatura LIVE durante drag: distanze dal bordo del layer trascinato a ogni RefPoint
+  const [liveQuotes, setLiveQuotes] = useState<{ pointId: string; pointX: number; pointY: number; toX: number; toY: number; mm: number }[]>([])
 
   // Bottom sheet state
   const [sheetState, setSheetState] = useState<'collapsed' | 'mid' | 'full'>('collapsed')
@@ -143,6 +148,8 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     })
     setZoom(3); setPanX(0); setPanY(0)
     setQuotes([]); setQuotePt1(null)
+    setRefPoints([])
+    setLiveQuotes([])
     setSelectedLayer(null)
     setSheetState('mid'); setSheetTab('info')
   }
@@ -167,6 +174,9 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     })
     setZoom(3); setPanX(0); setPanY(0)
     setSheetState('collapsed')
+    // Carica refPoints e quotes salvati
+    setRefPoints(Array.isArray(n.ref_points) ? n.ref_points : [])
+    setQuotes(Array.isArray(n.quotes) ? n.quotes : [])
   }
 
   const addLayerFromProfile = (profilo: any) => {
@@ -206,6 +216,8 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
         x: l.x, y: l.y, rotation: l.rotation, flipH: l.flipH, flipV: l.flipV,
         lato: l.lato || null,
       })),
+      ref_points: refPoints,
+      quotes: quotes,
       sezione_svg: generateCombinedSVG(editingNodo),
     }
     try {
@@ -321,6 +333,41 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       return
     }
     const t = getTouchPos(e)
+
+    // Tool POINTS: tap → crea un punto di riferimento sul layer/posizione più vicina
+    if (tool === 'points' && svgRef.current) {
+      const rect = svgRef.current.getBoundingClientRect()
+      const raw = screenToCanvas(t.x, t.y, rect, panX, panY, zoom)
+      // Snap automatico ai vertici dei profili (precisione)
+      const snapped = findNearestSnap(raw.x, raw.y, editingNodo, zoom, 30)
+      const pt = snapped || { x: raw.x, y: raw.y, layerId: '' }
+
+      // Trova layer di riferimento (snap o più vicino)
+      let bestLayerId = pt.layerId
+      if (!bestLayerId && editingNodo) {
+        let bestD = Infinity
+        editingNodo.layers.filter(l => l.visible).forEach(l => {
+          const d = Math.sqrt((raw.x - l.x) ** 2 + (raw.y - l.y) ** 2)
+          if (d < bestD) { bestD = d; bestLayerId = l.id }
+        })
+      }
+      if (!bestLayerId) return
+
+      const layer = editingNodo!.layers.find(l => l.id === bestLayerId)
+      if (!layer) return
+      const offX = pt.x - layer.x
+      const offY = pt.y - layer.y
+
+      const newPoint: RefPoint = {
+        id: 'rp_' + Date.now() + Math.random().toString(36).slice(2, 6),
+        layerId: bestLayerId,
+        offX, offY,
+        label: 'P' + (refPoints.length + 1),
+        color: DS.amber,
+      }
+      setRefPoints(prev => [...prev, newPoint])
+      return
+    }
 
     // Tool quota: snap & posiziona punto
     if (tool === 'quota' && svgRef.current) {
@@ -526,6 +573,55 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     // Bbox del source con la nuova posizione (simulata)
     const simSource: NodoLayer = { ...dragLayer, x: newX, y: newY }
     const sBox = getLayerBBox(simSource)
+
+    // ────── LIVE QUOTES: calcola distanza ai RefPoints + SNAP ai punti se < 3mm ──
+    if (sBox && refPoints.length > 0) {
+      const liveLines: { pointId: string; pointX: number; pointY: number; toX: number; toY: number; mm: number }[] = []
+      let bestPointSnap: { dx: number; dy: number; pointId: string } | null = null
+      let bestPointDist = 3 // mm: oltre 3mm dal punto, snap disattivo
+
+      // Per ogni refPoint che NON è ancorato al layer in drag (sennò si muoverebbero insieme)
+      refPoints.forEach(rp => {
+        if (rp.layerId === dragLayer.id) return
+        // Calcola posizione assoluta del punto
+        const ancorLayer = editingNodo.layers.find(l => l.id === rp.layerId)
+        if (!ancorLayer) return
+        const px = ancorLayer.x + rp.offX
+        const py = ancorLayer.y + rp.offY
+
+        // Trova bordo del sBox più vicino al punto (per disegnare la linea live)
+        const closeX = Math.max(sBox.x, Math.min(sBox.x + sBox.w, px))
+        const closeY = Math.max(sBox.y, Math.min(sBox.y + sBox.h, py))
+        const distMm = Math.sqrt((closeX - px) ** 2 + (closeY - py) ** 2)
+        liveLines.push({ pointId: rp.id, pointX: px, pointY: py, toX: closeX, toY: closeY, mm: distMm })
+
+        // Snap: se il bordo del sBox è < 3mm dal punto, scatta
+        if (distMm < bestPointDist) {
+          bestPointDist = distMm
+          // Calcola dx/dy per portare il punto vicino dentro il sBox
+          bestPointSnap = { dx: px - closeX, dy: py - closeY, pointId: rp.id }
+        }
+      })
+
+      // Applica snap punto se trovato
+      if (bestPointSnap) {
+        newX += bestPointSnap.dx
+        newY += bestPointSnap.dy
+        // Aggiorna sBox dopo snap
+        sBox.x += bestPointSnap.dx; sBox.y += bestPointSnap.dy
+        sBox.cx += bestPointSnap.dx; sBox.cy += bestPointSnap.dy
+        // Aggiorna anche le liveLines col nuovo posizionamento
+        liveLines.forEach(l => {
+          const closeX = Math.max(sBox.x, Math.min(sBox.x + sBox.w, l.pointX))
+          const closeY = Math.max(sBox.y, Math.min(sBox.y + sBox.h, l.pointY))
+          l.toX = closeX; l.toY = closeY
+          l.mm = Math.sqrt((closeX - l.pointX) ** 2 + (closeY - l.pointY) ** 2)
+        })
+      }
+
+      setLiveQuotes(liveLines)
+    }
+
     if (sBox) {
       const SNAP_THRESHOLD = 25 // mm: oltre questa distanza dal target il snap si disattiva
       const PRESETS = [0, 4, 6, 8, 12]
@@ -640,6 +736,7 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   const onLayerTouchEnd = (e: React.TouchEvent) => {
     e.stopPropagation()
     setSnapBadge(null)
+    setLiveQuotes([])
     onCanvasTouchEnd()
   }
 
@@ -759,6 +856,8 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       quotePt1={quotePt1} setQuotePt1={setQuotePt1}
       hoverPt={hoverPt}
       snapBadge={snapBadge}
+      refPoints={refPoints} setRefPoints={setRefPoints}
+      liveQuotes={liveQuotes}
       sheetState={sheetState} setSheetState={setSheetState}
       sheetTab={sheetTab} setSheetTab={setSheetTab}
       toolCategory={toolCategory} setToolCategory={setToolCategory}
@@ -821,6 +920,7 @@ function EditorView(p: any) {
     editingNodo, setEditingNodo, zoom, setZoom, panX, setPanX, panY, setPanY,
     tool, setTool, selectedLayer, setSelectedLayer, svgRef,
     quotes, setQuotes, quotePt1, hoverPt, snapBadge,
+    refPoints, setRefPoints, liveQuotes,
     sheetState, setSheetState, sheetTab, setSheetTab,
     toolCategory, setToolCategory,
     onCanvasTouchStart, onCanvasTouchMove, onCanvasTouchEnd,
@@ -873,16 +973,18 @@ function EditorView(p: any) {
       </div>
 
       {/* TOOL HINT */}
-      {(tool === 'quota' || tool === 'link' || alignMode) && (
+      {(tool === 'quota' || tool === 'link' || tool === 'points' || alignMode) && (
         <div style={{
           padding: '6px 12px',
-          background: alignMode ? DS.teal + '15' : tool === 'quota' ? DS.red + '15' : DS.blue + '15',
-          color: alignMode ? DS.teal : tool === 'quota' ? DS.red : DS.blue,
+          background: alignMode ? DS.teal + '15' : tool === 'quota' ? DS.red + '15' : tool === 'points' ? DS.amber + '15' : DS.blue + '15',
+          color: alignMode ? DS.teal : tool === 'quota' ? DS.red : tool === 'points' ? DS.amber : DS.blue,
           fontSize: 11, fontWeight: 700, textAlign: 'center',
           flexShrink: 0,
         }}>
           {alignMode
             ? '➡ Tappa il profilo target per allineare'
+            : tool === 'points'
+            ? `🎯 Tappa sul canvas per piazzare punti (${refPoints.length} attivi) · I profili si aggancieranno entro 3mm`
             : tool === 'quota'
             ? (quotePt1 ? '➡ Tappa il SECONDO punto' : '➡ Tappa il PRIMO punto da quotare')
             : selectedLayer ? '➡ Tappa un altro profilo per legarlo' : '➡ Seleziona il primo profilo'}
@@ -1011,6 +1113,52 @@ function EditorView(p: any) {
               <circle cx={quotePt1.x} cy={quotePt1.y} r={6 / zoom} fill={DS.green} opacity={0.9} />
             )}
 
+            {/* REF POINTS - marker permanenti ancorati ai layer */}
+            {refPoints.map((rp: RefPoint) => {
+              const layer = editingNodo.layers.find((l: NodoLayer) => l.id === rp.layerId)
+              if (!layer) return null
+              const px = layer.x + rp.offX
+              const py = layer.y + rp.offY
+              return (
+                <g key={rp.id} pointerEvents="none">
+                  <circle cx={px} cy={py} r={4 / zoom} fill={rp.color || DS.amber} stroke="#FFF" strokeWidth={1 / zoom} />
+                  <circle cx={px} cy={py} r={9 / zoom} fill="none" stroke={rp.color || DS.amber} strokeWidth={0.6 / zoom} opacity={0.6} />
+                  <rect x={px + 6 / zoom} y={py - 8 / zoom} width={(rp.label.length * 7 + 6) / zoom} height={14 / zoom} rx={2 / zoom}
+                    fill={rp.color || DS.amber} opacity={0.95} />
+                  <text x={px + 9 / zoom} y={py + 2 / zoom} fontSize={10 / zoom} fontFamily={M} fontWeight="800" fill="#FFF">
+                    {rp.label}
+                  </text>
+                </g>
+              )
+            })}
+
+            {/* LIVE QUOTES - linee tratteggiate dai bordi del layer in drag ai RefPoints */}
+            {liveQuotes.map((lq: any) => {
+              const isSnapped = lq.mm < 0.5
+              const col = isSnapped ? DS.green : DS.teal
+              return (
+                <g key={'lq-' + lq.pointId} pointerEvents="none">
+                  <line x1={lq.pointX} y1={lq.pointY} x2={lq.toX} y2={lq.toY}
+                    stroke={col} strokeWidth={1 / zoom}
+                    strokeDasharray={isSnapped ? undefined : `${4 / zoom},${2 / zoom}`}
+                  />
+                  <rect
+                    x={(lq.pointX + lq.toX) / 2 - 22 / zoom}
+                    y={(lq.pointY + lq.toY) / 2 - 8 / zoom}
+                    width={44 / zoom} height={16 / zoom}
+                    rx={3 / zoom}
+                    fill={col} opacity={0.95}
+                  />
+                  <text
+                    x={(lq.pointX + lq.toX) / 2}
+                    y={(lq.pointY + lq.toY) / 2 + 3 / zoom}
+                    textAnchor="middle"
+                    fontSize={10 / zoom} fontFamily={M} fontWeight="800" fill="#FFF"
+                  >{lq.mm.toFixed(1)}mm</text>
+                </g>
+              )
+            })}
+
             {/* MAGIC SNAP BADGE durante drag - mostra distanza agganciata */}
             {snapBadge && (
               <g pointerEvents="none">
@@ -1071,6 +1219,8 @@ function EditorView(p: any) {
               zoom={zoom}
               setQuotes={setQuotes}
               quotes={quotes}
+              refPoints={refPoints}
+              setRefPoints={setRefPoints}
               handleLayerAction={(a: string) => {
                 if (selectedLayer) handleLayerAction(selectedLayer, a)
                 setToolCategory(null)
@@ -1426,7 +1576,7 @@ function CatBtn({ icon, label, onClick, active, color }: {
 }
 
 // ============ TOOL MENU (mini-menu per categoria) ============
-function ToolMenu({ category, tool, setTool, selectedLayer, editingNodo, onAddProfile, onClose, setZoom, setPanX, setPanY, zoom, setQuotes, quotes, handleLayerAction }: any) {
+function ToolMenu({ category, tool, setTool, selectedLayer, editingNodo, onAddProfile, onClose, setZoom, setPanX, setPanY, zoom, setQuotes, quotes, refPoints, setRefPoints, handleLayerAction }: any) {
   const Item = ({ icon, label, sub, onClick, color, disabled }: { icon: string; label: string; sub?: string; onClick: () => void; color?: string; disabled?: boolean }) => (
     <button
       onClick={() => { if (!disabled) onClick() }}
@@ -1488,7 +1638,18 @@ function ToolMenu({ category, tool, setTool, selectedLayer, editingNodo, onAddPr
   if (category === 'measure') {
     return (
       <div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: DS.ink, marginBottom: 10 }}>📏 MISURE & QUOTE</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: DS.ink, marginBottom: 10 }}>📏 MISURE & PUNTI</div>
+        {sectionTitle('PUNTI DI RIFERIMENTO', DS.amber)}
+        <Item icon="🎯" label={tool === 'points' ? 'Disattiva punti' : 'Aggiungi punti X/Y'}
+          sub="Tappa il canvas per posizionare punti sticky · Snap automatico ai vertici · I punti seguono i profili"
+          onClick={() => { setTool(tool === 'points' ? 'select' : 'points'); onClose() }}
+          color={tool === 'points' ? DS.amber : DS.teal} />
+        {refPoints && refPoints.length > 0 && (
+          <Item icon="🗑" label={`Cancella tutti i punti (${refPoints.length})`}
+            sub="Rimuove tutti i punti di riferimento"
+            onClick={() => { if (confirm(`Cancellare ${refPoints.length} punti?`)) { setRefPoints([]); onClose() } }}
+            color={DS.red} />
+        )}
         {sectionTitle('STRUMENTO QUOTA')}
         <Item icon="📏" label={tool === 'quota' ? 'Disattiva quota' : 'Attiva quota'} sub="Tappa 2 punti sul canvas per misurarli" onClick={() => { setTool(tool === 'quota' ? 'select' : 'quota'); onClose() }} color={tool === 'quota' ? DS.red : DS.teal} />
         {quotes.length > 0 && (
