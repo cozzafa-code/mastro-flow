@@ -71,6 +71,9 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   const [sheetState, setSheetState] = useState<'collapsed' | 'mid' | 'full'>('collapsed')
   const [sheetTab, setSheetTab] = useState<'info' | 'profili' | 'quote' | 'azioni'>('info')
 
+  // Categoria toolbar attiva (mini-menu sopra toolbar)
+  const [toolCategory, setToolCategory] = useState<'add' | 'move' | 'measure' | 'view' | 'layer' | null>(null)
+
   // Mode "align con altro profilo"
   // Quando attivo, l'utente tappa un secondo profilo target → si apre AlignSheet
   const [alignMode, setAlignMode] = useState<{ sourceLayerId: string } | null>(null)
@@ -273,6 +276,10 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
         // EST = profilo specchiato orizzontalmente (lato camera invertito)
         updateLayer(layerId, { lato: 'EST', flipH: true })
         break
+      case 'nudge-left':  updateLayer(layerId, { x: layer.x - 1 }); break
+      case 'nudge-right': updateLayer(layerId, { x: layer.x + 1 }); break
+      case 'nudge-up':    updateLayer(layerId, { y: layer.y - 1 }); break
+      case 'nudge-down':  updateLayer(layerId, { y: layer.y + 1 }); break
       case 'align-mode':
         // Entra in modalità "tappa un altro profilo target per allineare"
         setAlignMode({ sourceLayerId: layerId })
@@ -661,6 +668,7 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       hoverPt={hoverPt}
       sheetState={sheetState} setSheetState={setSheetState}
       sheetTab={sheetTab} setSheetTab={setSheetTab}
+      toolCategory={toolCategory} setToolCategory={setToolCategory}
       onCanvasTouchStart={onCanvasTouchStart}
       onCanvasTouchMove={onCanvasTouchMove}
       onCanvasTouchEnd={onCanvasTouchEnd}
@@ -721,6 +729,7 @@ function EditorView(p: any) {
     tool, setTool, selectedLayer, setSelectedLayer, svgRef,
     quotes, setQuotes, quotePt1, hoverPt,
     sheetState, setSheetState, sheetTab, setSheetTab,
+    toolCategory, setToolCategory,
     onCanvasTouchStart, onCanvasTouchMove, onCanvasTouchEnd,
     onLayerTouchStart, onLayerTouchMove, onLayerTouchEnd,
     handleLayerAction,
@@ -911,29 +920,104 @@ function EditorView(p: any) {
         </svg>
       </div>
 
-      {/* BOTTOM TOOLBAR */}
+      {/* MINI-MENU CATEGORIA SOPRA TOOLBAR */}
+      {toolCategory && (
+        <div
+          onClick={() => setToolCategory(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(13,31,31,0.4)',
+            zIndex: 10000,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              left: 8, right: 8,
+              bottom: 76,
+              background: DS.white,
+              borderRadius: 16,
+              padding: 12,
+              boxShadow: '0 -8px 24px rgba(0,0,0,0.18)',
+              maxHeight: '70vh',
+              overflowY: 'auto',
+              zIndex: 10001,
+            }}
+          >
+            <ToolMenu
+              category={toolCategory}
+              tool={tool}
+              setTool={setTool}
+              selectedLayer={selectedLayer}
+              editingNodo={editingNodo}
+              onAddProfile={() => { setToolCategory(null); onAddProfile() }}
+              onClose={() => setToolCategory(null)}
+              setZoom={setZoom}
+              setPanX={setPanX}
+              setPanY={setPanY}
+              zoom={zoom}
+              setQuotes={setQuotes}
+              quotes={quotes}
+              handleLayerAction={(a: string) => {
+                if (selectedLayer) handleLayerAction(selectedLayer, a)
+                setToolCategory(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* BOTTOM TOOLBAR — 5 categorie */}
       <div style={{
-        height: 58,
+        height: 64,
         background: DS.ink,
         display: 'flex', alignItems: 'center', justifyContent: 'space-around',
         padding: '0 8px',
         flexShrink: 0,
         position: 'fixed',
         bottom: sheetState === 'collapsed' ? 52
-              : sheetState === 'mid' ? '38vh'
-              : '78vh',
+              : sheetState === 'mid' ? '55vh'
+              : '92vh',
         left: 0, right: 0,
         transition: 'bottom 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
         zIndex: 10001,
         borderTop: `1px solid ${DS.dark}`,
       }}>
-        <ToolBtn icon="+" label="Profilo" onClick={onAddProfile} color={DS.teal} />
-        <ToolBtn icon="✥" label="Sposta" active={tool === 'select'} onClick={() => setTool('select')} />
-        <ToolBtn icon="📏" label="Quota" active={tool === 'quota'} onClick={() => { setTool('quota'); }} />
-        <ToolBtn icon="🔍+" label="Zoom+" onClick={() => setZoom((z: number) => Math.min(50, z * 1.4))} />
-        <ToolBtn icon="🔍−" label="Zoom−" onClick={() => setZoom((z: number) => Math.max(0.3, z / 1.4))} />
-        <ToolBtn icon="⊕" label="Fit" onClick={() => { setZoom(3); setPanX(0); setPanY(0); }} />
-        <ToolBtn icon="🔗" label="Lega" active={tool === 'link'} onClick={() => setTool('link')} />
+        <CatBtn
+          icon="+"
+          label="Aggiungi"
+          color={DS.teal}
+          active={toolCategory === 'add'}
+          onClick={() => setToolCategory(toolCategory === 'add' ? null : 'add')}
+        />
+        <CatBtn
+          icon="✥"
+          label="Sposta"
+          active={toolCategory === 'move' || tool === 'select'}
+          onClick={() => setToolCategory(toolCategory === 'move' ? null : 'move')}
+        />
+        <CatBtn
+          icon="📏"
+          label="Misure"
+          active={toolCategory === 'measure' || tool === 'quota'}
+          color={tool === 'quota' ? DS.red : undefined}
+          onClick={() => setToolCategory(toolCategory === 'measure' ? null : 'measure')}
+        />
+        <CatBtn
+          icon="🔍"
+          label="Vista"
+          active={toolCategory === 'view'}
+          onClick={() => setToolCategory(toolCategory === 'view' ? null : 'view')}
+        />
+        <CatBtn
+          icon="☰"
+          label="Layer"
+          active={toolCategory === 'layer'}
+          color={selectedLayer ? DS.blue : undefined}
+          onClick={() => setToolCategory(toolCategory === 'layer' ? null : 'layer')}
+        />
       </div>
 
       {/* BOTTOM SHEET */}
@@ -1074,21 +1158,201 @@ function AlignSheet({ source, target, onApply, onClose }: {
   )
 }
 
-// ============ TOOL BUTTON BOTTOM BAR ============
-function ToolBtn({ icon, label, onClick, active, color }: {
+// ============ CAT BUTTON (toolbar bottom 5 categorie) ============
+function CatBtn({ icon, label, onClick, active, color }: {
   icon: string; label: string; onClick: () => void; active?: boolean; color?: string
 }) {
   return (
     <button onClick={onClick} style={{
-      flex: 1, height: 46, borderRadius: 10, border: 'none',
+      flex: 1, height: 52, borderRadius: 12, border: 'none',
       background: active ? (color || DS.teal) : 'transparent',
       color: active ? '#FFF' : (color || '#FFF'),
       cursor: 'pointer',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       gap: 2,
+      transition: 'background 0.15s',
     }}>
-      <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.3 }}>{label}</span>
     </button>
+  )
+}
+
+// ============ TOOL MENU (mini-menu per categoria) ============
+function ToolMenu({ category, tool, setTool, selectedLayer, editingNodo, onAddProfile, onClose, setZoom, setPanX, setPanY, zoom, setQuotes, quotes, handleLayerAction }: any) {
+  const Item = ({ icon, label, sub, onClick, color, disabled }: { icon: string; label: string; sub?: string; onClick: () => void; color?: string; disabled?: boolean }) => (
+    <button
+      onClick={() => { if (!disabled) onClick() }}
+      disabled={disabled}
+      style={{
+        width: '100%', padding: '12px 14px', borderRadius: 10,
+        border: `1.5px solid ${color || DS.border}`,
+        background: disabled ? DS.light : (color ? color + '10' : DS.white),
+        color: disabled ? DS.muted : (color || DS.ink),
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
+        display: 'flex', alignItems: 'center', gap: 12,
+        marginBottom: 6, textAlign: 'left',
+      }}
+    >
+      <span style={{ fontSize: 22, lineHeight: 1, width: 28, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 700 }}>{label}</div>
+        {sub && <div style={{ fontSize: 10, color: DS.muted, marginTop: 1 }}>{sub}</div>}
+      </div>
+    </button>
+  )
+
+  const layer = selectedLayer ? editingNodo?.layers.find((l: NodoLayer) => l.id === selectedLayer) : null
+  const sectionTitle = (text: string, color = DS.muted) => (
+    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, color, marginTop: 8, marginBottom: 6, padding: '0 4px' }}>{text}</div>
+  )
+
+  if (category === 'add') {
+    return (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: DS.ink, marginBottom: 10 }}>+ AGGIUNGI AL NODO</div>
+        <Item icon="🪟" label="Profilo / Vetro / Pannello" sub="Dal catalogo aziendale" onClick={onAddProfile} color={DS.teal} />
+      </div>
+    )
+  }
+
+  if (category === 'move') {
+    return (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: DS.ink, marginBottom: 10 }}>✥ SPOSTA</div>
+        {sectionTitle('MODALITÀ ATTIVA')}
+        <Item icon="✥" label="Trascina libero"   sub="Tocca e sposta i profili nel canvas" onClick={() => { setTool('select'); onClose() }} color={tool === 'select' ? DS.teal : undefined} />
+        {sectionTitle('SUL PROFILO SELEZIONATO', layer ? DS.teal : DS.muted)}
+        <Item icon="↔↕" label="Allinea con altro profilo" sub={layer ? `Sposta ${layer.codice} accanto a un target` : 'Seleziona prima un profilo'} onClick={() => handleLayerAction('align-mode')} disabled={!layer} color={DS.teal} />
+        {layer && (
+          <>
+            {sectionTitle('SPOSTAMENTO PRECISO')}
+            <Item icon="←" label="-1 mm orizzontale" sub={`X = ${layer.x.toFixed(1)} → ${(layer.x - 1).toFixed(1)}`} onClick={() => { handleLayerAction('nudge-left') }} />
+            <Item icon="→" label="+1 mm orizzontale" sub={`X = ${layer.x.toFixed(1)} → ${(layer.x + 1).toFixed(1)}`} onClick={() => { handleLayerAction('nudge-right') }} />
+            <Item icon="↑" label="-1 mm verticale"   sub={`Y = ${layer.y.toFixed(1)} → ${(layer.y - 1).toFixed(1)}`} onClick={() => { handleLayerAction('nudge-up') }} />
+            <Item icon="↓" label="+1 mm verticale"   sub={`Y = ${layer.y.toFixed(1)} → ${(layer.y + 1).toFixed(1)}`} onClick={() => { handleLayerAction('nudge-down') }} />
+          </>
+        )}
+      </div>
+    )
+  }
+
+  if (category === 'measure') {
+    return (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: DS.ink, marginBottom: 10 }}>📏 MISURE & QUOTE</div>
+        {sectionTitle('STRUMENTO QUOTA')}
+        <Item icon="📏" label={tool === 'quota' ? 'Disattiva quota' : 'Attiva quota'} sub="Tappa 2 punti sul canvas per misurarli" onClick={() => { setTool(tool === 'quota' ? 'select' : 'quota'); onClose() }} color={tool === 'quota' ? DS.red : DS.teal} />
+        {quotes.length > 0 && (
+          <>
+            {sectionTitle('GESTIONE QUOTE')}
+            <Item icon="🗑" label={`Cancella tutte le quote (${quotes.length})`} sub="Operazione non reversibile" onClick={() => { if (confirm('Cancellare tutte le quote?')) { setQuotes([]); onClose() } }} color={DS.red} />
+          </>
+        )}
+      </div>
+    )
+  }
+
+  if (category === 'view') {
+    return (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: DS.ink, marginBottom: 10 }}>🔍 VISTA</div>
+        {sectionTitle('ZOOM')}
+        <Item icon="🔍+" label="Zoom in (+40%)" sub={`${Math.round(zoom * 100)}% → ${Math.round(zoom * 1.4 * 100)}%`} onClick={() => setZoom((z: number) => Math.min(50, z * 1.4))} />
+        <Item icon="🔍−" label="Zoom out (-40%)" sub={`${Math.round(zoom * 100)}% → ${Math.round(zoom / 1.4 * 100)}%`} onClick={() => setZoom((z: number) => Math.max(0.3, z / 1.4))} />
+        {sectionTitle('PRESET')}
+        <Item icon="⊕" label="Centra e adatta vista" sub="Reset zoom 300% e posizione canvas" onClick={() => { setZoom(3); setPanX(0); setPanY(0); onClose() }} />
+        <Item icon="🔎" label="Zoom 100%" sub="Vista 1:1 (mm reali)" onClick={() => { setZoom(1); onClose() }} />
+        <Item icon="🔍" label="Zoom 1000%" sub="Massimo dettaglio per snap precisi" onClick={() => { setZoom(10); onClose() }} />
+      </div>
+    )
+  }
+
+  if (category === 'layer') {
+    if (!layer) {
+      return (
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: DS.ink, marginBottom: 10 }}>☰ AZIONI LAYER</div>
+          <div style={{ padding: 30, textAlign: 'center', color: DS.muted, fontSize: 12 }}>
+            Seleziona prima un profilo nel canvas o nel pannello “Profili”.
+          </div>
+        </div>
+      )
+    }
+    const lato = layer.lato || 'INT'
+    return (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: DS.ink, marginBottom: 4 }}>☰ AZIONI · {layer.codice}</div>
+        <div style={{ fontSize: 10, color: DS.muted, fontFamily: M, marginBottom: 8 }}>
+          X={layer.x.toFixed(1)} · Y={layer.y.toFixed(1)} · Rot={layer.rotation}° · Lato={lato}
+        </div>
+        {sectionTitle('LATO PROFILO (interno/esterno)', DS.blue)}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
+          <button
+            onClick={() => handleLayerAction('lato-INT')}
+            style={{
+              padding: 14, borderRadius: 10,
+              border: `2px solid ${lato === 'INT' ? DS.blue : DS.border}`,
+              background: lato === 'INT' ? DS.blue + '15' : DS.white,
+              color: lato === 'INT' ? DS.blue : DS.ink,
+              fontSize: 13, fontWeight: 800, cursor: 'pointer',
+            }}>🏠 INT</button>
+          <button
+            onClick={() => handleLayerAction('lato-EST')}
+            style={{
+              padding: 14, borderRadius: 10,
+              border: `2px solid ${lato === 'EST' ? DS.amber : DS.border}`,
+              background: lato === 'EST' ? DS.amber + '15' : DS.white,
+              color: lato === 'EST' ? DS.amber : DS.ink,
+              fontSize: 13, fontWeight: 800, cursor: 'pointer',
+            }}>🌤️ EST</button>
+        </div>
+        {sectionTitle('ALLINEA CON ALTRO PROFILO', DS.teal)}
+        <Item icon="↔↕" label="Tappa target → allinea" sub="Allineamento preciso con offset mm" onClick={() => handleLayerAction('align-mode')} color={DS.teal} />
+        {sectionTitle('ROTAZIONE')}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
+          <SmallActionBtn label="↻ +90°" onClick={() => handleLayerAction('rot+90')} />
+          <SmallActionBtn label="↺ -90°" onClick={() => handleLayerAction('rot-90')} />
+          <SmallActionBtn label="↻ +45°" onClick={() => handleLayerAction('rot+45')} />
+          <SmallActionBtn label="↻ +1°"  onClick={() => handleLayerAction('rot+1')} />
+          <SmallActionBtn label="↺ -1°"  onClick={() => handleLayerAction('rot-1')} />
+          <SmallActionBtn label="Reset"   onClick={() => handleLayerAction('reset')} />
+        </div>
+        {sectionTitle('SPECCHIO')}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
+          <SmallActionBtn label={`↔ Orizz${layer.flipH ? ' ✓' : ''}`} onClick={() => handleLayerAction('flipH')} active={layer.flipH} />
+          <SmallActionBtn label={`↕ Vert${layer.flipV ? ' ✓' : ''}`}  onClick={() => handleLayerAction('flipV')} active={layer.flipV} />
+        </div>
+        {sectionTitle('Z-ORDER')}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
+          <SmallActionBtn label="↑ Primo piano" onClick={() => handleLayerAction('front')} />
+          <SmallActionBtn label="↓ In fondo"    onClick={() => handleLayerAction('back')} />
+        </div>
+        {sectionTitle('GRUPPO')}
+        <Item
+          icon="🔗" label={layer.groupId ? 'Slega dal gruppo' : 'Lega con altro profilo'}
+          sub={layer.groupId ? 'Si muoveranno separatamente' : 'Si muoveranno insieme'}
+          onClick={() => handleLayerAction(layer.groupId ? 'unlink' : 'link')}
+          color={layer.groupId ? DS.red : DS.blue}
+        />
+        <Item icon="🗑" label="Elimina dal nodo" sub="Rimuove questo profilo" onClick={() => handleLayerAction('delete')} color={DS.red} />
+      </div>
+    )
+  }
+
+  return null
+}
+
+// ============ Small action button ============
+function SmallActionBtn({ label, onClick, active }: { label: string; onClick: () => void; active?: boolean }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: '12px 8px', borderRadius: 10,
+      border: `1.5px solid ${active ? DS.teal : DS.border}`,
+      background: active ? DS.teal + '15' : DS.white,
+      color: active ? DS.teal : DS.ink,
+      fontSize: 12, fontWeight: 700, cursor: 'pointer',
+    }}>{label}</button>
   )
 }
