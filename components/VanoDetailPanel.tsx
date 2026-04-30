@@ -12,6 +12,7 @@ import RilievoTende from "./RilievoTende";
 import SezioneModelloTenda from "./SezioneModelloTenda";
 import SkizzoTecnico from "./SkizzoTecnico";
 import OrdineControtelaiPanel from "./OrdineControtelaiPanel";
+import FerroPanel from "./FerroPanel";
 import CassonettoEditor from "./CassonettoEditor";
 import BoxEditor from "./BoxEditor";
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -187,7 +188,7 @@ export default function VanoDetailPanel() {
   const [flashSec, setFlashSec] = useState<string|null>(null);
   const [completedSecs, setCompletedSecs] = useState<Set<string>>(new Set());
   const sectionRefs = useRef<Record<string,HTMLDivElement|null>>({});
-  const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","coprifilo","lamiera","controtelaio"];
+  const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","coprifilo","lamiera","controtelaio","ferro"];
   const flashAndAdvance = (secId: string) => {
     console.log("FLASH:", secId);
     setCompletedSecs(prev => new Set([...prev, secId]));
@@ -1485,7 +1486,14 @@ export default function VanoDetailPanel() {
                 );
               })()
             },
-          ];
+          
+  {
+    id: "ferro",
+    label: "Ferro",
+    icon: null,
+    render: () => <FerroPanel vano={v} onChange={(p) => updateVano && updateVano(p)} />,
+  },
+  ];
 
           // Build chip summary
           const configChips = [v.tipo, v.stanza && v.piano ? v.stanza+" "+v.piano : "", v.sistema ? v.sistema.split(" ").slice(0,2).join(" · ") : "", v.coloreInt && v.coloreEst && v.bicolore ? v.coloreInt+"/"+v.coloreEst : v.coloreInt||"", v.vetro||""].filter(Boolean);
