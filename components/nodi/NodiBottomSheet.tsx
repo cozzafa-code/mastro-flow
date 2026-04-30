@@ -46,8 +46,8 @@ export default function NodiBottomSheet({
   // Heights per stato
   const heights: Record<SheetState, string> = {
     collapsed: '52px',
-    mid: '38vh',
-    full: '78vh',
+    mid: '45vh',
+    full: '88vh',
   }
 
   const layer = selectedLayer ? nodo.layers.find(l => l.id === selectedLayer) : null
@@ -63,7 +63,7 @@ export default function NodiBottomSheet({
       borderTop: `1px solid ${DS.border}`,
       boxShadow: '0 -6px 20px rgba(0,0,0,.12)',
       transition: 'height 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
-      zIndex: 110,
+      zIndex: 10002,
       display: 'flex',
       flexDirection: 'column',
     }}>
@@ -100,7 +100,16 @@ export default function NodiBottomSheet({
 
       {/* Content scrollable */}
       {state !== 'collapsed' && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          padding: 14,
+          paddingBottom: 100,
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+        }}>
           {tab === 'info'    && <TabInfo nodo={nodo} setNodo={setNodo} />}
           {tab === 'profili' && <TabProfili nodo={nodo} setNodo={setNodo} selectedLayer={selectedLayer} setSelectedLayer={setSelectedLayer} />}
           {tab === 'quote'   && <TabQuote nodo={nodo} quotes={quotes} setQuotes={setQuotes} />}
@@ -141,7 +150,7 @@ function TabProfili({ nodo, setNodo, selectedLayer, setSelectedLayer }: any) {
     )
   }
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {nodo.layers.map((l: NodoLayer) => {
         const isSel = selectedLayer === l.id
         const groupColor = l.groupId
@@ -150,20 +159,30 @@ function TabProfili({ nodo, setNodo, selectedLayer, setSelectedLayer }: any) {
         return (
           <div
             key={l.id}
-            onClick={() => setSelectedLayer(isSel ? null : l.id)}
             style={{
-              padding: 10, borderRadius: 10,
-              background: isSel ? DS.teal + '12' : DS.light,
-              border: `1.5px solid ${isSel ? DS.teal : 'transparent'}`,
-              cursor: 'pointer',
+              borderRadius: 12,
+              background: isSel ? DS.teal + '12' : DS.white,
+              border: `1.5px solid ${isSel ? DS.teal : DS.border}`,
+              overflow: 'hidden',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 12, height: 12, borderRadius: 3, background: l.color, flexShrink: 0 }} />
+            {/* Header card grande, tap per selezionare */}
+            <div
+              onClick={() => setSelectedLayer(isSel ? null : l.id)}
+              style={{
+                padding: 14,
+                display: 'flex', alignItems: 'center', gap: 10,
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ width: 18, height: 18, borderRadius: 4, background: l.color, flexShrink: 0 }} />
               {groupColor && (
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: groupColor, border: '1px solid rgba(0,0,0,.15)' }} title="Legato" />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: groupColor, border: '1px solid rgba(0,0,0,.15)' }} title="Legato" />
               )}
-              <span style={{ flex: 1, fontFamily: M, fontSize: 12, fontWeight: 700, color: DS.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{
+                flex: 1, fontFamily: M, fontSize: 14, fontWeight: 700, color: DS.ink,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
                 {l.codice}
               </span>
               <button
@@ -172,18 +191,27 @@ function TabProfili({ nodo, setNodo, selectedLayer, setSelectedLayer }: any) {
                   setNodo((p: any) => p ? ({ ...p, layers: p.layers.map((x: NodoLayer) => x.id === l.id ? { ...x, visible: !x.visible } : x) }) : null)
                 }}
                 style={{
-                  width: 28, height: 28, borderRadius: 6,
-                  border: 'none', background: 'transparent',
-                  color: l.visible ? DS.teal : DS.border,
-                  fontSize: 16, cursor: 'pointer',
+                  width: 38, height: 38, borderRadius: 8,
+                  border: 'none', background: l.visible ? DS.teal + '15' : DS.light,
+                  color: l.visible ? DS.teal : DS.muted,
+                  fontSize: 20, cursor: 'pointer',
                 }}
               >{l.visible ? '◉' : '◯'}</button>
             </div>
+
+            {/* Area edit valori - solo se selezionato */}
             {isSel && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8 }}>
-                <NumField label="X"   value={l.x}        onChange={v => setNodo((p: any) => p ? ({ ...p, layers: p.layers.map((x: NodoLayer) => x.id === l.id ? { ...x, x: v } : x) }) : null)} />
-                <NumField label="Y"   value={l.y}        onChange={v => setNodo((p: any) => p ? ({ ...p, layers: p.layers.map((x: NodoLayer) => x.id === l.id ? { ...x, y: v } : x) }) : null)} />
-                <NumField label="Rot" value={l.rotation} onChange={v => setNodo((p: any) => p ? ({ ...p, layers: p.layers.map((x: NodoLayer) => x.id === l.id ? { ...x, rotation: v } : x) }) : null)} />
+              <div style={{
+                padding: '0 14px 14px',
+                borderTop: `1px solid ${DS.border}`,
+                paddingTop: 12,
+              }}>
+                <div style={{ fontSize: 10, color: DS.muted, marginBottom: 8, letterSpacing: 0.5 }}>POSIZIONE E ROTAZIONE</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  <NumField label="X (mm)"   value={l.x}        onChange={v => setNodo((p: any) => p ? ({ ...p, layers: p.layers.map((x: NodoLayer) => x.id === l.id ? { ...x, x: v } : x) }) : null)} />
+                  <NumField label="Y (mm)"   value={l.y}        onChange={v => setNodo((p: any) => p ? ({ ...p, layers: p.layers.map((x: NodoLayer) => x.id === l.id ? { ...x, y: v } : x) }) : null)} />
+                  <NumField label="Rot (°)" value={l.rotation} onChange={v => setNodo((p: any) => p ? ({ ...p, layers: p.layers.map((x: NodoLayer) => x.id === l.id ? { ...x, rotation: v } : x) }) : null)} />
+                </div>
               </div>
             )}
           </div>

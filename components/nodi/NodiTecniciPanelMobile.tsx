@@ -662,7 +662,7 @@ function EditorView(p: any) {
       background: DS.light,
       display: 'flex', flexDirection: 'column',
       overflow: 'hidden',
-      zIndex: 100,
+      zIndex: 9999,
     }}>
       {/* TOP BAR */}
       <div style={{
@@ -829,7 +829,7 @@ function EditorView(p: any) {
               : '78vh',
         left: 0, right: 0,
         transition: 'bottom 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
-        zIndex: 105,
+        zIndex: 10001,
         borderTop: `1px solid ${DS.dark}`,
       }}>
         <ToolBtn icon="+" label="Profilo" onClick={onAddProfile} color={DS.teal} />
