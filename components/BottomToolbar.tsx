@@ -47,7 +47,7 @@ export default function BottomToolbar({ active = "home", onNavigate, unreadTalk 
   };
 
   return (
-    <div style={{ position: "fixed", bottom: 10, left: 10, right: 10, background: "#FFFFFF", borderRadius: 22, padding: "10px 8px", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", display: "flex", justifyContent: "space-around", alignItems: "center", zIndex: 100, maxWidth: 480, margin: "0 auto" }}>
+    <div className="mastro-bottom-toolbar" style={{ position: "fixed", bottom: 10, left: 10, right: 10, background: "#FFFFFF", borderRadius: 22, padding: "10px 8px", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", display: "flex", justifyContent: "space-around", alignItems: "center", zIndex: 100, maxWidth: 480, margin: "0 auto" }}>
       <Tab k="home" label="Home" icon={ic.home} />
       <Tab k="commesse" label="Commesse" icon={ic.commesse} />
       <Tab k="agenda" label="Agenda" icon={ic.agenda} />
