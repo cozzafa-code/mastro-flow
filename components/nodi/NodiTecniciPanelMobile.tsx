@@ -72,6 +72,10 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   // Long press detection
   const longPressRef = useRef<{ timer: any; layerId: string | null }>({ timer: null, layerId: null })
 
+  // RAF batching per drag fluido (evita re-render 60fps)
+  const rafRef = useRef<number | null>(null)
+  const pendingPosRef = useRef<{ layerId: string; x: number; y: number } | null>(null)
+
   // ─── BOOT: carica nodi + profili + vetri + pannelli ──
   useEffect(() => {
     (async () => {
@@ -310,11 +314,16 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   }
 
   const onCanvasTouchMove = (e: React.TouchEvent) => {
+    // Cancella long-press se l'utente sta muovendo il dito
+    if (longPressRef.current.timer) {
+      clearTimeout(longPressRef.current.timer)
+      longPressRef.current.timer = null
+    }
     if (e.touches.length === 2 && dragRef.current.type === 'pinch') {
       const t1 = e.touches[0], t2 = e.touches[1]
       const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
       const ratio = dist / (dragRef.current.pinchDist || 1)
-      const newZoom = Math.max(0.3, Math.min(20, (dragRef.current.pinchZoom || 1) * ratio))
+      const newZoom = Math.max(0.3, Math.min(50, (dragRef.current.pinchZoom || 1) * ratio))
       setZoom(newZoom)
       return
     }
@@ -326,29 +335,68 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     } else if (dragRef.current.type === 'layer' && dragRef.current.layerId && editingNodo) {
       const dx = (t.x - dragRef.current.startX) / zoom
       const dy = (t.y - dragRef.current.startY) / zoom
-      const dragLayer = editingNodo.layers.find(l => l.id === dragRef.current.layerId)
-      if (dragLayer) {
-        const newX = (dragRef.current.origLayerX || 0) + dx
-        const newY = (dragRef.current.origLayerY || 0) + dy
-        if (dragLayer.groupId) {
-          const deltaX = newX - dragLayer.x
-          const deltaY = newY - dragLayer.y
-          setEditingNodo(prev => {
-            if (!prev) return null
-            return { ...prev, layers: prev.layers.map(l => {
-              if (l.id === dragRef.current.layerId) return { ...l, x: newX, y: newY }
-              if (l.groupId === dragLayer.groupId) return { ...l, x: l.x + deltaX, y: l.y + deltaY }
-              return l
-            })}
-          })
-        } else {
-          updateLayer(dragRef.current.layerId, { x: newX, y: newY })
-        }
+      const newX = (dragRef.current.origLayerX || 0) + dx
+      const newY = (dragRef.current.origLayerY || 0) + dy
+
+      // Aggiorna posizione live in ref (per render non-React)
+      pendingPosRef.current = { layerId: dragRef.current.layerId, x: newX, y: newY }
+
+      // Schedula update via RAF (1 update per frame, no spam state)
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = null
+          const pending = pendingPosRef.current
+          if (!pending) return
+
+          const dragLayer = editingNodo.layers.find(l => l.id === pending.layerId)
+          if (!dragLayer) return
+
+          if (dragLayer.groupId) {
+            const deltaX = pending.x - dragLayer.x
+            const deltaY = pending.y - dragLayer.y
+            setEditingNodo(prev => {
+              if (!prev) return null
+              return { ...prev, layers: prev.layers.map(l => {
+                if (l.id === pending.layerId) return { ...l, x: pending.x, y: pending.y }
+                if (l.groupId === dragLayer.groupId) return { ...l, x: l.x + deltaX, y: l.y + deltaY }
+                return l
+              })}
+            })
+          } else {
+            updateLayer(pending.layerId, { x: pending.x, y: pending.y })
+          }
+        })
       }
     }
   }
 
   const onCanvasTouchEnd = () => {
+    // Cancella RAF pendente e applica ultima posizione
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+    const pending = pendingPosRef.current
+    if (pending && editingNodo) {
+      const dragLayer = editingNodo.layers.find(l => l.id === pending.layerId)
+      if (dragLayer) {
+        if (dragLayer.groupId) {
+          const deltaX = pending.x - dragLayer.x
+          const deltaY = pending.y - dragLayer.y
+          setEditingNodo(prev => {
+            if (!prev) return null
+            return { ...prev, layers: prev.layers.map(l => {
+              if (l.id === pending.layerId) return { ...l, x: pending.x, y: pending.y }
+              if (l.groupId === dragLayer.groupId) return { ...l, x: l.x + deltaX, y: l.y + deltaY }
+              return l
+            })}
+          })
+        } else {
+          updateLayer(pending.layerId, { x: pending.x, y: pending.y })
+        }
+      }
+    }
+    pendingPosRef.current = null
     dragRef.current = { type: null, startX: 0, startY: 0, origPanX: 0, origPanY: 0 }
   }
 
@@ -691,8 +739,10 @@ function EditorView(p: any) {
         <ToolBtn icon="+" label="Profilo" onClick={onAddProfile} color={DS.teal} />
         <ToolBtn icon="✥" label="Sposta" active={tool === 'select'} onClick={() => setTool('select')} />
         <ToolBtn icon="📏" label="Quota" active={tool === 'quota'} onClick={() => { setTool('quota'); }} />
+        <ToolBtn icon="🔍+" label="Zoom+" onClick={() => setZoom((z: number) => Math.min(50, z * 1.4))} />
+        <ToolBtn icon="🔍−" label="Zoom−" onClick={() => setZoom((z: number) => Math.max(0.3, z / 1.4))} />
+        <ToolBtn icon="⊕" label="Fit" onClick={() => { setZoom(3); setPanX(0); setPanY(0); }} />
         <ToolBtn icon="🔗" label="Lega" active={tool === 'link'} onClick={() => setTool('link')} />
-        <ToolBtn icon="⊕" label="Reset" onClick={() => { setZoom(3); setPanX(0); setPanY(0); }} />
       </div>
 
       {/* BOTTOM SHEET */}
