@@ -15,7 +15,7 @@ import SettingsAccessoriMobile from './settings-mobile/SettingsAccessoriMobile'
 // Catalogo prodotti (NEW)
 import MastroWinMobile from './settings-mobile/MastroWinMobile'
 import SettingsSistemiMobile from './settings-mobile/SettingsSistemiMobile'
-import NodiTecniciPanel from './NodiTecniciPanel'
+import NodiTecniciPanelMobile from './nodi/NodiTecniciPanelMobile'
 import SettingsImportaMobile from './settings-mobile/SettingsImportaMobile'
 
 // Tendaggi
@@ -47,7 +47,7 @@ export default function SettingsMobile() {
   if (sezione === 'accessori') return <SettingsAccessoriMobile onBack={torna} />
   if (sezione === 'win')       return <MastroWinMobile azienda_id={azienda_id} onBack={torna} />
   if (sezione === 'sistemi')   return <SettingsSistemiMobile azienda_id={azienda_id} onBack={torna} />
-  if (sezione === 'nodi')      return <NodiTecniciPanel onBack={torna} />
+  if (sezione === 'nodi')      return <NodiTecniciPanelMobile onBack={torna} />
   if (sezione === 'importa')   return <SettingsImportaMobile azienda_id={azienda_id} onBack={torna} />
 
   // TENDAGGI
