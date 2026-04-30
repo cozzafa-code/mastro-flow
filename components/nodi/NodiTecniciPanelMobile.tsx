@@ -12,6 +12,7 @@ import { LAYER_COLORS } from '@/lib/nodi/nodi-types'
 import {
   transformPoint, getSnapPoints, findNearestSnap, projectOnSegment,
   resolveQuote, generateCombinedSVG, extractSVGContent, screenToCanvas,
+  calcAlignedPosition,
 } from '@/lib/nodi/nodi-geometry'
 import NodiBottomSheet from './NodiBottomSheet'
 import NodiCatalogModal from './NodiCatalogModal'
@@ -69,6 +70,11 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   // Bottom sheet state
   const [sheetState, setSheetState] = useState<'collapsed' | 'mid' | 'full'>('collapsed')
   const [sheetTab, setSheetTab] = useState<'info' | 'profili' | 'quote' | 'azioni'>('info')
+
+  // Mode "align con altro profilo"
+  // Quando attivo, l'utente tappa un secondo profilo target → si apre AlignSheet
+  const [alignMode, setAlignMode] = useState<{ sourceLayerId: string } | null>(null)
+  const [alignSheet, setAlignSheet] = useState<{ sourceId: string; targetId: string } | null>(null)
 
   // Double tap detection
   const lastTapRef = useRef<{ time: number; layerId: string | null }>({ time: 0, layerId: null })
@@ -150,6 +156,7 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
         label: p.ruolo || p.codice,
         visible: true,
         groupId: null,
+        lato: p.lato || undefined,
       })),
     })
     setZoom(3); setPanX(0); setPanY(0)
@@ -191,6 +198,7 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       profili: editingNodo.layers.map(l => ({
         ruolo: l.label, codice: l.codice, profiloId: l.profiloId,
         x: l.x, y: l.y, rotation: l.rotation, flipH: l.flipH, flipV: l.flipV,
+        lato: l.lato || null,
       })),
       sezione_svg: generateCombinedSVG(editingNodo),
     }
@@ -208,6 +216,18 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       alert('Errore: ' + e.message)
     }
   }
+
+  // Applica allineamento: muove il source in modo che sia allineato al target
+  const applyAlign = useCallback((sourceId: string, targetId: string, direction: 'left' | 'right' | 'top' | 'bottom', offset: number, align: 'start' | 'center' | 'end') => {
+    if (!editingNodo) return
+    const source = editingNodo.layers.find(l => l.id === sourceId)
+    const target = editingNodo.layers.find(l => l.id === targetId)
+    if (!source || !target) return
+    const newPos = calcAlignedPosition(source, target, direction, offset, align)
+    updateLayer(sourceId, { x: newPos.x, y: newPos.y })
+    setAlignSheet(null)
+    setSelectedLayer(sourceId)
+  }, [editingNodo, updateLayer])
 
   // ─── AZIONI LAYER (dal bottom sheet "Azioni") ──
   const handleLayerAction = useCallback((layerId: string, action: string) => {
@@ -243,6 +263,19 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       case 'unlink':  updateLayer(layerId, { groupId: null }); break
       case 'link':
         setSelectedLayer(layerId); setTool('link')
+        setSheetState('collapsed')
+        break
+      case 'lato-INT':
+        // INT = orientamento standard (no flip aggiuntivo, etichetta INT)
+        updateLayer(layerId, { lato: 'INT', flipH: false })
+        break
+      case 'lato-EST':
+        // EST = profilo specchiato orizzontalmente (lato camera invertito)
+        updateLayer(layerId, { lato: 'EST', flipH: true })
+        break
+      case 'align-mode':
+        // Entra in modalità "tappa un altro profilo target per allineare"
+        setAlignMode({ sourceLayerId: layerId })
         setSheetState('collapsed')
         break
       case 'delete':
@@ -406,6 +439,13 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   // Layer touch (start drag layer + double-tap detection)
   const onLayerTouchStart = (e: React.TouchEvent, layer: NodoLayer) => {
     e.stopPropagation()
+
+    // Modalità ALIGN: tappi target → apri sheet allinea
+    if (alignMode && alignMode.sourceLayerId !== layer.id) {
+      setAlignSheet({ sourceId: alignMode.sourceLayerId, targetId: layer.id })
+      setAlignMode(null)
+      return
+    }
 
     if (tool === 'link' && selectedLayer && selectedLayer !== layer.id) {
       const selLayer = editingNodo?.layers.find(l => l.id === selectedLayer)
@@ -628,6 +668,9 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       onLayerTouchMove={onLayerTouchMove}
       onLayerTouchEnd={onLayerTouchEnd}
       handleLayerAction={handleLayerAction}
+      alignMode={alignMode} setAlignMode={setAlignMode}
+      alignSheet={alignSheet} setAlignSheet={setAlignSheet}
+      onApplyAlign={applyAlign}
       onAddProfile={() => setShowCatalog(true)}
       onSave={saveNodo}
       onClose={() => setEditingNodo(null)}
@@ -651,12 +694,17 @@ function EditorView(p: any) {
       style.id = styleId
       // Nasconde la bottom nav MASTRO durante editing nodi
       style.textContent = `
-        body.nodi-editor-open > div:not(.nodi-editor-portal) [class*="bottom-nav" i],
-        body.nodi-editor-open > div:not(.nodi-editor-portal) [class*="BottomNav" i],
-        body.nodi-editor-open > div:not(.nodi-editor-portal) nav,
-        body.nodi-editor-open > div:not(.nodi-editor-portal) > div > div[style*="position: fixed"][style*="bottom"]:not([style*="top"]),
-        body.nodi-editor-open > div:not(.nodi-editor-portal) > div[style*="position: fixed"][style*="bottom"]:not([style*="top"]) {
+        body.nodi-editor-open *:not(.nodi-editor-portal):not(.nodi-editor-portal *) {
+          /* niente */
+        }
+        /* Nasconde la BottomToolbar MASTRO durante editing */
+        body.nodi-editor-open > div [style*="position:fixed"][style*="bottom:0"]:not(.nodi-editor-portal):not(.nodi-editor-portal *),
+        body.nodi-editor-open > div [style*="position: fixed"][style*="bottom: 0"]:not(.nodi-editor-portal):not(.nodi-editor-portal *),
+        body.nodi-editor-open [class*="bottom-nav" i]:not(.nodi-editor-portal):not(.nodi-editor-portal *),
+        body.nodi-editor-open [class*="BottomNav" i]:not(.nodi-editor-portal):not(.nodi-editor-portal *),
+        body.nodi-editor-open [class*="BottomToolbar" i]:not(.nodi-editor-portal):not(.nodi-editor-portal *) {
           display: none !important;
+          visibility: hidden !important;
         }
         body.nodi-editor-open { overflow: hidden !important; }
       `
@@ -676,6 +724,7 @@ function EditorView(p: any) {
     onCanvasTouchStart, onCanvasTouchMove, onCanvasTouchEnd,
     onLayerTouchStart, onLayerTouchMove, onLayerTouchEnd,
     handleLayerAction,
+    alignMode, setAlignMode, alignSheet, setAlignSheet, onApplyAlign,
     onAddProfile, onSave, onClose,
     showCatalog, profili, onCatalogSelect, onCatalogClose,
   } = p
@@ -721,18 +770,20 @@ function EditorView(p: any) {
       </div>
 
       {/* TOOL HINT */}
-      {(tool === 'quota' || tool === 'link') && (
+      {(tool === 'quota' || tool === 'link' || alignMode) && (
         <div style={{
           padding: '6px 12px',
-          background: tool === 'quota' ? DS.red + '15' : DS.blue + '15',
-          color: tool === 'quota' ? DS.red : DS.blue,
+          background: alignMode ? DS.teal + '15' : tool === 'quota' ? DS.red + '15' : DS.blue + '15',
+          color: alignMode ? DS.teal : tool === 'quota' ? DS.red : DS.blue,
           fontSize: 11, fontWeight: 700, textAlign: 'center',
           flexShrink: 0,
         }}>
-          {tool === 'quota'
+          {alignMode
+            ? '➡ Tappa il profilo target per allineare'
+            : tool === 'quota'
             ? (quotePt1 ? '➡ Tappa il SECONDO punto' : '➡ Tappa il PRIMO punto da quotare')
             : selectedLayer ? '➡ Tappa un altro profilo per legarlo' : '➡ Seleziona il primo profilo'}
-          <button onClick={() => { setTool('select'); }} style={{
+          <button onClick={() => { setTool('select'); setAlignMode(null); }} style={{
             marginLeft: 12, padding: '2px 8px', borderRadius: 4, border: 'none',
             background: '#FFF', color: DS.ink, fontSize: 10, fontWeight: 700, cursor: 'pointer',
           }}>×</button>
@@ -801,6 +852,21 @@ function EditorView(p: any) {
                   {/* Rect invisibile dinamico: cattura touch su tutto il profilo */}
                   <rect x={hitX} y={hitY} width={hitW} height={hitH} fill="transparent" pointerEvents="all" />
                   <g dangerouslySetInnerHTML={{ __html: extractSVGContent(layer.svg) }} pointerEvents="none" />
+                  {/* Etichetta lato INT/EST in angolo basso destra del bbox */}
+                  {layer.lato && (
+                    <g pointerEvents="none">
+                      <rect x={hitX + hitW - 30 / zoom} y={hitY + hitH - 16 / zoom}
+                        width={28 / zoom} height={14 / zoom} rx={2 / zoom}
+                        fill={layer.lato === 'INT' ? DS.blue : DS.amber}
+                        opacity={0.85}
+                      />
+                      <text x={hitX + hitW - 16 / zoom} y={hitY + hitH - 6 / zoom}
+                        textAnchor="middle" fontSize={9 / zoom}
+                        fill="#FFF" fontFamily={M} fontWeight="800">
+                        {layer.lato}
+                      </text>
+                    </g>
+                  )}
                   {selectedLayer === layer.id && (
                     <rect x={hitX} y={hitY} width={hitW} height={hitH} fill="none"
                       stroke={DS.teal} strokeWidth={1.5 / zoom}
@@ -892,6 +958,118 @@ function EditorView(p: any) {
           onClose={onCatalogClose}
         />
       )}
+
+      {/* ALIGN SHEET - mostra controlli direzione/offset quando hai scelto source+target */}
+      {alignSheet && (
+        <AlignSheet
+          source={editingNodo.layers.find((l: NodoLayer) => l.id === alignSheet.sourceId)}
+          target={editingNodo.layers.find((l: NodoLayer) => l.id === alignSheet.targetId)}
+          onApply={(dir: any, offset: number, align: any) =>
+            onApplyAlign(alignSheet.sourceId, alignSheet.targetId, dir, offset, align)
+          }
+          onClose={() => setAlignSheet(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ============ ALIGN SHEET (mini-pannello allineamento) ============
+function AlignSheet({ source, target, onApply, onClose }: {
+  source: NodoLayer; target: NodoLayer;
+  onApply: (dir: 'left' | 'right' | 'top' | 'bottom', offset: number, align: 'start' | 'center' | 'end') => void;
+  onClose: () => void;
+}) {
+  const [direction, setDirection] = useState<'left' | 'right' | 'top' | 'bottom'>('right')
+  const [offset, setOffset] = useState<string>('0')
+  const [align, setAlign] = useState<'start' | 'center' | 'end'>('center')
+
+  const Btn = ({ d, label, icon, current }: { d: any; label: string; icon: string; current: any }) => (
+    <button
+      onClick={() => { current === 'direction' ? setDirection(d) : setAlign(d) }}
+      style={{
+        padding: '12px 8px', borderRadius: 10,
+        border: `2px solid ${(current === 'direction' ? direction : align) === d ? DS.teal : DS.border}`,
+        background: (current === 'direction' ? direction : align) === d ? DS.teal + '15' : DS.white,
+        color: (current === 'direction' ? direction : align) === d ? DS.teal : DS.ink,
+        fontSize: 11, fontWeight: 700, cursor: 'pointer', textAlign: 'center',
+      }}
+    >
+      <div style={{ fontSize: 18, lineHeight: 1, marginBottom: 4 }}>{icon}</div>
+      {label}
+    </button>
+  )
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(13,31,31,0.5)',
+      zIndex: 10500,
+      display: 'flex', alignItems: 'flex-end',
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', background: DS.white,
+        borderTopLeftRadius: 18, borderTopRightRadius: 18,
+        padding: 16, paddingBottom: 24,
+        maxHeight: '85vh', overflowY: 'auto',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: DS.ink }}>Allinea profili</div>
+            <div style={{ fontSize: 11, color: DS.muted, fontFamily: M, marginTop: 2 }}>
+              <span style={{ color: DS.teal, fontWeight: 700 }}>{source.codice}</span>
+              {' → '}
+              <span style={{ color: DS.blue, fontWeight: 700 }}>{target.codice}</span>
+            </div>
+          </div>
+          <button onClick={onClose} style={{
+            background: DS.light, border: 'none',
+            width: 36, height: 36, borderRadius: 8,
+            color: DS.ink, fontSize: 18, cursor: 'pointer',
+          }}>×</button>
+        </div>
+
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6 }}>POSIZIONE DI {source.codice} RISPETTO A {target.codice}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 14 }}>
+          <Btn d="top"    icon="↑" label="Sopra"    current="direction" />
+          <Btn d="bottom" icon="↓" label="Sotto"    current="direction" />
+          <Btn d="left"   icon="←" label="Sinistra" current="direction" />
+          <Btn d="right"  icon="→" label="Destra"   current="direction" />
+        </div>
+
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6 }}>ALLINEAMENTO {direction === 'left' || direction === 'right' ? 'VERTICALE' : 'ORIZZONTALE'}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 14 }}>
+          <Btn d="start"  icon={direction === 'left' || direction === 'right' ? '⊤' : '⊣'} label="Inizio"  current="align" />
+          <Btn d="center" icon="┼" label="Centro" current="align" />
+          <Btn d="end"    icon={direction === 'left' || direction === 'right' ? '⊥' : '⊢'} label="Fine"    current="align" />
+        </div>
+
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6 }}>OFFSET (mm) — distanza tra i due profili</div>
+        <input
+          type="number" inputMode="decimal"
+          value={offset}
+          onChange={e => setOffset(e.target.value)}
+          placeholder="0"
+          style={{
+            width: '100%', padding: '12px 14px', borderRadius: 10,
+            border: `2px solid ${DS.border}`, background: DS.light,
+            fontSize: 18, fontFamily: M, fontWeight: 800,
+            textAlign: 'center', color: DS.ink, boxSizing: 'border-box',
+            marginBottom: 14, outline: 'none',
+          }}
+        />
+
+        <button
+          onClick={() => onApply(direction, parseFloat(offset) || 0, align)}
+          style={{
+            width: '100%', padding: 14, borderRadius: 12,
+            border: 'none', background: DS.teal, color: '#FFF',
+            fontSize: 14, fontWeight: 800, letterSpacing: 0.5,
+            cursor: 'pointer',
+            boxShadow: `0 3px 0 0 ${DS.dark}`,
+          }}
+        >ALLINEA ORA</button>
+      </div>
     </div>
   )
 }

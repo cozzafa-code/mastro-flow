@@ -15,6 +15,7 @@ export interface NodoLayer {
   label: string;
   visible: boolean;
   groupId: string | null;
+  lato?: 'INT' | 'EST';   // orientamento profilo (interno/esterno camera)
 }
 
 export interface QuoteRef {

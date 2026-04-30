@@ -207,3 +207,95 @@ export function screenToCanvas(
     y: (clientY - rect.top - rect.height / 2 - panY) / zoom,
   };
 }
+
+// ─── Bounding box di un layer (in coordinate world dopo transform) ──
+export function getLayerBBox(layer: NodoLayer): { x: number; y: number; w: number; h: number; cx: number; cy: number } | null {
+  if (!layer.svg) return null;
+  const vbMatch = layer.svg.match(/viewBox="([\d.\s-]+)"/);
+  if (!vbMatch) return null;
+  const [vx, vy, vw, vh] = vbMatch[1].split(/\s+/).map(Number);
+  if (!isFinite(vx) || !isFinite(vw)) return null;
+  // Applica scale (flip) e translate del layer alla bbox della viewBox
+  const scaleX = layer.flipH ? -1 : 1;
+  const scaleY = layer.flipV ? -1 : 1;
+  // Quattro angoli della viewBox
+  const corners = [
+    { x: vx, y: vy },
+    { x: vx + vw, y: vy },
+    { x: vx, y: vy + vh },
+    { x: vx + vw, y: vy + vh },
+  ].map(p => transformPoint(p.x * scaleX / Math.abs(scaleX), p.y * scaleY / Math.abs(scaleY), { ...layer, flipH: false, flipV: false }));
+  // (semplificato: useremo solo width/height per allineamento; il resto via translate)
+  const xs = corners.map(c => c.x);
+  const ys = corners.map(c => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  return {
+    x: minX,
+    y: minY,
+    w: maxX - minX,
+    h: maxY - minY,
+    cx: (minX + maxX) / 2,
+    cy: (minY + maxY) / 2,
+  };
+}
+
+// ─── Calcola posizione per allineare un layer rispetto a un target ──
+// direction: 'left'|'right'|'top'|'bottom' = posizione del SOURCE rispetto al TARGET
+// align: 'start'|'center'|'end' = come allineare l'asse perpendicolare
+// offset: mm di spazio tra source e target (0 = combaciante)
+export function calcAlignedPosition(
+  source: NodoLayer,
+  target: NodoLayer,
+  direction: 'left' | 'right' | 'top' | 'bottom',
+  offset: number = 0,
+  align: 'start' | 'center' | 'end' = 'center'
+): { x: number; y: number } {
+  const sBox = getLayerBBox(source);
+  const tBox = getLayerBBox(target);
+  if (!sBox || !tBox) return { x: source.x, y: source.y };
+
+  // Le bbox sono già in coordinate world per il target.
+  // Per il source dobbiamo calcolare dove starebbe il suo CENTRO (layer.x,y) per posizionarlo dove vogliamo.
+  // sBox.cx attuale = source.x + (offset_centro_bbox_dal_layer_origin)
+  const sCenterOffsetX = sBox.cx - source.x;
+  const sCenterOffsetY = sBox.cy - source.y;
+
+  let newCx = sBox.cx;
+  let newCy = sBox.cy;
+
+  switch (direction) {
+    case 'left':   // source a sinistra del target
+      newCx = tBox.x - offset - sBox.w / 2;
+      newCy = align === 'start' ? tBox.y + sBox.h / 2
+            : align === 'end'   ? tBox.y + tBox.h - sBox.h / 2
+            : tBox.cy;
+      break;
+    case 'right':  // source a destra del target
+      newCx = tBox.x + tBox.w + offset + sBox.w / 2;
+      newCy = align === 'start' ? tBox.y + sBox.h / 2
+            : align === 'end'   ? tBox.y + tBox.h - sBox.h / 2
+            : tBox.cy;
+      break;
+    case 'top':    // source sopra il target
+      newCy = tBox.y - offset - sBox.h / 2;
+      newCx = align === 'start' ? tBox.x + sBox.w / 2
+            : align === 'end'   ? tBox.x + tBox.w - sBox.w / 2
+            : tBox.cx;
+      break;
+    case 'bottom': // source sotto il target
+      newCy = tBox.y + tBox.h + offset + sBox.h / 2;
+      newCx = align === 'start' ? tBox.x + sBox.w / 2
+            : align === 'end'   ? tBox.x + tBox.w - sBox.w / 2
+            : tBox.cx;
+      break;
+  }
+
+  // Calcola la nuova layer.x/y togliendo l'offset bbox-centro
+  return {
+    x: newCx - sCenterOffsetX,
+    y: newCy - sCenterOffsetY,
+  };
+}

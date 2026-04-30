@@ -46,8 +46,8 @@ export default function NodiBottomSheet({
   // Heights per stato
   const heights: Record<SheetState, string> = {
     collapsed: '52px',
-    mid: '45vh',
-    full: '88vh',
+    mid: '55vh',
+    full: '92vh',
   }
 
   const layer = selectedLayer ? nodo.layers.find(l => l.id === selectedLayer) : null
@@ -284,35 +284,79 @@ function TabAzioni({ layer, onAction }: { layer: NodoLayer; onAction: (a: string
       }}
     >{label}</button>
   )
+  const lato = layer.lato || 'INT'
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, color: DS.muted, letterSpacing: 1, marginBottom: 8 }}>
         AZIONI · {layer.codice}
       </div>
-      <div style={{ fontSize: 10, color: DS.muted, fontFamily: M, marginBottom: 10 }}>
-        X={layer.x.toFixed(1)} · Y={layer.y.toFixed(1)} · Rot={layer.rotation}°
+      <div style={{ fontSize: 10, color: DS.muted, fontFamily: M, marginBottom: 14 }}>
+        X={layer.x.toFixed(1)} · Y={layer.y.toFixed(1)} · Rot={layer.rotation}° · Lato={lato}
       </div>
+
+      {/* SEZIONE: ALLINEA CON ALTRO PROFILO */}
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.teal, marginBottom: 6 }}>↔ ALLINEA CON ALTRO PROFILO</div>
+      <Btn a="align-mode" label="Tappa target → Allinea ↔ ↕" color={DS.teal} />
+      <div style={{ height: 14 }} />
+
+      {/* SEZIONE: ORIENTAMENTO */}
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.blue, marginBottom: 6 }}>⊕ LATO PROFILO</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 14 }}>
+        <button
+          onClick={() => onAction('lato-INT')}
+          style={{
+            padding: '14px 10px', borderRadius: 10,
+            border: `2px solid ${lato === 'INT' ? DS.blue : DS.border}`,
+            background: lato === 'INT' ? DS.blue + '15' : DS.white,
+            color: lato === 'INT' ? DS.blue : DS.ink,
+            fontSize: 13, fontWeight: 800, cursor: 'pointer',
+          }}
+        >🏠 INT (interno)</button>
+        <button
+          onClick={() => onAction('lato-EST')}
+          style={{
+            padding: '14px 10px', borderRadius: 10,
+            border: `2px solid ${lato === 'EST' ? DS.blue : DS.border}`,
+            background: lato === 'EST' ? DS.blue + '15' : DS.white,
+            color: lato === 'EST' ? DS.blue : DS.ink,
+            fontSize: 13, fontWeight: 800, cursor: 'pointer',
+          }}
+        >🌤️ EST (esterno)</button>
+      </div>
+
+      {/* SEZIONE: ROTAZIONE */}
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6 }}>↻ ROTAZIONE</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
         <Btn a="rot+90" label="↻ +90°" />
         <Btn a="rot-90" label="↺ -90°" />
         <Btn a="rot+45" label="↻ +45°" />
         <Btn a="rot+1"  label="↻ +1°" />
         <Btn a="rot-1"  label="↺ -1°" />
-        <Btn a="reset"  label="Reset" />
+        <Btn a="reset"  label="Reset rot" />
       </div>
+
+      {/* SEZIONE: SPECCHIO */}
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6, marginTop: 12 }}>⇄ SPECCHIO</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
-        <Btn a="flipH" label={`Specchia ↔${layer.flipH ? ' ✓' : ''}`} color={layer.flipH ? DS.teal : undefined} />
-        <Btn a="flipV" label={`Specchia ↕${layer.flipV ? ' ✓' : ''}`} color={layer.flipV ? DS.teal : undefined} />
+        <Btn a="flipH" label={`↔ Orizzontale${layer.flipH ? ' ✓' : ''}`} color={layer.flipH ? DS.teal : undefined} />
+        <Btn a="flipV" label={`↕ Verticale${layer.flipV ? ' ✓' : ''}`} color={layer.flipV ? DS.teal : undefined} />
       </div>
+
+      {/* SEZIONE: ORDINE */}
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6, marginTop: 12 }}>▭ ORDINE LAYER</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
-        <Btn a="front" label="In primo piano" />
-        <Btn a="back"  label="In fondo" />
+        <Btn a="front" label="↑ Primo piano" />
+        <Btn a="back"  label="↓ In fondo" />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
-        <Btn a="move"  label="Sposta di…" color={DS.blue} />
-        <Btn a={layer.groupId ? 'unlink' : 'link'} label={layer.groupId ? 'Slega gruppo' : 'Lega con…'} color={layer.groupId ? DS.red : DS.blue} />
+
+      {/* SEZIONE: GRUPPO */}
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6, marginTop: 12 }}>🔗 GRUPPO</div>
+      <Btn a={layer.groupId ? 'unlink' : 'link'} label={layer.groupId ? 'Slega gruppo' : 'Lega con altro profilo...'} color={layer.groupId ? DS.red : DS.blue} />
+
+      {/* SEZIONE: ELIMINA */}
+      <div style={{ marginTop: 16 }}>
+        <Btn a="delete" label="🗑 Elimina dal nodo" color={DS.red} />
       </div>
-      <Btn a="delete" label="Elimina" color={DS.red} />
     </div>
   )
 }
