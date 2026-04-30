@@ -100,16 +100,21 @@ export default function NodiBottomSheet({
 
       {/* Content scrollable */}
       {state !== 'collapsed' && (
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          padding: 14,
-          paddingBottom: 100,
-          touchAction: 'pan-y',
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehavior: 'contain',
-        }}>
+        <div
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            padding: 14,
+            paddingBottom: 120,
+            touchAction: 'pan-y',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+            minHeight: 0,
+          }}
+        >
           {tab === 'info'    && <TabInfo nodo={nodo} setNodo={setNodo} />}
           {tab === 'profili' && <TabProfili nodo={nodo} setNodo={setNodo} selectedLayer={selectedLayer} setSelectedLayer={setSelectedLayer} />}
           {tab === 'quote'   && <TabQuote nodo={nodo} quotes={quotes} setQuotes={setQuotes} />}

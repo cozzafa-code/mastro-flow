@@ -5,6 +5,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { createClient } from '@supabase/supabase-js'
 import type { NodoLayer, NodoTecnico, QuoteRef, ToolMode } from '@/lib/nodi/nodi-types'
 import { LAYER_COLORS } from '@/lib/nodi/nodi-types'
@@ -603,8 +604,9 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     )
   }
 
-  // ============ RENDER EDITOR VIEW ============
-  return (
+  // ============ RENDER EDITOR VIEW (via Portal a body per uscire da wrapper con transform) ============
+  if (typeof window === 'undefined') return null
+  return createPortal(
     <EditorView
       editingNodo={editingNodo}
       setEditingNodo={setEditingNodo}
@@ -633,7 +635,8 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       profili={profili}
       onCatalogSelect={addLayerFromProfile}
       onCatalogClose={() => setShowCatalog(false)}
-    />
+    />,
+    document.body
   )
 }
 
