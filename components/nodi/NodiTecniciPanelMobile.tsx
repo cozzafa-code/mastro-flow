@@ -259,7 +259,10 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       case 'rot-1':   updateLayer(layerId, { rotation: (layer.rotation - 1 + 360) % 360 }); break
       case 'flipH':   updateLayer(layerId, { flipH: !layer.flipH }); break
       case 'flipV':   updateLayer(layerId, { flipV: !layer.flipV }); break
-      case 'reset':   updateLayer(layerId, { x: 0, y: 0, rotation: 0, flipH: false, flipV: false }); break
+      case 'reset':
+        // Reset totale: torna come da catalogo (no rotazione, no specchio)
+        updateLayer(layerId, { rotation: 0, flipH: false, flipV: false })
+        break
       case 'front':
         setEditingNodo(prev => {
           if (!prev) return null
@@ -284,12 +287,12 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
         setSheetState('collapsed')
         break
       case 'lato-INT':
-        // INT = orientamento standard (no flip aggiuntivo, etichetta INT)
-        updateLayer(layerId, { lato: 'INT', flipH: false })
+        // INT = etichetta semantica "lato interno camera". Non tocca flipH (spetta a te).
+        updateLayer(layerId, { lato: 'INT' })
         break
       case 'lato-EST':
-        // EST = profilo specchiato orizzontalmente (lato camera invertito)
-        updateLayer(layerId, { lato: 'EST', flipH: true })
+        // EST = etichetta semantica "lato esterno camera". Non tocca flipH (spetta a te).
+        updateLayer(layerId, { lato: 'EST' })
         break
       case 'nudge-left':  updateLayer(layerId, { x: layer.x - 1 }); break
       case 'nudge-right': updateLayer(layerId, { x: layer.x + 1 }); break
@@ -1728,6 +1731,9 @@ function ToolMenu({ category, tool, setTool, selectedLayer, editingNodo, onAddPr
           <SmallActionBtn label="Reset"   onClick={() => handleLayerAction('reset')} />
         </div>
         {sectionTitle('SPECCHIO')}
+        <div style={{ fontSize: 9, color: DS.muted, marginBottom: 6, fontStyle: 'italic' }}>
+          Specchia il profilo se vuoi vederlo dall'altro lato. INT/EST sono solo etichette, non specchiano.
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
           <SmallActionBtn label={`↔ Orizz${layer.flipH ? ' ✓' : ''}`} onClick={() => handleLayerAction('flipH')} active={layer.flipH} />
           <SmallActionBtn label={`↕ Vert${layer.flipV ? ' ✓' : ''}`}  onClick={() => handleLayerAction('flipV')} active={layer.flipV} />
