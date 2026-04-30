@@ -1045,6 +1045,61 @@ function EditorView(p: any) {
                 )
               })}
 
+            {/* DISTANZA LIVE tra tutte le coppie di profili - SEMPRE visibile, no setup */}
+            {(() => {
+              const layers = (editingNodo?.layers || []).filter((l: NodoLayer) => l.visible)
+              const lines: any[] = []
+              for (let i = 0; i < layers.length; i++) {
+                for (let j = i + 1; j < layers.length; j++) {
+                  const a = layers[i], b = layers[j]
+                  const ba = getLayerBBox(a), bb = getLayerBBox(b)
+                  if (!ba || !bb) continue
+
+                  // Calcolo distanza tra le 2 bounding box (gap)
+                  // Verticale (B sopra/sotto A) o orizzontale (B sx/dx A)
+                  const horizGap = (bb.x > ba.x + ba.w) ? bb.x - (ba.x + ba.w)
+                                : (ba.x > bb.x + bb.w) ? ba.x - (bb.x + bb.w) : 0
+                  const vertGap  = (bb.y > ba.y + ba.h) ? bb.y - (ba.y + ba.h)
+                                : (ba.y > bb.y + bb.h) ? ba.y - (bb.y + bb.h) : 0
+
+                  // Sovrapposti orizzontalmente → mostra distanza verticale
+                  if (horizGap === 0 && vertGap > 0 && vertGap < 500) {
+                    const cx = (Math.max(ba.x, bb.x) + Math.min(ba.x + ba.w, bb.x + bb.w)) / 2
+                    const y1 = Math.min(ba.y + ba.h, bb.y + bb.h)
+                    const y2 = Math.max(ba.y, bb.y)
+                    lines.push({ key: `${a.id}-${b.id}-v`, x1: cx, y1, x2: cx, y2, mm: vertGap })
+                  }
+                  // Sovrapposti verticalmente → mostra distanza orizzontale
+                  if (vertGap === 0 && horizGap > 0 && horizGap < 500) {
+                    const cy = (Math.max(ba.y, bb.y) + Math.min(ba.y + ba.h, bb.y + bb.h)) / 2
+                    const x1 = Math.min(ba.x + ba.w, bb.x + bb.w)
+                    const x2 = Math.max(ba.x, bb.x)
+                    lines.push({ key: `${a.id}-${b.id}-h`, x1, y1: cy, x2, y2: cy, mm: horizGap })
+                  }
+                }
+              }
+              return lines.map((l: any) => {
+                const mx = (l.x1 + l.x2) / 2, my = (l.y1 + l.y2) / 2
+                const fs = 18 / zoom
+                return (
+                  <g key={l.key} pointerEvents="none">
+                    <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+                      stroke={DS.amber} strokeWidth={2 / zoom} strokeDasharray={`${4 / zoom},${2 / zoom}`} />
+                    <rect
+                      x={mx - 36 / zoom} y={my - fs * 0.85}
+                      width={72 / zoom} height={fs * 1.5}
+                      rx={6 / zoom}
+                      fill={DS.amber} stroke="#FFF" strokeWidth={1.5 / zoom}
+                    />
+                    <text x={mx} y={my + fs * 0.32} textAnchor="middle"
+                      fontSize={fs} fontFamily={M} fontWeight="800" fill="#FFF">
+                      {l.mm.toFixed(1)} mm
+                    </text>
+                  </g>
+                )
+              })
+            })()}
+
             {quotes.map((q: QuoteRef, i: number) => {
               const r = resolveQuote(q, editingNodo)
               const mx = (r.x1 + r.x2) / 2, my = (r.y1 + r.y2) / 2
@@ -1217,11 +1272,21 @@ function EditorView(p: any) {
           onClick={() => { setSheetState('collapsed'); setToolCategory(toolCategory === 'move' ? null : 'move') }}
         />
         <CatBtn
-          icon="📏"
-          label="Misure"
-          active={toolCategory === 'measure' || tool === 'quota'}
-          color={tool === 'quota' ? DS.red : undefined}
-          onClick={() => { setSheetState('collapsed'); setToolCategory(toolCategory === 'measure' ? null : 'measure') }}
+          icon="↔"
+          label="Allinea"
+          color={DS.amber}
+          active={alignMode !== null}
+          onClick={() => {
+            // Avvia modalità allinea: tappi target, poi source, si combaciano
+            setSheetState('collapsed')
+            setToolCategory(null)
+            // Se c'è già un layer selezionato lo uso come source
+            if (selectedLayer) {
+              setAlignMode({ sourceLayerId: selectedLayer })
+            } else {
+              alert('Tocca prima un profilo, poi premi Allinea')
+            }
+          }}
         />
         <CatBtn
           icon="🔍"
