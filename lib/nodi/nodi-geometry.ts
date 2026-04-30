@@ -251,15 +251,35 @@ export function getLayerBBox(layer: NodoLayer): { x: number; y: number; w: numbe
     });
   }
 
-  // path d="M ... L ... A ..."
+  // path d="M ... L ... C ... Q ... A ..." - estrae tutti gli endpoint
   const pathRegex = /d="([^"]+)"/g;
   while ((match = pathRegex.exec(layer.svg)) !== null) {
     const d = match[1];
-    const coordRegex = /[ML]\s*([\d.-]+)[,\s]([\d.-]+)/g;
-    let cm;
-    while ((cm = coordRegex.exec(d)) !== null) {
-      addPoint(parseFloat(cm[1]), parseFloat(cm[2]));
+    // Estrae coppie x,y dopo qualsiasi comando path (M L C Q T S A H V)
+    // Per semplicità: tutti i numeri nel path, presi a coppie consecutive
+    const numRegex = /-?\d+\.?\d*/g;
+    const nums: number[] = [];
+    let nm;
+    while ((nm = numRegex.exec(d)) !== null) {
+      nums.push(parseFloat(nm[0]));
     }
+    // Aggiungi a coppie x,y (le curve hanno punti di controllo intermedi ma i bbox di quei
+    // punti di controllo possono essere LEGGERMENTE più grandi della bbox della curva reale,
+    // ma per scopi di allineamento è una buona approssimazione)
+    for (let i = 0; i + 1 < nums.length; i += 2) {
+      addPoint(nums[i], nums[i + 1]);
+    }
+  }
+
+  // rect x="..." y="..." width="..." height="..."
+  const rectRegex = /<rect[^>]*x="([\d.-]+)"[^>]*y="([\d.-]+)"[^>]*width="([\d.-]+)"[^>]*height="([\d.-]+)"/g;
+  while ((match = rectRegex.exec(layer.svg)) !== null) {
+    const rx = parseFloat(match[1]), ry = parseFloat(match[2]);
+    const rw = parseFloat(match[3]), rh = parseFloat(match[4]);
+    addPoint(rx, ry);
+    addPoint(rx + rw, ry);
+    addPoint(rx, ry + rh);
+    addPoint(rx + rw, ry + rh);
   }
 
   // circle cx cy

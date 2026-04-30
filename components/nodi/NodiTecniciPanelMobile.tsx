@@ -586,7 +586,7 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   // Touch move su layer - applica transform DIRETTAMENTE al DOM per mantenere touch capture
   const onLayerTouchMove = (e: React.TouchEvent) => {
     e.stopPropagation()
-    e.preventDefault()
+    // NB: e.preventDefault() rimosso - React touch listeners sono passive in v18+
     if (dragRef.current.type !== 'layer' || !dragRef.current.layerId || !editingNodo) return
     if (e.touches.length !== 1) return
 
@@ -1045,7 +1045,7 @@ function EditorView(p: any) {
                 )
               })}
 
-            {/* DISTANZA LIVE tra tutte le coppie di profili - SEMPRE visibile, no setup */}
+            {/* DISTANZA LIVE tra coppie di profili - SEMPRE visibile, calcolo robusto */}
             {(() => {
               const layers = (editingNodo?.layers || []).filter((l: NodoLayer) => l.visible)
               const lines: any[] = []
@@ -1055,44 +1055,70 @@ function EditorView(p: any) {
                   const ba = getLayerBBox(a), bb = getLayerBBox(b)
                   if (!ba || !bb) continue
 
-                  // Calcolo distanza tra le 2 bounding box (gap)
-                  // Verticale (B sopra/sotto A) o orizzontale (B sx/dx A)
-                  const horizGap = (bb.x > ba.x + ba.w) ? bb.x - (ba.x + ba.w)
-                                : (ba.x > bb.x + bb.w) ? ba.x - (bb.x + bb.w) : 0
-                  const vertGap  = (bb.y > ba.y + ba.h) ? bb.y - (ba.y + ba.h)
-                                : (ba.y > bb.y + bb.h) ? ba.y - (bb.y + bb.h) : 0
+                  // Calcolo PUNTI PIÙ VICINI tra le 2 bounding box (sempre funziona)
+                  // x del punto più vicino di A a B (clampa il centro di B sui bordi di A)
+                  const ax = Math.max(ba.x, Math.min(ba.x + ba.w, bb.cx))
+                  const ay = Math.max(ba.y, Math.min(ba.y + ba.h, bb.cy))
+                  const bx = Math.max(bb.x, Math.min(bb.x + bb.w, ba.cx))
+                  const by = Math.max(bb.y, Math.min(bb.y + bb.h, ba.cy))
 
-                  // Sovrapposti orizzontalmente → mostra distanza verticale
-                  if (horizGap === 0 && vertGap > 0 && vertGap < 500) {
-                    const cx = (Math.max(ba.x, bb.x) + Math.min(ba.x + ba.w, bb.x + bb.w)) / 2
-                    const y1 = Math.min(ba.y + ba.h, bb.y + bb.h)
-                    const y2 = Math.max(ba.y, bb.y)
-                    lines.push({ key: `${a.id}-${b.id}-v`, x1: cx, y1, x2: cx, y2, mm: vertGap })
+                  // Gap effettivo: distanza tra i bordi delle bbox lungo l'asse principale
+                  const dx = ba.cx - bb.cx
+                  const dy = ba.cy - bb.cy
+                  const isHoriz = Math.abs(dx) > Math.abs(dy)
+                  let gap = 0
+                  let lx1 = 0, ly1 = 0, lx2 = 0, ly2 = 0
+                  if (isHoriz) {
+                    // Distanza orizzontale tra i bordi delle bbox
+                    if (ba.cx < bb.cx) {
+                      gap = bb.x - (ba.x + ba.w)
+                      lx1 = ba.x + ba.w; lx2 = bb.x
+                    } else {
+                      gap = ba.x - (bb.x + bb.w)
+                      lx1 = bb.x + bb.w; lx2 = ba.x
+                    }
+                    const cy = (ba.cy + bb.cy) / 2
+                    ly1 = ly2 = cy
+                  } else {
+                    if (ba.cy < bb.cy) {
+                      gap = bb.y - (ba.y + ba.h)
+                      ly1 = ba.y + ba.h; ly2 = bb.y
+                    } else {
+                      gap = ba.y - (bb.y + bb.h)
+                      ly1 = bb.y + bb.h; ly2 = ba.y
+                    }
+                    const cx = (ba.cx + bb.cx) / 2
+                    lx1 = lx2 = cx
                   }
-                  // Sovrapposti verticalmente → mostra distanza orizzontale
-                  if (vertGap === 0 && horizGap > 0 && horizGap < 500) {
-                    const cy = (Math.max(ba.y, bb.y) + Math.min(ba.y + ba.h, bb.y + bb.h)) / 2
-                    const x1 = Math.min(ba.x + ba.w, bb.x + bb.w)
-                    const x2 = Math.max(ba.x, bb.x)
-                    lines.push({ key: `${a.id}-${b.id}-h`, x1, y1: cy, x2, y2: cy, mm: horizGap })
+
+                  // Mostra anche se è negativo (profili sovrapposti) come 0
+                  const displayGap = Math.max(0, gap)
+                  if (displayGap < 1000) { // mostra solo se entro 1 metro
+                    lines.push({
+                      key: `${a.id}-${b.id}`,
+                      x1: lx1, y1: ly1, x2: lx2, y2: ly2,
+                      mm: displayGap,
+                    })
                   }
                 }
               }
               return lines.map((l: any) => {
                 const mx = (l.x1 + l.x2) / 2, my = (l.y1 + l.y2) / 2
-                const fs = 18 / zoom
+                const fs = 20 / zoom
+                const labelW = 90 / zoom
+                const labelH = fs * 1.6
                 return (
                   <g key={l.key} pointerEvents="none">
                     <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-                      stroke={DS.amber} strokeWidth={2 / zoom} strokeDasharray={`${4 / zoom},${2 / zoom}`} />
+                      stroke={DS.amber} strokeWidth={2.5 / zoom} strokeDasharray={`${5 / zoom},${3 / zoom}`} />
                     <rect
-                      x={mx - 36 / zoom} y={my - fs * 0.85}
-                      width={72 / zoom} height={fs * 1.5}
-                      rx={6 / zoom}
-                      fill={DS.amber} stroke="#FFF" strokeWidth={1.5 / zoom}
+                      x={mx - labelW / 2} y={my - labelH / 2}
+                      width={labelW} height={labelH}
+                      rx={8 / zoom}
+                      fill={DS.amber} stroke="#FFF" strokeWidth={2 / zoom}
                     />
                     <text x={mx} y={my + fs * 0.32} textAnchor="middle"
-                      fontSize={fs} fontFamily={M} fontWeight="800" fill="#FFF">
+                      fontSize={fs} fontFamily={M} fontWeight="900" fill="#FFF">
                       {l.mm.toFixed(1)} mm
                     </text>
                   </g>
