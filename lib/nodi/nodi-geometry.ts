@@ -158,7 +158,7 @@ export function findNearestSnap(
   return best;
 }
 
-// ─── Risolvi quota in coordinate world (segue i layer) ──
+// ─── Risolvi quota in coordinate world (segue i layer con rotation/flip) ──
 export function resolveQuote(
   q: QuoteRef,
   nodo: NodoTecnico | null
@@ -166,10 +166,15 @@ export function resolveQuote(
   if (!nodo) return { x1: 0, y1: 0, x2: 0, y2: 0, dist: 0 };
   const l1 = nodo.layers.find((l) => l.id === q.layerId1);
   const l2 = nodo.layers.find((l) => l.id === q.layerId2);
-  const x1 = (l1?.x || 0) + q.offX1;
-  const y1 = (l1?.y || 0) + q.offY1;
-  const x2 = (l2?.x || 0) + q.offX2;
-  const y2 = (l2?.y || 0) + q.offY2;
+
+  // Punto 1: se ancorato a un layer, applica TUTTO il transform (translate+rotate+flip)
+  // L'offset è in coordinate world relative al layer.x/y, quindi NON va trasformato dal flip/rotation
+  // - basta sommare alle coordinate world del layer
+  // Se il layer non esiste (canvas-anchor), il punto resta dove era stato creato (offset assoluto)
+  const x1 = l1 ? l1.x + q.offX1 : q.offX1;
+  const y1 = l1 ? l1.y + q.offY1 : q.offY1;
+  const x2 = l2 ? l2.x + q.offX2 : q.offX2;
+  const y2 = l2 ? l2.y + q.offY2 : q.offY2;
   return { x1, y1, x2, y2, dist: Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) };
 }
 

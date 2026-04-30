@@ -1127,14 +1127,23 @@ function EditorView(p: any) {
               const r = resolveQuote(q, editingNodo)
               const mx = (r.x1 + r.x2) / 2, my = (r.y1 + r.y2) / 2
               const fs = 14 / zoom
+              // Calcola direzione perpendicolare per linee di estensione
+              const dx = r.x2 - r.x1, dy = r.y2 - r.y1
+              const len = Math.sqrt(dx * dx + dy * dy) || 1
+              // Punta freccia
+              const arrowSize = 6 / zoom
               return (
                 <g key={`q${i}`}>
-                  <circle cx={r.x1} cy={r.y1} r={2 / zoom} fill={DS.ink} />
-                  <circle cx={r.x2} cy={r.y2} r={2 / zoom} fill={DS.ink} />
-                  <line x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2} stroke={DS.ink} strokeWidth={0.7 / zoom} />
-                  <rect x={mx - 32 / zoom} y={my - fs * 0.9} width={64 / zoom} height={fs * 1.6}
-                    fill="rgba(255,255,255,.95)" rx={2 / zoom}
-                    stroke={DS.ink} strokeWidth={0.3 / zoom} />
+                  {/* Punti agli estremi */}
+                  <circle cx={r.x1} cy={r.y1} r={3 / zoom} fill={DS.red} stroke="#FFF" strokeWidth={0.5 / zoom} />
+                  <circle cx={r.x2} cy={r.y2} r={3 / zoom} fill={DS.red} stroke="#FFF" strokeWidth={0.5 / zoom} />
+                  {/* Linea principale */}
+                  <line x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2}
+                    stroke={DS.red} strokeWidth={1.2 / zoom} opacity={0.8} />
+                  {/* Label distanza */}
+                  <rect x={mx - 28 / zoom} y={my - fs * 0.85} width={56 / zoom} height={fs * 1.5}
+                    fill="#FFF" rx={3 / zoom}
+                    stroke={DS.red} strokeWidth={0.8 / zoom} />
                   <text x={mx} y={my + fs * 0.3} textAnchor="middle"
                     fontSize={fs} fill={DS.ink} fontFamily={M} fontWeight="800">
                     {r.dist.toFixed(1)}
