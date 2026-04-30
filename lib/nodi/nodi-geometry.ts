@@ -208,44 +208,93 @@ export function screenToCanvas(
   };
 }
 
-// ─── Bounding box di un layer (in coordinate world dopo transform) ──
+// ─── Bounding box REALE di un layer (in coordinate world dopo transform) ──
+// Usa i punti snap effettivi del profilo, non l'approssimazione viewBox.
 export function getLayerBBox(layer: NodoLayer): { x: number; y: number; w: number; h: number; cx: number; cy: number } | null {
   if (!layer.svg) return null;
-  const vbMatch = layer.svg.match(/viewBox="([\d.\s-]+)"/);
-  if (!vbMatch) return null;
-  const [vx, vy, vw, vh] = vbMatch[1].split(/\s+/).map(Number);
-  if (!isFinite(vx) || !isFinite(vw)) return null;
-  // Applica scale (flip) e translate del layer alla bbox della viewBox
-  const scaleX = layer.flipH ? -1 : 1;
-  const scaleY = layer.flipV ? -1 : 1;
-  // Quattro angoli della viewBox
-  const corners = [
-    { x: vx, y: vy },
-    { x: vx + vw, y: vy },
-    { x: vx, y: vy + vh },
-    { x: vx + vw, y: vy + vh },
-  ].map(p => transformPoint(p.x * scaleX / Math.abs(scaleX), p.y * scaleY / Math.abs(scaleY), { ...layer, flipH: false, flipV: false }));
-  // (semplificato: useremo solo width/height per allineamento; il resto via translate)
-  const xs = corners.map(c => c.x);
-  const ys = corners.map(c => c.y);
+
+  // Estrai TUTTI i punti dal SVG e applica il transform del layer
+  const points: { x: number; y: number }[] = [];
+
+  // Estrai Y-flip offset come fa getSnapPoints
+  let yFlipOffset = 0;
+  const translateMatch = layer.svg.match(/translate\(0[,\s]+([-\d.]+)\)/);
+  if (translateMatch) {
+    yFlipOffset = -parseFloat(translateMatch[1]);
+  } else {
+    const vbMatch = layer.svg.match(/viewBox="([\d.\s-]+)"/);
+    if (vbMatch) {
+      const vbParts = vbMatch[1].split(/\s+/).map(Number);
+      yFlipOffset = vbParts[1] + vbParts[3];
+    }
+  }
+
+  const addPoint = (rawX: number, rawY: number) => {
+    const svgX = rawX;
+    const svgY = -rawY + yFlipOffset;
+    const tp = transformPoint(svgX, svgY, layer);
+    points.push(tp);
+  };
+
+  // points="x,y x,y"
+  const pointsRegex = /points="([^"]+)"/g;
+  let match;
+  while ((match = pointsRegex.exec(layer.svg)) !== null) {
+    match[1].split(/\s+/).forEach(pair => {
+      const [x, y] = pair.split(',').map(Number);
+      if (isFinite(x) && isFinite(y)) addPoint(x, y);
+    });
+  }
+
+  // path d="M ... L ... A ..."
+  const pathRegex = /d="([^"]+)"/g;
+  while ((match = pathRegex.exec(layer.svg)) !== null) {
+    const d = match[1];
+    const coordRegex = /[ML]\s*([\d.-]+)[,\s]([\d.-]+)/g;
+    let cm;
+    while ((cm = coordRegex.exec(d)) !== null) {
+      addPoint(parseFloat(cm[1]), parseFloat(cm[2]));
+    }
+  }
+
+  // circle cx cy
+  const circleRegex = /cx="([\d.-]+)"\s*cy="([\d.-]+)"/g;
+  while ((match = circleRegex.exec(layer.svg)) !== null) {
+    addPoint(parseFloat(match[1]), parseFloat(match[2]));
+  }
+
+  // Fallback se nessun punto trovato: usa viewBox
+  if (points.length === 0) {
+    const vbMatch = layer.svg.match(/viewBox="([\d.\s-]+)"/);
+    if (!vbMatch) return null;
+    const [vx, vy, vw, vh] = vbMatch[1].split(/\s+/).map(Number);
+    if (!isFinite(vx) || !isFinite(vw)) return null;
+    return {
+      x: layer.x + vx, y: layer.y + vy,
+      w: vw, h: vh,
+      cx: layer.x + vx + vw / 2,
+      cy: layer.y + vy + vh / 2,
+    };
+  }
+
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
   const minX = Math.min(...xs);
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
   return {
-    x: minX,
-    y: minY,
-    w: maxX - minX,
-    h: maxY - minY,
+    x: minX, y: minY,
+    w: maxX - minX, h: maxY - minY,
     cx: (minX + maxX) / 2,
     cy: (minY + maxY) / 2,
   };
 }
 
 // ─── Calcola posizione per allineare un layer rispetto a un target ──
-// direction: 'left'|'right'|'top'|'bottom' = posizione del SOURCE rispetto al TARGET
-// align: 'start'|'center'|'end' = come allineare l'asse perpendicolare
-// offset: mm di spazio tra source e target (0 = combaciante)
+// direction: posizione del SOURCE rispetto al TARGET
+// offset: spazio tra i bordi (0 = combaciante)
+// align: come allineare l'asse perpendicolare
 export function calcAlignedPosition(
   source: NodoLayer,
   target: NodoLayer,
@@ -257,45 +306,45 @@ export function calcAlignedPosition(
   const tBox = getLayerBBox(target);
   if (!sBox || !tBox) return { x: source.x, y: source.y };
 
-  // Le bbox sono già in coordinate world per il target.
-  // Per il source dobbiamo calcolare dove starebbe il suo CENTRO (layer.x,y) per posizionarlo dove vogliamo.
-  // sBox.cx attuale = source.x + (offset_centro_bbox_dal_layer_origin)
-  const sCenterOffsetX = sBox.cx - source.x;
-  const sCenterOffsetY = sBox.cy - source.y;
+  // Per spostare il source dobbiamo capire: se layer.x = source.x attuale, come si trasforma in sBox.x?
+  // sBox.x = source.x + (offset_bbox_da_origin_layer)
+  // → offset_bbox_da_origin_layer = sBox.x - source.x
+  const sBoxOffsetX = sBox.x - source.x;
+  const sBoxOffsetY = sBox.y - source.y;
 
-  let newCx = sBox.cx;
-  let newCy = sBox.cy;
+  let newBoxX = sBox.x;
+  let newBoxY = sBox.y;
 
   switch (direction) {
-    case 'left':   // source a sinistra del target
-      newCx = tBox.x - offset - sBox.w / 2;
-      newCy = align === 'start' ? tBox.y + sBox.h / 2
-            : align === 'end'   ? tBox.y + tBox.h - sBox.h / 2
-            : tBox.cy;
+    case 'left':   // source A SINISTRA del target
+      newBoxX = tBox.x - sBox.w - offset;
+      newBoxY = align === 'start' ? tBox.y
+              : align === 'end'   ? tBox.y + tBox.h - sBox.h
+              : tBox.y + (tBox.h - sBox.h) / 2;
       break;
-    case 'right':  // source a destra del target
-      newCx = tBox.x + tBox.w + offset + sBox.w / 2;
-      newCy = align === 'start' ? tBox.y + sBox.h / 2
-            : align === 'end'   ? tBox.y + tBox.h - sBox.h / 2
-            : tBox.cy;
+    case 'right':  // source A DESTRA del target
+      newBoxX = tBox.x + tBox.w + offset;
+      newBoxY = align === 'start' ? tBox.y
+              : align === 'end'   ? tBox.y + tBox.h - sBox.h
+              : tBox.y + (tBox.h - sBox.h) / 2;
       break;
-    case 'top':    // source sopra il target
-      newCy = tBox.y - offset - sBox.h / 2;
-      newCx = align === 'start' ? tBox.x + sBox.w / 2
-            : align === 'end'   ? tBox.x + tBox.w - sBox.w / 2
-            : tBox.cx;
+    case 'top':    // source SOPRA il target
+      newBoxY = tBox.y - sBox.h - offset;
+      newBoxX = align === 'start' ? tBox.x
+              : align === 'end'   ? tBox.x + tBox.w - sBox.w
+              : tBox.x + (tBox.w - sBox.w) / 2;
       break;
-    case 'bottom': // source sotto il target
-      newCy = tBox.y + tBox.h + offset + sBox.h / 2;
-      newCx = align === 'start' ? tBox.x + sBox.w / 2
-            : align === 'end'   ? tBox.x + tBox.w - sBox.w / 2
-            : tBox.cx;
+    case 'bottom': // source SOTTO il target
+      newBoxY = tBox.y + tBox.h + offset;
+      newBoxX = align === 'start' ? tBox.x
+              : align === 'end'   ? tBox.x + tBox.w - sBox.w
+              : tBox.x + (tBox.w - sBox.w) / 2;
       break;
   }
 
-  // Calcola la nuova layer.x/y togliendo l'offset bbox-centro
+  // newLayer.x = newBox.x - offset_bbox_da_origin
   return {
-    x: newCx - sCenterOffsetX,
-    y: newCy - sCenterOffsetY,
+    x: newBoxX - sBoxOffsetX,
+    y: newBoxY - sBoxOffsetY,
   };
 }

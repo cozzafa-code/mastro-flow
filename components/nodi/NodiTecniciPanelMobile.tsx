@@ -1066,94 +1066,230 @@ function AlignSheet({ source, target, onApply, onClose }: {
   onClose: () => void;
 }) {
   const [direction, setDirection] = useState<'left' | 'right' | 'top' | 'bottom'>('right')
-  const [offset, setOffset] = useState<string>('0')
+  const [offset, setOffset] = useState<number>(0)
   const [align, setAlign] = useState<'start' | 'center' | 'end'>('center')
 
-  const Btn = ({ d, label, icon, current }: { d: any; label: string; icon: string; current: any }) => (
+  // Preset offset comuni nei serramenti
+  const PRESETS = [
+    { v: 0,  label: 'Combaciante',     sub: 'Bordo a bordo' },
+    { v: 4,  label: 'Guarn. PVC 4mm',  sub: 'Guarnizione battuta standard' },
+    { v: 6,  label: 'Guarn. PVC 6mm',  sub: 'Guarnizione battuta maggiorata' },
+    { v: 8,  label: 'EPDM 8mm',        sub: 'Gomma battuta esterna' },
+    { v: 12, label: 'Canalina 12mm',   sub: 'Canalina vetrocamera' },
+  ]
+
+  // Preview SVG: 2 quadrati che mostrano la disposizione direzione/align
+  const previewW = 200
+  const previewH = 100
+  const targetSize = 32
+  const sourceSize = 24
+  let sx = 0, sy = 0
+  const tx = previewW / 2 - targetSize / 2
+  const ty = previewH / 2 - targetSize / 2
+  const offsetVisual = Math.min(20, offset / 2 + 6) // visualizziamo offset proporzionalmente
+  switch (direction) {
+    case 'left':   sx = tx - sourceSize - offsetVisual; sy = align === 'start' ? ty : align === 'end' ? ty + targetSize - sourceSize : ty + (targetSize - sourceSize) / 2; break
+    case 'right':  sx = tx + targetSize + offsetVisual; sy = align === 'start' ? ty : align === 'end' ? ty + targetSize - sourceSize : ty + (targetSize - sourceSize) / 2; break
+    case 'top':    sy = ty - sourceSize - offsetVisual; sx = align === 'start' ? tx : align === 'end' ? tx + targetSize - sourceSize : tx + (targetSize - sourceSize) / 2; break
+    case 'bottom': sy = ty + targetSize + offsetVisual; sx = align === 'start' ? tx : align === 'end' ? tx + targetSize - sourceSize : tx + (targetSize - sourceSize) / 2; break
+  }
+
+  const DirBtn = ({ d, icon, label }: { d: 'left' | 'right' | 'top' | 'bottom'; icon: string; label: string }) => (
     <button
-      onClick={() => { current === 'direction' ? setDirection(d) : setAlign(d) }}
+      onClick={() => setDirection(d)}
       style={{
-        padding: '12px 8px', borderRadius: 10,
-        border: `2px solid ${(current === 'direction' ? direction : align) === d ? DS.teal : DS.border}`,
-        background: (current === 'direction' ? direction : align) === d ? DS.teal + '15' : DS.white,
-        color: (current === 'direction' ? direction : align) === d ? DS.teal : DS.ink,
+        padding: '14px 8px', borderRadius: 10,
+        border: `2px solid ${direction === d ? DS.teal : DS.border}`,
+        background: direction === d ? DS.teal + '15' : DS.white,
+        color: direction === d ? DS.teal : DS.ink,
         fontSize: 11, fontWeight: 700, cursor: 'pointer', textAlign: 'center',
       }}
     >
-      <div style={{ fontSize: 18, lineHeight: 1, marginBottom: 4 }}>{icon}</div>
+      <div style={{ fontSize: 22, lineHeight: 1, marginBottom: 4 }}>{icon}</div>
       {label}
     </button>
+  )
+
+  const AlignBtn = ({ a, label }: { a: 'start' | 'center' | 'end'; label: string }) => (
+    <button
+      onClick={() => setAlign(a)}
+      style={{
+        padding: '10px 6px', borderRadius: 8,
+        border: `1.5px solid ${align === a ? DS.teal : DS.border}`,
+        background: align === a ? DS.teal + '15' : DS.white,
+        color: align === a ? DS.teal : DS.ink,
+        fontSize: 11, fontWeight: 700, cursor: 'pointer',
+      }}
+    >{label}</button>
   )
 
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      background: 'rgba(13,31,31,0.5)',
+      background: 'rgba(13,31,31,0.55)',
       zIndex: 10500,
       display: 'flex', alignItems: 'flex-end',
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
         width: '100%', background: DS.white,
-        borderTopLeftRadius: 18, borderTopRightRadius: 18,
-        padding: 16, paddingBottom: 24,
-        maxHeight: '85vh', overflowY: 'auto',
+        borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        padding: 16, paddingBottom: 28,
+        maxHeight: '92vh', overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+        {/* HEADER */}
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: DS.ink }}>Allinea profili</div>
             <div style={{ fontSize: 11, color: DS.muted, fontFamily: M, marginTop: 2 }}>
-              <span style={{ color: DS.teal, fontWeight: 700 }}>{source.codice}</span>
-              {' → '}
-              <span style={{ color: DS.blue, fontWeight: 700 }}>{target.codice}</span>
+              Sposto <span style={{ color: DS.teal, fontWeight: 800 }}>{source.codice}</span>
+              {' '}rispetto a <span style={{ color: DS.blue, fontWeight: 800 }}>{target.codice}</span>
             </div>
           </div>
           <button onClick={onClose} style={{
             background: DS.light, border: 'none',
-            width: 36, height: 36, borderRadius: 8,
-            color: DS.ink, fontSize: 18, cursor: 'pointer',
+            width: 38, height: 38, borderRadius: 10,
+            color: DS.ink, fontSize: 20, cursor: 'pointer', fontWeight: 700,
           }}>×</button>
         </div>
 
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6 }}>POSIZIONE DI {source.codice} RISPETTO A {target.codice}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 14 }}>
-          <Btn d="top"    icon="↑" label="Sopra"    current="direction" />
-          <Btn d="bottom" icon="↓" label="Sotto"    current="direction" />
-          <Btn d="left"   icon="←" label="Sinistra" current="direction" />
-          <Btn d="right"  icon="→" label="Destra"   current="direction" />
+        {/* PREVIEW */}
+        <div style={{
+          background: DS.light, borderRadius: 12, padding: 10,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          marginBottom: 16, height: 120,
+        }}>
+          <svg width={previewW} height={previewH} viewBox={`0 0 ${previewW} ${previewH}`}>
+            {/* Target (riferimento) */}
+            <rect x={tx} y={ty} width={targetSize} height={targetSize}
+              fill={DS.blue + '20'} stroke={DS.blue} strokeWidth="1.5" rx="2" />
+            <text x={tx + targetSize / 2} y={ty + targetSize / 2 + 3} textAnchor="middle"
+              fontSize="9" fill={DS.blue} fontWeight="800" fontFamily={M}>TARGET</text>
+
+            {/* Source (da spostare) */}
+            <rect x={sx} y={sy} width={sourceSize} height={sourceSize}
+              fill={DS.teal + '30'} stroke={DS.teal} strokeWidth="1.5" rx="2" />
+            <text x={sx + sourceSize / 2} y={sy + sourceSize / 2 + 3} textAnchor="middle"
+              fontSize="9" fill={DS.teal} fontWeight="800" fontFamily={M}>{source.codice.substring(0, 6)}</text>
+
+            {/* Linea offset se offset > 0 */}
+            {offset > 0 && offsetVisual > 4 && (() => {
+              let lx1 = 0, ly1 = 0, lx2 = 0, ly2 = 0
+              switch (direction) {
+                case 'right': lx1 = tx + targetSize; lx2 = sx; ly1 = ly2 = ty + targetSize / 2; break
+                case 'left':  lx1 = sx + sourceSize; lx2 = tx; ly1 = ly2 = ty + targetSize / 2; break
+                case 'bottom':ly1 = ty + targetSize; ly2 = sy; lx1 = lx2 = tx + targetSize / 2; break
+                case 'top':   ly1 = sy + sourceSize; ly2 = ty; lx1 = lx2 = tx + targetSize / 2; break
+              }
+              return (
+                <g>
+                  <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke={DS.amber} strokeWidth="1.5" strokeDasharray="3,2" />
+                  <text x={(lx1 + lx2) / 2} y={(ly1 + ly2) / 2 - 6} textAnchor="middle"
+                    fontSize="10" fill={DS.amber} fontWeight="800" fontFamily={M}>{offset}mm</text>
+                </g>
+              )
+            })()}
+          </svg>
         </div>
 
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6 }}>ALLINEAMENTO {direction === 'left' || direction === 'right' ? 'VERTICALE' : 'ORIZZONTALE'}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 14 }}>
-          <Btn d="start"  icon={direction === 'left' || direction === 'right' ? '⊤' : '⊣'} label="Inizio"  current="align" />
-          <Btn d="center" icon="┼" label="Centro" current="align" />
-          <Btn d="end"    icon={direction === 'left' || direction === 'right' ? '⊥' : '⊢'} label="Fine"    current="align" />
+        {/* DIREZIONE */}
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: DS.muted, marginBottom: 8 }}>
+          DOVE METTERE <span style={{ color: DS.teal }}>{source.codice}</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 16 }}>
+          <DirBtn d="top"    icon="↑" label="Sopra" />
+          <DirBtn d="bottom" icon="↓" label="Sotto" />
+          <DirBtn d="left"   icon="←" label="Sinistra" />
+          <DirBtn d="right"  icon="→" label="Destra" />
         </div>
 
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: DS.muted, marginBottom: 6 }}>OFFSET (mm) — distanza tra i due profili</div>
-        <input
-          type="number" inputMode="decimal"
-          value={offset}
-          onChange={e => setOffset(e.target.value)}
-          placeholder="0"
-          style={{
-            width: '100%', padding: '12px 14px', borderRadius: 10,
-            border: `2px solid ${DS.border}`, background: DS.light,
-            fontSize: 18, fontFamily: M, fontWeight: 800,
-            textAlign: 'center', color: DS.ink, boxSizing: 'border-box',
-            marginBottom: 14, outline: 'none',
-          }}
-        />
+        {/* ALLINEAMENTO PERPENDICOLARE */}
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: DS.muted, marginBottom: 8 }}>
+          ALLINEAMENTO {direction === 'left' || direction === 'right' ? 'VERTICALE' : 'ORIZZONTALE'}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 16 }}>
+          <AlignBtn a="start"  label={direction === 'left' || direction === 'right' ? '⤒ Alto' : '⇤ Sx'} />
+          <AlignBtn a="center" label="┼ Centro" />
+          <AlignBtn a="end"    label={direction === 'left' || direction === 'right' ? '⤓ Basso' : '⇥ Dx'} />
+        </div>
 
+        {/* OFFSET PRESETS */}
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: DS.muted, marginBottom: 8 }}>
+          DISTANZA TRA I PROFILI
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+          {PRESETS.map(p => (
+            <button
+              key={p.v}
+              onClick={() => setOffset(p.v)}
+              style={{
+                padding: '12px 14px', borderRadius: 10,
+                border: `2px solid ${offset === p.v ? DS.teal : DS.border}`,
+                background: offset === p.v ? DS.teal + '12' : DS.white,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 12,
+                textAlign: 'left',
+              }}
+            >
+              <div style={{
+                fontSize: 16, fontWeight: 800,
+                color: offset === p.v ? DS.teal : DS.ink,
+                fontFamily: M,
+                width: 56, textAlign: 'center',
+              }}>{p.v} mm</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: DS.ink }}>{p.label}</div>
+                <div style={{ fontSize: 10, color: DS.muted, marginTop: 1 }}>{p.sub}</div>
+              </div>
+              {offset === p.v && <span style={{ color: DS.teal, fontSize: 18, fontWeight: 800 }}>✓</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* OFFSET CUSTOM */}
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: DS.muted, marginBottom: 6 }}>
+          OPPURE INSERISCI MM ESATTI
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+          <input
+            type="number" inputMode="decimal"
+            value={offset}
+            onChange={e => setOffset(parseFloat(e.target.value) || 0)}
+            style={{
+              flex: 1, padding: '14px', borderRadius: 10,
+              border: `2px solid ${DS.border}`, background: DS.light,
+              fontSize: 18, fontFamily: M, fontWeight: 800,
+              textAlign: 'center', color: DS.ink, boxSizing: 'border-box',
+              outline: 'none',
+            }}
+          />
+          <button
+            onClick={() => setOffset(Math.max(0, offset - 1))}
+            style={{
+              width: 50, borderRadius: 10, border: `2px solid ${DS.border}`,
+              background: DS.white, fontSize: 22, cursor: 'pointer', fontWeight: 800,
+            }}
+          >−</button>
+          <button
+            onClick={() => setOffset(offset + 1)}
+            style={{
+              width: 50, borderRadius: 10, border: `2px solid ${DS.border}`,
+              background: DS.white, fontSize: 22, cursor: 'pointer', fontWeight: 800,
+            }}
+          >+</button>
+        </div>
+
+        {/* APPLY */}
         <button
-          onClick={() => onApply(direction, parseFloat(offset) || 0, align)}
+          onClick={() => onApply(direction, offset, align)}
           style={{
-            width: '100%', padding: 14, borderRadius: 12,
+            width: '100%', padding: 16, borderRadius: 14,
             border: 'none', background: DS.teal, color: '#FFF',
-            fontSize: 14, fontWeight: 800, letterSpacing: 0.5,
+            fontSize: 15, fontWeight: 800, letterSpacing: 0.8,
             cursor: 'pointer',
-            boxShadow: `0 3px 0 0 ${DS.dark}`,
+            boxShadow: `0 4px 0 0 ${DS.dark}`,
           }}
-        >ALLINEA ORA</button>
+        >✓ ALLINEA ORA</button>
       </div>
     </div>
   )
