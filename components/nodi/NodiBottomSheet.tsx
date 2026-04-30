@@ -63,7 +63,7 @@ export default function NodiBottomSheet({
       borderTop: `1px solid ${DS.border}`,
       boxShadow: '0 -6px 20px rgba(0,0,0,.12)',
       transition: 'height 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
-      zIndex: 10002,
+      zIndex: 10100,
       display: 'flex',
       flexDirection: 'column',
     }}>

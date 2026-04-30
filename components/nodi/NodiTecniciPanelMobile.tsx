@@ -927,8 +927,8 @@ function EditorView(p: any) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(13,31,31,0.4)',
-            zIndex: 10000,
+            background: 'rgba(13,31,31,0.5)',
+            zIndex: 10500,
           }}
         >
           <div
@@ -939,11 +939,11 @@ function EditorView(p: any) {
               bottom: 76,
               background: DS.white,
               borderRadius: 16,
-              padding: 12,
-              boxShadow: '0 -8px 24px rgba(0,0,0,0.18)',
+              padding: 14,
+              boxShadow: '0 -10px 30px rgba(0,0,0,0.25)',
               maxHeight: '70vh',
               overflowY: 'auto',
-              zIndex: 10001,
+              zIndex: 10501,
             }}
           >
             <ToolMenu
@@ -982,7 +982,7 @@ function EditorView(p: any) {
               : '92vh',
         left: 0, right: 0,
         transition: 'bottom 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
-        zIndex: 10001,
+        zIndex: 10200,
         borderTop: `1px solid ${DS.dark}`,
       }}>
         <CatBtn
@@ -990,33 +990,33 @@ function EditorView(p: any) {
           label="Aggiungi"
           color={DS.teal}
           active={toolCategory === 'add'}
-          onClick={() => setToolCategory(toolCategory === 'add' ? null : 'add')}
+          onClick={() => { setSheetState('collapsed'); setToolCategory(toolCategory === 'add' ? null : 'add') }}
         />
         <CatBtn
           icon="✥"
           label="Sposta"
           active={toolCategory === 'move' || tool === 'select'}
-          onClick={() => setToolCategory(toolCategory === 'move' ? null : 'move')}
+          onClick={() => { setSheetState('collapsed'); setToolCategory(toolCategory === 'move' ? null : 'move') }}
         />
         <CatBtn
           icon="📏"
           label="Misure"
           active={toolCategory === 'measure' || tool === 'quota'}
           color={tool === 'quota' ? DS.red : undefined}
-          onClick={() => setToolCategory(toolCategory === 'measure' ? null : 'measure')}
+          onClick={() => { setSheetState('collapsed'); setToolCategory(toolCategory === 'measure' ? null : 'measure') }}
         />
         <CatBtn
           icon="🔍"
           label="Vista"
           active={toolCategory === 'view'}
-          onClick={() => setToolCategory(toolCategory === 'view' ? null : 'view')}
+          onClick={() => { setSheetState('collapsed'); setToolCategory(toolCategory === 'view' ? null : 'view') }}
         />
         <CatBtn
           icon="☰"
           label="Layer"
           active={toolCategory === 'layer'}
           color={selectedLayer ? DS.blue : undefined}
-          onClick={() => setToolCategory(toolCategory === 'layer' ? null : 'layer')}
+          onClick={() => { setSheetState('collapsed'); setToolCategory(toolCategory === 'layer' ? null : 'layer') }}
         />
       </div>
 
@@ -1030,7 +1030,7 @@ function EditorView(p: any) {
         setQuotes={setQuotes}
         onLayerAction={handleLayerAction}
         state={sheetState}
-        setState={setSheetState}
+        setState={(s: any) => { if (s !== 'collapsed') setToolCategory(null); setSheetState(s) }}
         initialTab={sheetTab}
       />
 
