@@ -727,25 +727,53 @@ function EditorView(p: any) {
           </g>
 
           <g transform={`translate(${panX + (svgRef.current?.clientWidth || 380) / 2}, ${panY + (svgRef.current?.clientHeight || 600) / 2}) scale(${zoom})`}>
-            {editingNodo.layers.filter((l: NodoLayer) => l.visible).map((layer: NodoLayer) => (
-              <g key={layer.id}
-                id={'nodo-layer-' + layer.id}
-                transform={`translate(${layer.x},${layer.y}) rotate(${layer.rotation}) scale(${layer.flipH ? -1 : 1},${layer.flipV ? -1 : 1})`}
-                onTouchStart={(e) => onLayerTouchStart(e, layer)}
-                onTouchMove={onLayerTouchMove}
-                onTouchEnd={onLayerTouchEnd}
-                onTouchCancel={onLayerTouchEnd}
-                style={{ cursor: 'pointer', touchAction: 'none' }}
-                opacity={selectedLayer === layer.id ? 1 : 0.7}
-              >
-                <g dangerouslySetInnerHTML={{ __html: extractSVGContent(layer.svg) }} />
-                {selectedLayer === layer.id && (
-                  <rect x={-60} y={-60} width={120} height={120} fill="none"
-                    stroke={DS.teal} strokeWidth={1.2 / zoom}
-                    strokeDasharray={`${4 / zoom},${3 / zoom}`} />
-                )}
-              </g>
-            ))}
+            {editingNodo.layers
+              .filter((l: NodoLayer) => l.visible)
+              .slice()
+              .sort((a: NodoLayer, b: NodoLayer) => {
+                // Layer selezionato sempre in cima (renderato per ultimo)
+                if (a.id === selectedLayer) return 1
+                if (b.id === selectedLayer) return -1
+                return 0
+              })
+              .map((layer: NodoLayer) => {
+                // Estrai bounding box dalla viewBox del SVG per hit-area dinamica
+                let hitX = -100, hitY = -100, hitW = 200, hitH = 200
+                if (layer.svg) {
+                  const vbMatch = layer.svg.match(/viewBox="([\d.\s-]+)"/)
+                  if (vbMatch) {
+                    const [vx, vy, vw, vh] = vbMatch[1].split(/\s+/).map(Number)
+                    if (isFinite(vx) && isFinite(vw)) {
+                      // Padding 10% per assicurarsi che tutto il profilo sia tappabile
+                      const padW = vw * 0.1, padH = vh * 0.1
+                      hitX = vx - padW; hitY = vy - padH
+                      hitW = vw + padW * 2; hitH = vh + padH * 2
+                    }
+                  }
+                }
+                return (
+                <g key={layer.id}
+                  id={'nodo-layer-' + layer.id}
+                  transform={`translate(${layer.x},${layer.y}) rotate(${layer.rotation}) scale(${layer.flipH ? -1 : 1},${layer.flipV ? -1 : 1})`}
+                  onTouchStart={(e) => onLayerTouchStart(e, layer)}
+                  onTouchMove={onLayerTouchMove}
+                  onTouchEnd={onLayerTouchEnd}
+                  onTouchCancel={onLayerTouchEnd}
+                  style={{ cursor: 'pointer', touchAction: 'none' }}
+                  opacity={selectedLayer === layer.id ? 1 : 0.7}
+                >
+                  {/* Rect invisibile dinamico: cattura touch su tutto il profilo */}
+                  <rect x={hitX} y={hitY} width={hitW} height={hitH} fill="transparent" pointerEvents="all" />
+                  <g dangerouslySetInnerHTML={{ __html: extractSVGContent(layer.svg) }} pointerEvents="none" />
+                  {selectedLayer === layer.id && (
+                    <rect x={hitX} y={hitY} width={hitW} height={hitH} fill="none"
+                      stroke={DS.teal} strokeWidth={1.5 / zoom}
+                      strokeDasharray={`${4 / zoom},${3 / zoom}`}
+                      pointerEvents="none" />
+                  )}
+                </g>
+                )
+              })}
 
             {quotes.map((q: QuoteRef, i: number) => {
               const r = resolveQuote(q, editingNodo)
