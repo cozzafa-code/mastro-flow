@@ -69,8 +69,11 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   const [sheetState, setSheetState] = useState<'collapsed' | 'mid' | 'full'>('collapsed')
   const [sheetTab, setSheetTab] = useState<'info' | 'profili' | 'quote' | 'azioni'>('info')
 
-  // Long press detection
-  const longPressRef = useRef<{ timer: any; layerId: string | null }>({ timer: null, layerId: null })
+  // Double tap detection
+  const lastTapRef = useRef<{ time: number; layerId: string | null }>({ time: 0, layerId: null })
+
+  // Drag soglia: se sposti < 4px è un tap, oltre è drag
+  const dragMovedRef = useRef<boolean>(false)
 
   // RAF batching per drag fluido (evita re-render 60fps)
   const rafRef = useRef<number | null>(null)
@@ -314,11 +317,9 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
   }
 
   const onCanvasTouchMove = (e: React.TouchEvent) => {
-    // Cancella long-press se l'utente sta muovendo il dito
-    if (longPressRef.current.timer) {
-      clearTimeout(longPressRef.current.timer)
-      longPressRef.current.timer = null
-    }
+    // Se è in corso un drag di layer, NON gestire qui (gestito da onLayerTouchMove)
+    if (dragRef.current.type === 'layer') return
+
     if (e.touches.length === 2 && dragRef.current.type === 'pinch') {
       const t1 = e.touches[0], t2 = e.touches[1]
       const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
@@ -400,11 +401,11 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     dragRef.current = { type: null, startX: 0, startY: 0, origPanX: 0, origPanY: 0 }
   }
 
-  // Layer touch (start drag layer + long press detection)
+  // Layer touch (start drag layer + double-tap detection)
   const onLayerTouchStart = (e: React.TouchEvent, layer: NodoLayer) => {
     e.stopPropagation()
+
     if (tool === 'link' && selectedLayer && selectedLayer !== layer.id) {
-      // Lega questo layer al gruppo del selezionato
       const selLayer = editingNodo?.layers.find(l => l.id === selectedLayer)
       if (selLayer) {
         const groupId = selLayer.groupId || 'grp_' + Date.now()
@@ -423,25 +424,79 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     setSelectedLayer(layer.id)
     if (tool !== 'select') return
 
+    // Double tap detection (entro 350ms sullo stesso layer)
+    const now = Date.now()
+    const isDouble = lastTapRef.current.layerId === layer.id && (now - lastTapRef.current.time) < 350
+    if (isDouble) {
+      // Apri azioni
+      setSheetTab('azioni')
+      setSheetState('mid')
+      lastTapRef.current = { time: 0, layerId: null }
+      return
+    }
+    lastTapRef.current = { time: now, layerId: layer.id }
+
+    // Setup drag
     const t = getTouchPos(e)
+    dragMovedRef.current = false
     dragRef.current = {
       type: 'layer', layerId: layer.id,
       startX: t.x, startY: t.y,
       origPanX: panX, origPanY: panY,
       origLayerX: layer.x, origLayerY: layer.y,
     }
-
-    // Long press → apri sheet "Azioni"
-    if (longPressRef.current.timer) clearTimeout(longPressRef.current.timer)
-    longPressRef.current.timer = setTimeout(() => {
-      setSelectedLayer(layer.id)
-      setSheetTab('azioni')
-      setSheetState('mid')
-    }, 600)
   }
 
-  const onLayerTouchEnd = () => {
-    if (longPressRef.current.timer) clearTimeout(longPressRef.current.timer)
+  // Touch move su layer (gestito direttamente sull'elemento per intercettare prima del canvas)
+  const onLayerTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (dragRef.current.type !== 'layer' || !dragRef.current.layerId || !editingNodo) return
+    if (e.touches.length !== 1) return
+
+    const t = getTouchPos(e)
+    const dx_screen = t.x - dragRef.current.startX
+    const dy_screen = t.y - dragRef.current.startY
+
+    // Soglia: serve almeno 4px per considerarlo drag
+    if (!dragMovedRef.current && Math.abs(dx_screen) < 4 && Math.abs(dy_screen) < 4) return
+    dragMovedRef.current = true
+
+    const dx = dx_screen / zoom
+    const dy = dy_screen / zoom
+    const newX = (dragRef.current.origLayerX || 0) + dx
+    const newY = (dragRef.current.origLayerY || 0) + dy
+
+    pendingPosRef.current = { layerId: dragRef.current.layerId, x: newX, y: newY }
+
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null
+        const pending = pendingPosRef.current
+        if (!pending) return
+        const dragLayer = editingNodo.layers.find(l => l.id === pending.layerId)
+        if (!dragLayer) return
+
+        if (dragLayer.groupId) {
+          const deltaX = pending.x - dragLayer.x
+          const deltaY = pending.y - dragLayer.y
+          setEditingNodo(prev => {
+            if (!prev) return null
+            return { ...prev, layers: prev.layers.map(l => {
+              if (l.id === pending.layerId) return { ...l, x: pending.x, y: pending.y }
+              if (l.groupId === dragLayer.groupId) return { ...l, x: l.x + deltaX, y: l.y + deltaY }
+              return l
+            })}
+          })
+        } else {
+          updateLayer(pending.layerId, { x: pending.x, y: pending.y })
+        }
+      })
+    }
+  }
+
+  const onLayerTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation()
     onCanvasTouchEnd()
   }
 
@@ -565,6 +620,7 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       onCanvasTouchMove={onCanvasTouchMove}
       onCanvasTouchEnd={onCanvasTouchEnd}
       onLayerTouchStart={onLayerTouchStart}
+      onLayerTouchMove={onLayerTouchMove}
       onLayerTouchEnd={onLayerTouchEnd}
       handleLayerAction={handleLayerAction}
       onAddProfile={() => setShowCatalog(true)}
@@ -586,7 +642,7 @@ function EditorView(p: any) {
     quotes, setQuotes, quotePt1, hoverPt,
     sheetState, setSheetState, sheetTab, setSheetTab,
     onCanvasTouchStart, onCanvasTouchMove, onCanvasTouchEnd,
-    onLayerTouchStart, onLayerTouchEnd,
+    onLayerTouchStart, onLayerTouchMove, onLayerTouchEnd,
     handleLayerAction,
     onAddProfile, onSave, onClose,
     showCatalog, profili, onCatalogSelect, onCatalogClose,
@@ -672,6 +728,7 @@ function EditorView(p: any) {
               <g key={layer.id}
                 transform={`translate(${layer.x},${layer.y}) rotate(${layer.rotation}) scale(${layer.flipH ? -1 : 1},${layer.flipV ? -1 : 1})`}
                 onTouchStart={(e) => onLayerTouchStart(e, layer)}
+                onTouchMove={onLayerTouchMove}
                 onTouchEnd={onLayerTouchEnd}
                 onTouchCancel={onLayerTouchEnd}
                 style={{ cursor: 'pointer' }}
