@@ -398,6 +398,7 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
       }
     }
     pendingPosRef.current = null
+    dragMovedRef.current = false
     dragRef.current = { type: null, startX: 0, startY: 0, origPanX: 0, origPanY: 0 }
   }
 
@@ -447,7 +448,7 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
     }
   }
 
-  // Touch move su layer (gestito direttamente sull'elemento per intercettare prima del canvas)
+  // Touch move su layer - applica transform DIRETTAMENTE al DOM per mantenere touch capture
   const onLayerTouchMove = (e: React.TouchEvent) => {
     e.stopPropagation()
     e.preventDefault()
@@ -469,29 +470,31 @@ export default function NodiTecniciPanelMobile({ onBack, fornitore: initFornitor
 
     pendingPosRef.current = { layerId: dragRef.current.layerId, x: newX, y: newY }
 
-    if (!rafRef.current) {
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null
-        const pending = pendingPosRef.current
-        if (!pending) return
-        const dragLayer = editingNodo.layers.find(l => l.id === pending.layerId)
-        if (!dragLayer) return
+    // Applica transform DIRETTAMENTE al DOM (no setState - mantiene touch capture)
+    const dragLayer = editingNodo.layers.find(l => l.id === dragRef.current.layerId)
+    if (!dragLayer) return
 
-        if (dragLayer.groupId) {
-          const deltaX = pending.x - dragLayer.x
-          const deltaY = pending.y - dragLayer.y
-          setEditingNodo(prev => {
-            if (!prev) return null
-            return { ...prev, layers: prev.layers.map(l => {
-              if (l.id === pending.layerId) return { ...l, x: pending.x, y: pending.y }
-              if (l.groupId === dragLayer.groupId) return { ...l, x: l.x + deltaX, y: l.y + deltaY }
-              return l
-            })}
-          })
-        } else {
-          updateLayer(pending.layerId, { x: pending.x, y: pending.y })
+    const updateLayerDOM = (layerId: string, x: number, y: number, layerObj: NodoLayer) => {
+      const el = document.getElementById('nodo-layer-' + layerId)
+      if (el) {
+        el.setAttribute('transform',
+          `translate(${x},${y}) rotate(${layerObj.rotation}) scale(${layerObj.flipH ? -1 : 1},${layerObj.flipV ? -1 : 1})`
+        )
+      }
+    }
+
+    if (dragLayer.groupId) {
+      const deltaX = newX - dragLayer.x
+      const deltaY = newY - dragLayer.y
+      editingNodo.layers.forEach(l => {
+        if (l.id === dragLayer.id) {
+          updateLayerDOM(l.id, newX, newY, l)
+        } else if (l.groupId === dragLayer.groupId) {
+          updateLayerDOM(l.id, l.x + deltaX, l.y + deltaY, l)
         }
       })
+    } else {
+      updateLayerDOM(dragLayer.id, newX, newY, dragLayer)
     }
   }
 
@@ -726,12 +729,13 @@ function EditorView(p: any) {
           <g transform={`translate(${panX + (svgRef.current?.clientWidth || 380) / 2}, ${panY + (svgRef.current?.clientHeight || 600) / 2}) scale(${zoom})`}>
             {editingNodo.layers.filter((l: NodoLayer) => l.visible).map((layer: NodoLayer) => (
               <g key={layer.id}
+                id={'nodo-layer-' + layer.id}
                 transform={`translate(${layer.x},${layer.y}) rotate(${layer.rotation}) scale(${layer.flipH ? -1 : 1},${layer.flipV ? -1 : 1})`}
                 onTouchStart={(e) => onLayerTouchStart(e, layer)}
                 onTouchMove={onLayerTouchMove}
                 onTouchEnd={onLayerTouchEnd}
                 onTouchCancel={onLayerTouchEnd}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', touchAction: 'none' }}
                 opacity={selectedLayer === layer.id ? 1 : 0.7}
               >
                 <g dangerouslySetInnerHTML={{ __html: extractSVGContent(layer.svg) }} />
