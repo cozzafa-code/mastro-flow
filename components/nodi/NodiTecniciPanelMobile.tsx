@@ -656,7 +656,14 @@ function EditorView(p: any) {
                 : 'calc(100vh - 110px - 78vh)'
 
   return (
-    <div style={{ height: '100vh', background: DS.light, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: DS.light,
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',
+      zIndex: 100,
+    }}>
       {/* TOP BAR */}
       <div style={{
         padding: '10px 12px',
@@ -818,11 +825,11 @@ function EditorView(p: any) {
         flexShrink: 0,
         position: 'fixed',
         bottom: sheetState === 'collapsed' ? 52
-              : sheetState === 'mid' ? 'calc(38vh)'
-              : 'calc(78vh)',
+              : sheetState === 'mid' ? '38vh'
+              : '78vh',
         left: 0, right: 0,
         transition: 'bottom 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
-        zIndex: 30,
+        zIndex: 105,
         borderTop: `1px solid ${DS.dark}`,
       }}>
         <ToolBtn icon="+" label="Profilo" onClick={onAddProfile} color={DS.teal} />
