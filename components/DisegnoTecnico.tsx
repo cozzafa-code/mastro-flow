@@ -926,7 +926,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   );
 }
 
-function DisegnoTecnicoInner({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
+export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"sensi"|"strumenti"|null>(null);
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
@@ -3838,4 +3838,4 @@ function DisegnoTecnicoInner({ vanoId, vanoNome, vanoDisegno, realW: propRealW, 
                             );
 }
 
-export default React.memo(DisegnoTecnicoInner);
+

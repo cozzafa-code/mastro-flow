@@ -1234,7 +1234,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     if (selectedVano?.id === vanoId) setSelectedVano(prev => ({ ...prev, accessori: { ...prev.accessori, [acc]: { ...prev.accessori[acc], [field]: value } } }));
   };
 
-  const updateVanoField = React.useCallback((vanoId: any, field: string, value: any) => {
+  const updateVanoField = (vanoId, field, value) => {
     if (isStorico) return; // rilievo storico = sola lettura
     if (selectedRilievo) {
       const updRil = { ...selectedRilievo, vani: selectedRilievo.vani.map(v => v.id === vanoId ? { ...v, [field]: value } : v) };
@@ -1243,7 +1243,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       setSelectedCM(prev => prev ? ({ ...prev, rilievi: prev.rilievi.map(r => r.id === selectedRilievo.id ? updRil : r) }) : prev);
     }
     if (selectedVano?.id === vanoId) setSelectedVano(prev => ({ ...prev, [field]: value }));
-  }, [isStorico, selectedRilievo, selectedCM, selectedVano]);
+  };
 
   // DELETE functions
   const deleteTask = (taskId) => { confirm({ title: "Eliminare task?", message: "Questa azione è irreversibile.", confirmText: "Elimina", danger: true, onConfirm: () => { setTasks(ts => ts.filter(t => t.id !== taskId)); toast("Task eliminato", "success"); } }); };
