@@ -525,9 +525,15 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   function snapPt(pt: any) {
     const g = GRID;
     let sx = Math.round(pt.x/g)*g, sy = Math.round(pt.y/g)*g;
+    // Snap ai vertici esistenti SOLO se il tap è davvero vicinissimo (8px / zoom).
+    // Prima era 18px — troppo grande su mobile, snappava ad ogni tap rendendo impossibile disegnare.
+    // Inoltre escludo l'ULTIMO vertice (curPt) per evitare auto-snap che blocca il prossimo punto.
+    const _cp = curPtRef.current;
     for (const s of shapes) {
       for (const p of [s.a, s.b]) {
-        if (p && Math.hypot(p.x-pt.x,p.y-pt.y) < 18/zoom) return {x:p.x,y:p.y};
+        if (!p) continue;
+        if (_cp && Math.hypot(p.x-_cp.x,p.y-_cp.y)<1) continue; // skip vertex coincident con curPt
+        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 8/zoom) return {x:p.x,y:p.y};
       }
     }
     if (curPt) {
