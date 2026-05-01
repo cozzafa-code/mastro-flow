@@ -167,6 +167,7 @@ export default function VanoDetailPanel() {
   } = useMastro();
   // Catalogo tendaggi aziendale (per RilievoTende)
   const { catalogo: catalogoTendaggiRaw } = useCatalogoTendaggi();
+  const _onCadUpdate = React.useCallback((vid: any, d: any) => updateVanoField(vid, "disegno", d), [updateVanoField]);
   const catalogoTendePerRilievo = React.useMemo(() => (catalogoTendaggiRaw || []).map((c) => ({
     id: c.id,
     tipo: c.tipo_modello,
@@ -1957,7 +1958,7 @@ export default function VanoDetailPanel() {
                         vanoDisegno={v.disegno}
                         realW={m.lCentro||m.lAlto||1200}
                         realH={m.hCentro||m.hSx||1400}
-                        onUpdate={(d:any)=>updateVanoField(v.id,"disegno",d)}
+                        onUpdate={(d:any)=>_onCadUpdate(v.id,d)}
                         onClose={()=>setShowDisegno(false)}
                         T={T}
                       />
