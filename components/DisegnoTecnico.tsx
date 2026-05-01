@@ -628,6 +628,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function onDown(e: any) {
+    console.log("[CAD onDown]", { pointerType: e.pointerType, button: e.button, touches: e.touches?.length, tool, hasCurPt: !!curPtRef.current, shapes: shapes.length });
     if ((e.pointerType==="mouse" && e.button===1)||(e.touches?.length>=2)) {
       isPanRef.current=true;
       const ct=e.touches
