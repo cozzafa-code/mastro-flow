@@ -825,9 +825,9 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
           {[5,8,10,12,15,20,25,30].map(v=><option key={v} value={v}>{v}cm</option>)}
         </select>
         <div style={{width:1,height:22,background:"rgba(197,198,206,0.4)"}}/>
-        <div onClick={()=>setZoom(z=>Math.min(8,z*1.2))} style={bs2()}>＋</div>
+        <div onPointerUp={()=>setZoom(z=>Math.min(8,z*1.2))} style={bs2()}>＋</div>
         <div style={{fontSize:11,fontWeight:700,color:"#64748B",minWidth:36,textAlign:"center"}}>{Math.round(zoom*100)}%</div>
-        <div onClick={()=>setZoom(z=>Math.max(0.1,z*0.83))} style={bs2()}>－</div>
+        <div onPointerUp={()=>setZoom(z=>Math.max(0.1,z*0.83))} style={bs2()}>－</div>
         <div onClick={()=>{setZoom(1);setPan({x:60,y:60});}} style={bs2()}>↺</div>
         <div style={{flex:1}}/>
         <div onClick={()=>{if(curPt)setCurPt(null);else setShapes(s=>s.slice(0,-1));}} style={bs2()}>↩</div>
@@ -848,7 +848,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
           style={{width:"100%",height:"100%",display:"block",background:"#F9F9FB",
             cursor:isPanRef.current?"grabbing":tool==="select"?"pointer":"crosshair",
             touchAction:"none",userSelect:"none"}}
-          onPointerDown={(e)=>{ e.currentTarget.setPointerCapture(e.pointerId); onDown(e); }} onPointerMove={onMove} onPointerUp={(e)=>{ try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch{}; onUp(); }} onPointerCancel={()=>onUp()}
+          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
           onDoubleClick={onDblClick}
           onWheel={onWheel}>
           <g transform={`scale(${zoom}) translate(${pan.x},${pan.y})`}>
