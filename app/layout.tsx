@@ -31,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* CookieBanner sta fuori dal wrapper safe-area per posizione fixed */}
         <CookieBanner />
         <script dangerouslySetInnerHTML={{ __html: "if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));if(window.caches){caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));}}" }} />
+        <script dangerouslySetInnerHTML={{ __html: "if(typeof window!=='undefined'&&new URLSearchParams(location.search).get('debug')==='1'){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init();};document.body.appendChild(s);}" }} />
       </body>
     </html>
   )
