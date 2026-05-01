@@ -845,9 +845,13 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
           style={{width:"100%",height:"100%",display:"block",background:"#F9F9FB",
             cursor:isPanRef.current?"grabbing":tool==="select"?"pointer":"crosshair",
             touchAction:"none",userSelect:"none"}}
-          onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
+          onMouseDown={(e:any)=>{ console.log("[CAD] MouseDown"); onDown(e); }}
+          onMouseMove={onMove}
+          onMouseUp={(e:any)=>{ console.log("[CAD] MouseUp"); onUp(e); }}
           onDoubleClick={onDblClick}
-          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
+          onTouchStart={(e:any)=>{ console.log("[CAD] TouchStart touches:", e.touches?.length); onDown(e); }}
+          onTouchMove={onMove}
+          onTouchEnd={(e:any)=>{ console.log("[CAD] TouchEnd"); onUp(e); }}
           onWheel={onWheel}>
           <g transform={`scale(${zoom}) translate(${pan.x},${pan.y})`}>
             <defs>
