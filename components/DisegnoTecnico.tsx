@@ -499,7 +499,9 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const [tool, setTool] = React.useState<"muro"|"oggetto"|"select">("muro");
   const [spessore, setSpessore] = React.useState(15);
   const [shapes, setShapes] = React.useState<any[]>([]);
-  const [curPt, setCurPt] = React.useState<any>(null);
+  const [curPt, _setCurPtState] = React.useState<any>(null);
+  const curPtRef = React.useRef<any>(null);
+  const setCurPt = React.useCallback((v: any) => { curPtRef.current = (typeof v === "function" ? v(curPtRef.current) : v); _setCurPtState(curPtRef.current); }, []);
   const [mousePos, setMousePos] = React.useState<any>(null);
   const [joinMenu, setJoinMenu] = React.useState<any>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
@@ -647,10 +649,11 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       return;
     }
     setJoinMenu(null);
-    if (!curPt) { setCurPt(pt); }
+    const _cp = curPtRef.current;
+    if (!_cp) { setCurPt(pt); }
     else {
-      if (segLen(curPt,pt)>4)
-        setShapes(s=>[...s,{id:Date.now(),type:tool,a:curPt,b:pt,spessore,joinA:"miter",joinB:"miter"}]);
+      if (segLen(_cp,pt)>4)
+        setShapes(s=>[...s,{id:Date.now(),type:tool,a:_cp,b:pt,spessore,joinA:"miter",joinB:"miter"}]);
       setCurPt(pt);
     }
   }
