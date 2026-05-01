@@ -527,7 +527,7 @@ const LavoriInCorsoWidget = ({ data, nav }: any) => {
               <Avatar text={initials(cliente)} fase={fase} size={32} urgent={fermo} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 900, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
-                  {c.code} · {cliente}
+                  {c.code} · {typeof cliente === "string" ? cliente : (cliente?.nome || cliente?.ragione_sociale || cliente?.denominazione || "")}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
                   <span style={{
@@ -630,7 +630,7 @@ const FattureIncassareWidget = ({ data, nav, onlyScadute }: any) => {
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 11px" }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: ff.solid, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 900, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{cliente}</div>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{typeof cliente === "string" ? cliente : (cliente?.nome || cliente?.ragione_sociale || cliente?.denominazione || "")}</div>
                   <div style={{ fontSize: 10, color: scaduta ? FASE.ferma.dark : SUB, fontWeight: 700 }}>
                     {scad ? (scaduta ? `${gg}gg in ritardo` : `scade ${scad}`) : "no scadenza"}
                   </div>

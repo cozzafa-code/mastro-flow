@@ -397,7 +397,7 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-                  {c.code || ""} · {cliente}
+                  {c.code || ""} · {typeof cliente === "string" ? cliente : (cliente?.nome || cliente?.ragione_sociale || cliente?.denominazione || "")}
                 </div>
                 {valore > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: TEAL_DARK, flexShrink: 0 }}>{eur(valore)}</div>}
               </div>
