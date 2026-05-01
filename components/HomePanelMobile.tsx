@@ -311,7 +311,8 @@ function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }
           const f = getFaseV3(fase);
           const imp = Number(c?.totale || c?.importo || 0);
           const impLabel = imp >= 1000 ? `€${(imp / 1000).toFixed(1)}k` : `€${Math.round(imp)}`;
-          const cliente = c?.cliente_nome || c?.cliente || "Cliente";
+          const _cl = c?.cliente_nome || c?.cliente;
+          const cliente = typeof _cl === "string" ? _cl : (_cl?.nome || _cl?.ragione_sociale || _cl?.denominazione || "Cliente");
           const cod = c?.codice || c?.code || `S-00${64 + idx}`;
           return (
             <div key={key} onClick={() => !editMode && setExpanded(isOpen ? null : key)} style={{
