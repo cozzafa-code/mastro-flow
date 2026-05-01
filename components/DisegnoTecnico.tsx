@@ -844,7 +844,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         {liveLen&&<span style={{fontSize:13,fontWeight:800,color:col,
           background:"#EFF8FF",padding:"2px 10px",borderRadius:6,marginLeft:"auto"}}>{liveLen}</span>}
       </div>
-      <div style={{flex:1,minHeight:0,position:"relative"}}>
+      <div style={{flex:1,minHeight:0,position:"relative",touchAction:"none"}}>
         <svg ref={svgRef}
           style={{width:"100%",height:"100%",display:"block",background:"#F9F9FB",
             cursor:isPanRef.current?"grabbing":tool==="select"?"pointer":"crosshair",
