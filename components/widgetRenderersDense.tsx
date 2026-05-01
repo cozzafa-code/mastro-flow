@@ -62,7 +62,7 @@ const valoreCM = (c: any): number => {
 
 // Nome cliente commessa
 const clienteCM = (c: any): string => {
-  const nome = pick(c, "cliente", "cliente_nome");
+  const nome = _toStr(pick(c, "cliente", "cliente_nome"));
   const cognome = pick(c, "cognome");
   if (nome && cognome) return `${nome} ${cognome}`;
   return nome || cognome || "—";
@@ -103,8 +103,9 @@ const fattScadenza = (f: any): string | null => {
   return pick(f, "data_scadenza", "scadenza");
 };
 
+const _toStr = (v: any): string => { if (v == null) return ""; if (typeof v === "string") return v; if (typeof v === "number") return String(v); if (typeof v === "object") return v.nome || v.ragione_sociale || v.denominazione || v.label || ""; return ""; };
 const fattCliente = (f: any): string => {
-  return pick(f, "cliente", "ragione_sociale") || "—";
+  return _toStr(pick(f, "cliente", "ragione_sociale")) || "—";
 };
 
 function safeRender(id: string, data: any, nav: any): React.ReactNode {

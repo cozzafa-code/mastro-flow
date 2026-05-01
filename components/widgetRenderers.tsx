@@ -75,6 +75,12 @@ const pick = (obj: any, ...keys: string[]) => {
 };
 const valoreCM = (c: any): number => Number(pick(c, "totale_finale", "totale_preventivo", "euro", "totale", "valore_totale")) || 0;
 const clienteCM = (c: any): string => {
+  const _v = c?.cliente_nome || c?.cliente;
+  const _name = _toStr(_v) || _v;
+  if (typeof _name !== "string") return "—";
+  const _v = c?.cliente_nome || c?.cliente;
+  const _name = _toStr(_v) || _v;
+  if (typeof _name !== "string") return "—";
   const nome = pick(c, "cliente", "cliente_nome");
   const cognome = pick(c, "cognome");
   if (nome && cognome) return `${nome} ${cognome}`;
@@ -95,7 +101,8 @@ const fattPagata = (f: any): boolean => {
 };
 const fattImporto = (f: any): number => Number(pick(f, "totale", "importo")) || 0;
 const fattScadenza = (f: any): string | null => pick(f, "data_scadenza", "scadenza");
-const fattCliente = (f: any): string => pick(f, "cliente", "ragione_sociale") || "—";
+const _toStr = (v: any): string => { if (v == null) return ""; if (typeof v === "string") return v; if (typeof v === "number") return String(v); if (typeof v === "object") return v.nome || v.ragione_sociale || v.denominazione || v.label || ""; return ""; };
+const fattCliente = (f: any): string => _toStr(pick(f, "cliente", "ragione_sociale")) || "—";
 const telLink = (t: string | null | undefined) => t ? `tel:${t}` : "#";
 const waLink = (t: string | null | undefined, msg: string = "") => t ? `https://wa.me/${t.replace(/\D/g, "")}${msg ? "?text=" + encodeURIComponent(msg) : ""}` : "#";
 const mapsLink = (addr: string | null | undefined) => addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}` : "#";
