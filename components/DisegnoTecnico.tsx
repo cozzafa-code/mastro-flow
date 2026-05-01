@@ -508,6 +508,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const isPanRef = React.useRef(false);
   const lastPanPt = React.useRef({x:0,y:0});
   const lastPinch = React.useRef<number|null>(null);
+  const lastTapTime = React.useRef<number>(0);
+  const lastTapPt = React.useRef<{x:number,y:number}|null>(null);
 
   const GRID = 20;
   const scale = GRID / 10;
@@ -634,6 +636,15 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function onDown(e: any) {
+    // DEBOUNCE iOS: ignora pointerdown duplicati entro 80ms nella stessa posizione (iOS sintetizza eventi mouse dopo touch)
+    const _now = Date.now();
+    const _raw = svgRef.current ? toSvg(e) : {x:0,y:0};
+    if (lastTapPt.current && _now - lastTapTime.current < 80) {
+      const _dist = Math.hypot(_raw.x - lastTapPt.current.x, _raw.y - lastTapPt.current.y);
+      if (_dist < 5) return; // duplicato → ignora
+    }
+    lastTapTime.current = _now;
+    lastTapPt.current = _raw;
     if ((e.pointerType==="mouse" && e.button===1)||(e.touches?.length>=2)) {
       isPanRef.current=true;
       const ct=e.touches
