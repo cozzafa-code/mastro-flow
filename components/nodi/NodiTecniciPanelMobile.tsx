@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from "@/lib/supabase";
 import type { NodoLayer, NodoTecnico, QuoteRef, ToolMode, RefPoint } from '@/lib/nodi/nodi-types'
 import { LAYER_COLORS } from '@/lib/nodi/nodi-types'
 import {
@@ -16,11 +16,6 @@ import {
 } from '@/lib/nodi/nodi-geometry'
 import NodiBottomSheet from './NodiBottomSheet'
 import NodiCatalogModal from './NodiCatalogModal'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 const DS = {
   teal: '#28A0A0', dark: '#156060', ink: '#0D1F1F',

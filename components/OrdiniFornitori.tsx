@@ -6,8 +6,8 @@
 // 8 tab + Supply Item Flow + Risk Score + Stato per riga
 // ═══════════════════════════════════════════════════════════
 import React,{useState,useEffect,useMemo} from 'react';
-import {createClient} from '@supabase/supabase-js';
-const sb=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+import { supabase } from "@/lib/supabase";
+const sb = supabase;
 const C={tl:'#28A0A0',dk:'#156060',ink:'#0D1F1F',bg:'#EEF8F8',bdr:'#C8E4E4',wh:'#FFFFFF',red:'#DC4444',grn:'#1A9E73',amb:'#D08008',blu:'#3B7FE0',vio:'#7C3AED'};
 const FF="'Inter',system-ui,sans-serif",FM="'JetBrains Mono',monospace";
 
