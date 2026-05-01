@@ -500,7 +500,6 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const [spessore, setSpessore] = React.useState(15);
   const [shapes, setShapes] = React.useState<any[]>([]);
   const [curPt, _setCurPtState] = React.useState<any>(null);
-  const [_dbg, _setDbg] = React.useState<{n:number,last:string}>({n:0,last:"-"});
   const curPtRef = React.useRef<any>(null);
   const setCurPt = React.useCallback((v: any) => { curPtRef.current = (typeof v === "function" ? v(curPtRef.current) : v); _setCurPtState(curPtRef.current); }, []);
   const [mousePos, setMousePos] = React.useState<any>(null);
@@ -635,7 +634,6 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function onDown(e: any) {
-    _setDbg(d => ({n: d.n+1, last: `${e.pointerType||"?"} btn=${e.button} t=${e.touches?.length||0} cp=${!!curPtRef.current?"Y":"N"} sh=${shapes.length}`}));
     if ((e.pointerType==="mouse" && e.button===1)||(e.touches?.length>=2)) {
       isPanRef.current=true;
       const ct=e.touches
@@ -877,7 +875,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
               return renderSeg(s.a,s.b,s.type,s.spessore,false,s.id,prevB,nextA,s.joinA||"miter",s.joinB||"miter",prevSp,nextSp);
             })}
             {curPt&&mousePos&&tool!=="select"&&renderSeg(curPt,mousePos,tool==="select"?"muro":tool,spessore,true)}
-            {curPt&&<circle cx={curPt.x} cy={curPt.y} r={6/zoom} fill="#dc4444" stroke="#fff" strokeWidth={2/zoom}/>}
+            {curPt&&<><circle cx={curPt.x} cy={curPt.y} r={28/zoom} fill="rgba(220,68,68,0.25)" stroke="none"/><circle cx={curPt.x} cy={curPt.y} r={18/zoom} fill="#dc4444" stroke="#fff" strokeWidth={3/zoom}/></>}
             {tool==="select"&&joinPoints.map((jp:any,i:number)=>(
               <circle key={i} cx={jp.x} cy={jp.y} r={8/zoom}
                 fill={joinMenu&&Math.hypot(joinMenu.jPt.x-jp.x,joinMenu.jPt.y-jp.y)<2?"#dc4444":"#D08008"}
@@ -886,11 +884,6 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
             {mousePos&&tool!=="select"&&<circle cx={mousePos.x} cy={mousePos.y} r={3/zoom}
               stroke={col} strokeWidth={1/zoom} fill="rgba(59,127,224,0.2)"/>}
           </g>
-          <foreignObject x="2" y="2" width="280" height="60" style={{pointerEvents:"none"}}>
-            <div style={{background:"rgba(0,0,0,0.85)",color:"#0f0",fontSize:10,fontFamily:"monospace",padding:"4px 6px",borderRadius:4,lineHeight:1.3}}>
-              tap#{_dbg.n}<br/>{_dbg.last}
-            </div>
-          </foreignObject>
         </svg>
 
         {joinMenu&&(
