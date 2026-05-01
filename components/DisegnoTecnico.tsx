@@ -1568,6 +1568,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                             // ── SVG Click ──
                             const onSvgClick = (e2) => {
+                              console.log("[CAD] onSvgClick BODY drawMode:", dwRef.current.drawMode, "pendingLine:", !!dwRef.current._pendingLine);
                               const svg = e2.currentTarget;
                               const { mx, my } = getSvgXY(e2, svg);
                               // Usa dwRef.current per avere sempre lo stato fresco (evita stale closure)
@@ -2773,7 +2774,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
-                                  onClick={onSvgClick}
+                                  onClick={(e) => { console.log("[CAD] onClick FIRED type:", (e.nativeEvent as any)?.pointerType||"?", "drawMode:", dwRef.current.drawMode, "pendingLine:", !!dwRef.current._pendingLine); onSvgClick(e); }}
                                   onWheel={(e2) => {
                                     e2.preventDefault();
                                     const newZoom = Math.max(0.15, Math.min(6, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
@@ -2855,6 +2856,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchStart={(e2) => {
+                                    console.log("[CAD] onTouchStart touches:", e2.touches.length, "drawMode:", dwRef.current.drawMode, "pendingLine:", !!dwRef.current._pendingLine);
                                     if (drawMode === "pen") {
                                       e2.preventDefault();
                                       const svg = e2.currentTarget;
