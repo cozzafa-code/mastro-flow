@@ -499,17 +499,13 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const [tool, setTool] = React.useState<"muro"|"oggetto"|"select">("muro");
   const [spessore, setSpessore] = React.useState(15);
   const [shapes, setShapes] = React.useState<any[]>([]);
-  const [curPt, _setCurPtState] = React.useState<any>(null);
-  const curPtRef = React.useRef<any>(null);
-  const setCurPt = React.useCallback((v: any) => { curPtRef.current = (typeof v === "function" ? v(curPtRef.current) : v); _setCurPtState(curPtRef.current); }, []);
+  const [curPt, setCurPt] = React.useState<any>(null);
   const [mousePos, setMousePos] = React.useState<any>(null);
   const [joinMenu, setJoinMenu] = React.useState<any>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
   const isPanRef = React.useRef(false);
   const lastPanPt = React.useRef({x:0,y:0});
   const lastPinch = React.useRef<number|null>(null);
-  const lastTapTime = React.useRef<number>(0);
-  const lastTapPt = React.useRef<{x:number,y:number}|null>(null);
 
   const GRID = 20;
   const scale = GRID / 10;
@@ -527,15 +523,9 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   function snapPt(pt: any) {
     const g = GRID;
     let sx = Math.round(pt.x/g)*g, sy = Math.round(pt.y/g)*g;
-    // Snap ai vertici esistenti SOLO se il tap è davvero vicinissimo (8px / zoom).
-    // Prima era 18px — troppo grande su mobile, snappava ad ogni tap rendendo impossibile disegnare.
-    // Inoltre escludo l'ULTIMO vertice (curPt) per evitare auto-snap che blocca il prossimo punto.
-    const _cp = curPtRef.current;
     for (const s of shapes) {
       for (const p of [s.a, s.b]) {
-        if (!p) continue;
-        if (_cp && Math.hypot(p.x-_cp.x,p.y-_cp.y)<1) continue; // skip vertex coincident con curPt
-        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 8/zoom) return {x:p.x,y:p.y};
+        if (p && Math.hypot(p.x-pt.x,p.y-pt.y) < 18/zoom) return {x:p.x,y:p.y};
       }
     }
     if (curPt) {
@@ -636,16 +626,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function onDown(e: any) {
-    // DEBOUNCE iOS: ignora pointerdown duplicati entro 80ms nella stessa posizione (iOS sintetizza eventi mouse dopo touch)
-    const _now = Date.now();
-    const _raw = svgRef.current ? toSvg(e) : {x:0,y:0};
-    if (lastTapPt.current && _now - lastTapTime.current < 80) {
-      const _dist = Math.hypot(_raw.x - lastTapPt.current.x, _raw.y - lastTapPt.current.y);
-      if (_dist < 5) return; // duplicato → ignora
-    }
-    lastTapTime.current = _now;
-    lastTapPt.current = _raw;
-    if ((e.pointerType==="mouse" && e.button===1)||(e.touches?.length>=2)) {
+    if (e.button===1||(e.touches?.length>=2)) {
       isPanRef.current=true;
       const ct=e.touches
         ?{clientX:(e.touches[0].clientX+e.touches[1].clientX)/2,clientY:(e.touches[0].clientY+e.touches[1].clientY)/2}:e;
@@ -666,11 +647,10 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       return;
     }
     setJoinMenu(null);
-    const _cp = curPtRef.current;
-    if (!_cp) { setCurPt(pt); }
+    if (!curPt) { setCurPt(pt); }
     else {
-      if (segLen(_cp,pt)>4)
-        setShapes(s=>[...s,{id:Date.now(),type:tool,a:_cp,b:pt,spessore,joinA:"miter",joinB:"miter"}]);
+      if (segLen(curPt,pt)>4)
+        setShapes(s=>[...s,{id:Date.now(),type:tool,a:curPt,b:pt,spessore,joinA:"miter",joinB:"miter"}]);
       setCurPt(pt);
     }
   }
@@ -860,13 +840,14 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         {liveLen&&<span style={{fontSize:13,fontWeight:800,color:col,
           background:"#EFF8FF",padding:"2px 10px",borderRadius:6,marginLeft:"auto"}}>{liveLen}</span>}
       </div>
-      <div style={{flex:1,minHeight:0,position:"relative",touchAction:"none"}}>
+      <div style={{flex:1,minHeight:0,position:"relative"}}>
         <svg ref={svgRef}
           style={{width:"100%",height:"100%",display:"block",background:"#F9F9FB",
             cursor:isPanRef.current?"grabbing":tool==="select"?"pointer":"crosshair",
             touchAction:"none",userSelect:"none"}}
-          onPointerDown={(e)=>{ if(e.pointerType==="touch" && e.isPrimary===false) return; onDown(e); }} onPointerMove={onMove} onPointerUp={(e)=>onUp(e)} onPointerCancel={()=>onUp()}
+          onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
           onDoubleClick={onDblClick}
+          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
           onWheel={onWheel}>
           <g transform={`scale(${zoom}) translate(${pan.x},${pan.y})`}>
             <defs>
@@ -886,7 +867,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
               return renderSeg(s.a,s.b,s.type,s.spessore,false,s.id,prevB,nextA,s.joinA||"miter",s.joinB||"miter",prevSp,nextSp);
             })}
             {curPt&&mousePos&&tool!=="select"&&renderSeg(curPt,mousePos,tool==="select"?"muro":tool,spessore,true)}
-            {curPt&&<><circle cx={curPt.x} cy={curPt.y} r={28/zoom} fill="rgba(220,68,68,0.25)" stroke="none"/><circle cx={curPt.x} cy={curPt.y} r={18/zoom} fill="#dc4444" stroke="#fff" strokeWidth={3/zoom}/></>}
+            {curPt&&<circle cx={curPt.x} cy={curPt.y} r={6/zoom} fill="#dc4444" stroke="#fff" strokeWidth={2/zoom}/>}
             {tool==="select"&&joinPoints.map((jp:any,i:number)=>(
               <circle key={i} cx={jp.x} cy={jp.y} r={8/zoom}
                 fill={joinMenu&&Math.hypot(joinMenu.jPt.x-jp.x,joinMenu.jPt.y-jp.y)<2?"#dc4444":"#D08008"}
@@ -956,9 +937,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // dwRef: sempre aggiornato, usato nei click handler per evitare stale closure
                             const dwRef = React.useRef(dw);
                             dwRef.current = dw;
-                            // Refs per pinch/pan touch (SVG principale canvas mobile)
-                            const _lastPinch = React.useRef<number|null>(null);
-                            const _panStart = React.useRef<{x:number,y:number,panX:number,panY:number}|null>(null);
                             const placeApType = dw._placeApType || "SX";
                             const zoom = dw._zoom || 1;
                             const panX = dw._panX || 0, panY = dw._panY || 0;
@@ -967,7 +945,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // Touch detection: dita richiedono raggio molto piu' grande del mouse
                             const _isTouch = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
                             // Base: 120 su touch (pollice + imprecisione), 28 mouse. Diviso per zoom.
-                            const SNAP_R = (_isTouch ? 60 : 12) / Math.max(0.4, (dw._zoom || 1));
+                            const SNAP_R = (_isTouch ? 120 : 28) / Math.max(0.4, (dw._zoom || 1));
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -1038,49 +1016,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               }
                               return result;
                             };
-                            const polys = getPolygons();
+                            const polys = !frame ? getPolygons() : [];
                             const poly = polys.length > 0 ? polys.reduce((a,b) => {
                               const area = (p) => Math.abs(p.reduce((s,pt,i)=>{ const q=p[(i+1)%p.length]; return s+(pt[0]*q[1]-q[0]*pt[1]); },0)/2);
                               return area(a) >= area(b) ? a : b;
                             }) : null;
-                            // Poly con virtualClose inclusa — solo per calcolo anta
-                            const _getPolysVC = () => {
-                              const vcs = els.filter(e => e.type === "virtualClose");
-                              if (vcs.length === 0) return polys;
-                              const lines = [...els.filter(e => e.type === "freeLine"), ...vcs];
-                              if (lines.length < 3) return polys;
-                              const CONN = 30;
-                              const usedG = new Set();
-                              const res: number[][][] = [];
-                              for (let si = 0; si < lines.length; si++) {
-                                if (usedG.has(si)) continue;
-                                const used = new Set<number>();
-                                const pts: number[][] = [];
-                                const addP = (x:number,y:number) => { const k=`${Math.round(x)},${Math.round(y)}`; if(!pts.length||k!==`${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x,y]); };
-                                addP(lines[si].x1, lines[si].y1); addP(lines[si].x2, lines[si].y2); used.add(si);
-                                for (let it=0; it<lines.length; it++) {
-                                  const last=pts[pts.length-1]; let found=false;
-                                  for (let li=0; li<lines.length; li++) {
-                                    if (used.has(li)||usedG.has(li)) continue;
-                                    const l=lines[li];
-                                    if (Math.hypot(l.x1-last[0],l.y1-last[1])<CONN) { addP(l.x2,l.y2); used.add(li); found=true; break; }
-                                    if (Math.hypot(l.x2-last[0],l.y2-last[1])<CONN) { addP(l.x1,l.y1); used.add(li); found=true; break; }
-                                  }
-                                  if (!found) break;
-                                }
-                                if (pts.length>=3 && Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1])<CONN) {
-                                  used.forEach(i=>usedG.add(i)); res.push(pts);
-                                }
-                              }
-                              return res.length > 0 ? res : polys;
-                            };
-                            const polyVC = (() => {
-                              const pvc = _getPolysVC();
-                              return pvc.length > 0 ? pvc.reduce((a,b) => {
-                                const area = (p: number[][]) => Math.abs(p.reduce((s,pt,i)=>{ const q=p[(i+1)%p.length]; return s+(pt[0]*q[1]-q[0]*pt[1]); },0)/2);
-                                return area(a) >= area(b) ? a : b;
-                              }) : null;
-                            })();
 
                             // ══ Line-segment intersection helpers ══
                             const segIntersectV = (x, pts2) => {
@@ -1366,6 +1306,42 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const d = Math.hypot(chainStart.x - mx, chainStart.y - my);
                                 if (d < bestD + 4) { best = chainStart; }
                               }
+                              // ALIGNMENT SNAP: forza allineamento Y/X con vertici esistenti (PRIORITA' ALTA)
+                              // FIX CRITICO: in profileMode (zoccolo/soglia/etc.) DISABILITIAMO l'alignment snap
+                              // perche' creava punti artificiali sul telaio che deformavano il profilo.
+                              // L'alignment serve solo per la costruzione del telaio, NON per i profili che si agganciano all'anta.
+                              if (!isProfileMode) {
+                                const ALIGN_TOL = 20;
+                                const freeLineVertices = els.filter(e => e.type === "freeLine" && !e.subType)
+                                  .flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                // Deduplica vertici
+                                const seenV = new Set();
+                                const uVerts = freeLineVertices.filter(p => {
+                                  const k = Math.round(p.x/3) + "," + Math.round(p.y/3);
+                                  if (seenV.has(k)) return false;
+                                  seenV.add(k); return true;
+                                });
+                                // Cerca allineamento Y (orizzontale) — solo vertici DISTANTI in X (>50px)
+                                let alignY = null, alignDY = ALIGN_TOL;
+                                uVerts.forEach(p => {
+                                  if (Math.abs(p.x - mx) < 50) return; // ignora vertici sulla stessa colonna
+                                  const dy = Math.abs(p.y - my);
+                                  if (dy < alignDY) { alignDY = dy; alignY = p.y; }
+                                });
+                                // Cerca allineamento X (verticale) — solo vertici DISTANTI in Y (>50px)
+                                let alignX = null, alignDX = ALIGN_TOL;
+                                uVerts.forEach(p => {
+                                  if (Math.abs(p.y - my) < 50) return;
+                                  const dx = Math.abs(p.x - mx);
+                                  if (dx < alignDX) { alignDX = dx; alignX = p.x; }
+                                });
+                                // Applica allineamento al risultato (solo fuori da profileMode)
+                                if (alignY !== null || alignX !== null) {
+                                  const rx = alignX !== null ? alignX : (best ? best.x : mx);
+                                  const ry = alignY !== null ? alignY : (best ? best.y : my);
+                                  best = { x: rx, y: ry };
+                                }
+                              }
                               return best;
                             };
 
@@ -1594,8 +1570,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const dw = dwRef.current;
                               const els = dw.elements || [];
                               const drawMode = dw.drawMode || null;
-                              // In modalità pan non creare elementi al click
-                              if (drawMode === "pan") return;
 
                               // Place montante/traverso — click on cell OR polygon
                               if (drawMode === "place-mont") {
@@ -1702,93 +1676,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Profile.Lib — soglia/zoccolo/fascia/soglia_rib/profcomp a 2 click (un segmento singolo)
-                              if (drawMode === "place-profile-free") {
-                                const pending = dw._pendingLine;
-                                const sub = dw._profileSub || "zoccolo";
-                                // Snap 1° click: bordi frame + vertici freeLine esistenti
-                                let rx = Math.round(mx), ry = Math.round(my);
-                                // Snap ai vertici freeLine esistenti (priorità)
-                                const verts1: {x:number,y:number}[] = [];
-                                els.filter((e: any) => e.type === "freeLine").forEach((l: any) => {
-                                  verts1.push({ x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 });
-                                });
-                                let bestV1D = 20, bestV1: {x:number,y:number}|null = null;
-                                verts1.forEach(pt => {
-                                  const d = Math.hypot(rx - pt.x, ry - pt.y);
-                                  if (d < bestV1D) { bestV1D = d; bestV1 = pt; }
-                                });
-                                if (bestV1) { rx = bestV1.x; ry = bestV1.y; }
-                                else {
-                                  // Snap single-axis ai vertici
-                                  verts1.forEach(pt => {
-                                    if (Math.abs(ry - pt.y) < 20) ry = pt.y;
-                                    if (Math.abs(rx - pt.x) < 20) rx = pt.x;
-                                  });
-                                }
-                                // Snap ai bordi interni del telaio
-                                if (frame) {
-                                  const iy1 = frame.y + TK_FRAME, iy2 = frame.y + frame.h - TK_FRAME;
-                                  const ix1 = frame.x + TK_FRAME, ix2 = frame.x + frame.w - TK_FRAME;
-                                  if (Math.abs(ry - iy1) < 20) ry = iy1;
-                                  else if (Math.abs(ry - iy2) < 20) ry = iy2;
-                                  if (Math.abs(rx - ix1) < 20) rx = ix1;
-                                  else if (Math.abs(rx - ix2) < 20) rx = ix2;
-                                }
-                                if (!pending) {
-                                  setMode({ _pendingLine: { x1: rx, y1: ry, _subType: sub } });
-                                } else {
-                                  // 2° click: snap ai bordi frame + snap ai vertici freeLine esistenti
-                                  let fx2 = Math.round(mx), fy2 = Math.round(my);
-                                  const SNAP_SOFT = 20;
-                                  // 1) Snap ai vertici di tutte le freeLine esistenti (allinea gambe)
-                                  const allVerts: {x:number,y:number}[] = [];
-                                  els.filter((e: any) => e.type === "freeLine").forEach((l: any) => {
-                                    allVerts.push({ x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 });
-                                  });
-                                  let bestSnapD = SNAP_SOFT, bestSnapPt: {x:number,y:number}|null = null;
-                                  allVerts.forEach(pt => {
-                                    const d = Math.hypot(fx2 - pt.x, fy2 - pt.y);
-                                    if (d < bestSnapD) { bestSnapD = d; bestSnapPt = pt; }
-                                  });
-                                  // Snap anche solo su singolo asse (Y per allineare piedi, X per allineare lati)
-                                  if (!bestSnapPt) {
-                                    allVerts.forEach(pt => {
-                                      if (Math.abs(fy2 - pt.y) < SNAP_SOFT) fy2 = pt.y;
-                                      if (Math.abs(fx2 - pt.x) < SNAP_SOFT) fx2 = pt.x;
-                                    });
-                                  } else {
-                                    fx2 = bestSnapPt.x; fy2 = bestSnapPt.y;
-                                  }
-                                  // 2) Snap ai bordi interni del telaio
-                                  if (frame) {
-                                    const iy1 = frame.y + TK_FRAME, iy2 = frame.y + frame.h - TK_FRAME;
-                                    const ix1 = frame.x + TK_FRAME, ix2 = frame.x + frame.w - TK_FRAME;
-                                    if (Math.abs(fy2 - iy1) < SNAP_SOFT) fy2 = iy1;
-                                    else if (Math.abs(fy2 - iy2) < SNAP_SOFT) fy2 = iy2;
-                                    if (Math.abs(fx2 - ix1) < SNAP_SOFT) fx2 = ix1;
-                                    else if (Math.abs(fx2 - ix2) < SNAP_SOFT) fx2 = ix2;
-                                  }
-                                  // 3) Forza asse: montante=verticale, traverso=orizzontale
-                                  const _st = pending._subType || sub;
-                                  let x2f = fx2, y2f = fy2;
-                                  if (_st === "montante") {
-                                    x2f = pending.x1; // forza verticale
-                                  } else if (_st === "traverso") {
-                                    y2f = pending.y1; // forza orizzontale
-                                  } else {
-                                    // Generico: forza asse se prevalente
-                                    const ddx = Math.abs(fx2 - pending.x1);
-                                    const ddy = Math.abs(fy2 - pending.y1);
-                                    if (ddx > ddy * 3) y2f = pending.y1;
-                                    else if (ddy > ddx * 3) x2f = pending.x1;
-                                  }
-                                  if (Math.hypot(x2f - pending.x1, y2f - pending.y1) < 5) return;
-                                  setDW([...els, { id: Date.now(), type: "freeLine", subType: sub, x1: pending.x1, y1: pending.y1, x2: x2f, y2: y2f }], { _pendingLine: null });
-                                }
-                                return;
-                              }
-
                               // Place modes — click on cell OR polygon fallback for complex shapes
                               if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
                                 let cell = findCellAt(mx, my);
@@ -1802,40 +1689,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   });
                                   cell = best;
                                 }
-                                // Anta usa il poly se esiste un telaio libero non rettangolare (poligono reale)
-                                // Altrimenti usa innerRect (caso normale: telaio rect senza freeLine)
-                                const _polyForCheck = polyVC || poly;
-                                const hasRealPoly = _polyForCheck && (() => {
-                                  const xs = _polyForCheck.map(p => p[0]), ys = _polyForCheck.map(p => p[1]);
-                                  const minX = Math.min(...xs), maxX = Math.max(...xs);
-                                  const minY = Math.min(...ys), maxY = Math.max(...ys);
-                                  // Se il poligono ha >4 vertici o se non è rettangolare, è un poly reale
-                                  if (_polyForCheck.length > 4) return true;
-                                  return !_polyForCheck.every(p => (p[0] === minX || p[0] === maxX) && (p[1] === minY || p[1] === maxY));
-                                })();
-                                if (cell && !cell.poly && hasRealPoly) {
+                                // Per telaio libero (no frame), converti cella BSP in poly per usare il path polyAnta
+                                // La cella BSP è GIÀ insetata di TK_FRAME da getCells, quindi il poly è il bordo interno
+                                if (cell && !cell.poly && !frame && poly) {
                                   cell = { id: cell.id, poly: [
                                     [cell.x, cell.y], [cell.x + cell.w, cell.y],
                                     [cell.x + cell.w, cell.y + cell.h], [cell.x, cell.y + cell.h]
                                   ], _bspInset: true };
                                 }
                                 if (!cell && cells.length === 0) {
-                                  // Usa il poligono reale chiuso se disponibile
-                                  const _polyFallback = polyVC || poly;
-                                  if (_polyFallback && _polyFallback.length >= 3) {
-                                    cell = { id: "poly", poly: _polyFallback };
-                                  } else {
-                                    // Fallback: BBOX delle freeLine
-                                    const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
-                                    if (telLines.length >= 2) {
-                                      const allX = telLines.flatMap(l => [l.x1, l.x2]);
-                                      const allY = telLines.flatMap(l => [l.y1, l.y2]);
-                                      const bMinX = Math.min(...allX), bMaxX = Math.max(...allX);
-                                      const bMinY = Math.min(...allY), bMaxY = Math.max(...allY);
-                                      cell = { id: "poly", poly: [
-                                        [bMinX, bMinY], [bMaxX, bMinY], [bMaxX, bMaxY], [bMinX, bMaxY]
-                                      ]};
-                                    }
+                                  // Calcola BBOX delle freeLine telaio (senza subType) come cella per anta
+                                  const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
+                                  if (telLines.length >= 2) {
+                                    const allX = telLines.flatMap(l => [l.x1, l.x2]);
+                                    const allY = telLines.flatMap(l => [l.y1, l.y2]);
+                                    const bMinX = Math.min(...allX), bMaxX = Math.max(...allX);
+                                    const bMinY = Math.min(...allY), bMaxY = Math.max(...allY);
+                                    cell = { id: "poly", poly: [
+                                      [bMinX, bMinY], [bMaxX, bMinY], [bMaxX, bMaxY], [bMinX, bMaxY]
+                                    ]};
                                   }
                                   // Fallback apLine
                                   if (!cell) {
@@ -1875,15 +1747,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     [_cpMinX + _cpInset, _cpMaxY - _cpInset]
                                   ];
                                   if (freeMontanti.length > 0) {
-                                    // Taglia il poligono con linee verticali dei montanti
+                                    // Trova i montanti che attraversano il polygon verticalmente
                                     const allPolyX = cell.poly.map(p => p[0]);
                                     const polyMinX = Math.min(...allPolyX);
                                     const polyMaxX = Math.max(...allPolyX);
+                                    // Ordina montanti per X
                                     const montX = freeMontanti
                                       .map(m => m.x !== undefined ? m.x : (m.x1 + m.x2) / 2)
                                       .filter(x => x > polyMinX + 5 && x < polyMaxX - 5)
                                       .sort((a, b) => a - b);
                                     if (montX.length > 0) {
+                                      // Determina i bounds X della sotto-cella cliccata
                                       let subX1 = polyMinX, subX2 = polyMaxX;
                                       for (let i = 0; i < montX.length; i++) {
                                         if (mx < montX[i]) { subX2 = montX[i]; break; }
@@ -1920,52 +1794,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       cpTop = Math.max(cpTop, hMidY);
                                     }
                                   });
-                                  // Controlla se c'è un poly reale (non rettangolare) da usare per l'anta
-                                  let _realPoly = polyVC || poly;
-                                  if (!_realPoly) {
-                                    // Telaio aperto: costruisci poly dalla catena di freeLine + virtualClose
-                                    const _fls = els.filter(e => (e.type === "freeLine" && !e.subType) || e.type === "virtualClose");
-                                    if (_fls.length >= 2) {
-                                      const _CONN = 15;
-                                      const _used = new Set();
-                                      const _pts: number[][] = [];
-                                      const _addP = (x:number,y:number) => { const k=`${Math.round(x)},${Math.round(y)}`; if(!_pts.length||k!==`${Math.round(_pts[_pts.length-1][0])},${Math.round(_pts[_pts.length-1][1])}`) _pts.push([x,y]); };
-                                      _addP(_fls[0].x1, _fls[0].y1); _addP(_fls[0].x2, _fls[0].y2); _used.add(0);
-                                      for (let it=0; it<_fls.length; it++) {
-                                        const last=_pts[_pts.length-1];
-                                        for (let li=0; li<_fls.length; li++) {
-                                          if (_used.has(li)) continue;
-                                          const l=_fls[li];
-                                          if (Math.hypot(l.x1-last[0],l.y1-last[1])<_CONN) { _addP(l.x2,l.y2); _used.add(li); break; }
-                                          if (Math.hypot(l.x2-last[0],l.y2-last[1])<_CONN) { _addP(l.x1,l.y1); _used.add(li); break; }
-                                        }
-                                      }
-                                      if (_pts.length >= 3) _realPoly = _pts;
-                                    }
-                                  }
-                                  if (!_realPoly) {
-                                    // Nessun poly reale — applica clamp Y rettangolare (logica originale)
-                                    cellPoly = [
-                                      [cellPoly[0][0], cpTop],
-                                      [cellPoly[1][0], cpTop],
-                                      [cellPoly[2][0], cpBot],
-                                      [cellPoly[3][0], cpBot]
-                                    ];
-                                    _realPoly = cell.poly;
-                                  }
-                                  if (_realPoly && _realPoly.length >= 3) {
-                                    // Anta: scala basata su TK_FRAME — margine fisso in pixel
-                                    const _cx = _realPoly.reduce((s,p)=>s+p[0],0)/_realPoly.length;
-                                    const _cy = _realPoly.reduce((s,p)=>s+p[1],0)/_realPoly.length;
-                                    // Calcola il raggio medio dal centroide
-                                    const _avgR = _realPoly.reduce((s,p)=>s+Math.hypot(p[0]-_cx,p[1]-_cy),0)/_realPoly.length;
-                                    // Scala = (raggio - TK_FRAME) / raggio
-                                    const _scale = _avgR > TK_FRAME*2 ? (_avgR - TK_FRAME) / _avgR : 0.9;
-                                    cellPoly = _realPoly.map(p => [
-                                      _cx + (p[0] - _cx) * _scale,
-                                      _cy + (p[1] - _cy) * _scale
-                                    ]);
-                                  }
+                                  document.title = `POLY cpT=${cpTop.toFixed(0)} cpB=${cpBot.toFixed(0)} subs=${horzSubEls.length} ${horzSubEls.map(h=>`${h.subType||"?"}@y=${((h.y1+h.y2)/2).toFixed(0)}`).join(",")}`;
+                                  cellPoly = [
+                                    [cellPoly[0][0], cpTop],
+                                    [cellPoly[1][0], cpTop],
+                                    [cellPoly[2][0], cpBot],
+                                    [cellPoly[3][0], cpBot]
+                                  ];
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
                                     // Rimuovi solo le polyAnta nella stessa zona X
                                     const subMinX = Math.min(...cellPoly.map(p => p[0]));
@@ -2207,7 +2042,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               if (drawMode === "line" || drawMode === "apertura") {
                                 const pending = dw._pendingLine;
-                                // Leggi subType sia da dw che da pending (pending ├¿ pi├╣ affidabile)
+                                // Leggi subType sia da dw che da pending (pending è più affidabile)
                                 const subTypeVal = (pending && pending._subType) || dw._lineSubType || null;
                                 const isMont = subTypeVal === "montante";
                                 const isTrav = subTypeVal === "traverso";
@@ -2251,22 +2086,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   } else {
                                     // Soglia, zoccolo, fascia, profcomp, tel.libero — snap unificato
                                     const snapPt = findSnap(px, py);
-                                    if (snapPt) { px = snapPt.x; py = snapPt.y; }
-                                    // Extra: snap forte ai vertici freeLine esistenti (angoli perfetti)
-                                    if (!snapPt) {
-                                      let bestVD = 25, bestV: any = null;
-                                      els.filter(e => e.type === "freeLine").forEach(l => {
-                                        [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}].forEach(p => {
-                                          const d = Math.hypot(px-p.x, py-p.y);
-                                          if (d < bestVD) { bestVD = d; bestV = p; }
-                                        });
-                                      });
-                                      if (bestV) { px = bestV.x; py = bestV.y; }
+                                    let antaOri = null;
+                                    if (snapPt) {
+                                      px = snapPt.x; py = snapPt.y;
+                                      if (snapPt._antaSnap && snapPt._antaOri) antaOri = snapPt._antaOri;
                                     }
-                                    setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
+                                    setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal, _antaOri: antaOri }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
                                   }
                                 } else {
-                                  // SECONDO CLICK ÔÇö crea il segmento
+                                  // SECONDO CLICK — crea il segmento
 
                                   // Montante: X SEMPRE uguale al primo punto, Y libera
                                   if (isMont) {
@@ -2296,14 +2124,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if(bestX!==null) px=bestX;
                                     // Se nessuno snap: accetta px grezzo
                                   }
-                                  // Telaio libero / altri: snap semplice (come vecchio codice stabile)
+                                  // Telaio libero / altri: snap normale
                                   else {
                                     const sp = findSnap(px, py);
                                     if (sp) { px = sp.x; py = sp.y; }
-                                    // H/V snap entro 8px
-                                    if (Math.abs(px-pending.x1)<8 && Math.abs(py-pending.y1)>8) px=pending.x1;
-                                    if (Math.abs(py-pending.y1)<8 && Math.abs(px-pending.x1)>8) py=pending.y1;
-                                    // chiusura forma
+                                    // H/V: forza allineamento anche dopo snap
+                                    const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
+                                    if (adxC < 25 && adyC > adxC * 1.5) px=pending.x1;
+                                    if (adyC < 25 && adxC > adyC * 1.5) py=pending.y1;
+                                    // chiusura forma — solo per telaio libero senza subType
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
@@ -2311,19 +2140,87 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }
 
+                                  // Se è aggancio ANTA → forza allineamento H o V rigido e salta tutti gli altri snap
+                                  if (pending._antaOri === "H") {
+                                    py = pending.y1; // forza Y uguale al primo click (linea orizzontale)
+                                    // Snap X all'estremo anta più vicino
+                                    const snapX = findSnap(px, py);
+                                    if (snapX && snapX._antaSnap && Math.abs(snapX.y - py) < 2) px = snapX.x;
+                                  } else if (pending._antaOri === "V") {
+                                    px = pending.x1; // forza X uguale al primo click (linea verticale)
+                                    const snapY = findSnap(px, py);
+                                    if (snapY && snapY._antaSnap && Math.abs(snapY.x - px) < 2) py = snapY.y;
+                                  }
+                                  // Per montante X è sempre = pending.x1, per traverso Y è sempre = pending.y1
+                                  // → il guard "punto uguale" va saltato per questi subType
                                   if (!isMont && !isTrav && px===pending.x1 && py===pending.y1) return;
-                                  if (isMont && py===pending.y1) return;
-                                  if (isTrav && px===pending.x1) return;
+                                  if (isMont && py===pending.y1) return;   // zero-length verticale
+                                  if (isTrav && px===pending.x1) return;   // zero-length orizzontale
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
-                                  // Crea elemento direttamente con px,py (già snappati)
-                                  const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
-                                  // Per montante/traverso: reset, per telaio libero: concatena dal punto finale
+                                  // Clamp al frame
+                                  let [nx1,ny1,nx2,ny2] = [pending.x1,pending.y1,px,py];
+                                  const fr=els.find(e=>e.type==="rect");
+                                  if(fr&&lineType==="freeLine"){const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);if(isH){nx1=Math.max(fr.x,Math.min(fr.x+fr.w,nx1));nx2=Math.max(fr.x,Math.min(fr.x+fr.w,nx2));}else{ny1=Math.max(fr.y,Math.min(fr.y+fr.h,ny1));ny2=Math.max(fr.y,Math.min(fr.y+fr.h,ny2));}}
+                                  // Clamp anche per Tel.Lib. (freeLine senza subType come telaio)
+                                  if(!fr&&subTypeVal&&lineType==="freeLine"){
+                                    const telV=els.filter(e=>e.type==="freeLine"&&!e.subType&&Math.abs(e.x2-e.x1)<Math.abs(e.y2-e.y1)+1);
+                                    const telH=els.filter(e=>e.type==="freeLine"&&!e.subType&&Math.abs(e.y2-e.y1)<=Math.abs(e.x2-e.x1)+1);
+                                    if(telV.length>=2){
+                                      const vXs=telV.flatMap(l=>[(l.x1+l.x2)/2]);
+                                      const cL=Math.min(...vXs), cR=Math.max(...vXs);
+                                      nx1=Math.max(cL,Math.min(cR,nx1)); nx2=Math.max(cL,Math.min(cR,nx2));
+                                    }
+                                    if(telV.length>=1){
+                                      const vYs=telV.flatMap(l=>[l.y1,l.y2]);
+                                      const cT=Math.min(...vYs), cB=Math.max(...vYs);
+                                      ny1=Math.max(cT,Math.min(cB,ny1)); ny2=Math.max(cT,Math.min(cB,ny2));
+                                    }
+                                  }                                  const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
+                                  // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
+                                  const WELD2 = SNAP_R;
+                                  const buildWeldPts2 = (allEls) => {
+                                    const wpts = [];
+                                    allEls.forEach(o => {
+                                      if (o.x1 !== undefined) { wpts.push({x:o.x1,y:o.y1}); wpts.push({x:o.x2,y:o.y2}); wpts.push({x:(o.x1+o.x2)/2,y:(o.y1+o.y2)/2}); }
+                                      if (o.type === "rect") { wpts.push({x:o.x,y:o.y},{x:o.x+o.w,y:o.y},{x:o.x,y:o.y+o.h},{x:o.x+o.w,y:o.y+o.h}); }
+                                      if (o.type === "montante") {
+                                        const my1=o.y1??o.y, my2=o.y2??(o.y+(o.h||0));
+                                        wpts.push({x:o.x,y:my1},{x:o.x,y:my2},{x:o.x,y:(my1+my2)/2});
+                                      }
+                                      if (o.type === "traverso") {
+                                        const tx1=o.x1??o.x, tx2=o.x2??(o.x+(o.w||0));
+                                        wpts.push({x:tx1,y:o.y},{x:tx2,y:o.y},{x:(tx1+tx2)/2,y:o.y});
+                                      }
+                                    });
+                                    return wpts;
+                                  };
+                                  // Snap i punti del NUOVO elemento ai vicini esistenti
+                                  let snappedX1=pending.x1, snappedY1=pending.y1, snappedX2=px, snappedY2=py;
+                                  const existingWeldPts = buildWeldPts2(els);
+                                  existingWeldPts.forEach(p => {
+                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
+                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
+                                  });
+                                  newEl.x1=snappedX1; newEl.y1=snappedY1; newEl.x2=snappedX2; newEl.y2=snappedY2;
+                                  // Snap i freeLine ESISTENTI ai punti del nuovo elemento
+                                  const weldedEls = els.map(x => {
+                                    if (x.x1 === undefined) return x;
+                                    let nx1=x.x1, ny1=x.y1, nx2=x.x2, ny2=x.y2;
+                                    if (Math.hypot(nx1-snappedX1, ny1-snappedY1)<WELD2) { nx1=snappedX1; ny1=snappedY1; }
+                                    if (Math.hypot(nx2-snappedX1, ny2-snappedY1)<WELD2) { nx2=snappedX1; ny2=snappedY1; }
+                                    if (Math.hypot(nx1-snappedX2, ny1-snappedY2)<WELD2) { nx1=snappedX2; ny1=snappedY2; }
+                                    if (Math.hypot(nx2-snappedX2, ny2-snappedY2)<WELD2) { nx2=snappedX2; ny2=snappedY2; }
+                                    if (nx1!==x.x1||ny1!==x.y1||nx2!==x.x2||ny2!==x.y2) return {...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2};
+                                    return x;
+                                  });
+                                  // Per montante/traverso: reset pendingLine (no catena), per telaio libero: concatena
                                   const newChainStart = (isMont || isTrav) ? null : dw._chainStart;
                                   const newPending = (isMont || isTrav) ? null : { x1: px, y1: py, _subType: subTypeVal || null };
-                                  setDW([...els, newEl], { _pendingLine: newPending, _chainStart: newChainStart, _lineSubType: subTypeVal });
+                                  setDW([...weldedEls, newEl], { _pendingLine: newPending, _chainStart: newChainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
                               }
+
                               // Righello — traccia misura con punti di riferimento
                               if (drawMode === "righello") {
                                 const sp = findSnap(mx, my);
@@ -2452,7 +2349,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const bAp = (active = false) => ({ padding: "3px 6px", borderRadius: 5, border: `1px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
                             const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
 
-                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-profile-free" ? "crosshair" : drawMode ? "pointer" : "default";
+                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" ? "crosshair" : drawMode ? "pointer" : "default";
 
                             // ══ Apply dim change con propagazione catena ══
                             const dimEditRef = dimEdit; // accessibile in applyDimChange
@@ -2649,8 +2546,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {(drawMode === "place-mont" || drawMode === "place-trav") && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {drawMode === "place-mont" ? "MONTANTE" : "TRAVERSO"} — click cella</span>}
                                   {drawMode === "place-mont-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine montante" : "1° click → inizio montante"}</span>}
                                   {drawMode === "place-trav-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine traverso" : "1° click → inizio traverso"}</span>}
-                                  {drawMode === "place-profile-free" && <span style={{ fontSize: 9, background: "#D08008", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? `2° click → fine ${dw._profileSub}` : `1° click → inizio ${dw._profileSub}`}</span>}
-                                  {drawMode === "pan" && <span style={{ fontSize: 9, background: "#1A9E73", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>✋ SPOSTA — trascina il dito</span>}
                                   {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
                                 </div>
 
@@ -2686,7 +2581,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="1"/></svg>Telaio</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,8 21,17 12,22 3,17 3,8"/></svg>Tel.Lib.</div>
-                                  {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine" && !e.subType).length >= 2 && (<>
+                                  {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine" && !e.subType).length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
                                       const ptCount = {};
@@ -2695,17 +2590,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); if(ptCount[k1]===1)freePts.push({x:l.x1,y:l.y1}); if(ptCount[k2]===1)freePts.push({x:l.x2,y:l.y2}); });
                                       if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null }); }
                                       else { setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null }); }
-
                                     }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px solid #1A9E73", background: "#1A9E73", fontSize: 9, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>Chiudi</div>
-                                    <div onClick={() => {
-                                      const fl = els.filter(e => e.type === "freeLine" && !e.subType);
-                                      const ptCount: Record<string,number> = {};
-                                      fl.forEach(l => { const k1 = Math.round(l.x1)+","+Math.round(l.y1); const k2 = Math.round(l.x2)+","+Math.round(l.y2); ptCount[k1]=(ptCount[k1]||0)+1; ptCount[k2]=(ptCount[k2]||0)+1; });
-                                      const freePts: {x:number,y:number}[] = [];
-                                      fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); if(ptCount[k1]===1)freePts.push({x:l.x1,y:l.y1}); if(ptCount[k2]===1)freePts.push({x:l.x2,y:l.y2}); });
-                                      if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "virtualClose", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null }); }
-                                    }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px dashed #1A9E73", background: "#fff", fontSize: 9, fontWeight: 800, cursor: "pointer", color: "#1A9E73", whiteSpace: "nowrap" }}>Chiudi ⓥ</div>
-                                  </>)}
+                                  )}
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.</div>
                                 </div>
@@ -2718,7 +2604,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     style={bs(drawMode === "place-mont-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.Lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav-free" ? null : "place-trav-free", _pendingLine: null })}
                                     style={bs(drawMode === "place-trav-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.Lib.</div>
-                                  {/* Soglia / Zoccolo / Fascia / Soglia Rib. / Prof.Comp. — catena a filo */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "soglia")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="14" width="18" height="4" rx="0.5"/></svg>Soglia</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
@@ -2729,23 +2614,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     style={bs(drawMode === "line" && dw._lineSubType === "soglia_rib")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 18 L8 14 L16 14 L21 18 Z"/></svg>Sog.Rib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "profcomp" ? null : "line", _lineSubType: "profcomp", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "profcomp")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12" strokeWidth="3"/></svg>Prof.Comp.</div>
-                                </div>
-                                {/* Sub-riga: versioni LIBERE a 2 click (parte-fine libero) */}
-                                <div style={{ display: "flex", gap: 3, padding: "0 6px 4px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}`, background: "#FCF9F4" }}>
-                                  <span style={{ fontSize: 8, fontWeight: 800, color: "#888", alignSelf: "center", marginRight: 4 }}>LIB.</span>
-                                  {[
-                                    {id:"soglia",l:"Soglia"},
-                                    {id:"zoccolo",l:"Zoccolo"},
-                                    {id:"fascia",l:"Fascia"},
-                                    {id:"soglia_rib",l:"Sog.Rib."},
-                                    {id:"profcomp",l:"P.Comp."},
-                                  ].map(pf => {
-                                    const active = drawMode === "place-profile-free" && dw._profileSub === pf.id;
-                                    return (
-                                      <div key={pf.id} onClick={() => setMode({ drawMode: active ? null : "place-profile-free", _profileSub: pf.id, _pendingLine: null, _lineSubType: null })}
-                                        style={{ ...bs(active), borderStyle: "dashed" }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:2}}><line x1="3" y1="12" x2="21" y2="12"/></svg>{pf.l}</div>
-                                    );
-                                  })}
                                 </div>
                                 </>}
 
@@ -2780,8 +2648,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 {/* ═══ GRUPPO 3: ANNOTAZIONI + STRUMENTI ═══ */}
                                 {menuTab === "strumenti" && <>
                                 <div style={{ display: "flex", gap: 2, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
-                                  {/* Sposta — pan del canvas con 1 dito */}
-                                  <div onClick={() => setMode({ drawMode: drawMode === "pan" ? null : "pan", _pendingLine: null })} style={{ ...bs(drawMode === "pan"), background: drawMode === "pan" ? "#1A9E7312" : undefined, color: drawMode === "pan" ? "#1A9E73" : undefined, border: `1px solid ${drawMode === "pan" ? "#1A9E73" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polyline points="5,9 2,12 5,15"/><polyline points="9,5 12,2 15,5"/><polyline points="15,19 12,22 9,19"/><polyline points="19,9 22,12 19,15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>Sposta</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="5" y1="19" x2="19" y2="5"/><polyline points="10,5 19,5 19,14"/></svg>Linea lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><line x1="2" y1="2" x2="7.586" y2="7.586"/></svg>Penna</div>
                                   <div onClick={() => { const txt = prompt("Testo:"); if (!txt) return; const cx2=frame?frame.x+frame.w/2:fX+fW/2; const cy2=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"label",x:cx2,y:cy2,text:txt,fontSize:11}]); }} style={bs()}>Aa Testo</div>
@@ -2804,21 +2670,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="9" x2="3" y2="15"/><line x1="21" y1="9" x2="21" y2="15"/></svg>Misure</div>
                                   {/* Righello / Metro */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "righello" ? null : "righello", _pendingLine: null })} style={{ ...bs(drawMode === "righello"), background: drawMode === "righello" ? "#3B7FE012" : undefined, color: drawMode === "righello" ? T.blue : undefined, border: `1px solid ${drawMode === "righello" ? T.blue : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21L21 3L21 9L3 21Z"/><line x1="7" y1="17" x2="9" y2="15"/><line x1="11" y1="13" x2="13" y2="11"/><line x1="15" y1="9" x2="17" y2="7"/></svg>Righello</div>
-                                  {/* Toggle Gradi — mostra angoli numerici sui vertici */}
-                                  <div onClick={() => setMode({ _showGradi: !dw._showGradi })} style={{ ...bs(dw._showGradi), background: dw._showGradi ? "#D0800812" : undefined, color: dw._showGradi ? "#D08008" : undefined, border: `1px solid ${dw._showGradi ? "#D08008" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21 L21 21 L3 3 Z"/><path d="M8 21 A5 5 0 0 0 3 16" strokeWidth="1.5"/></svg>Gradi</div>
-                                  {/* Toggle Miter 45 — forza taglio 45 a tutti gli angoli del telaio libero */}
-                                  <div onClick={() => {
-                                    const next = !dw._miter45;
-                                    if (next) {
-                                      // Applica 45 a tutte le giunzioni esistenti
-                                      const all45 = junctions.map((j: any) => ({ ...j, type: "45", winner: "A" }));
-                                      setMode({ _miter45: true, _junctions: all45 });
-                                    } else {
-                                      // Riporta a 90
-                                      const all90 = (dw._junctions || []).map((j: any) => ({ ...j, type: "90" }));
-                                      setMode({ _miter45: false, _junctions: all90 });
-                                    }
-                                  }} style={{ ...bs(dw._miter45), background: dw._miter45 ? "#1A9E7312" : undefined, color: dw._miter45 ? "#1A9E73" : undefined, border: `1px solid ${dw._miter45 ? "#1A9E73" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="21" x2="12" y2="12"/><line x1="12" y1="12" x2="21" y2="21"/><line x1="12" y1="12" x2="12" y2="3"/></svg>Angoli 45°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
                                   {/* Distinta materiali */}
                                   <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="5" y="3" width="14" height="18" rx="1"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Distinta</div>
                                   {/* Giunzioni */}
@@ -2955,7 +2810,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
                                       return;
                                     }
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-profile-free")) return;
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free")) return;
                                     const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
                                     let gx = Math.round(gmx), gy = Math.round(gmy);
                                     const p = dw._pendingLine;
@@ -2963,35 +2818,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const snapPt = findSnap(gx, gy);
                                     if (snapPt) { gx = snapPt.x; gy = snapPt.y; }
                                     // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
+                                    // (anche dopo findSnap — priorita' all'allineamento)
                                     const adx = Math.abs(gx - p.x1), ady = Math.abs(gy - p.y1);
                                     if (adx < 25 && ady > adx * 1.5) gx = p.x1;
                                     if (ady < 25 && adx > ady * 1.5) gy = p.y1;
-                                    // Tel.Lib. senza subType: snap Y ai piedi di altri segmenti verticali
-                                    if (drawMode === "line" && !dw._lineSubType && !p._subType && gx === p.x1) {
-                                      const _otherVY = els.filter((e: any) => e.type === "freeLine" && !e.subType && Math.abs(e.x1 - e.x2) < 3)
-                                        .flatMap((l: any) => [l.y1, l.y2]);
-                                      _otherVY.forEach(vy => { if (Math.abs(gy - vy) < 10) gy = vy; });
-                                    }
-                                    // Mont.Lib / Profile montante: forza verticale
-                                    const _pSub = p._subType || dw._lineSubType;
-                                    if (drawMode === "place-mont-free" || _pSub === "montante") {
+                                    // Mont.Lib: forza verticale
+                                    if (drawMode === "place-mont-free" || dw._lineSubType === "montante") {
                                       gx = p.x1;
-                                      // Snap Y solo a vertici sulla stessa colonna (±30px) per allineare piedi
-                                      const colVerts = els.filter((e: any) => e.type === "freeLine").flatMap((l: any) => [
-                                        { x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 }
-                                      ]);
-                                      let bestYsnap = 10, bestYval: number|null = null;
-                                      colVerts.forEach(pt => {
-                                        if (Math.abs(pt.x - p.x1) > 30) { // vertici su ALTRE colonne
-                                          const dy = Math.abs(gy - pt.y);
-                                          if (dy < bestYsnap) { bestYsnap = dy; bestYval = pt.y; }
-                                        }
-                                      });
-                                      if (bestYval !== null) gy = bestYval;
                                       if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy));
                                     }
-                                    // Trav.Lib / Profile traverso: forza orizzontale
-                                    if (drawMode === "place-trav-free" || _pSub === "traverso") {
+                                    // Trav.Lib: forza orizzontale
+                                    if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") {
                                       gy = p.y1;
                                       if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx));
                                     }
@@ -3014,22 +2851,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchStart={(e2) => {
-                                    // ── Pinch zoom con 2 dita ──
-                                    if (e2.touches.length === 2) {
-                                      e2.preventDefault();
-                                      _lastPinch.current = Math.hypot(
-                                        e2.touches[0].clientX - e2.touches[1].clientX,
-                                        e2.touches[0].clientY - e2.touches[1].clientY
-                                      );
-                                      return;
-                                    }
-                                    // ── Pan con 1 dito in modalità "pan" ──
-                                    if (drawMode === "pan") {
-                                      e2.preventDefault();
-                                      const t = e2.touches[0];
-                                      _panStart.current = { x: t.clientX, y: t.clientY, panX, panY };
-                                      return;
-                                    }
                                     if (drawMode === "pen") {
                                       e2.preventDefault();
                                       const svg = e2.currentTarget;
@@ -3047,33 +2868,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const dw = dwRef.current;
                                     const els = dw.elements || [];
                                     const drawMode = dw.drawMode || null;
-                                    // ── Pinch zoom con 2 dita ──
-                                    if (e2.touches.length === 2 && _lastPinch.current != null) {
-                                      e2.preventDefault();
-                                      const d = Math.hypot(
-                                        e2.touches[0].clientX - e2.touches[1].clientX,
-                                        e2.touches[0].clientY - e2.touches[1].clientY
-                                      );
-                                      const delta = (d - _lastPinch.current) / 100;
-                                      const newZoom = Math.max(0.15, Math.min(6, (dw._zoom || 1) + delta));
-                                      onUpdate({ ...dw, _zoom: newZoom });
-                                      _lastPinch.current = d;
-                                      return;
-                                    }
-                                    // ── Pan con 1 dito in modalità "pan" ──
-                                    if (drawMode === "pan" && _panStart.current) {
-                                      e2.preventDefault();
-                                      const t = e2.touches[0];
-                                      const svg = e2.currentTarget;
-                                      const rect = svg.getBoundingClientRect();
-                                      const vb = svg.viewBox?.baseVal;
-                                      const sx = vb ? vb.width / rect.width : 1;
-                                      const sy2 = vb ? vb.height / rect.height : 1;
-                                      const dx = (t.clientX - _panStart.current.x) * sx;
-                                      const dy = (t.clientY - _panStart.current.y) * sy2;
-                                      onUpdate({ ...dw, _panX: _panStart.current.panX - dx, _panY: _panStart.current.panY - dy });
-                                      return;
-                                    }
                                     e2.preventDefault();
                                     const svg = e2.currentTarget;
                                     const t = e2.touches[0];
@@ -3089,7 +2883,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
                                       return;
                                     }
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-profile-free")) return;
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free")) return;
                                     let gx = Math.round(gmx), gy = Math.round(gmy);
                                     const pp = dw._pendingLine;
                                     const snapPtT = findSnap(gx, gy);
@@ -3098,29 +2892,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const adxT = Math.abs(gx - pp.x1), adyT = Math.abs(gy - pp.y1);
                                     if (adxT < 25 && adyT > adxT * 1.5) gx = pp.x1;
                                     if (adyT < 25 && adxT > adyT * 1.5) gy = pp.y1;
-                                    // Tel.Lib. senza subType: snap Y ai piedi di altri montanti
-                                    if (drawMode === "line" && !dw._lineSubType && !pp._subType && gx === pp.x1) {
-                                      const _otherVYT = els.filter((e: any) => e.type === "freeLine" && !e.subType && Math.abs(e.x1 - e.x2) < 3)
-                                        .flatMap((l: any) => [l.y1, l.y2]);
-                                      _otherVYT.forEach(vy => { if (Math.abs(gy - vy) < 10) gy = vy; });
-                                    }
-                                    const _pSubT = pp._subType || dw._lineSubType;
-                                    if (drawMode === "place-mont-free" || _pSubT === "montante") {
-                                      gx = pp.x1;
-                                      const colVertsT = els.filter((e: any) => e.type === "freeLine").flatMap((l: any) => [
-                                        { x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 }
-                                      ]);
-                                      let bestYsT = 10, bestYvT: number|null = null;
-                                      colVertsT.forEach(pt => {
-                                        if (Math.abs(pt.x - pp.x1) > 30) {
-                                          const dy = Math.abs(gy - pt.y);
-                                          if (dy < bestYsT) { bestYsT = dy; bestYvT = pt.y; }
-                                        }
-                                      });
-                                      if (bestYvT !== null) gy = bestYvT;
-                                      if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy));
-                                    }
-                                    if (drawMode === "place-trav-free" || _pSubT === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
+                                    if (drawMode === "place-mont-free" || dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
+                                    if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - pp.x1, gy - pp.y1) / fW * realW);
                                     if (dw._guideX !== gx || dw._guideY !== gy) {
@@ -3128,9 +2901,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchEnd={(e2) => {
-                                    // Reset refs pinch/pan
-                                    if (e2.touches.length < 2) _lastPinch.current = null;
-                                    if (e2.touches.length === 0) _panStart.current = null;
                                     if (drawMode === "pen" && dw._penActive) {
                                       const pts2 = dw._penPath || [];
                                       if (pts2.length > 2) {
@@ -3146,14 +2916,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <pattern id={`dg-${vanoId}`} width={GRID} height={GRID} patternUnits="userSpaceOnUse">
                                       <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="#f0f0f0" strokeWidth="0.5" />
                                     </pattern>
-                                    {(polyVC || poly) && <clipPath id={`polyClip-${vanoId}`}><polygon points={(polyVC || poly).map(p => p.join(",")).join(" ")} /></clipPath>}
+                                    {poly && <clipPath id={`polyClip-${vanoId}`}><polygon points={poly.map(p => p.join(",")).join(" ")} /></clipPath>}
                                     {frame && <clipPath id={`frameClip-${vanoId}`}><rect x={frame.x+6} y={frame.y+6} width={frame.w-12} height={frame.h-12} /></clipPath>}
                                   </defs>
                                   <rect x={panX - 100} y={panY - 100} width={canvasW / zoom + 200} height={canvasH / zoom + 200} fill={`url(#dg-${vanoId})`} />
 
                                   {/* Cell highlights in place mode — clipped to polygon if present */}
                                   {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-ap" || drawMode === "place-mont" || drawMode === "place-trav" || drawMode === "place-porta" || drawMode === "place-persiana") && cells.length > 0 && (
-                                    <g clipPath={(polyVC || poly) ? `url(#polyClip-${vanoId})` : undefined}>
+                                    <g clipPath={poly ? `url(#polyClip-${vanoId})` : undefined}>
                                       {cells.map(c2 => (
                                         <rect key={`cell-${c2.id}`} x={c2.x + 1} y={c2.y + 1} width={c2.w - 2} height={c2.h - 2}
                                           fill={drawMode === "place-ap" ? T.blue : drawMode === "place-mont" || drawMode === "place-trav" ? "#555" : T.grn} fillOpacity={0.06}
@@ -3163,9 +2933,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   )}
                                   {/* Polygon shape highlight when no cells but freeLines exist */}
                                   {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-ap" || drawMode === "place-porta" || drawMode === "place-persiana") && cells.length === 0 && (() => {
-                                    const lines = els.filter(e => e.type === "freeLine" || e.type === "virtualClose");
+                                    const lines = els.filter(e => e.type === "freeLine");
                                     if (lines.length < 2) return null;
-                                    // Build point chain from connected lines (tolleranza 30px per angoli imprecisi)
+                                    // Build point chain from connected lines
                                     const pts = [];
                                     const used = new Set();
                                     const addPt = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
@@ -3175,8 +2945,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       for (let li = 0; li < lines.length; li++) {
                                         if (used.has(li)) continue;
                                         const l = lines[li];
-                                        if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 30) { addPt(l.x2, l.y2); used.add(li); break; }
-                                        if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 30) { addPt(l.x1, l.y1); used.add(li); break; }
+                                        if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 2) { addPt(l.x2, l.y2); used.add(li); break; }
+                                        if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 2) { addPt(l.x1, l.y1); used.add(li); break; }
                                       }
                                     }
                                     const clr = drawMode === "place-ap" ? T.blue : T.grn;
@@ -3240,52 +3010,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     });
                                   })()}
 
-                                  {/* ══ OPEN CHAIN PROFILES — catene non chiuse renderizzate come polyline ══ */}
-                                  {(() => {
-                                    // Trova catene di freeLine senza subType che NON fanno parte di un poly chiuso
-                                    const closedFLIds = new Set();
-                                    // Segna tutte le freeLine che fanno parte di un poly chiuso
-                                    polys.forEach(polyPts => {
-                                      els.filter(e => e.type === "freeLine" && !e.subType).forEach(fl => {
-                                        const p1in = polyPts.some(p => Math.hypot(p[0]-fl.x1,p[1]-fl.y1) < 15);
-                                        const p2in = polyPts.some(p => Math.hypot(p[0]-fl.x2,p[1]-fl.y2) < 15);
-                                        if (p1in && p2in) closedFLIds.add(fl.id);
-                                      });
-                                    });
-                                    // FreeLine non-chiuse senza subType
-                                    const openFLs = els.filter(e => e.type === "freeLine" && !e.subType && !closedFLIds.has(e.id));
-                                    if (openFLs.length < 2) return null;
-                                    // Costruisci catena
-                                    const CONN = 15;
-                                    const used = new Set();
-                                    const chains: number[][][] = [];
-                                    for (let si = 0; si < openFLs.length; si++) {
-                                      if (used.has(si)) continue;
-                                      const pts: number[][] = [];
-                                      pts.push([openFLs[si].x1, openFLs[si].y1], [openFLs[si].x2, openFLs[si].y2]);
-                                      used.add(si);
-                                      for (let it = 0; it < openFLs.length; it++) {
-                                        const last = pts[pts.length - 1];
-                                        for (let li = 0; li < openFLs.length; li++) {
-                                          if (used.has(li)) continue;
-                                          const l = openFLs[li];
-                                          if (Math.hypot(l.x1-last[0],l.y1-last[1]) < CONN) { pts.push([l.x2,l.y2]); used.add(li); break; }
-                                          if (Math.hypot(l.x2-last[0],l.y2-last[1]) < CONN) { pts.push([l.x1,l.y1]); used.add(li); break; }
-                                        }
-                                      }
-                                      if (pts.length >= 2) chains.push(pts);
-                                    }
-                                    const TK = TK_FRAME * 2;
-                                    return chains.map((ch, ci) => {
-                                      const ptStr = ch.map(p => `${p[0]},${p[1]}`).join(" ");
-                                      return <g key={`oc${ci}`}>
-                                        <polyline points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={TK + 1} strokeLinejoin="miter" strokeMiterlimit={20} strokeLinecap="square" />
-                                        <polyline points={ptStr} fill="none" stroke="#eceae0" strokeWidth={TK - 0.5} strokeLinejoin="miter" strokeMiterlimit={20} strokeLinecap="square" />
-
-                                        {ch.map((p,pi) => <circle key={`occ${ci}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
-                                      </g>;
-                                    });
-                                  })()}
                                   {/* ══ CLOSED POLYGON PROFILES ══ */}
                                   {polys.map((polyPts, polyIdx) => {
                                     if (polyPts.length < 3) return null;
@@ -3390,18 +3114,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const dp = !drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id), style: { cursor: "move" } } : {};
 
                                     // ═══ TELAIO — doppio rettangolo con spessore ═══
-                                    if (el.type === "rect") {
-                                      // Nascondo il frame rect se ci sono freeLine del telaio libero
-                                      const _hasFreeTel = els.some(e => e.type === "freeLine" && !e.subType);
-                                      if (_hasFreeTel) return <g key={el.id} />;
-                                      return (
-                                        <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : undefined}>
-                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#f8f8f6" stroke={hc || "#1A1A1C"} strokeWidth={1.5} rx={1} />
-                                          <rect x={el.x + TK_FRAME} y={el.y + TK_FRAME} width={el.w - TK_FRAME * 2} height={el.h - TK_FRAME * 2} fill="none" stroke={hc || "#1A1A1C"} strokeWidth={1} rx={0.5} />
-                                          {sel && [[el.x,el.y],[el.x+el.w,el.y],[el.x,el.y+el.h],[el.x+el.w,el.y+el.h]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill={"#1A9E73"} />)}
-                                        </g>
-                                      );
-                                    }
+                                    if (el.type === "rect") return (
+                                      <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : undefined}>
+                                        <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#f8f8f6" stroke={hc || "#1A1A1C"} strokeWidth={1.5} rx={1} />
+                                        <rect x={el.x + TK_FRAME} y={el.y + TK_FRAME} width={el.w - TK_FRAME * 2} height={el.h - TK_FRAME * 2} fill="none" stroke={hc || "#1A1A1C"} strokeWidth={1} rx={0.5} />
+                                        {sel && [[el.x,el.y],[el.x+el.w,el.y],[el.x,el.y+el.h],[el.x+el.w,el.y+el.h]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill={"#1A9E73"} />)}
+                                      </g>
+                                    );
 
                                     // ═══ MONTANTE — render semplice, freeLine non si estende verso di lui ═══
                                     if (el.type === "montante") {
@@ -3593,7 +3312,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const tk = el.subType === "porta" ? 4 : 3; // ridotto per anta piu grande
                                       // Outer polygon — riempie tutta la cella
                                       const outerPts = pts.map(p => p.join(",")).join(" ");
-                                      // Inner polygon — inset rettangolare di tk (come il vecchio codice stabile)
+                                      // Inner polygon — inset rettangolare di tk (profilo anta)
                                       const apAllX = pts.map(p => p[0]);
                                       const apAllY = pts.map(p => p[1]);
                                       const apMinX = Math.min(...apAllX) + tk, apMaxX = Math.max(...apAllX) - tk;
@@ -3606,20 +3325,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
                                           <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
                                           <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
-                                          {/* Linee maniglia — dal punto medio del lato sinistro al centroide */}
-                                          {!el.subType && (() => {
-                                            // Lato sinistro: media dei punti con X minore
-                                            const sortedByX = [...pts].sort((a,b) => a[0] - b[0]);
-                                            const leftPts = sortedByX.slice(0, Math.ceil(pts.length/2));
-                                            const handleX = leftPts.reduce((s,p) => s+p[0],0)/leftPts.length;
-                                            const handleTopY = Math.min(...leftPts.map(p=>p[1]));
-                                            const handleBotY = Math.max(...leftPts.map(p=>p[1]));
-                                            const handleMidY = (handleTopY + handleBotY) / 2;
-                                            return <>
-                                              <line x1={handleX} y1={handleTopY} x2={cx2} y2={handleMidY} stroke={(hc || "#777") + "40"} strokeWidth={0.5} />
-                                              <line x1={handleX} y1={handleBotY} x2={cx2} y2={handleMidY} stroke={(hc || "#777") + "40"} strokeWidth={0.5} />
-                                            </>;
-                                          })()}
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
@@ -3701,14 +3406,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
                                       const mmLen = el._mmOverride != null ? el._mmOverride : Math.round(len / refLen * refReal);
                                       const isPartOfPoly = poly && poly.length >= 3;
-                                      // Controlla se questa freeLine fa parte di una catena aperta (≥2 segmenti connessi)
-                                      const isPartOfChain = !subType && !isPartOfPoly && (() => {
-                                        const others = els.filter(e => e.type === "freeLine" && !e.subType && e.id !== el.id);
-                                        return others.some(o => 
-                                          Math.hypot(o.x1-el.x1,o.y1-el.y1)<15 || Math.hypot(o.x2-el.x1,o.y2-el.y1)<15 ||
-                                          Math.hypot(o.x1-el.x2,o.y1-el.y2)<15 || Math.hypot(o.x2-el.x2,o.y2-el.y2)<15
-                                        );
-                                      })();
                                       // ── Determina se la linea è orizzontale o verticale ──
                                       const isHorzLine = Math.abs(dy2) <= Math.abs(dx2) + 0.5;
                                       // ── SubType con spessore fisso: usa RECT agganciato al frame (come il telaio) ──
@@ -3766,13 +3463,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const pts4 = flCorners.length > 0 ? buildFreePoly() : `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
-                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(28, halfT * 4)} style={{touchAction: "none"}} />
-                                          {!isPartOfPoly && !isPartOfChain && <>
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
+                                          {!isPartOfPoly && <>
                                             <polygon points={pts4} fill={sel ? "#1A9E7318" : fillC} stroke="none" />
                                             <polygon points={pts4} fill="none" stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} strokeLinejoin="miter" strokeMiterlimit={20} />
                                           </>}
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="#1A9E73" strokeWidth={2} opacity={0.3} />}
-
                                           {labelTxt && (
                                             <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lxN}, ${lyN})`}>
                                               <rect x={lxN - labelTxt.length*3.5} y={lyN - 7} width={labelTxt.length*7+4} height={13} fill="#1A1A1C" rx={3} opacity={0.85} />
@@ -3826,7 +3522,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         </g>
                                       );
                                     }
-                                    if (el.type === "virtualClose") return null;
                                     if (el.type === "penPath") return (
                                       <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
                                         <path d={el.d} fill="none" stroke={sel ? "#1A9E73" : "#1A1A1C"} strokeWidth={sel ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round" />
@@ -3899,29 +3594,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       {/* H/V guide lines from pending point */}
                                       <line x1={panX - 500} y1={p.y1} x2={panX + canvasW/zoom + 500} y2={p.y1} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
                                       <line x1={p.x1} y1={panY - 500} x2={p.x1} y2={panY + canvasH/zoom + 500} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
-                                      {/* PASSIVE LEG ALIGNMENT CHECK — solo indicatore visivo, zero interazione */}
-                                      {(() => {
-                                        // Trova montanti verticali completati (freeLine con x1===x2, cioè verticali)
-                                        const verticals = els.filter(e => e.type === "freeLine" && Math.abs(e.x1 - e.x2) < 3);
-                                        if (verticals.length < 2) return null;
-                                        // Prendi il punto più basso (max Y) di ogni montante
-                                        const bottoms = verticals.map(v => ({ x: v.x1, y: Math.max(v.y1, v.y2) }));
-                                        // Controlla se almeno 2 montanti hanno lo stesso Y in basso (tolleranza 8px)
-                                        for (let i = 0; i < bottoms.length; i++) {
-                                          for (let j = i + 1; j < bottoms.length; j++) {
-                                            if (Math.abs(bottoms[i].y - bottoms[j].y) < 8) {
-                                              const midX = (bottoms[i].x + bottoms[j].x) / 2;
-                                              const alignY = (bottoms[i].y + bottoms[j].y) / 2;
-                                              return <g pointerEvents="none" opacity={0.85}>
-                                                <line x1={bottoms[i].x} y1={alignY} x2={bottoms[j].x} y2={alignY} stroke="#1A9E73" strokeWidth={1.2} strokeDasharray="8,4" />
-                                                <rect x={midX - 42} y={alignY + 8} width={84} height={20} rx={4} fill="#1A9E73" />
-                                                <text x={midX} y={alignY + 22} textAnchor="middle" fill="white" fontSize={11} fontWeight={600}>ALLINEATO</text>
-                                              </g>;
-                                            }
-                                          }
-                                        }
-                                        return null;
-                                      })()}
+                                      {/* ALIGNMENT INDICATORS — quando il cursore è allineato H/V con un vertice */}
+                                      {gx != null && gy != null && uniquePts.map((pt, ai) => {
+                                        const alignH = Math.abs(gy - pt.y) < 15;
+                                        const alignV = Math.abs(gx - pt.x) < 15;
+                                        if (!alignH && !alignV) return null;
+                                        return <g key={`align-${ai}`}>
+                                          {alignH && <>
+                                            <line x1={Math.min(gx, pt.x)} y1={pt.y} x2={Math.max(gx, pt.x)} y2={pt.y} stroke="#DC4444" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.9} />
+                                            <circle cx={pt.x} cy={pt.y} r={5} fill="none" stroke="#DC4444" strokeWidth={1.5} />
+                                            <circle cx={gx} cy={gy} r={5} fill="none" stroke="#DC4444" strokeWidth={1.5} />
+                                          </>}
+                                          {alignV && <>
+                                            <line x1={pt.x} y1={Math.min(gy, pt.y)} x2={pt.x} y2={Math.max(gy, pt.y)} stroke="#3B7FE0" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.9} />
+                                            <circle cx={pt.x} cy={pt.y} r={5} fill="none" stroke="#3B7FE0" strokeWidth={1.5} />
+                                            <circle cx={gx} cy={gy} r={5} fill="none" stroke="#3B7FE0" strokeWidth={1.5} />
+                                          </>}
+                                        </g>;
+                                      })}
                                       {/* Live guide line to mouse */}
                                       {gx != null && gy != null && <>
                                         <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={2.5} strokeDasharray="8,4" opacity={0.8} />
@@ -3942,28 +3632,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           if (drawMode === "place-mont-free" || drawMode === "place-trav-free") return null;
                                           return <circle cx={gx} cy={gy} r={5} fill={clr} fillOpacity={0.7} />;
                                         })()}
-                                        {/* LIVE ALIGNMENT INDICATOR — mostra "=" quando il cursore è alla stessa Y di un piede esistente */}
-                                        {(() => {
-                                          // Cerca montanti verticali completati (freeLine senza subType, verticali)
-                                          const vLegs = els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x1 - e.x2) < 5);
-                                          if (vLegs.length === 0 || gx === null || gy === null) return null;
-                                          // Cerca se gy è allineato al piede (max Y) di un altro montante
-                                          for (const leg of vLegs) {
-                                            const footY = Math.max(leg.y1, leg.y2);
-                                            const footX = (leg.x1 + leg.x2) / 2;
-                                            // Non confrontare con se stesso (stessa X = stesso montante in costruzione)
-                                            if (Math.abs(footX - p.x1) < 5) continue;
-                                            if (Math.abs(gy - footY) < 12) {
-                                              return <g pointerEvents="none">
-                                                <line x1={Math.min(footX, gx)} y1={footY} x2={Math.max(footX, gx)} y2={footY} stroke="#1A9E73" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.8} />
-                                                <circle cx={footX} cy={footY} r={6} fill="none" stroke="#1A9E73" strokeWidth={2} opacity={0.8} />
-                                                <rect x={(footX+gx)/2-14} y={footY-22} width={28} height={16} rx={3} fill="#1A9E73" opacity={0.9} />
-                                                <text x={(footX+gx)/2} y={footY-11} textAnchor="middle" fill="white" fontSize={10} fontWeight={700}>=</text>
-                                              </g>;
-                                            }
-                                          }
-                                          return null;
-                                        })()}
                                         {/* Angle + length label */}
                                         {/* Badge — si adatta per restare visibile */}
                                         {(() => {
@@ -3971,7 +3639,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const bx = gx + 16 + bw > canvasW ? gx - bw - 16 : gx + 16;
                                           const by = gy - bh - 8 < 0 ? gy + 8 : gy - bh - 8;
                                           const isH = gy === p.y1, isV = gx === p.x1;
-                                          const line2 = isV ? "↕ VERT" : isH ? "↔ ORIZ" : dw._guideDeg != null ? `${dw._guideDeg}°` : "";
+                                          const line2 = isV ? "\u2195 VERT" : isH ? "\u2194 ORIZ" : dw._guideDeg != null ? `${dw._guideDeg}\u00b0` : "";
                                           return <>
                                             <rect x={bx} y={by} width={bw} height={bh} fill="#1A1A1C" rx={6} opacity={0.96}/>
                                             <text x={bx+bw/2} y={by+22} textAnchor="middle" fontSize={16} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">
@@ -4025,48 +3693,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
                                   })}
-                                  {/* ══ OVERLAY GRADI sui vertici freeLine ══ */}
-                                  {dw._showGradi && (() => {
-                                    const fls = els.filter((e: any) => e.type === "freeLine" && !e.subType);
-                                    if (fls.length < 2) return null;
-                                    // Raccolgo endpoint e trovo coppie di linee che si incontrano allo stesso punto
-                                    type Pt = { x: number; y: number; lines: { l: any; isStart: boolean }[] };
-                                    const ptMap: Record<string, Pt> = {};
-                                    const keyOf = (x: number, y: number) => Math.round(x) + "," + Math.round(y);
-                                    fls.forEach(l => {
-                                      const kS = keyOf(l.x1, l.y1), kE = keyOf(l.x2, l.y2);
-                                      if (!ptMap[kS]) ptMap[kS] = { x: l.x1, y: l.y1, lines: [] };
-                                      if (!ptMap[kE]) ptMap[kE] = { x: l.x2, y: l.y2, lines: [] };
-                                      ptMap[kS].lines.push({ l, isStart: true });
-                                      ptMap[kE].lines.push({ l, isStart: false });
-                                    });
-                                    return Object.values(ptMap).filter(p => p.lines.length >= 2).map((p, idx) => {
-                                      // Calcolo i vettori uscenti dal vertice
-                                      const vecs = p.lines.slice(0, 2).map(ln => {
-                                        const other = ln.isStart ? { x: ln.l.x2, y: ln.l.y2 } : { x: ln.l.x1, y: ln.l.y1 };
-                                        const dx = other.x - p.x, dy = other.y - p.y;
-                                        const len = Math.hypot(dx, dy) || 1;
-                                        return { dx: dx / len, dy: dy / len };
-                                      });
-                                      const dot = vecs[0].dx * vecs[1].dx + vecs[0].dy * vecs[1].dy;
-                                      const angRad = Math.acos(Math.max(-1, Math.min(1, dot)));
-                                      const angDeg = Math.round(angRad * 180 / Math.PI);
-                                      // Posizione label: bisettrice interna
-                                      const bx = (vecs[0].dx + vecs[1].dx), by = (vecs[0].dy + vecs[1].dy);
-                                      const blen = Math.hypot(bx, by) || 1;
-                                      const lx = p.x + (bx / blen) * 22, ly = p.y + (by / blen) * 22;
-                                      const isRight = Math.abs(angDeg - 90) < 3;
-                                      const clr = isRight ? "#1A9E73" : "#D08008";
-                                      return (
-                                        <g key={"ang" + idx} pointerEvents="none">
-                                          <circle cx={p.x} cy={p.y} r={4} fill={clr} stroke="#fff" strokeWidth={1} />
-                                          <rect x={lx - 14} y={ly - 7} width={28} height={14} rx={3} fill={clr} opacity={0.92} />
-                                          <text x={lx} y={ly + 4} textAnchor="middle" fontSize={9} fontWeight={900} fill="#fff" fontFamily="monospace">{angDeg}°</text>
-                                        </g>
-                                      );
-                                    });
-                                  })()}
-
                                 </svg>
                                 </div>
 
