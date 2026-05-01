@@ -3014,7 +3014,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchStart={(e2) => {
-                                    /* IOS_TAP_FIX_v2 */
+                                    // ── Pinch zoom con 2 dita ──
                                     if (e2.touches.length === 2) {
                                       e2.preventDefault();
                                       _lastPinch.current = Math.hypot(
@@ -3023,6 +3023,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       );
                                       return;
                                     }
+                                    // ── Pan con 1 dito in modalità "pan" ──
                                     if (drawMode === "pan") {
                                       e2.preventDefault();
                                       const t = e2.touches[0];
@@ -3040,9 +3041,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const gmx = Math.round((t.clientX - rect.left) * sx);
                                       const gmy = Math.round((t.clientY - rect.top) * sy2);
                                       onUpdate({ ...dw, _penActive: true, _penPath: [[gmx, gmy]] });
-                                      return;
                                     }
-                                    // FIX iOS: per line/place-*/apertura/righello NON chiamare preventDefault.
                                   }}
                                   onTouchMove={(e2) => {
                                     const dw = dwRef.current;
@@ -3075,12 +3074,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _panX: _panStart.current.panX - dx, _panY: _panStart.current.panY - dy });
                                       return;
                                     }
-                                    /* IOS_TAP_FIX_v2 */
-                                    if (drawMode === "pen" && dw._penActive) {
-                                      e2.preventDefault();
-                                    } else {
-                                      return;
-                                    }
+                                    e2.preventDefault();
                                     const svg = e2.currentTarget;
                                     const t = e2.touches[0];
                                     const rect = svg.getBoundingClientRect();
@@ -3089,6 +3083,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const sy2 = vb ? vb.height / rect.height : 1;
                                     const gmx = (t.clientX - rect.left) * sx;
                                     const gmy = (t.clientY - rect.top) * sy2;
+                                    // Pen mode touch
                                     if (drawMode === "pen" && dw._penActive) {
                                       const cur = dw._penPath || [];
                                       onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
