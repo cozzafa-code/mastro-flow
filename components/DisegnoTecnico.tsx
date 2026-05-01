@@ -958,8 +958,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             dwRef.current = dw;
                             // Refs per pinch/pan touch (SVG principale canvas mobile)
                             const _lastPinch = React.useRef<number|null>(null);
-  const _iosTapStart = React.useRef<any>(null);
-
                             const _panStart = React.useRef<{x:number,y:number,panX:number,panY:number}|null>(null);
                             const placeApType = dw._placeApType || "SX";
                             const zoom = dw._zoom || 1;
@@ -2916,22 +2914,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
-                                  onClick={(e) => { const pt = (e.nativeEvent as any)?.pointerType; if (pt === 'mouse' || pt === undefined) onSvgClick(e); }}
-                                  onPointerDown={(e) => {
-                                    if (e.pointerType === 'touch') {
-                                      _iosTapStart.current = { x: e.clientX, y: e.clientY, t: Date.now(), id: e.pointerId };
-                                    }
-                                  }}
-                                  onPointerUp={(e) => {
-                                    const r = _iosTapStart.current;
-                                    if (e.pointerType === 'touch' && r && r.id === e.pointerId
-                                        && Date.now() - r.t < 500
-                                        && Math.hypot(e.clientX - r.x, e.clientY - r.y) < 12) {
-                                      onSvgClick(e);
-                                    }
-                                    _iosTapStart.current = null;
-                                  }}
-                                  onPointerCancel={() => { _iosTapStart.current = null; }}
+                                  onClick={onSvgClick}
                                   onWheel={(e2) => {
                                     e2.preventDefault();
                                     const newZoom = Math.max(0.15, Math.min(6, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
