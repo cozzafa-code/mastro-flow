@@ -26,11 +26,12 @@ body {
 }
 
 
-/* MASTRO_IOS_TAP_FIX */
+/* MASTRO_IOS_TAP_FIX v2 - solo highlight, no touch-action globale */
 * { -webkit-tap-highlight-color: transparent; }
 button, a, [role="button"], [onclick], [onClick],
 input[type="button"], input[type="submit"], input[type="reset"],
-[data-tap], svg, .touch-fix {
+[data-tap], .touch-fix {
   touch-action: manipulation;
 }
-html, body { touch-action: manipulation; }
+/* svg e html/body NON devono avere touch-action: manipulation
+   perche causa doppio tap su Safari iOS - bug noto */
