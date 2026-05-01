@@ -24,3 +24,13 @@ body {
   background: #DCDCD7;
   border-radius: 2px;
 }
+
+
+/* MASTRO_IOS_TAP_FIX */
+* { -webkit-tap-highlight-color: transparent; }
+button, a, [role="button"], [onclick], [onClick],
+input[type="button"], input[type="submit"], input[type="reset"],
+[data-tap], svg, .touch-fix {
+  touch-action: manipulation;
+}
+html, body { touch-action: manipulation; }
