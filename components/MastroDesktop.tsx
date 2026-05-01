@@ -33,18 +33,12 @@ import CostruttoreVetri from './CostruttoreVetri';
 import CostruttoreLavorazioni from './CostruttoreLavorazioni';
 import PosizionatoreLavorazioni from './PosizionatoreLavorazioni';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
+import { supabase } from "@/lib/supabase";
 import AgendaCalendarioPanel from "@/components/agenda/AgendaCalendarioPanel";
 // ═══════════════════════════════════════════════════════════
 // MASTRO DESKTOP — fliwoX Design System
 // Sessione 5: Sidebar riorg + Tipologie SVG + Configuratore
 // ═══════════════════════════════════════════════════════════
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // ── Design System fliwoX (immutabile) ──
 const DS = {

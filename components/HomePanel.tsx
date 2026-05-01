@@ -3,9 +3,7 @@
 // MASTRO ERP — HomePanel v11 — Card Configurabili
 // Dropdown ingranaggio + Catalogo widget + Espandi inline + Salva layout JSONB
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
+import { supabase } from "@/lib/supabase";
 const DS = {
   teal: '#28A0A0', tealDark: '#156060', dark: '#0D1F1F',
   light: '#EEF8F8', border: '#C8E4E4', bg: '#E8F4F4',

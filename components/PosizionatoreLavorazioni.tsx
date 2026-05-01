@@ -7,9 +7,7 @@
 // + regole di posizionamento lungo il profilo (altezza, ripetizione)
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-
+import { supabase } from "@/lib/supabase";
 const DS = { teal: '#28A0A0', dark: '#156060', ink: '#0D1F1F', light: '#EEF8F8', border: '#C8E4E4', white: '#FFFFFF', red: '#DC4444', green: '#1A9E73', amber: '#D08008', blue: '#3B7FE0' };
 const M = "'JetBrains Mono', monospace";
 
