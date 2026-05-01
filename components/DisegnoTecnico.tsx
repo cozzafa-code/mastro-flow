@@ -2773,7 +2773,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
-                                  style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
+                                  style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none" }}
                                   onClick={(e) => { console.log("[CAD] onClick FIRED type:", (e.nativeEvent as any)?.pointerType||"?", "drawMode:", dwRef.current.drawMode, "pendingLine:", !!dwRef.current._pendingLine); onSvgClick(e); }}
                                   onWheel={(e2) => {
                                     e2.preventDefault();
