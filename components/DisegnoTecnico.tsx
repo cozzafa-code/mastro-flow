@@ -845,9 +845,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
           style={{width:"100%",height:"100%",display:"block",background:"#F9F9FB",
             cursor:isPanRef.current?"grabbing":tool==="select"?"pointer":"crosshair",
             touchAction:"none",userSelect:"none"}}
-          onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
+          onPointerDown={(e)=>{ e.currentTarget.setPointerCapture(e.pointerId); onDown(e); }} onPointerMove={onMove} onPointerUp={(e)=>{ try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch{}; onUp(); }} onPointerCancel={()=>onUp()}
           onDoubleClick={onDblClick}
-          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
           onWheel={onWheel}>
           <g transform={`scale(${zoom}) translate(${pan.x},${pan.y})`}>
             <defs>
