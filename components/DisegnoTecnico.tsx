@@ -1678,18 +1678,46 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Zocc.Lib — due tap. Niente snap. Si ferma esattamente dove tappi.
+                              // Zocc.Lib — due tap. Snap solo a bordi telaio (raggio 30px).
                               if (drawMode === "place-zocc-free") {
                                 const pending = dw._pendingLine;
+                                // Snap a bordi del telaio (freeLine senza subType, isole già escluse)
+                                const frameEdges = els.filter(e => e.type === "freeLine" && !e.subType);
+                                const SNAP_EDGE = 30;
+                                const snapToEdge = (px: number, py: number) => {
+                                  // Trova bordo più vicino (orizzontale o verticale)
+                                  let bestX = px, bestY = py, bestD = SNAP_EDGE;
+                                  frameEdges.forEach(l => {
+                                    const isHorz = Math.abs(l.y2 - l.y1) < Math.abs(l.x2 - l.x1);
+                                    if (isHorz) {
+                                      const lY = (l.y1 + l.y2) / 2;
+                                      const lXmin = Math.min(l.x1, l.x2), lXmax = Math.max(l.x1, l.x2);
+                                      // Snap Y se px è nell'intervallo X del bordo
+                                      if (px >= lXmin - 10 && px <= lXmax + 10) {
+                                        const d = Math.abs(py - lY);
+                                        if (d < bestD) { bestD = d; bestY = lY; bestX = px; }
+                                      }
+                                    } else {
+                                      const lX = (l.x1 + l.x2) / 2;
+                                      const lYmin = Math.min(l.y1, l.y2), lYmax = Math.max(l.y1, l.y2);
+                                      if (py >= lYmin - 10 && py <= lYmax + 10) {
+                                        const d = Math.abs(px - lX);
+                                        if (d < bestD) { bestD = d; bestX = lX; bestY = py; }
+                                      }
+                                    }
+                                  });
+                                  return { x: bestX, y: bestY };
+                                };
                                 if (!pending) {
-                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(my), _subType: "zoccolo_free" } });
-                                  if (typeof document !== 'undefined') document.title = `1tap mx=${Math.round(mx)} my=${Math.round(my)}`;
+                                  const sn = snapToEdge(mx, my);
+                                  setMode({ _pendingLine: { x1: Math.round(sn.x), y1: Math.round(sn.y), _subType: "zoccolo_free" } });
                                 } else {
                                   const y = pending.y1;
-                                  const finalX = Math.round(mx);
+                                  // Sul 2° tap, snap solo X mantenendo y=pending.y1
+                                  const sn = snapToEdge(mx, pending.y1);
+                                  const finalX = Math.round(sn.x);
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
-                                  if (typeof document !== 'undefined') document.title = `2tap p1=${pending.x1},${pending.y1} mx=${Math.round(mx)} my=${Math.round(my)} → x1=${x1} x2=${x2} y=${y}`;
                                   if (Math.abs(x2 - x1) < 5) return;
                                   setDW([...els, { id: Date.now(), type: "freeLine", subType: "zoccolo", x1, y1: y, x2, y2: y }], { drawMode: null, _pendingLine: null, _lineSubType: null });
                                 }
