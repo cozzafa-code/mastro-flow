@@ -4296,7 +4296,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   return (
                                     <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }}
                                       onClick={() => { const ce: any = cornerEdit; if (ce && ce._t && Date.now() - ce._t < 800) return; setCornerEdit(null); }}
-                                      onPointerDown={(e) => { const ce: any = cornerEdit; if (ce && ce._t && Date.now() - ce._t < 800) e.stopPropagation(); }}>
+                                      >
                                       <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 300, display: "flex", flexDirection: "column", gap: 12 }}
                                         onClick={e => e.stopPropagation()}>
                                         <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1C" }}>📐 Angolo anta</div>
@@ -4383,7 +4383,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return (
                                   <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }}
                                     onClick={() => { const ce: any = cornerEdit; if (ce && ce._t && Date.now() - ce._t < 800) return; setCornerEdit(null); }}
-                                    onPointerDown={(e) => { const ce: any = cornerEdit; if (ce && ce._t && Date.now() - ce._t < 800) e.stopPropagation(); }}>
+                                    >
                                     <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 300, display: "flex", flexDirection: "column", gap: 12 }}
                                       onClick={e => e.stopPropagation()}>
                                       <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1C" }}>📐 Angolo</div>
