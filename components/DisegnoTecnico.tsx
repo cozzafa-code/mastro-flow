@@ -2235,7 +2235,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Snap i punti del NUOVO elemento ai vicini esistenti
                                   let snappedX1=pending.x1, snappedY1=pending.y1, snappedX2=px, snappedY2=py;
                                   const existingWeldPts = buildWeldPts2(els);
-                                  existingWeldPts.forEach(p => {
+                                  // FIX TRIANGOLO: escludi chainStart dalla weld finché non hai ≥3 lati piazzati.
+                                  // Altrimenti il 3° click entro 120px dal primo vertice chiude la forma senza volerlo.
+                                  const cs = dw._chainStart;
+                                  const freeLineCount = els.filter((e: any) => e.type === "freeLine").length;
+                                  const canCloseShape = freeLineCount >= 3;
+                                  const filteredWeldPts = (cs && !canCloseShape)
+                                    ? existingWeldPts.filter(p => Math.hypot(p.x - cs.x, p.y - cs.y) > 4)
+                                    : existingWeldPts;
+                                  filteredWeldPts.forEach(p => {
                                     if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
                                     if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
                                   });
