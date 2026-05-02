@@ -2704,6 +2704,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       setDW(els.filter(e => e.id !== selId), { selectedId: null });
                                     }
                                   }} style={bDel()}>Elimina</div>}
+                                  {selId && String(selId).includes(":") && (() => {
+                                    const selStr = String(selId);
+                                    const [antaIdStr, side] = selStr.split(":");
+                                    const antaId = isNaN(Number(antaIdStr)) ? antaIdStr : Number(antaIdStr);
+                                    const antaEl = els.find(e => e.id === antaId);
+                                    if (!antaEl || antaEl.type !== "innerRect") return null;
+                                    const curType = (antaEl.sideTypes || {})[side] || 'anta';
+                                    const setSideType = (newType: string) => {
+                                      const upd = els.map(e => {
+                                        if (e.id !== antaId) return e;
+                                        const newST = { ...(e.sideTypes || {}) };
+                                        if (newType === 'anta') delete newST[side];
+                                        else newST[side] = newType;
+                                        return { ...e, sideTypes: newST };
+                                      });
+                                      setDW(upd, { selectedId: selId });
+                                    };
+                                    const TBtn = ({ t, label, color }: any) => (
+                                      <div onClick={() => setSideType(t)} style={{ ...bDel(curType === t ? color : undefined), background: curType === t ? `${color}25` : undefined, borderColor: curType === t ? color : undefined, color: curType === t ? color : undefined }}>{label}</div>
+                                    );
+                                    return <>
+                                      <TBtn t="anta" label="Anta" color="#777" />
+                                      <TBtn t="zoccolo" label="Zoccolo" color="#8B5E3C" />
+                                      <TBtn t="soglia" label="Soglia" color="#8B5E3C" />
+                                      <TBtn t="fascia" label="Fascia" color="#666" />
+                                    </>;
+                                  })()}
                                   {selId && (() => {
                                     const selEl = els.find(e => e.id === selId);
                                     if (!selEl) return null;
@@ -3256,52 +3283,64 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const leftYEnd = (hidBot ? el.y + el.h : el.y + el.h - TK);
                                       const rightYStart = leftYStart;
                                       const rightYEnd = leftYEnd;
+                                      const sideTypes = el.sideTypes || {};
                                       const sideShape = (side: string) => {
                                         if (hiddenSides.includes(side)) return null;
                                         const sideId = `${el.id}:${side}`;
                                         const isSelSide = selId === sideId;
+                                        // Tipo del lato: anta (default) | zoccolo | soglia | fascia | profcomp
+                                        const sideType = sideTypes[side] || 'anta';
+                                        const fillBySide: any = { anta: "#e8e8e4", zoccolo: "#c8c6c0", soglia: "#d8d6d0", fascia: "#e8e4dc", profcomp: "#dcdad4" };
+                                        const labelBySide: any = { zoccolo: "ZOCCOLO", soglia: "SOGLIA", fascia: "FASCIA", profcomp: "PROF.COMP." };
+                                        const tkBySide: any = { anta: TK, zoccolo: TK_ZOCCOLO * 2, soglia: TK_SOGLIA * 2, fascia: TK_FASCIA * 2, profcomp: TK_PROFCOMP * 2 };
+                                        const thisTK = tkBySide[sideType] || TK;
                                         const sideClr = isSelSide ? "#1A9E73" : clrBase;
-                                        const sideFill = isSelSide ? "#1A9E7333" : "#e8e8e4";
+                                        const sideFill = isSelSide ? "#1A9E7333" : (fillBySide[sideType] || "#e8e8e4");
                                         const sideSw = isSelSide ? 2 : 1;
-                                        // Logica taglio 45°:
-                                        // - cutTL/cutTR/cutBR/cutBL true → angolo è 45 (trapezio)
-                                        // - false → angolo squadrato (rettangolo: outer = inner)
-                                        // Per ogni angolo a 45, il lato INNER si ritira di TK su quel angolo
-                                        // Per ogni angolo squadrato, inner = outer (nessun ritiro)
+                                        const sideLabel = labelBySide[sideType];
                                         let pts = "";
+                                        let labelX = 0, labelY = 0;
                                         if (side === "top") {
                                           const xL = el.x, xR = el.x + el.w;
-                                          const yT = el.y, yB = el.y + TK;
-                                          const ixL = xL + (cutTL ? TK : 0);
-                                          const ixR = xR - (cutTR ? TK : 0);
-                                          // outer top edge: full width xL..xR; inner bot edge: ritirato dove 45
+                                          const yT = el.y, yB = el.y + thisTK;
+                                          const ixL = xL + (cutTL ? thisTK : 0);
+                                          const ixR = xR - (cutTR ? thisTK : 0);
                                           pts = `${xL},${yT} ${xR},${yT} ${ixR},${yB} ${ixL},${yB}`;
+                                          labelX = (xL + xR) / 2; labelY = (yT + yB) / 2 + 3;
                                         } else if (side === "bot") {
                                           const xL = el.x, xR = el.x + el.w;
                                           const yB = el.y + el.h;
-                                          const yT = yB - TK;
-                                          const ixL = xL + (cutBL ? TK : 0);
-                                          const ixR = xR - (cutBR ? TK : 0);
+                                          const yT = yB - thisTK;
+                                          const ixL = xL + (cutBL ? thisTK : 0);
+                                          const ixR = xR - (cutBR ? thisTK : 0);
                                           pts = `${ixL},${yT} ${ixR},${yT} ${xR},${yB} ${xL},${yB}`;
+                                          labelX = (xL + xR) / 2; labelY = (yT + yB) / 2 + 3;
                                         } else if (side === "left") {
                                           const yT = el.y, yB = el.y + el.h;
-                                          const xL = el.x, xR = el.x + TK;
-                                          const iyT = yT + (cutTL ? TK : 0);
-                                          const iyB = yB - (cutBL ? TK : 0);
+                                          const xL = el.x, xR = el.x + thisTK;
+                                          const iyT = yT + (cutTL ? thisTK : 0);
+                                          const iyB = yB - (cutBL ? thisTK : 0);
                                           pts = `${xL},${yT} ${xR},${iyT} ${xR},${iyB} ${xL},${yB}`;
+                                          labelX = (xL + xR) / 2; labelY = (yT + yB) / 2 + 3;
                                         } else if (side === "right") {
                                           const yT = el.y, yB = el.y + el.h;
                                           const xR = el.x + el.w;
-                                          const xL = xR - TK;
-                                          const iyT = yT + (cutTR ? TK : 0);
-                                          const iyB = yB - (cutBR ? TK : 0);
+                                          const xL = xR - thisTK;
+                                          const iyT = yT + (cutTR ? thisTK : 0);
+                                          const iyB = yB - (cutBR ? thisTK : 0);
                                           pts = `${xL},${iyT} ${xR},${yT} ${xR},${yB} ${xL},${iyB}`;
+                                          labelX = (xL + xR) / 2; labelY = (yT + yB) / 2 + 3;
                                         }
                                         return (
-                                          <polygon key={side} points={pts} fill={sideFill} stroke={sideClr} strokeWidth={sideSw}
-                                            onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: sideId }); }}
-                                            style={{ cursor: drawMode ? undefined : "pointer" }}
-                                          />
+                                          <g key={side}>
+                                            <polygon points={pts} fill={sideFill} stroke={sideClr} strokeWidth={sideSw}
+                                              onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: sideId }); }}
+                                              style={{ cursor: drawMode ? undefined : "pointer" }}
+                                            />
+                                            {sideLabel && (side === 'top' || side === 'bot') && thisTK >= 8 && (
+                                              <text x={labelX} y={labelY} textAnchor="middle" fontSize={6} fontWeight={800} fill="#555" pointerEvents="none">{sideLabel}</text>
+                                            )}
+                                          </g>
                                         );
                                       };
                                       return (
