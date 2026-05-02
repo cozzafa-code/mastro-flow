@@ -3351,30 +3351,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
                                       const innerStr = innerPoly.map(p => p.join(",")).join(" ");
-                                      // Vertici outer per pallini
-                                      const _antaVerts = [
-                                        { key: 'tl', x: apMinX, y: apMinY, mode: mTL },
-                                        { key: 'tr', x: apMaxX, y: apMinY, mode: mTR },
-                                        { key: 'br', x: apMaxX, y: apMaxY, mode: mBR },
-                                        { key: 'bl', x: apMinX, y: apMaxY, mode: mBL },
-                                      ];
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
                                           <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
                                           <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
-                                          {!drawMode && _antaVerts.map(v => {
-                                            const dotColor = v.mode === '45' ? '#3B7FE0' : v.mode === 'V' ? '#1A9E73' : v.mode === 'H' ? '#D08008' : '#888';
-                                            return (
-                                              <g key={`av-${v.key}`} style={{ cursor: 'pointer' }}
-                                                onClick={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: el.id, antaCorner: v.key } as any); }}
-                                                onTouchStart={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: el.id, antaCorner: v.key } as any); }}>
-                                                <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
-                                                <circle cx={v.x} cy={v.y} r={10} fill="#fff" stroke={dotColor} strokeWidth={1.5} opacity={0.85} />
-                                                <circle cx={v.x} cy={v.y} r={4} fill={dotColor} />
-                                              </g>
-                                            );
-                                          })}
                                         </g>
                                       );
                                     }
@@ -3679,6 +3660,40 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <circle cx={v.x} cy={v.y} r={14} fill="#fff" stroke="#888" strokeWidth={2} opacity={0.85} />
                                             <circle cx={v.x} cy={v.y} r={6} fill="#888" />
                                           </>}
+                                        </g>
+                                      );
+                                    });
+                                  })()}
+
+                                  {/* Pallini d'angolo ANTE: 4 vertici di ogni polyAnta — sempre visibili */}
+                                  {(() => {
+                                    if (drawMode) return null;
+                                    const antas = els.filter((e: any) => e.type === "polyAnta" && e.poly);
+                                    if (antas.length === 0) return null;
+                                    const dots: any[] = [];
+                                    antas.forEach((a: any) => {
+                                      const xs = a.poly.map((p: number[]) => p[0]);
+                                      const ys = a.poly.map((p: number[]) => p[1]);
+                                      const xMin = Math.min(...xs), xMax = Math.max(...xs);
+                                      const yMin = Math.min(...ys), yMax = Math.max(...ys);
+                                      const acm = a.cornerModes || {};
+                                      const corners = [
+                                        { key: 'tl', x: xMin, y: yMin, mode: acm.tl || '45' },
+                                        { key: 'tr', x: xMax, y: yMin, mode: acm.tr || '45' },
+                                        { key: 'br', x: xMax, y: yMax, mode: acm.br || '45' },
+                                        { key: 'bl', x: xMin, y: yMax, mode: acm.bl || '45' },
+                                      ];
+                                      corners.forEach(c => dots.push({ ...c, antaId: a.id }));
+                                    });
+                                    return dots.map((v, i) => {
+                                      const dotColor = v.mode === '45' ? '#3B7FE0' : v.mode === 'V' ? '#1A9E73' : v.mode === 'H' ? '#D08008' : '#888';
+                                      return (
+                                        <g key={`avx-${i}`} style={{ cursor: 'pointer' }}
+                                          onClick={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: v.antaId, antaCorner: v.key } as any); }}
+                                          onTouchStart={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: v.antaId, antaCorner: v.key } as any); }}>
+                                          <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
+                                          <circle cx={v.x} cy={v.y} r={9} fill="#fff" stroke={dotColor} strokeWidth={1.5} opacity={0.9} />
+                                          <circle cx={v.x} cy={v.y} r={4} fill={dotColor} />
                                         </g>
                                       );
                                     });
