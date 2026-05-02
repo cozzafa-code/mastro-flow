@@ -1678,44 +1678,42 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Zocc.Lib — due tap. Snap solo a bordi telaio (raggio 30px).
+                              // Zocc.Lib — due tap. Snap Y solo a bordi telaio orizzontali (raggio 30px). X libera.
                               if (drawMode === "place-zocc-free") {
                                 const pending = dw._pendingLine;
-                                // Snap a bordi del telaio (freeLine senza subType, isole già escluse)
                                 const frameEdges = els.filter(e => e.type === "freeLine" && !e.subType);
-                                const SNAP_EDGE = 30;
-                                const snapToEdge = (px: number, py: number) => {
-                                  // Trova bordo più vicino (orizzontale o verticale)
-                                  let bestX = px, bestY = py, bestD = SNAP_EDGE;
+                                const SNAP_EDGE = 35;
+                                // Snap solo Y (lo zoccolo è orizzontale, X resta del dito)
+                                // Offset: dentro al vano (sopra il bordo bot, sotto il bordo top)
+                                const snapY = (px: number, py: number, halfT: number) => {
+                                  let bestY = py, bestD = SNAP_EDGE;
                                   frameEdges.forEach(l => {
                                     const isHorz = Math.abs(l.y2 - l.y1) < Math.abs(l.x2 - l.x1);
-                                    if (isHorz) {
-                                      const lY = (l.y1 + l.y2) / 2;
-                                      const lXmin = Math.min(l.x1, l.x2), lXmax = Math.max(l.x1, l.x2);
-                                      // Snap Y se px è nell'intervallo X del bordo
-                                      if (px >= lXmin - 10 && px <= lXmax + 10) {
-                                        const d = Math.abs(py - lY);
-                                        if (d < bestD) { bestD = d; bestY = lY; bestX = px; }
-                                      }
-                                    } else {
-                                      const lX = (l.x1 + l.x2) / 2;
-                                      const lYmin = Math.min(l.y1, l.y2), lYmax = Math.max(l.y1, l.y2);
-                                      if (py >= lYmin - 10 && py <= lYmax + 10) {
-                                        const d = Math.abs(px - lX);
-                                        if (d < bestD) { bestD = d; bestX = lX; bestY = py; }
-                                      }
+                                    if (!isHorz) return;
+                                    const lY = (l.y1 + l.y2) / 2;
+                                    const lXmin = Math.min(l.x1, l.x2), lXmax = Math.max(l.x1, l.x2);
+                                    if (px < lXmin - 10 || px > lXmax + 10) return;
+                                    const d = Math.abs(py - lY);
+                                    if (d < bestD) {
+                                      bestD = d;
+                                      // Determina se il bordo è top o bot del telaio (in base al baricentro)
+                                      const allY = frameEdges.flatMap(fl => [fl.y1, fl.y2]);
+                                      const cY = allY.reduce((a, b) => a + b, 0) / allY.length;
+                                      // Se questo bordo è SOTTO il baricentro = è il bordo bot → zoccolo va SOPRA
+                                      // Se è SOPRA il baricentro = bordo top → zoccolo va SOTTO
+                                      bestY = lY > cY ? lY - halfT : lY + halfT;
                                     }
                                   });
-                                  return { x: bestX, y: bestY };
+                                  return bestY;
                                 };
+                                const TK_ZOCC = 8; // halfT zoccolo
                                 if (!pending) {
-                                  const sn = snapToEdge(mx, my);
-                                  setMode({ _pendingLine: { x1: Math.round(sn.x), y1: Math.round(sn.y), _subType: "zoccolo_free" } });
+                                  const py = snapY(mx, my, TK_ZOCC);
+                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(py), _subType: "zoccolo_free" } });
                                 } else {
                                   const y = pending.y1;
-                                  // Sul 2° tap, snap solo X mantenendo y=pending.y1
-                                  const sn = snapToEdge(mx, pending.y1);
-                                  const finalX = Math.round(sn.x);
+                                  // 2° tap: solo X del dito, Y mantiene quella del 1° tap
+                                  const finalX = Math.round(mx);
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
                                   if (Math.abs(x2 - x1) < 5) return;
