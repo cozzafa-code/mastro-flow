@@ -928,6 +928,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
+  const [cornerEdit, setCornerEdit] = React.useState<{id: any, which: 'start'|'end', x: number, y: number} | null>(null);
   const realW = propRealW || 1200;
   const realH = propRealH || 1000;
                             const dw = vanoDisegno || { elements: [], selectedId: null, drawMode: null, history: [] };
@@ -2769,22 +2770,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
-                                  onPointerDown={(e2: any) => {
-                                    // Memorizza posizione iniziale per drift-check
-                                    (e2.currentTarget as any).__tapStartX = e2.clientX;
-                                    (e2.currentTarget as any).__tapStartY = e2.clientY;
-                                  }}
-                                  onPointerUp={(e2: any) => {
-                                    // Se il dito/mouse si e' mosso < 6px = tap valido (anche con microvibrazione iPhone)
-                                    const sx = (e2.currentTarget as any).__tapStartX;
-                                    const sy = (e2.currentTarget as any).__tapStartY;
-                                    if (sx == null || sy == null) return;
-                                    const dx = Math.abs(e2.clientX - sx);
-                                    const dy = Math.abs(e2.clientY - sy);
-                                    if (dx < 6 && dy < 6) {
-                                      onSvgClick(e2);
-                                    }
-                                  }}
+                                  onClick={onSvgClick}
                                   onWheelDISABLED={(e2: any) => {
                                     e2.preventDefault();
                                     const newZoom = Math.max(0.15, Math.min(6, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
@@ -3442,8 +3428,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       
                                       // ext1: si estende verso montante sx (SVG) = dx utente
                                       // ext2: si ferma su el.x2, non esce
-                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -TK_MONT : halfT;
-                                      const ext2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
+                                      // Override esplicito da cornerModes (V/H/45/auto)
+                                      const cm = el.cornerModes || {};
+                                      const modeStart = cm.start || 'auto';
+                                      const modeEnd = cm.end || 'auto';
+                                      // V = la linea passa (si estende halfT) | H = si ferma (-TK_MONT) | 45 = neutro halfT (taglio gestito da corners)
+                                      const resolveExt = (mode: string, autoVal: number) => {
+                                        if (mode === 'V') return halfT;
+                                        if (mode === 'H') return -TK_MONT;
+                                        if (mode === '45') return halfT;
+                                        return autoVal;
+                                      };
+                                      const ext1 = resolveExt(modeStart, (hasMontAt1 || hasVertAt1) ? -TK_MONT : halfT);
+                                      const ext2 = resolveExt(modeEnd, (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT);
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali: bordo basso polygon = el.y1
@@ -3451,8 +3448,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         ey1 = el.y1 - halfT + TK_FRAME;
                                         ey2 = el.y2 - halfT + TK_FRAME;
                                       }
-                                      // Taglio 45° sul profilo freeLine orizzontale
-                                      const flCorners = el.corners || [];
+                                      // Taglio 45° sul profilo freeLine: usa cornerModes oppure el.corners legacy
+                                      const flCorners: any[] = el.corners ? [...el.corners] : [];
+                                      if (modeStart === '45') flCorners.push({ cx: el.x1, cy: el.y1, _which: 'start' });
+                                      if (modeEnd === '45') flCorners.push({ cx: el.x2, cy: el.y2, _which: 'end' });
                                       const buildFreePoly = () => {
                                         // pts4 base: TL, TR, BR, BL (top=ey+ny, bot=ey-ny)
                                         let p = [
@@ -3496,7 +3495,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <rect x={lx - 18} y={ly - 7} width={36} height={14} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? "#1A9E73" : T.acc} strokeWidth={dimEdit?.id === el.id ? 1.5 : 0.6} opacity={0.9} />
                                             <text x={lx} y={ly + 4} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{mmLen}</text>
                                           </g>
-                                          {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill="#1A9E73" /><circle cx={el.x2} cy={el.y2} r={5} fill="#1A9E73" /></>}
+                                          {sel && <>
+                                            <circle cx={el.x1} cy={el.y1} r={8} fill="#1A9E73" style={{cursor:"pointer"}}
+                                              onClick={(e3) => { e3.stopPropagation(); const svgEl = (e3.currentTarget as any).closest("svg"); const r = svgEl?.getBoundingClientRect(); setCornerEdit({ id: el.id, which: 'start', x: r ? r.left + r.width/2 : 200, y: r ? r.top + 80 : 80 }); }}
+                                              onTouchStart={(e3) => { e3.stopPropagation(); const svgEl = (e3.currentTarget as any).closest("svg"); const r = svgEl?.getBoundingClientRect(); setCornerEdit({ id: el.id, which: 'start', x: r ? r.left + r.width/2 : 200, y: r ? r.top + 80 : 80 }); }}
+                                            />
+                                            <circle cx={el.x2} cy={el.y2} r={8} fill="#1A9E73" style={{cursor:"pointer"}}
+                                              onClick={(e3) => { e3.stopPropagation(); const svgEl = (e3.currentTarget as any).closest("svg"); const r = svgEl?.getBoundingClientRect(); setCornerEdit({ id: el.id, which: 'end', x: r ? r.left + r.width/2 : 200, y: r ? r.top + 80 : 80 }); }}
+                                              onTouchStart={(e3) => { e3.stopPropagation(); const svgEl = (e3.currentTarget as any).closest("svg"); const r = svgEl?.getBoundingClientRect(); setCornerEdit({ id: el.id, which: 'end', x: r ? r.left + r.width/2 : 200, y: r ? r.top + 80 : 80 }); }}
+                                            />
+                                          </>}
                                         </g>
                                       );
                                     }
@@ -3843,6 +3851,47 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   </div>
                                 </div>
                               )}
+
+                              {/* ══ OVERLAY SCELTA ANGOLO ══ */}
+                              {cornerEdit && (() => {
+                                const elTarget = (dw.elements || []).find((x: any) => x.id === cornerEdit.id);
+                                if (!elTarget) return null;
+                                const curMode = (elTarget.cornerModes || {})[cornerEdit.which] || 'auto';
+                                const setMode2 = (m: string) => {
+                                  const upd = (dw.elements || []).map((x: any) => {
+                                    if (x.id !== cornerEdit.id) return x;
+                                    const cm = { ...(x.cornerModes || {}) };
+                                    cm[cornerEdit.which] = m;
+                                    return { ...x, cornerModes: cm };
+                                  });
+                                  setDW(upd, { selectedId: cornerEdit.id });
+                                  setCornerEdit(null);
+                                };
+                                const Btn = ({m, label, hint}: any) => (
+                                  <div onClick={() => setMode2(m)}
+                                    style={{ flex: 1, padding: "14px 6px", borderRadius: 10, background: curMode === m ? "#1A9E73" : "#F2F1EC", border: curMode === m ? "2px solid #1A9E73" : "1.5px solid #ddd", textAlign: "center", cursor: "pointer", color: curMode === m ? "#fff" : "#1A1A1C" }}>
+                                    <div style={{ fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{label}</div>
+                                    <div style={{ fontSize: 9, fontWeight: 600, marginTop: 4, opacity: 0.85 }}>{hint}</div>
+                                  </div>
+                                );
+                                return (
+                                  <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.35)" }}
+                                    onClick={() => setCornerEdit(null)}>
+                                    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 280, display: "flex", flexDirection: "column", gap: 12 }}
+                                      onClick={e => e.stopPropagation()}>
+                                      <div style={{ fontSize: 13, fontWeight: 800, color: "#1A1A1C" }}>📐 Angolo {cornerEdit.which === 'start' ? 'iniziale' : 'finale'}</div>
+                                      <div style={{ fontSize: 11, color: "#888" }}>Scegli come si chiude questo angolo</div>
+                                      <div style={{ display: "flex", gap: 8 }}>
+                                        <Btn m="V" label="V" hint="Vert. vince" />
+                                        <Btn m="H" label="H" hint="Orizz. vince" />
+                                        <Btn m="45" label="45°" hint="Taglio" />
+                                        <Btn m="auto" label="A" hint="Auto" />
+                                      </div>
+                                      <div onClick={() => setCornerEdit(null)} style={{ padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Chiudi</div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                               </>
                             );
 }
