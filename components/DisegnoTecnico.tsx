@@ -3665,25 +3665,34 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     });
                                   })()}
 
-                                  {/* Pallini d'angolo ANTE: 4 vertici di ogni polyAnta — sempre visibili */}
+                                  {/* Pallini d'angolo ANTE: 4 vertici di ogni anta (innerRect + polyAnta) — sempre visibili */}
                                   {(() => {
                                     if (drawMode) return null;
-                                    const antas = els.filter((e: any) => e.type === "polyAnta" && e.poly);
-                                    if (antas.length === 0) return null;
+                                    const polyAntas = els.filter((e: any) => e.type === "polyAnta" && e.poly);
+                                    const rectAntas = els.filter((e: any) => e.type === "innerRect");
+                                    if (polyAntas.length === 0 && rectAntas.length === 0) return null;
                                     const dots: any[] = [];
-                                    antas.forEach((a: any) => {
+                                    polyAntas.forEach((a: any) => {
                                       const xs = a.poly.map((p: number[]) => p[0]);
                                       const ys = a.poly.map((p: number[]) => p[1]);
                                       const xMin = Math.min(...xs), xMax = Math.max(...xs);
                                       const yMin = Math.min(...ys), yMax = Math.max(...ys);
                                       const acm = a.cornerModes || {};
-                                      const corners = [
+                                      [
                                         { key: 'tl', x: xMin, y: yMin, mode: acm.tl || '45' },
                                         { key: 'tr', x: xMax, y: yMin, mode: acm.tr || '45' },
                                         { key: 'br', x: xMax, y: yMax, mode: acm.br || '45' },
                                         { key: 'bl', x: xMin, y: yMax, mode: acm.bl || '45' },
-                                      ];
-                                      corners.forEach(c => dots.push({ ...c, antaId: a.id }));
+                                      ].forEach(c => dots.push({ ...c, antaId: a.id }));
+                                    });
+                                    rectAntas.forEach((a: any) => {
+                                      const acm = a.cornerModes || {};
+                                      [
+                                        { key: 'tl', x: a.x, y: a.y, mode: acm.tl || '45' },
+                                        { key: 'tr', x: a.x + a.w, y: a.y, mode: acm.tr || '45' },
+                                        { key: 'br', x: a.x + a.w, y: a.y + a.h, mode: acm.br || '45' },
+                                        { key: 'bl', x: a.x, y: a.y + a.h, mode: acm.bl || '45' },
+                                      ].forEach(c => dots.push({ ...c, antaId: a.id }));
                                     });
                                     return dots.map((v, i) => {
                                       const dotColor = v.mode === '45' ? '#3B7FE0' : v.mode === 'V' ? '#1A9E73' : v.mode === 'H' ? '#D08008' : '#888';
