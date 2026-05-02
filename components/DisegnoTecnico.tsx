@@ -3312,10 +3312,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             frameTop = Math.min(frameTop, l.y1, l.y2);
                                             frameBot = Math.max(frameBot, l.y1, l.y2);
                                           });
-                                          // Top: aggancia al bordo top del telaio se vicino
+                                          // Top: aggancia al bordo interno top del telaio se vicino
                                           if (Math.abs(my1raw - frameTop) < 40) my1raw = frameTop + TK_FRAME;
-                                          // Bot: aggancia al bordo bot interno se vicino e nessun zoccolo
-                                          if (Math.abs(my2raw - frameBot) < 40) my2raw = frameBot - TK_FRAME;
+                                          // Bot: aggancia al bordo interno bot, e si allunga di 7px in più verso il basso
+                                          if (Math.abs(my2raw - frameBot) < 40) my2raw = frameBot - TK_FRAME + 7;
                                         }
                                       }
                                       // Aggancio zoccolo: cerca freeLine subType=zoccolo OPPURE zoccoloLibero adiacente
