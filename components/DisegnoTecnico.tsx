@@ -3913,18 +3913,34 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     });
                                     const verts = Object.values(vmap).filter((v: any) => v.refs.length >= 2);
                                     return verts.map((v: any, i: number) => {
-                                      // Stato corrente: leggi cornerModes della prima linea che ha valore esplicito
                                       let curMode = 'auto';
+                                      let manuallyHidden = false;
                                       for (const r of v.refs) {
                                         const cm = (r.line.cornerModes || {})[r.which];
                                         if (cm && cm !== 'auto') { curMode = cm; break; }
+                                        if ((r.line.cornerModes || {})[`${r.which}_hidden`]) manuallyHidden = true;
                                       }
-                                      const isConfigured = curMode !== 'auto';
+                                      const isConfigured = curMode !== 'auto' || manuallyHidden;
+                                      // Doppio-tap = nascondi manualmente questo pallino
+                                      const onDblTap = () => {
+                                        const upd = (dw.elements || []).map((e: any) => {
+                                          const r = v.refs.find((rr: any) => rr.id === e.id);
+                                          if (!r) return e;
+                                          return { ...e, cornerModes: { ...(e.cornerModes || {}), [`${r.which}_hidden`]: true } };
+                                        });
+                                        setDW(upd);
+                                      };
                                       return (
                                         <g key={`vtx-${i}`} style={{ cursor: 'pointer' }}
-                                          onClick={(e3) => { e3.stopPropagation(); openCornerEdit({ vx: v.x, vy: v.y }); }}
-                                          onTouchStart={(e3) => { e3.stopPropagation(); openCornerEdit({ vx: v.x, vy: v.y }); }}>
-                                          {/* Hit area trasparente per ri-tap anche quando configurato */}
+                                          onClick={(e3) => {
+                                            e3.stopPropagation();
+                                            const now = Date.now();
+                                            const last = (e3.currentTarget as any).__lastTap || 0;
+                                            if (now - last < 400) { onDblTap(); (e3.currentTarget as any).__lastTap = 0; return; }
+                                            (e3.currentTarget as any).__lastTap = now;
+                                            openCornerEdit({ vx: v.x, vy: v.y });
+                                          }}
+                                          onTouchStart={(e3) => { e3.stopPropagation(); }}>
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
                                           {!isConfigured && <>
                                             <circle cx={v.x} cy={v.y} r={14} fill="#fff" stroke="#888" strokeWidth={2} opacity={0.85} />
