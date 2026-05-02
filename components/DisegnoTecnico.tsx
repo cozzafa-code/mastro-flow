@@ -3445,10 +3445,45 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         ey1 = el.y1 - halfT + TK_FRAME;
                                         ey2 = el.y2 - halfT + TK_FRAME;
                                       }
-                                      // Taglio 45° sul profilo freeLine orizzontale
-                                      const flCorners = [...(el.corners || [])];
-                                      if (_cm.start === '45') flCorners.push({ cx: el.x1, cy: el.y1 });
-                                      if (_cm.end === '45') flCorners.push({ cx: el.x2, cy: el.y2 });
+                                      // Taglio 45° sul profilo: usa cornerModes esplicito (non tocca el.corners legacy)
+                                      const cut45Start = _cm.start === '45';
+                                      const cut45End = _cm.end === '45';
+                                      const flCorners = (cut45Start || cut45End) ? [] : (el.corners || []);
+                                      const buildPts45 = () => {
+                                        // Quando 45 è attivo su un estremo, accorcio quel lato di halfT lungo la direzione e creo 1 solo vertice centrale arretrato
+                                        // Lati base (rettangolo): TL=(ex1+nx,ey1+ny) TR=(ex2+nx,ey2+ny) BR=(ex2-nx,ey2-ny) BL=(ex1-nx,ey1-ny)
+                                        const back = halfT; // arretramento lungo la direzione
+                                        // Punto medio arretrato sull'estremo start: (ex1 + ux*back, ey1 + uy*back)
+                                        // Punto medio arretrato sull'estremo end: (ex2 - ux*back, ey2 - uy*back)
+                                        const sx = ex1 + ux * back, sy = ey1 + uy * back;
+                                        const ex_ = ex2 - ux * back, ey_ = ey2 - uy * back;
+                                        const TL = [ex1+nx, ey1+ny], TR = [ex2+nx, ey2+ny];
+                                        const BR = [ex2-nx, ey2-ny], BL = [ex1-nx, ey1-ny];
+                                        // 4 casi
+                                        if (cut45Start && cut45End) {
+                                          // Esagono: TL spostato a sx+nx, TR a ex+nx, BR a ex-nx, BL a sx-nx
+                                          return [
+                                            [sx+nx, sy+ny], [ex_+nx, ey_+ny],
+                                            [ex2+nx*0, ey2+ny*0], // punto end (taglio)
+                                            [ex_-nx, ey_-ny], [sx-nx, sy-ny],
+                                            [ex1+nx*0, ey1+ny*0]  // punto start (taglio)
+                                          ];
+                                        }
+                                        if (cut45Start) {
+                                          return [
+                                            [sx+nx, sy+ny], TR, BR, [sx-nx, sy-ny],
+                                            [ex1+nx*0, ey1+ny*0]
+                                          ];
+                                        }
+                                        if (cut45End) {
+                                          return [
+                                            TL, [ex_+nx, ey_+ny],
+                                            [ex2+nx*0, ey2+ny*0],
+                                            [ex_-nx, ey_-ny], BL
+                                          ];
+                                        }
+                                        return [TL, TR, BR, BL];
+                                      };
                                       const buildFreePoly = () => {
                                         // pts4 base: TL, TR, BR, BL (top=ey+ny, bot=ey-ny)
                                         let p = [
@@ -3471,7 +3506,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         });
                                         return p.map(pt => pt.join(",")).join(" ");
                                       };
-                                      const pts4 = flCorners.length > 0 ? buildFreePoly() : `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
+                                      const has45 = cut45Start || cut45End;
+                                      const pts4 = has45
+                                        ? buildPts45().map(pt => pt.join(",")).join(" ")
+                                        : (flCorners.length > 0 ? buildFreePoly() : `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`);
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
