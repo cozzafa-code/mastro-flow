@@ -626,7 +626,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function onDown(e: any) {
-    if (e.button===1||(e.touches?.length>=2)) {
+    if ((e.pointerType === "mouse" && e.button===1)||(e.touches?.length>=2)) {
       isPanRef.current=true;
       const ct=e.touches
         ?{clientX:(e.touches[0].clientX+e.touches[1].clientX)/2,clientY:(e.touches[0].clientY+e.touches[1].clientY)/2}:e;
