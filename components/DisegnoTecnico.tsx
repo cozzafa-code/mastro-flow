@@ -2798,7 +2798,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       document.addEventListener("mouseup", onPU);
                                     }
                                   }}
-                                  onMouseMove={(e2) => {
+                                  onMouseMoveDISABLED={(e2: any) => {
                                     const dw = dwRef.current;
                                     const els = dw.elements || [];
                                     const drawMode = dw.drawMode || null;
@@ -2864,7 +2864,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penActive: true, _penPath: [[gmx, gmy]] });
                                     }
                                   }}
-                                  onTouchMoveDISABLED={(e2: any) => {
+                                  onTouchMove={(e2) => {
                                     const dw = dwRef.current;
                                     const els = dw.elements || [];
                                     const drawMode = dw.drawMode || null;
