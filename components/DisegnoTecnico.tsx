@@ -2166,21 +2166,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   else {
                                     const origPx = px, origPy = py;
                                     const sp = findSnap(px, py);
+                                    let snapApplied = "no";
+                                    let snapInfo = "";
                                     if (sp) {
-                                      // Accetta lo snap solo se è entro 50px dal punto del dito.
-                                      // Altrimenti il dito viene tirato a un bordo lontano del telaio.
                                       const snapDist = Math.hypot(sp.x - origPx, sp.y - origPy);
-                                      if (snapDist < 50) { px = sp.x; py = sp.y; }
+                                      snapInfo = `sp=${Math.round(sp.x)},${Math.round(sp.y)} d=${Math.round(snapDist)}`;
+                                      if (snapDist < 50) { px = sp.x; py = sp.y; snapApplied = "yes"; }
                                     }
                                     // H/V: forza allineamento anche dopo snap
                                     const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
                                     if (adxC < 25 && adyC > adxC * 1.5) px=pending.x1;
                                     if (adyC < 25 && adxC > adyC * 1.5) py=pending.y1;
                                     // chiusura forma — solo per telaio libero senza subType, ≥3 lati, snap ravvicinato 30px
+                                    let closeApplied = "no";
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
-                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<30) { px=cs.x; py=cs.y; }
+                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<30) { px=cs.x; py=cs.y; closeApplied="yes"; }
+                                      if (typeof document !== 'undefined') {
+                                        document.title = `TEL.LIB. clk#${freeLines.length+1} orig=${Math.round(origPx)},${Math.round(origPy)} ${snapInfo} sn=${snapApplied} cs=${cs?Math.round(cs.x)+","+Math.round(cs.y):"-"} cl=${closeApplied} fin=${Math.round(px)},${Math.round(py)}`;
+                                      }
                                     }
                                   }
 
