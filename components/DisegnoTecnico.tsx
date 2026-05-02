@@ -1685,6 +1685,50 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
+                              // FERMAVETRO — un tap dentro una cella o un'anta. Crea 4 fermavetri autonomi (anello)
+                              // attorno al rettangolo del vetro: bordo interno offset di TK_ANTA o TK_FRAME.
+                              if (drawMode === "place-fermavetro") {
+                                const TK_FERMA = 3;
+                                // Cerca prima un'anta (innerRect) sotto il dito
+                                const anta = els.find((e: any) => e.type === "innerRect" &&
+                                  mx >= e.x && mx <= e.x + e.w && my >= e.y && my <= e.y + e.h);
+                                let bx = 0, by = 0, bw = 0, bh = 0, inset = 0;
+                                if (anta) {
+                                  // Dentro anta: offset = TK_ANTA (spessore profilo anta)
+                                  inset = TK_ANTA;
+                                  bx = anta.x + inset; by = anta.y + inset;
+                                  bw = anta.w - inset * 2; bh = anta.h - inset * 2;
+                                } else {
+                                  // Cerca cella telaio
+                                  let cell = findCellAt(mx, my);
+                                  if (!cell && cells.length > 0) {
+                                    let best = null, bestD = Infinity;
+                                    cells.forEach(c2 => {
+                                      const cx2 = c2.x + c2.w / 2, cy2 = c2.y + c2.h / 2;
+                                      const d = Math.hypot(mx - cx2, my - cy2);
+                                      if (d < bestD) { bestD = d; best = c2; }
+                                    });
+                                    cell = best;
+                                  }
+                                  if (cell) {
+                                    inset = TK_FRAME;
+                                    bx = cell.x + inset; by = cell.y + inset;
+                                    bw = cell.w - inset * 2; bh = cell.h - inset * 2;
+                                  } else { return; }
+                                }
+                                if (bw < 20 || bh < 20) return;
+                                const tNow = Date.now();
+                                const fvBase = { type: "freeLine", subType: "fermavetro" };
+                                // 4 lati attorno al rettangolo (top, bot, left, right)
+                                setDW([...els,
+                                  { id: tNow,     ...fvBase, x1: bx,      y1: by,      x2: bx + bw, y2: by      },  // top
+                                  { id: tNow + 1, ...fvBase, x1: bx,      y1: by + bh, x2: bx + bw, y2: by + bh },  // bot
+                                  { id: tNow + 2, ...fvBase, x1: bx,      y1: by,      x2: bx,      y2: by + bh },  // left
+                                  { id: tNow + 3, ...fvBase, x1: bx + bw, y1: by,      x2: bx + bw, y2: by + bh },  // right
+                                ], { drawMode: null });
+                                return;
+                              }
+
                               // Zocc.Lib — due tap. Crea un rect autonomo (NON freeLine subType).
                               // Niente weld, niente offset, niente fusione col telaio.
                               if (drawMode === "place-zocc-free") {
@@ -2461,7 +2505,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const bAp = (active = false) => ({ padding: "3px 6px", borderRadius: 5, border: `1px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
                             const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
 
-                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free" ? "crosshair" : drawMode ? "pointer" : "default";
+                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free" || drawMode === "place-fermavetro" ? "crosshair" : drawMode ? "pointer" : "default";
 
                             // ══ Apply dim change con propagazione catena ══
                             const dimEditRef = dimEdit; // accessibile in applyDimChange
@@ -2719,6 +2763,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     style={bs(drawMode === "place-trav-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.Lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-zocc-free" ? null : "place-zocc-free", _pendingLine: null })}
                                     style={bs(drawMode === "place-zocc-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="16" width="18" height="6" rx="0.5" fill="currentColor" fillOpacity="0.15"/></svg>Zocc.Lib.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-fermavetro" ? null : "place-fermavetro", _pendingLine: null })}
+                                    style={bs(drawMode === "place-fermavetro")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="4" y="4" width="16" height="16" rx="0.5"/><rect x="7" y="7" width="10" height="10" rx="0.5"/></svg>Fermavetro</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "soglia")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="14" width="18" height="4" rx="0.5"/></svg>Soglia</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
@@ -3695,11 +3741,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
                                       const subType = el.subType || null;
-                                      const tkMap: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, montante: TK_MONT, traverso: TK_MONT, soglia_rib: TK_SOGLIA };
+                                      const tkMap: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, montante: TK_MONT, traverso: TK_MONT, soglia_rib: TK_SOGLIA, fermavetro: 3 };
                                       const halfT = subType ? (tkMap[subType] || TK_FRAME) : TK_FRAME;
-                                      const fillMap: any = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", montante: "#e4e2d8", traverso: "#e4e2d8", soglia_rib: "#c0beb8" };
+                                      const fillMap: any = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", montante: "#e4e2d8", traverso: "#e4e2d8", soglia_rib: "#c0beb8", fermavetro: "#f0ede0" };
                                       const fillC = subType ? (fillMap[subType] || "#f0efe8") : "#f0efe8";
-                                      const labelMap: any = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", montante: "MONTANTE", traverso: "TRAVERSO", soglia_rib: "SOGLIA RIB." };
+                                      const labelMap: any = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", montante: "MONTANTE", traverso: "TRAVERSO", soglia_rib: "SOGLIA RIB.", fermavetro: "" };
                                       const labelTxt = subType ? (labelMap[subType] || subType.toUpperCase()) : null;
                                       const refLen = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
                                       const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
