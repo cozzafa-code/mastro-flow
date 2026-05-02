@@ -2800,8 +2800,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }}
                                   onMouseMove={(e2) => {
                                     const dw = dwRef.current;
-                                    const els = dw.elements || [];
                                     const drawMode = dw.drawMode || null;
+                                    if (!dw._penActive && !dw._pendingLine) return;
+                                    const els = dw.elements || [];
                                     const svg = e2.currentTarget;
                                     // Pen mode — traccia path
                                     if (drawMode === "pen" && dw._penActive) {
