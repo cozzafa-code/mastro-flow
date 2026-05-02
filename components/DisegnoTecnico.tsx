@@ -3555,18 +3555,22 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const _autoExt1 = (hasMontAt1 || hasVertAt1) ? -TK_MONT : halfT;
                                       const _autoExt2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
                                       const _cm = el.cornerModes || {};
+                                      // Se subType è un complemento (soglia/soglia_rib/zoccolo/fascia/profcomp), il pezzo è ISOLATO:
+                                      // niente estensione automatica verso vertici, niente offset Y al frame.
+                                      const isComplemento = subType && ["soglia","soglia_rib","zoccolo","fascia","profcomp"].includes(subType);
                                       const _resolveE = (m: any, autoVal: number) => {
                                         if (m === 'V') return halfT;
                                         if (m === 'H') return -TK_MONT;
                                         if (m === '45') return halfT;
                                         return autoVal;
                                       };
-                                      const ext1 = _resolveE(_cm.start, _autoExt1);
-                                      const ext2 = _resolveE(_cm.end, _autoExt2);
+                                      const ext1 = isComplemento ? halfT : _resolveE(_cm.start, _autoExt1);
+                                      const ext2 = isComplemento ? halfT : _resolveE(_cm.end, _autoExt2);
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali: bordo basso polygon = el.y1
-                                      if (isHorzEl && !isPartOfPoly) {
+                                      // Solo per profili "ancorati" (montante/traverso) non per complementi isolati
+                                      if (isHorzEl && !isPartOfPoly && !isComplemento) {
                                         ey1 = el.y1 - halfT + TK_FRAME;
                                         ey2 = el.y2 - halfT + TK_FRAME;
                                       }
