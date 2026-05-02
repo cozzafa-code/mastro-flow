@@ -23,8 +23,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it" suppressHydrationWarning style={{ backgroundColor: '#E4F2F2', overflowX: 'hidden' }}>
-      <body suppressHydrationWarning style={{ margin: 0, padding: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#E4F2F2', overflowX: 'hidden', maxWidth: '100vw' }}>
+    <html lang="it" suppressHydrationWarning style={{ backgroundColor: '#E4F2F2' }}>
+      <body suppressHydrationWarning style={{ margin: 0, padding: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#E4F2F2' }}>
         <div style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', minHeight: '100vh', boxSizing: 'border-box' }}>
           <DayProvider>{children}</DayProvider>
         </div>
