@@ -1679,36 +1679,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Zocc.Lib — due tap. Y agganciata al bordo bot/top INTERNO del telaio (zoccolo dentro vano).
+                              // Zocc.Lib — due tap. Crea un rect autonomo (NON freeLine subType).
+                              // Niente weld, niente offset, niente fusione col telaio.
                               if (drawMode === "place-zocc-free") {
                                 const pending = dw._pendingLine;
                                 const TK_ZOCC = 8;
-                                // Calcola bbox telaio per posizionamento intelligente Y
-                                const frameLines = els.filter((e: any) => e.type === "freeLine" && !e.subType);
-                                let frameTop = Infinity, frameBot = -Infinity, frameLeft = Infinity, frameRight = -Infinity;
-                                frameLines.forEach((l: any) => {
-                                  frameTop = Math.min(frameTop, l.y1, l.y2);
-                                  frameBot = Math.max(frameBot, l.y1, l.y2);
-                                  frameLeft = Math.min(frameLeft, l.x1, l.x2);
-                                  frameRight = Math.max(frameRight, l.x1, l.x2);
-                                });
-                                const TK_FR = 6;
-                                // Y target: se utente tappa nella metà inferiore del vano → zoccolo attaccato a bordo bot interno;
-                                // se tappa nella metà superiore → attaccato a bordo top (uso come fascia).
-                                const midY = (frameTop + frameBot) / 2;
-                                const targetY = my > midY
-                                  ? (frameBot - TK_FR)             // bordo BASSO del polygon = bordo interno bot
-                                  : (frameTop + TK_FR + TK_ZOCC*2); // bordo BASSO del polygon = TK_FR + spessore sotto top
                                 if (!pending) {
-                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(targetY), _subType: "zoccolo_free" } });
+                                  // 1° tap: salva punto inizio. Y libera dove tappa l'utente.
+                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(my), _subType: "zoccolo_free" } });
                                 } else {
-                                  // 2° tap: Y mantiene quella del 1° tap. X = punto del dito.
-                                  const y = pending.y1;
+                                  // 2° tap: crea rect. X dal min al max. Y centrata su pending.y1.
+                                  // Spessore: TK_ZOCC*2 (16px). Bordo basso = pending.y1, bordo alto = pending.y1 - 16.
                                   const finalX = Math.round(mx);
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
                                   if (Math.abs(x2 - x1) < 5) return;
-                                  setDW([...els, { id: Date.now(), type: "freeLine", subType: "zoccolo", x1, y1: y, x2, y2: y }], { drawMode: null, _pendingLine: null, _lineSubType: null });
+                                  // Crea rect: x, y, w, h. y = top del rect, quindi y1 - 2*halfT
+                                  const rectEl = {
+                                    id: Date.now(),
+                                    type: "zoccoloLibero",  // tipo a sé, non interferisce con freeLine
+                                    x: x1,
+                                    y: pending.y1 - TK_ZOCC * 2,
+                                    w: x2 - x1,
+                                    h: TK_ZOCC * 2,
+                                  };
+                                  setDW([...els, rectEl], { drawMode: null, _pendingLine: null, _lineSubType: null });
                                 }
                                 return;
                               }
@@ -3219,6 +3214,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const dp = !drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id), style: { cursor: "move" } } : {};
 
                                     // ═══ TELAIO — doppio rettangolo con spessore ═══
+                                    // ═══ ZOCCOLO LIBERO — rect autonomo, indipendente da telaio ═══
+                                    if (el.type === "zoccoloLibero") {
+                                      return (
+                                        <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : undefined}>
+                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill={sel ? "#1A9E7322" : "#c8c6c0"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} />
+                                          <text x={el.x + el.w / 2} y={el.y + el.h / 2 + 3} textAnchor="middle" fontSize={6} fontWeight={800} fill="#fff" pointerEvents="none">ZOCCOLO</text>
+                                        </g>
+                                      );
+                                    }
+
                                     if (el.type === "rect") return (
                                       <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : undefined}>
                                         <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#f8f8f6" stroke={hc || "#1A1A1C"} strokeWidth={1.5} rx={1} />
