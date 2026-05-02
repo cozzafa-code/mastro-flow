@@ -2982,8 +2982,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free")) return;
                                     let gx = Math.round(gmx), gy = Math.round(gmy);
                                     const pp = dw._pendingLine;
-                                    const snapPtT = findSnap(gx, gy);
-                                    if (snapPtT) { gx = snapPtT.x; gy = snapPtT.y; }
+                                    // Per Zocc.Lib. niente snap durante il preview live: il dito segue al millimetro.
+                                    // Lo snap si applica solo al momento del tap finale.
+                                    if (drawMode !== "place-zocc-free") {
+                                      const snapPtT = findSnap(gx, gy);
+                                      if (snapPtT) { gx = snapPtT.x; gy = snapPtT.y; }
+                                    }
                                     // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
                                     const adxT = Math.abs(gx - pp.x1), adyT = Math.abs(gy - pp.y1);
                                     if (adxT < 25 && adyT > adxT * 1.5) gx = pp.x1;
