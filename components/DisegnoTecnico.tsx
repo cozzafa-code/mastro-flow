@@ -1688,8 +1688,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "zoccolo_free" } });
                                 } else {
                                   const y = pending.y1;
+                                  // Snap solo se molto vicino al punto cliccato (max 12px), altrimenti usa il punto esatto
                                   const snap2 = findSnap(Math.round(mx), Math.round(my));
-                                  const finalX = snap2 ? snap2.x : Math.round(mx);
+                                  let finalX = Math.round(mx);
+                                  if (snap2 && Math.abs(snap2.x - mx) < 12) finalX = snap2.x;
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
                                   if (Math.abs(x2 - x1) < 3) return;
