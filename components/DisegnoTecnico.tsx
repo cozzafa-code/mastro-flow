@@ -3364,16 +3364,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
                                           {!drawMode && _antaVerts.map(v => {
-                                            const isDefault = v.mode === '45';
+                                            const dotColor = v.mode === '45' ? '#3B7FE0' : v.mode === 'V' ? '#1A9E73' : v.mode === 'H' ? '#D08008' : '#888';
                                             return (
                                               <g key={`av-${v.key}`} style={{ cursor: 'pointer' }}
                                                 onClick={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: el.id, antaCorner: v.key } as any); }}
                                                 onTouchStart={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: el.id, antaCorner: v.key } as any); }}>
                                                 <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
-                                                {!isDefault && <>
-                                                  <circle cx={v.x} cy={v.y} r={10} fill="#fff" stroke="#888" strokeWidth={1.5} opacity={0.7} />
-                                                  <circle cx={v.x} cy={v.y} r={4} fill="#888" />
-                                                </>}
+                                                <circle cx={v.x} cy={v.y} r={10} fill="#fff" stroke={dotColor} strokeWidth={1.5} opacity={0.85} />
+                                                <circle cx={v.x} cy={v.y} r={4} fill={dotColor} />
                                               </g>
                                             );
                                           })}
