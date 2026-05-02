@@ -1683,12 +1683,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const pending = dw._pendingLine;
                                 if (!pending) {
                                   setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(my), _subType: "zoccolo_free" } });
+                                  if (typeof document !== 'undefined') document.title = `1tap mx=${Math.round(mx)} my=${Math.round(my)}`;
                                 } else {
                                   const y = pending.y1;
                                   const finalX = Math.round(mx);
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
-                                  if (Math.abs(x2 - x1) < 5) return; // ignora doppio tap accidentale stesso punto
+                                  if (typeof document !== 'undefined') document.title = `2tap p1=${pending.x1},${pending.y1} mx=${Math.round(mx)} my=${Math.round(my)} → x1=${x1} x2=${x2} y=${y}`;
+                                  if (Math.abs(x2 - x1) < 5) return;
                                   setDW([...els, { id: Date.now(), type: "freeLine", subType: "zoccolo", x1, y1: y, x2, y2: y }], { drawMode: null, _pendingLine: null, _lineSubType: null });
                                 }
                                 return;
