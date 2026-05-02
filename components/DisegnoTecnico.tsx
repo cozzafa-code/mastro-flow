@@ -3328,7 +3328,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (zoccoloEl) my2 = zoccoloEl.y1 + TK_FRAME;
                                       else if (zoccoloLibEl) my2 = zoccoloLibEl.y; // attacca al bordo top dello zoccolo libero
                                       const HM2 = TK_MONT / 2;
-                                      const mXcenter = el._libero ? el.x + 4 : el.x;
+                                      const mXcenter = el._libero ? el.x + 4.5 : el.x;
                                       const mX1 = mXcenter - HM2, mX2 = mXcenter + HM2;
                                       // Calcola tagli 45° agli angoli
                                       const mCorners = el.corners || [];
