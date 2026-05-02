@@ -1678,6 +1678,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
+                              // Zocc.Lib — due click, crea freeLine isolata con subType="zoccolo"
+                              if (drawMode === "place-zocc-free") {
+                                const pending = dw._pendingLine;
+                                const snapPt = findSnap(Math.round(mx), Math.round(my));
+                                let rx = snapPt ? snapPt.x : Math.round(mx);
+                                let ry = snapPt ? snapPt.y : Math.round(my);
+                                if (!pending) {
+                                  setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "zoccolo_free" } });
+                                } else {
+                                  const y = pending.y1;
+                                  const snap2 = findSnap(Math.round(mx), Math.round(my));
+                                  const finalX = snap2 ? snap2.x : Math.round(mx);
+                                  const x1 = Math.min(pending.x1, finalX);
+                                  const x2 = Math.max(pending.x1, finalX);
+                                  if (Math.abs(x2 - x1) < 3) return;
+                                  setDW([...els, { id: Date.now(), type: "freeLine", subType: "zoccolo", x1, y1: y, x2, y2: y }], { drawMode: null, _pendingLine: null, _lineSubType: null });
+                                }
+                                return;
+                              }
+
                               // Place modes — click on cell OR polygon fallback for complex shapes
                               if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
                                 let cell = findCellAt(mx, my);
@@ -2351,7 +2371,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const bAp = (active = false) => ({ padding: "3px 6px", borderRadius: 5, border: `1px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
                             const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
 
-                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" ? "crosshair" : drawMode ? "pointer" : "default";
+                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free" ? "crosshair" : drawMode ? "pointer" : "default";
 
                             // ══ Apply dim change con propagazione catena ══
                             const dimEditRef = dimEdit; // accessibile in applyDimChange
@@ -2606,6 +2626,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     style={bs(drawMode === "place-mont-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.Lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav-free" ? null : "place-trav-free", _pendingLine: null })}
                                     style={bs(drawMode === "place-trav-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.Lib.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-zocc-free" ? null : "place-zocc-free", _pendingLine: null })}
+                                    style={bs(drawMode === "place-zocc-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="16" width="18" height="6" rx="0.5" fill="currentColor" fillOpacity="0.15"/></svg>Zocc.Lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "soglia")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="14" width="18" height="4" rx="0.5"/></svg>Soglia</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
