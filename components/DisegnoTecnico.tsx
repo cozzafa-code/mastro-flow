@@ -3236,9 +3236,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
+                                      // Aggancio zoccolo: cerca freeLine subType=zoccolo OPPURE zoccoloLibero adiacente
                                       const zoccoloEl = els.find((e: any) => e.type === "freeLine" && e.subType === "zoccolo" &&
                                         Math.max(e.x1, e.x2) >= el.x - TK_MONT && Math.min(e.x1, e.x2) <= el.x + TK_MONT);
-                                      const my2 = zoccoloEl ? zoccoloEl.y1 + TK_FRAME : my2raw;
+                                      const zoccoloLibEl = els.find((e: any) => e.type === "zoccoloLibero" &&
+                                        e.x <= el.x + TK_MONT && e.x + e.w >= el.x - TK_MONT &&
+                                        e.y >= my1raw - 5 && e.y <= my2raw + TK_MONT * 3);
+                                      let my2 = my2raw;
+                                      if (zoccoloEl) my2 = zoccoloEl.y1 + TK_FRAME;
+                                      else if (zoccoloLibEl) my2 = zoccoloLibEl.y; // attacca al bordo top dello zoccolo libero
                                       const HM2 = TK_MONT / 2;
                                       const mX1 = el.x - HM2, mX2 = el.x + HM2;
                                       // Calcola tagli 45° agli angoli
@@ -3576,6 +3582,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     );
 
                                     if (el.type === "freeLine") {
+                                      // Aggancio montante libero a zoccolo libero: accorcia y2 al bordo top dello zoccoloLibero
+                                      const isVertMontFree = el.subType === "montante" && Math.abs(el.x2 - el.x1) < Math.abs(el.y2 - el.y1);
+                                      if (isVertMontFree) {
+                                        const xMid = (el.x1 + el.x2) / 2;
+                                        const yBot = Math.max(el.y1, el.y2);
+                                        const yTop = Math.min(el.y1, el.y2);
+                                        const zlSotto = els.find((z: any) => z.type === "zoccoloLibero" &&
+                                          z.x <= xMid + TK_MONT && z.x + z.w >= xMid - TK_MONT &&
+                                          z.y >= yTop && z.y <= yBot + TK_MONT * 3);
+                                        if (zlSotto) {
+                                          el = { ...el, [el.y2 > el.y1 ? "y2" : "y1"]: zlSotto.y };
+                                        }
+                                      }
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
                                       const subType = el.subType || null;
