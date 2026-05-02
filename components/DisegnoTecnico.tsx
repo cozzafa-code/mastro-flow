@@ -1279,7 +1279,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const pts = getSnapPoints();
                               const chainStart = dw._chainStart;
                               const freeLines = els.filter(e => e.type === "freeLine");
-                              const canClose = freeLines.length >= 3;
+                              const canClose = freeLines.length >= 4;
                               let best = null, bestD = SNAP_R;
                               const ANTA_SNAP_R = 60; // raggio snap per lati ante eliminati (domina su vertici telaio)
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
@@ -1304,10 +1304,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (d < SNAP_R && d < bestD) { bestD = d; best = p; }
                                 });
                               }
-                              // Snap al chainStart (chiusura forma) solo se ≥3 segmenti e non montante/traverso
+                              // Snap al chainStart (chiusura forma) solo se ≥4 segmenti e non montante/traverso
+                              // raggio molto piccolo (30px) per evitare chiusure accidentali
                               if (canClose && chainStart && !dw._lineSubType) {
                                 const d = Math.hypot(chainStart.x - mx, chainStart.y - my);
-                                if (d < bestD + 4) { best = chainStart; }
+                                if (d < 30 && d < bestD) { best = chainStart; bestD = d; }
                               }
                               // ALIGNMENT SNAP: forza allineamento Y/X con vertici esistenti (PRIORITA' ALTA)
                               // FIX CRITICO: in profileMode (zoccolo/soglia/etc.) DISABILITIAMO l'alignment snap
@@ -2234,7 +2235,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
-                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<30) { px=cs.x; py=cs.y; closeApplied="yes"; }
+                                      if (cs && freeLines.length>=4 && Math.hypot(px-cs.x,py-cs.y)<25) { px=cs.x; py=cs.y; closeApplied="yes"; }
                                       if (typeof document !== 'undefined') {
                                         document.title = `TEL.LIB. clk#${freeLines.length+1} orig=${Math.round(origPx)},${Math.round(origPy)} ${snapInfo} sn=${snapApplied} cs=${cs?Math.round(cs.x)+","+Math.round(cs.y):"-"} cl=${closeApplied} fin=${Math.round(px)},${Math.round(py)}`;
                                       }
@@ -2302,7 +2303,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Altrimenti il 3° click salda P3 al primo vertice → triangolo.
                                   const cs0 = dw._chainStart;
                                   const flCount0 = els.filter((e:any) => e.type === "freeLine").length;
-                                  const filteredWeldPts = (cs0 && !subTypeVal && flCount0 < 3)
+                                  const filteredWeldPts = (cs0 && !subTypeVal && flCount0 < 4)
                                     ? existingWeldPts.filter(p => Math.hypot(p.x - cs0.x, p.y - cs0.y) > 4)
                                     : existingWeldPts;
                                   filteredWeldPts.forEach(p => {
