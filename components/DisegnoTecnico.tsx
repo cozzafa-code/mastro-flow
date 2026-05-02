@@ -1678,26 +1678,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Zocc.Lib — due click, crea freeLine isolata con subType="zoccolo"
+                              // Zocc.Lib — gestito via onPointerDown/Move/Up sull'SVG (drag continuo touch).
+                              // Click handler disabilitato per evitare doppio tap.
                               if (drawMode === "place-zocc-free") {
-                                const pending = dw._pendingLine;
-                                if (!pending) {
-                                  // 1° tap: snap solo se vicinissimo a un punto esistente
-                                  const snapPt = findSnap(Math.round(mx), Math.round(my));
-                                  let rx = Math.round(mx), ry = Math.round(my);
-                                  if (snapPt && Math.hypot(snapPt.x - mx, snapPt.y - my) < 12) {
-                                    rx = snapPt.x; ry = snapPt.y;
-                                  }
-                                  setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "zoccolo_free" } });
-                                } else {
-                                  // 2° tap: NIENTE snap. Lo zoccolo si ferma esattamente dove il dito.
-                                  const y = pending.y1;
-                                  const finalX = Math.round(mx);
-                                  const x1 = Math.min(pending.x1, finalX);
-                                  const x2 = Math.max(pending.x1, finalX);
-                                  if (Math.abs(x2 - x1) < 3) return;
-                                  setDW([...els, { id: Date.now(), type: "freeLine", subType: "zoccolo", x1, y1: y, x2, y2: y }], { drawMode: null, _pendingLine: null, _lineSubType: null });
-                                }
                                 return;
                               }
 
@@ -2571,7 +2554,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {(drawMode === "place-mont" || drawMode === "place-trav") && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {drawMode === "place-mont" ? "MONTANTE" : "TRAVERSO"} — click cella</span>}
                                   {drawMode === "place-mont-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine montante" : "1° click → inizio montante"}</span>}
                                   {drawMode === "place-trav-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine traverso" : "1° click → inizio traverso"}</span>}
-                                  {drawMode === "place-zocc-free" && <span style={{ fontSize: 9, background: "#8B5E3C", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine zoccolo" : "1° click → inizio zoccolo"}</span>}
+                                  {drawMode === "place-zocc-free" && <span style={{ fontSize: 9, background: "#8B5E3C", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>Tieni premuto e trascina dove vuoi → rilascia</span>}
                                   {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
                                 </div>
 
@@ -2847,19 +2830,38 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
-                                  onClick={(e2: any) => {
-                                    (e2.currentTarget as any).__lastClickAt = Date.now();
-                                    onSvgClick(e2);
+                                  onClick={onSvgClick}
+                                  onPointerDown={(e2: any) => {
+                                    if (e2.pointerType !== "touch" || drawMode !== "place-zocc-free") return;
+                                    const svg = e2.currentTarget;
+                                    const { mx, my } = getSvgXY(e2, svg);
+                                    setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(my), _subType: "zoccolo_free" } });
+                                  }}
+                                  onPointerMove={(e2: any) => {
+                                    if (e2.pointerType !== "touch" || drawMode !== "place-zocc-free") return;
+                                    if (!dwRef.current._pendingLine) return;
+                                    const svg = e2.currentTarget;
+                                    const { mx, my } = getSvgXY(e2, svg);
+                                    const p = dwRef.current._pendingLine;
+                                    onUpdate({ ...dwRef.current, _guideX: Math.round(mx), _guideY: p.y1, _guideLen: Math.round(Math.abs(mx - p.x1)) });
                                   }}
                                   onPointerUp={(e2: any) => {
-                                    if (e2.pointerType !== "touch") return;
-                                    const dm = drawMode;
-                                    if (dm !== "place-mont-free" && dm !== "place-trav-free" && dm !== "place-zocc-free") return;
-                                    // Anti-doppio: se onClick ha già processato il tap entro 400ms, salta
-                                    const last = (e2.currentTarget as any).__lastClickAt || 0;
-                                    if (Date.now() - last < 400) return;
-                                    (e2.currentTarget as any).__lastClickAt = Date.now();
-                                    onSvgClick(e2);
+                                    if (e2.pointerType !== "touch" || drawMode !== "place-zocc-free") return;
+                                    const p = dwRef.current._pendingLine;
+                                    if (!p) return;
+                                    const svg = e2.currentTarget;
+                                    const { mx } = getSvgXY(e2, svg);
+                                    const finalX = Math.round(mx);
+                                    const x1 = Math.min(p.x1, finalX);
+                                    const x2 = Math.max(p.x1, finalX);
+                                    const y = p.y1;
+                                    if (Math.abs(x2 - x1) < 5) {
+                                      // pezzo troppo piccolo, annulla
+                                      setMode({ _pendingLine: null });
+                                      return;
+                                    }
+                                    const newEl = { id: Date.now(), type: "freeLine", subType: "zoccolo", x1, y1: y, x2, y2: y };
+                                    setDW([...(dwRef.current.elements || []), newEl], { drawMode: null, _pendingLine: null, _lineSubType: null, _guideX: null, _guideY: null });
                                   }}
                                   onWheelDISABLED={(e2: any) => {
                                     e2.preventDefault();
