@@ -3746,7 +3746,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const fillMap: any = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", montante: "#e4e2d8", traverso: "#e4e2d8", soglia_rib: "#c0beb8", fermavetro: "#f0ede0" };
                                       const fillC = subType ? (fillMap[subType] || "#f0efe8") : "#f0efe8";
                                       const labelMap: any = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", montante: "MONTANTE", traverso: "TRAVERSO", soglia_rib: "SOGLIA RIB.", fermavetro: "" };
-                                      const labelTxt = subType ? (labelMap[subType] || subType.toUpperCase()) : null;
+                                      const labelTxt = subType ? (labelMap[subType] !== undefined ? labelMap[subType] : subType.toUpperCase()) : null;
                                       const refLen = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
                                       const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
                                       const mmLen = el._mmOverride != null ? el._mmOverride : Math.round(len / refLen * refReal);
