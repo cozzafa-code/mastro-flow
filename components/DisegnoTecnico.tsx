@@ -928,6 +928,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
+  const [cornerEdit, setCornerEdit] = React.useState<{vx: number, vy: number} | null>(null);
   const realW = propRealW || 1200;
   const realH = propRealH || 1000;
                             const dw = vanoDisegno || { elements: [], selectedId: null, drawMode: null, history: [] };
@@ -2724,41 +2725,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       {selEl.type !== "polyPersiana" && <div onClick={() => changeType("polyPersiana")} style={bDel("#666")}>Persiana</div>}
                                     </>;
                                   })()}
-                                  {selId && (() => {
-                                    const selEl = els.find(e => e.id === selId);
-                                    if (!selEl || selEl.type !== "freeLine") return null;
-                                    const cm = selEl.cornerModes || {};
-                                    const setCorner = (which: 'start' | 'end', mode: string) => {
-                                      const upd = els.map(e => {
-                                        if (e.id !== selId) return e;
-                                        const newCm = { ...(e.cornerModes || {}) };
-                                        newCm[which] = mode;
-                                        return { ...e, cornerModes: newCm };
-                                      });
-                                      setDW(upd, { selectedId: selId });
-                                    };
-                                    const Btn = ({ which, mode, label, color }: any) => {
-                                      const active = (cm[which] || 'auto') === mode;
-                                      return <div onClick={() => setCorner(which, mode)}
-                                        style={{ padding: "4px 7px", borderRadius: 5, fontSize: 9, fontWeight: 800, cursor: "pointer", border: active ? `1.5px solid ${color}` : `1px solid ${T.bdr}`, background: active ? `${color}20` : "#fff", color: active ? color : "#666" }}>{label}</div>;
-                                    };
-                                    return <>
-                                      <div style={{ display: "flex", gap: 2, alignItems: "center", padding: "0 4px", borderLeft: `1px solid ${T.bdr}` }}>
-                                        <span style={{ fontSize: 8, fontWeight: 700, color: "#888", marginRight: 2 }}>P1</span>
-                                        <Btn which="start" mode="V" label="V" color="#1A9E73" />
-                                        <Btn which="start" mode="H" label="H" color="#D08008" />
-                                        <Btn which="start" mode="45" label="45°" color="#3B7FE0" />
-                                        <Btn which="start" mode="auto" label="A" color="#888" />
-                                      </div>
-                                      <div style={{ display: "flex", gap: 2, alignItems: "center", padding: "0 4px", borderLeft: `1px solid ${T.bdr}` }}>
-                                        <span style={{ fontSize: 8, fontWeight: 700, color: "#888", marginRight: 2 }}>P2</span>
-                                        <Btn which="end" mode="V" label="V" color="#1A9E73" />
-                                        <Btn which="end" mode="H" label="H" color="#D08008" />
-                                        <Btn which="end" mode="45" label="45°" color="#3B7FE0" />
-                                        <Btn which="end" mode="auto" label="A" color="#888" />
-                                      </div>
-                                    </>;
-                                  })()}
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setDW([], { selectedId: null, drawMode: null, _pendingLine: null, history: [] })} style={bDel()}>🗑 Reset</div>
                                   {frame && <div onClick={() => {
@@ -3464,12 +3430,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // ext2: si ferma su el.x2, non esce
                                       const _autoExt1 = (hasMontAt1 || hasVertAt1) ? -TK_MONT : halfT;
                                       const _autoExt2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
-                                      // Override esplicito solo se cornerModes settato (V/H/45). Default = auto = comportamento attuale intoccato.
                                       const _cm = el.cornerModes || {};
                                       const _resolveE = (m: any, autoVal: number) => {
-                                        if (m === 'V') return halfT;
+                                        if (m === 'V' || m === '45') return halfT;
                                         if (m === 'H') return -TK_MONT;
-                                        if (m === '45') return halfT;
                                         return autoVal;
                                       };
                                       const ext1 = _resolveE(_cm.start, _autoExt1);
@@ -3605,6 +3569,40 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                     return null;
                                   })}
+
+                                  {/* Pallini d'angolo: vertici condivisi da 2+ freeLine telaio */}
+                                  {(() => {
+                                    if (drawMode) return null;
+                                    const flAll = els.filter(e => e.type === "freeLine" && !e.subType);
+                                    if (flAll.length < 2) return null;
+                                    // Raggruppa endpoint per vertice (chiave x,y arrotondati)
+                                    const vmap: any = {};
+                                    flAll.forEach(l => {
+                                      [['start', l.x1, l.y1], ['end', l.x2, l.y2]].forEach(([w, x, y]: any) => {
+                                        const k = `${Math.round(x)},${Math.round(y)}`;
+                                        if (!vmap[k]) vmap[k] = { x, y, refs: [] };
+                                        vmap[k].refs.push({ id: l.id, which: w, line: l });
+                                      });
+                                    });
+                                    const verts = Object.values(vmap).filter((v: any) => v.refs.length >= 2);
+                                    return verts.map((v: any, i: number) => {
+                                      // Stato corrente: leggi cornerModes della prima linea che ha valore esplicito
+                                      let curMode = 'auto';
+                                      for (const r of v.refs) {
+                                        const cm = (r.line.cornerModes || {})[r.which];
+                                        if (cm && cm !== 'auto') { curMode = cm; break; }
+                                      }
+                                      const fillColor = curMode === '45' ? '#3B7FE0' : curMode === 'V' ? '#1A9E73' : curMode === 'H' ? '#D08008' : '#888';
+                                      return (
+                                        <g key={`vtx-${i}`} style={{ cursor: 'pointer' }}
+                                          onClick={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y }); }}
+                                          onTouchStart={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y }); }}>
+                                          <circle cx={v.x} cy={v.y} r={14} fill="#fff" stroke={fillColor} strokeWidth={2} opacity={0.85} />
+                                          <circle cx={v.x} cy={v.y} r={6} fill={fillColor} />
+                                        </g>
+                                      );
+                                    });
+                                  })()}
 
                                   {/* Path live penna durante disegno */}
                                   {drawMode === "pen" && dw._penPath && dw._penPath.length > 1 && (
@@ -3875,6 +3873,73 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   </div>
                                 </div>
                               )}
+
+                              {/* ══ POPUP SCELTA ANGOLO ══ */}
+                              {cornerEdit && (() => {
+                                const flAll = (dw.elements || []).filter((e: any) => e.type === "freeLine" && !e.subType);
+                                const tol = 2;
+                                // Trova le linee toccate dal vertice
+                                const refs: any[] = [];
+                                flAll.forEach((l: any) => {
+                                  if (Math.abs(l.x1 - cornerEdit.vx) < tol && Math.abs(l.y1 - cornerEdit.vy) < tol) refs.push({ id: l.id, which: 'start', line: l });
+                                  if (Math.abs(l.x2 - cornerEdit.vx) < tol && Math.abs(l.y2 - cornerEdit.vy) < tol) refs.push({ id: l.id, which: 'end', line: l });
+                                });
+                                if (refs.length < 2) return null;
+                                // Determina mode corrente
+                                let curMode = 'auto';
+                                for (const r of refs) {
+                                  const cm = (r.line.cornerModes || {})[r.which];
+                                  if (cm && cm !== 'auto') { curMode = cm; break; }
+                                }
+                                // Identifica orientamento di ogni linea (V/H)
+                                const isVert = (l: any) => Math.abs(l.x2 - l.x1) < Math.abs(l.y2 - l.y1);
+                                // Applica scelta: per V vince la verticale → linea V mantiene halfT, linea H si ferma
+                                const apply = (m: string) => {
+                                  const upd = (dw.elements || []).map((e: any) => {
+                                    const r = refs.find((rr: any) => rr.id === e.id);
+                                    if (!r) return e;
+                                    const newCm = { ...(e.cornerModes || {}) };
+                                    if (m === 'auto') {
+                                      newCm[r.which] = 'auto';
+                                    } else if (m === '45') {
+                                      newCm[r.which] = '45';
+                                    } else if (m === 'V') {
+                                      // verticale vince: la linea verticale "passa" (V), l'orizzontale "si ferma" (H)
+                                      newCm[r.which] = isVert(e) ? 'V' : 'H';
+                                    } else if (m === 'H') {
+                                      // orizzontale vince
+                                      newCm[r.which] = isVert(e) ? 'H' : 'V';
+                                    }
+                                    return { ...e, cornerModes: newCm };
+                                  });
+                                  setDW(upd);
+                                  setCornerEdit(null);
+                                };
+                                const Btn = ({ m, label, hint, color }: any) => (
+                                  <div onClick={() => apply(m)}
+                                    style={{ flex: 1, padding: "16px 6px", borderRadius: 10, background: curMode === m ? color : "#F2F1EC", border: curMode === m ? `2px solid ${color}` : "1.5px solid #ddd", textAlign: "center", cursor: "pointer", color: curMode === m ? "#fff" : "#1A1A1C" }}>
+                                    <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1 }}>{label}</div>
+                                    <div style={{ fontSize: 10, fontWeight: 600, marginTop: 5, opacity: 0.85 }}>{hint}</div>
+                                  </div>
+                                );
+                                return (
+                                  <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }}
+                                    onClick={() => setCornerEdit(null)}>
+                                    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 300, display: "flex", flexDirection: "column", gap: 12 }}
+                                      onClick={e => e.stopPropagation()}>
+                                      <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1C" }}>📐 Angolo</div>
+                                      <div style={{ fontSize: 11, color: "#888" }}>Quale lato vince in questo angolo?</div>
+                                      <div style={{ display: "flex", gap: 8 }}>
+                                        <Btn m="V" label="V" hint="Vert. vince" color="#1A9E73" />
+                                        <Btn m="H" label="H" hint="Oriz. vince" color="#D08008" />
+                                        <Btn m="45" label="45°" hint="Taglio" color="#3B7FE0" />
+                                        <Btn m="auto" label="A" hint="Auto" color="#666" />
+                                      </div>
+                                      <div onClick={() => setCornerEdit(null)} style={{ padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Chiudi</div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                               </>
                             );
 }
