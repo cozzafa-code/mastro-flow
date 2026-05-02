@@ -923,9 +923,9 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   );
 }
 
-export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
+export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, vanoSistema, vanoColore, vanoProfilo }) {
   const [viewTab, setViewTab] = React.useState("disegno");
-  const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"sensi"|"strumenti"|null>(null);
+  const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
@@ -1687,6 +1687,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               // FERMAVETRO — un tap dentro una cella o un'anta. Crea 4 fermavetri autonomi (anello)
                               // attorno al rettangolo del vetro: bordo interno offset di TK_ANTA o TK_FRAME.
+                              // MANIGLIONE TUBOLARE — un tap piazza un maniglione standard (200x35mm reali, scala canvas)
+                              if (drawMode === "place-maniglione") {
+                                const refLen = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
+                                const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
+                                const pxPerMm = refLen / refReal;
+                                const W_MM = 220, H_MM = 35; // 220mm lung × 35mm largh interasse staffe
+                                const wPx = Math.round(W_MM * pxPerMm);
+                                const hPx = Math.round(H_MM * pxPerMm);
+                                setDW([...els, {
+                                  id: Date.now(), type: "maniglione",
+                                  x: Math.round(mx - wPx / 2),
+                                  y: Math.round(my - hPx / 2),
+                                  w: wPx, h: hPx, orient: "H",
+                                }], { drawMode: null });
+                                return;
+                              }
+
                               if (drawMode === "place-fermavetro") {
                                 let bx = 0, by = 0, bw = 0, bh = 0;
                                 // 1. Anta innerRect (rettangolare) sotto il dito
@@ -2513,7 +2530,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const bAp = (active = false) => ({ padding: "3px 6px", borderRadius: 5, border: `1px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
                             const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
 
-                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free" || drawMode === "place-fermavetro" ? "crosshair" : drawMode ? "pointer" : "default";
+                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free" || drawMode === "place-fermavetro" || drawMode === "place-maniglione" ? "crosshair" : drawMode ? "pointer" : "default";
 
                             // ══ Apply dim change con propagazione catena ══
                             const dimEditRef = dimEdit; // accessibile in applyDimChange
@@ -2681,6 +2698,34 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <span onClick={() => onClose()} style={{ fontSize: 16, cursor: "pointer", color: T.sub, padding: "2px 6px" }}>✕</span>
                                 </div>
 
+                                {/* Info bar Sistema / Colore / Profilo (ereditati dal vano se presenti) */}
+                                <div style={{ display: "flex", gap: 6, padding: "5px 10px", background: "#FAFAF7", borderBottom: `1px solid ${T.bdr}`, alignItems: "center", flexWrap: "wrap", fontSize: 9 }}>
+                                  {[
+                                    { lbl: "Sistema", val: vanoSistema, icon: "⚙", color: "#1A9E73" },
+                                    { lbl: "Colore", val: vanoColore, icon: "●", color: "#D08008" },
+                                    { lbl: "Profilo", val: vanoProfilo, icon: "▭", color: "#3B7FE0" },
+                                  ].map(item => (
+                                    <div key={item.lbl} onClick={() => {
+                                      const v = prompt(`${item.lbl}:`, item.val || "");
+                                      if (v && onUpdateField) {
+                                        const fieldMap: any = { Sistema: "sistema", Colore: "colore", Profilo: "profilo" };
+                                        onUpdateField(fieldMap[item.lbl], v);
+                                      }
+                                    }} style={{
+                                      display: "flex", alignItems: "center", gap: 3,
+                                      padding: "2px 7px", borderRadius: 4,
+                                      background: item.val ? `${item.color}15` : "#fff",
+                                      border: `1px solid ${item.val ? item.color : T.bdr}`,
+                                      cursor: "pointer", fontWeight: 700,
+                                      color: item.val ? item.color : T.sub,
+                                    }}>
+                                      <span style={{ fontSize: 8 }}>{item.icon}</span>
+                                      <span style={{ fontSize: 8, opacity: 0.7 }}>{item.lbl}:</span>
+                                      <span>{item.val || "—"}</span>
+                                    </div>
+                                  ))}
+                                </div>
+
                                 {/* ═══ TAB BAR ═══ */}
                                 <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}` }}>
                                   {[{ id: "disegno", l: "✏️ Disegno", c: "#1A9E73" }, { id: "libero", l: "✍️ Libero", c: "#6366f1" }].map(tab => (
@@ -2720,6 +2765,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     {id:"struttura",l:"Struttura",c:"#1A9E73"},
                                     {id:"profili",l:"Profili",c:"#1A7070"},
                                     {id:"aperture",l:"Aperture",c:"#3B7FE0"},
+                                    {id:"accessori",l:"Access.",c:"#8B5E3C"},
                                     {id:"sensi",l:"Sensi",c:"#D08008"},
                                     {id:"strumenti",l:"Strumenti",c:"#6366f1"},
                                   ].map(mt => (
@@ -2815,6 +2861,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </>}
 
                                 {/* ═══ GRUPPO 3: ANNOTAZIONI + STRUMENTI ═══ */}
+                                {menuTab === "accessori" && <>
+                                <div style={{ display: "flex", gap: 2, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-maniglione" ? null : "place-maniglione", _pendingLine: null })}
+                                    style={{ ...bs(drawMode === "place-maniglione"), color: drawMode === "place-maniglione" ? "#8B5E3C" : undefined, border: `1.5px solid ${drawMode === "place-maniglione" ? "#8B5E3C" : T.bdr}` }}>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}>
+                                      <path d="M5 14 L5 10 L19 10 L19 14" strokeLinecap="round"/>
+                                    </svg>
+                                    Maniglione
+                                  </div>
+                                </div>
+                                </>}
+
                                 {menuTab === "strumenti" && <>
                                 <div style={{ display: "flex", gap: 2, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="5" y1="19" x2="19" y2="5"/><polyline points="10,5 19,5 19,14"/></svg>Linea lib.</div>
@@ -3354,6 +3412,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                     // ═══ TELAIO — doppio rettangolo con spessore ═══
                                     // ═══ ZOCCOLO LIBERO — rect autonomo, indipendente da telaio ═══
+                                    // ═══ MANIGLIONE TUBOLARE — accessorio maniglia tubolare U-shape ═══
+                                    if (el.type === "maniglione") {
+                                      const isH = el.orient !== "V";
+                                      const ww = isH ? el.w : el.h;
+                                      const hh = isH ? el.h : el.w;
+                                      const ex = isH ? el.x : el.x;
+                                      const ey = isH ? el.y : el.y;
+                                      const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+                                      const C = sel ? "#1A9E73" : "#5a5a5c";
+                                      // Ruota se verticale
+                                      const rot = isH ? 0 : 90;
+                                      const tubR = Math.min(hh / 2, 6);
+                                      return (
+                                        <g key={el.id} {...dp} transform={`rotate(${rot} ${cx} ${cy})`} style={drawMode ? { pointerEvents: "none" } : { cursor: "move" }}>
+                                          {/* Asta principale orizzontale (tubo) */}
+                                          <rect x={el.x + tubR} y={cy - tubR/2} width={el.w - tubR*2} height={tubR} fill={C} rx={tubR/2} />
+                                          {/* Bracci verticali (gambe del U) ai 2 estremi che vanno verso il basso = montaggio anta */}
+                                          <rect x={el.x} y={cy - tubR/2} width={tubR*1.6} height={el.h/2 + tubR/2} fill={C} rx={tubR*0.4} />
+                                          <rect x={el.x + el.w - tubR*1.6} y={cy - tubR/2} width={tubR*1.6} height={el.h/2 + tubR/2} fill={C} rx={tubR*0.4} />
+                                          {/* Curve agli angoli per il look tubolare */}
+                                          <circle cx={el.x + tubR} cy={cy} r={tubR*0.8} fill={C}/>
+                                          <circle cx={el.x + el.w - tubR} cy={cy} r={tubR*0.8} fill={C}/>
+                                          {sel && <rect x={el.x - 2} y={el.y - 2} width={el.w + 4} height={el.h + 4} fill="none" stroke="#1A9E73" strokeWidth={1} strokeDasharray="3,2" />}
+                                        </g>
+                                      );
+                                    }
+
                                     // ═══ FERMAVETRO — anello sottile attorno al vetro ═══
                                     if (el.type === "fermavetroRect") {
                                       const T = 3;
@@ -3929,18 +4014,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "dim") {
                                       const isH = Math.abs(el.y1 - el.y2) < 2;
                                       const mx2 = (el.x1 + el.x2) / 2, my2 = (el.y1 + el.y2) / 2;
-                                      const tw = String(el.label).length * 6.5 + 16;
+                                      const labelStr = String(el.label);
+                                      const tw = labelStr.length * 5.5 + 10;
+                                      const DIM_C = "#1A1A1C";
+                                      const tickL = 4;
+                                      // Tacche rivolte verso l'esterno (frecce diagonali a 45°)
                                       return (
                                         <g key={el.id} onClick={(e3) => {
                                           e3.stopPropagation();
                                           if (drawMode) return;
                                           setDimEdit({ id: el.id, val: el.label, x: 0, y: 0, isDim: true });
                                         }} style={{ cursor: "pointer" }}>
-                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.acc} strokeWidth={0.8} />
-                                          {isH ? <><line x1={el.x1} y1={el.y1-5} x2={el.x1} y2={el.y1+5} stroke={T.acc} strokeWidth={0.8}/><line x1={el.x2} y1={el.y2-5} x2={el.x2} y2={el.y2+5} stroke={T.acc} strokeWidth={0.8}/></>
-                                            : <><line x1={el.x1-5} y1={el.y1} x2={el.x1+5} y2={el.y1} stroke={T.acc} strokeWidth={0.8}/><line x1={el.x2-5} y1={el.y2} x2={el.x2+5} y2={el.y2} stroke={T.acc} strokeWidth={0.8}/></>}
-                                          <rect x={mx2-tw/2} y={my2-9} width={tw} height={18} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={T.acc} strokeWidth={0.6}/>
-                                          <text x={mx2} y={my2+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{el.label}</text>
+                                          {/* Linea quotata principale */}
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={DIM_C} strokeWidth={0.5} />
+                                          {/* Tacche oblique professionali (45°) */}
+                                          {isH ? <>
+                                            <line x1={el.x1-tickL} y1={el.y1-tickL} x2={el.x1+tickL} y2={el.y1+tickL} stroke={DIM_C} strokeWidth={0.7}/>
+                                            <line x1={el.x2-tickL} y1={el.y2-tickL} x2={el.x2+tickL} y2={el.y2+tickL} stroke={DIM_C} strokeWidth={0.7}/>
+                                          </> : <>
+                                            <line x1={el.x1-tickL} y1={el.y1-tickL} x2={el.x1+tickL} y2={el.y1+tickL} stroke={DIM_C} strokeWidth={0.7}/>
+                                            <line x1={el.x2-tickL} y1={el.y2-tickL} x2={el.x2+tickL} y2={el.y2+tickL} stroke={DIM_C} strokeWidth={0.7}/>
+                                          </>}
+                                          {/* Box bianco sottile sotto al numero per leggibilità */}
+                                          <rect x={mx2-tw/2} y={my2-6.5} width={tw} height={13} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={2} stroke={dimEdit?.id === el.id ? "#1A9E73" : DIM_C} strokeWidth={0.4} opacity={0.95}/>
+                                          <text x={mx2} y={my2+3} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : DIM_C} fontFamily="'SF Mono', 'Menlo', monospace" letterSpacing="0.3">{labelStr}</text>
                                         </g>
                                       );
                                     }
