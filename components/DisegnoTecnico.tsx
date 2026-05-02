@@ -2731,6 +2731,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       <TBtn t="fascia" label="Fascia" color="#666" />
                                     </>;
                                   })()}
+                                  {selId && !String(selId).includes(":") && (() => {
+                                    const selEl = els.find(e => e.id === selId);
+                                    if (!selEl || selEl.type !== "freeLine") return null;
+                                    const curSub = selEl.subType || 'telaio';
+                                    const setSub = (newSub: string) => {
+                                      const upd = els.map(e => {
+                                        if (e.id !== selId) return e;
+                                        if (newSub === 'telaio') { const { subType, ...rest } = e; return rest; }
+                                        return { ...e, subType: newSub };
+                                      });
+                                      setDW(upd, { selectedId: selId });
+                                    };
+                                    const FBtn = ({ s, label, color }: any) => (
+                                      <div onClick={() => setSub(s)} style={{ ...bDel(curSub === s ? color : undefined), background: curSub === s ? `${color}25` : undefined, borderColor: curSub === s ? color : undefined, color: curSub === s ? color : undefined }}>{label}</div>
+                                    );
+                                    return <>
+                                      <FBtn s="telaio" label="Telaio" color="#1A9E73" />
+                                      <FBtn s="soglia" label="Soglia" color="#8B5E3C" />
+                                      <FBtn s="soglia_rib" label="Sog.Rib." color="#A0522D" />
+                                      <FBtn s="zoccolo" label="Zoccolo" color="#8B5E3C" />
+                                      <FBtn s="fascia" label="Fascia" color="#666" />
+                                    </>;
+                                  })()}
                                   {selId && (() => {
                                     const selEl = els.find(e => e.id === selId);
                                     if (!selEl) return null;
