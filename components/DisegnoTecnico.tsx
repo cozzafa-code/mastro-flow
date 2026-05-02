@@ -3226,41 +3226,74 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const hiddenSides = el.hiddenSides || [];
                                       const clrBase = hc || "#1A1A1C";
                                       const TK = el.subType === "porta" ? TK_PORTA : TK_ANTA;
-                                      // Fill interno (sfondo anta) — visibile solo se almeno un lato non è hidden
+                                      const acm = el.cornerModes || {};
+                                      const mTL = acm.tl || '45';
+                                      const mTR = acm.tr || '45';
+                                      const mBR = acm.br || '45';
+                                      const mBL = acm.bl || '45';
+                                      // Per ogni angolo a 45°, i due lati che convergono si accorciano di TK creando un gap diagonale
+                                      const cutTL = mTL === '45';
+                                      const cutTR = mTR === '45';
+                                      const cutBR = mBR === '45';
+                                      const cutBL = mBL === '45';
                                       const hasAnySide = ["top","bot","left","right"].some(s => !hiddenSides.includes(s));
-                                      // Se un lato è hidden, estendi lo sfondo fino al bordo su quel lato (niente gap visivo)
                                       const bgTop = hiddenSides.includes("top") ? el.y : el.y + TK;
                                       const bgBot = hiddenSides.includes("bot") ? el.y + el.h : el.y + el.h - TK;
                                       const bgLeft = hiddenSides.includes("left") ? el.x : el.x + TK;
                                       const bgRight = hiddenSides.includes("right") ? el.x + el.w : el.x + el.w - TK;
-                                      // 4 lati come rect separati cliccabili
-                                      // I lati left/right si estendono verticalmente se top/bot sono hidden
-                                      // I lati top/bot si estendono orizzontalmente se left/right sono hidden
                                       const hidTop = hiddenSides.includes("top");
                                       const hidBot = hiddenSides.includes("bot");
                                       const hidLeft = hiddenSides.includes("left");
                                       const hidRight = hiddenSides.includes("right");
-                                      // Top: parte da el.x se left hidden, sennò da el.x (pezzo copre già angolo)
-                                      const topX = hidLeft ? el.x : el.x;
-                                      const topW = el.w - (hidLeft ? 0 : 0) - (hidRight ? 0 : 0);
-                                      // Bot: idem
-                                      const botX = topX;
-                                      const botW = topW;
-                                      // Left: parte da el.y se top hidden, altrimenti da el.y+TK; finisce a el.y+el.h se bot hidden, altrimenti el.y+el.h-TK
-                                      const leftY = hidTop ? el.y : el.y + TK;
-                                      const leftH = (hidBot ? el.y + el.h : el.y + el.h - TK) - leftY;
-                                      // Right: idem
-                                      const rightY = leftY;
-                                      const rightH = leftH;
-                                      const sideRect = (side, rx, ry, rw, rh) => {
+                                      // Top/Bot: si accorciano da sinistra se TL/BL a 45, da destra se TR/BR a 45
+                                      const topXStart = el.x + (cutTL ? TK : 0);
+                                      const topXEnd = el.x + el.w - (cutTR ? TK : 0);
+                                      const botXStart = el.x + (cutBL ? TK : 0);
+                                      const botXEnd = el.x + el.w - (cutBR ? TK : 0);
+                                      // Left/Right: si accorciano da top se TL/TR a 45, da bot se BL/BR a 45
+                                      const leftYStart = (hidTop ? el.y : el.y + TK) + (cutTL && !hidTop ? 0 : 0);
+                                      const leftYEnd = (hidBot ? el.y + el.h : el.y + el.h - TK);
+                                      const rightYStart = leftYStart;
+                                      const rightYEnd = leftYEnd;
+                                      // Top: shape diventa polygon se ci sono tagli
+                                      const sideShape = (side: string) => {
                                         if (hiddenSides.includes(side)) return null;
                                         const sideId = `${el.id}:${side}`;
                                         const isSelSide = selId === sideId;
                                         const sideClr = isSelSide ? "#1A9E73" : clrBase;
                                         const sideFill = isSelSide ? "#1A9E7333" : "#e8e8e4";
                                         const sideSw = isSelSide ? 2 : 1;
+                                        let pts = "";
+                                        if (side === "top") {
+                                          // polygon: outer (el.y) full width o accorciato + inner (el.y+TK) sempre tagliato di TK se 45
+                                          const oxL = el.x + (cutTL ? TK : 0);
+                                          const oxR = el.x + el.w - (cutTR ? TK : 0);
+                                          const ixL = el.x + TK;
+                                          const ixR = el.x + el.w - TK;
+                                          pts = `${oxL},${el.y} ${oxR},${el.y} ${ixR},${el.y+TK} ${ixL},${el.y+TK}`;
+                                        } else if (side === "bot") {
+                                          const oxL = el.x + (cutBL ? TK : 0);
+                                          const oxR = el.x + el.w - (cutBR ? TK : 0);
+                                          const ixL = el.x + TK;
+                                          const ixR = el.x + el.w - TK;
+                                          const yB = el.y + el.h;
+                                          pts = `${ixL},${yB-TK} ${ixR},${yB-TK} ${oxR},${yB} ${oxL},${yB}`;
+                                        } else if (side === "left") {
+                                          const oyT = el.y + (cutTL ? TK : 0);
+                                          const oyB = el.y + el.h - (cutBL ? TK : 0);
+                                          const iyT = el.y + TK;
+                                          const iyB = el.y + el.h - TK;
+                                          pts = `${el.x},${oyT} ${el.x+TK},${iyT} ${el.x+TK},${iyB} ${el.x},${oyB}`;
+                                        } else if (side === "right") {
+                                          const oyT = el.y + (cutTR ? TK : 0);
+                                          const oyB = el.y + el.h - (cutBR ? TK : 0);
+                                          const iyT = el.y + TK;
+                                          const iyB = el.y + el.h - TK;
+                                          const xR = el.x + el.w;
+                                          pts = `${xR-TK},${iyT} ${xR},${oyT} ${xR},${oyB} ${xR-TK},${iyB}`;
+                                        }
                                         return (
-                                          <rect key={side} x={rx} y={ry} width={Math.max(0, rw)} height={Math.max(0, rh)} fill={sideFill} stroke={sideClr} strokeWidth={sideSw}
+                                          <polygon key={side} points={pts} fill={sideFill} stroke={sideClr} strokeWidth={sideSw}
                                             onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: sideId }); }}
                                             style={{ cursor: drawMode ? undefined : "pointer" }}
                                           />
@@ -3268,16 +3301,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       };
                                       return (
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined}>
-                                          {/* Sfondo interno (vetro area) */}
                                           {hasAnySide && <rect x={bgLeft} y={bgTop} width={Math.max(0, bgRight - bgLeft)} height={Math.max(0, bgBot - bgTop)} fill="#f8f8f6" stroke="none" pointerEvents="none" />}
-                                          {/* Lato TOP (esteso orizzontalmente se left/right hidden) */}
-                                          {sideRect("top", topX, el.y, topW, TK)}
-                                          {/* Lato BOT */}
-                                          {sideRect("bot", botX, el.y + el.h - TK, botW, TK)}
-                                          {/* Lato LEFT (esteso verticalmente se top/bot hidden) */}
-                                          {sideRect("left", el.x, leftY, TK, leftH)}
-                                          {/* Lato RIGHT */}
-                                          {sideRect("right", el.x + el.w - TK, rightY, TK, rightH)}
+                                          {sideShape("top")}
+                                          {sideShape("bot")}
+                                          {sideShape("left")}
+                                          {sideShape("right")}
                                           {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 12} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700} pointerEvents="none">PORTA</text>}
                                         </g>
                                       );
@@ -3695,14 +3723,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       ].forEach(c => dots.push({ ...c, antaId: a.id }));
                                     });
                                     return dots.map((v, i) => {
+                                      // Default = 45 (anta tagliata). Pallino visibile solo se modificato.
+                                      const isDefault = v.mode === '45';
                                       const dotColor = v.mode === '45' ? '#3B7FE0' : v.mode === 'V' ? '#1A9E73' : v.mode === 'H' ? '#D08008' : '#888';
                                       return (
                                         <g key={`avx-${i}`} style={{ cursor: 'pointer' }}
                                           onClick={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: v.antaId, antaCorner: v.key } as any); }}
                                           onTouchStart={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: v.antaId, antaCorner: v.key } as any); }}>
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
-                                          <circle cx={v.x} cy={v.y} r={9} fill="#fff" stroke={dotColor} strokeWidth={1.5} opacity={0.9} />
-                                          <circle cx={v.x} cy={v.y} r={4} fill={dotColor} />
+                                          {isDefault && <>
+                                            <circle cx={v.x} cy={v.y} r={9} fill="#fff" stroke={dotColor} strokeWidth={1.5} opacity={0.9} />
+                                            <circle cx={v.x} cy={v.y} r={4} fill={dotColor} />
+                                          </>}
                                         </g>
                                       );
                                     });
