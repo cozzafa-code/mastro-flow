@@ -1712,16 +1712,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const innerLeft = frameLeft + TK_FR;
                                   const innerRight = frameRight - TK_FR;
 
-                                  // Snap Y: bordo basso del rect aggancia al bordo bot interno se vicino
+                                  // Snap Y: bordo basso del rect aggancia al bordo bot del telaio (esterno!),
+                                  // così lo zoccolo si appoggia direttamente sotto al traverso bot del telaio (1cm più sotto del bordo interno)
                                   if (frameLines.length > 0) {
-                                    if (Math.abs(yBot - innerBot) < SNAP) yBot = innerBot;
-                                    else if (Math.abs(yBot - innerTop) < SNAP) yBot = innerTop + TK_ZOCC * 2; // come fascia attaccata sotto
+                                    if (Math.abs(yBot - frameBot) < SNAP) yBot = frameBot;
+                                    else if (Math.abs(yBot - innerBot) < SNAP) yBot = frameBot;  // anche se sei vicino al bordo interno → scendi al bordo esterno
+                                    else if (Math.abs(yBot - frameTop) < SNAP) yBot = frameTop + TK_ZOCC * 2;
+                                    else if (Math.abs(yBot - innerTop) < SNAP) yBot = frameTop + TK_ZOCC * 2;
                                   }
 
-                                  // Snap X1/X2: ai bordi interni del telaio + a bordi di altri zoccoloLibero/montanti adiacenti
+                                  // Snap X1/X2: ai bordi ESTERNI del telaio (zoccolo va da bordo a bordo)
                                   if (frameLines.length > 0) {
-                                    if (Math.abs(x1 - innerLeft) < SNAP) x1 = innerLeft;
-                                    if (Math.abs(x2 - innerRight) < SNAP) x2 = innerRight;
+                                    if (Math.abs(x1 - frameLeft) < SNAP) x1 = frameLeft;
+                                    else if (Math.abs(x1 - innerLeft) < SNAP) x1 = frameLeft;
+                                    if (Math.abs(x2 - frameRight) < SNAP) x2 = frameRight;
+                                    else if (Math.abs(x2 - innerRight) < SNAP) x2 = frameRight;
                                   }
                                   // Snap a montanti (verticali)
                                   els.forEach((m: any) => {
