@@ -1273,6 +1273,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   for (let d = 0; d <= (yEnd-yStart); d += GRID) pushAG({x, y: yStart+d}, "V");
                                 }
                               });
+                              // ── ZOCCOLI LIBERI: aggiungi i 4 angoli + mezzerie ai 4 lati come punti snap ──
+                              els.filter((e: any) => e.type === "zoccoloLibero").forEach((z: any) => {
+                                const zx1 = z.x, zx2 = z.x + z.w, zy1 = z.y, zy2 = z.y + z.h;
+                                // 4 angoli
+                                pts.push({x: zx1, y: zy1},{x: zx2, y: zy1},{x: zx1, y: zy2},{x: zx2, y: zy2});
+                                // Mezzerie dei 4 lati
+                                pts.push({x: (zx1+zx2)/2, y: zy1},{x: (zx1+zx2)/2, y: zy2});
+                                pts.push({x: zx1, y: (zy1+zy2)/2},{x: zx2, y: (zy1+zy2)/2});
+                                // Bordo top continuo: punto chiave per agganciare montanti che terminano sopra zoccolo
+                                for (let xx = zx1; xx <= zx2; xx += 4) pts.push({x: xx, y: zy1});
+                              });
                               return pts;
                             };
                             const findSnap = (mx, my) => {
