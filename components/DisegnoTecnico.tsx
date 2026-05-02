@@ -1273,17 +1273,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   for (let d = 0; d <= (yEnd-yStart); d += GRID) pushAG({x, y: yStart+d}, "V");
                                 }
                               });
-                              // ── ZOCCOLI LIBERI: aggiungi i 4 angoli + mezzerie ai 4 lati come punti snap ──
-                              els.filter((e: any) => e.type === "zoccoloLibero").forEach((z: any) => {
-                                const zx1 = z.x, zx2 = z.x + z.w, zy1 = z.y, zy2 = z.y + z.h;
-                                // 4 angoli
-                                pts.push({x: zx1, y: zy1},{x: zx2, y: zy1},{x: zx1, y: zy2},{x: zx2, y: zy2});
-                                // Mezzerie dei 4 lati
-                                pts.push({x: (zx1+zx2)/2, y: zy1},{x: (zx1+zx2)/2, y: zy2});
-                                pts.push({x: zx1, y: (zy1+zy2)/2},{x: zx2, y: (zy1+zy2)/2});
-                                // Bordo top continuo: punto chiave per agganciare montanti che terminano sopra zoccolo
-                                for (let xx = zx1; xx <= zx2; xx += 4) pts.push({x: xx, y: zy1});
-                              });
+                              // ── ZOCCOLI LIBERI: NIENTE snap. Il montante deve passare a fianco e proseguire fino al telaio.
+                              // (Nessun punto agganciabile sui bordi dello zoccoloLibero per evitare che il Mont.Lib. si fermi sopra.)
                               return pts;
                             };
                             const findSnap = (mx, my) => {
@@ -3314,7 +3305,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "montante") {
                                       let my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       let my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
-                                      // Mont.Lib.: snap automatico al bordo top/bot interno del telaio (TEL.LIB.)
+                                      // Mont.Lib.: forza SEMPRE top e bot al telaio (passa a fianco di zoccoli/altro).
                                       if (el._libero) {
                                         const frameLines = els.filter((e: any) => e.type === "freeLine" && !e.subType);
                                         if (frameLines.length > 0) {
@@ -3323,10 +3314,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             frameTop = Math.min(frameTop, l.y1, l.y2);
                                             frameBot = Math.max(frameBot, l.y1, l.y2);
                                           });
-                                          // Top: aggancia al bordo interno top del telaio se vicino
-                                          if (Math.abs(my1raw - frameTop) < 40) my1raw = frameTop + TK_FRAME;
-                                          // Bot: aggancia al bordo interno bot, e si allunga di 12px in più verso il basso
-                                          if (Math.abs(my2raw - frameBot) < 40) my2raw = frameBot - TK_FRAME + 12;
+                                          // FORZATURA: la cima va al bordo interno top, la base scende fino a frameBot - TK_FRAME + 12,
+                                          // a prescindere dal punto cliccato (così passa a fianco dello zoccolo).
+                                          my1raw = frameTop + TK_FRAME;
+                                          my2raw = frameBot - TK_FRAME + 12;
                                         }
                                       }
                                       // Aggancio zoccolo: cerca SOLO freeLine subType=zoccolo (vecchio sistema, fonde sopra).
