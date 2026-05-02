@@ -2170,11 +2170,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
                                     if (adxC < 25 && adyC > adxC * 1.5) px=pending.x1;
                                     if (adyC < 25 && adxC > adyC * 1.5) py=pending.y1;
-                                    // chiusura forma — solo per telaio libero senza subType
+                                    // chiusura forma — solo per telaio libero senza subType, e solo dal 4° click in poi (≥3 lati)
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
-                                      if (cs && freeLines.length>=2 && Math.hypot(px-cs.x,py-cs.y)<SNAP_R+6) { px=cs.x; py=cs.y; }
+                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<SNAP_R+6) { px=cs.x; py=cs.y; }
                                     }
                                   }
 
