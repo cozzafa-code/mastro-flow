@@ -4085,7 +4085,7 @@ export default function VanoDetailPanel() {
                 lamieraTouches.current = ts;
               }}
               onTouchMove={e=>{
-                e.preventDefault();
+                // e.preventDefault() rimosso - React 18 listeners sono passive, causa "Unable to preventDefault" e doppio tap iOS
                 const ts = Array.from(e.touches) as any;
                 if(ts.length===1 && lamieraTouches.current.length===1){
                   // Pan
