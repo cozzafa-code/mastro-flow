@@ -1626,29 +1626,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Mont.Lib — due click con snap: primo=inizio, secondo=fine
+                              // Mont.Lib — due click. Snap solo se molto vicino (< 25px) al punto del dito.
                               if (drawMode === "place-mont-free") {
                                 const pending = dw._pendingLine;
-                                // Snap generico + snap verticale al frame/zoccolo/traversi
-                                const snapPt = findSnap(Math.round(mx), Math.round(my));
-                                let rx = snapPt ? snapPt.x : Math.round(mx);
-                                let ry = snapPt ? snapPt.y : Math.round(my);
+                                const SNAP_LIM = 25;
+                                const snapNear = (px: number, py: number) => {
+                                  const sp = findSnap(Math.round(px), Math.round(py));
+                                  if (!sp) return null;
+                                  return Math.hypot(sp.x - px, sp.y - py) < SNAP_LIM ? sp : null;
+                                };
                                 if (!pending) {
+                                  const sn = snapNear(mx, my);
+                                  const rx = sn ? sn.x : Math.round(mx);
+                                  const ry = sn ? sn.y : Math.round(my);
                                   setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "montante" } });
                                 } else {
                                   const x = pending.x1;
-                                  // FIX: cerco snap al punto reale (mx,my) invece che solo sulla colonna x fissa
-                                  const snap2 = findSnap(Math.round(mx), Math.round(my));
-                                  const finalY = snap2 ? snap2.y : Math.round(my);
+                                  const sn2 = snapNear(mx, my);
+                                  const finalY = sn2 ? sn2.y : Math.round(my);
                                   let y1 = Math.min(pending.y1, finalY);
                                   let y2 = Math.max(pending.y1, finalY);
-                                  // Aggiusta y1/y2 al bordo del profilo orizzontale più vicino
+                                  // Aggiusta y1/y2 al bordo del profilo orizzontale più vicino (zoccolo/soglia/fascia)
                                   const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
                                   els.filter(e => e.type === "freeLine" && Math.abs(e.y2-e.y1) <= Math.abs(e.x2-e.x1)+1).forEach(l => {
                                     const lHT = tkMapLocal[l.subType] || TK_FRAME;
                                     const lY = (l.y1+l.y2)/2;
-                                    if (Math.abs(lY - y2) < lHT*2+10) y2 = lY + lHT; // scende al bordo inferiore
-                                    if (Math.abs(lY - y1) < lHT*2+10) y1 = lY - lHT; // sale al bordo superiore
+                                    if (Math.abs(lY - y2) < lHT*2+10) y2 = lY + lHT;
+                                    if (Math.abs(lY - y1) < lHT*2+10) y1 = lY - lHT;
                                   });
                                   if (Math.abs(y2 - y1) < 3) return;
                                   setDW([...els, { id: Date.now(), type: "montante", x, y1, y2 }], { _pendingLine: null });
