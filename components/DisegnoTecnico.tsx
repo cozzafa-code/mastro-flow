@@ -1679,28 +1679,32 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Zocc.Lib — due tap. Snap intelligente ai bordi interni del telaio (profileMode).
+                              // Zocc.Lib — due tap. Y agganciata al bordo bot/top INTERNO del telaio (zoccolo dentro vano).
                               if (drawMode === "place-zocc-free") {
                                 const pending = dw._pendingLine;
-                                // Trick: chiamo findSnap simulando profileMode
-                                const wasDrawMode = dw.drawMode;
-                                const wasSub = dw._lineSubType;
-                                (dw as any).drawMode = "line";
-                                (dw as any)._lineSubType = "zoccolo";
-                                const snapPt = findSnap(Math.round(mx), Math.round(my));
-                                (dw as any).drawMode = wasDrawMode;
-                                (dw as any)._lineSubType = wasSub;
-                                // Accetta lo snap solo se è entro 50px dal punto del dito reale
-                                const snapDist = snapPt ? Math.hypot(snapPt.x - mx, snapPt.y - my) : Infinity;
-                                const snapOk = snapPt && snapDist < 50;
-                                const rx = snapOk ? snapPt.x : Math.round(mx);
-                                const ry = snapOk ? snapPt.y : Math.round(my);
+                                const TK_ZOCC = 8;
+                                // Calcola bbox telaio per posizionamento intelligente Y
+                                const frameLines = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                let frameTop = Infinity, frameBot = -Infinity, frameLeft = Infinity, frameRight = -Infinity;
+                                frameLines.forEach((l: any) => {
+                                  frameTop = Math.min(frameTop, l.y1, l.y2);
+                                  frameBot = Math.max(frameBot, l.y1, l.y2);
+                                  frameLeft = Math.min(frameLeft, l.x1, l.x2);
+                                  frameRight = Math.max(frameRight, l.x1, l.x2);
+                                });
+                                const TK_FR = 6;
+                                // Y target: se utente tappa nella metà inferiore del vano → zoccolo attaccato a bordo bot interno;
+                                // se tappa nella metà superiore → attaccato a bordo top (uso come fascia).
+                                const midY = (frameTop + frameBot) / 2;
+                                const targetY = my > midY
+                                  ? (frameBot - TK_FR)             // bordo BASSO del polygon = bordo interno bot
+                                  : (frameTop + TK_FR + TK_ZOCC*2); // bordo BASSO del polygon = TK_FR + spessore sotto top
                                 if (!pending) {
-                                  setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "zoccolo_free" } });
+                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(targetY), _subType: "zoccolo_free" } });
                                 } else {
-                                  // 2° tap: Y mantiene quella del 1° tap. X = punto del dito (con snap solo entro 50px).
+                                  // 2° tap: Y mantiene quella del 1° tap. X = punto del dito.
                                   const y = pending.y1;
-                                  const finalX = rx; // solo X del snapPt (Y resta pending.y1)
+                                  const finalX = Math.round(mx);
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
                                   if (Math.abs(x2 - x1) < 5) return;
@@ -3622,13 +3626,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (isHorzEl && !isPartOfPoly && !isComplemento) {
                                         ey1 = el.y1 - halfT + TK_FRAME;
                                         ey2 = el.y2 - halfT + TK_FRAME;
-                                      }
-                                      // Per complementi orizzontali (zoccolo/soglia/fascia/sog.rib./prof.comp.):
-                                      // posiziona il polygon SOPRA el.y1 (bordo basso polygon = el.y1).
-                                      // L'utente tappa sul bordo interno del telaio bot → zoccolo cresce verso il vano.
-                                      if (isHorzEl && !isPartOfPoly && isComplemento) {
-                                        ey1 = el.y1 - halfT;
-                                        ey2 = el.y2 - halfT;
                                       }
                                       // Taglio 45° sul profilo: usa cornerModes esplicito (non tocca el.corners legacy)
                                       const cut45Start = _cm.start === '45';
