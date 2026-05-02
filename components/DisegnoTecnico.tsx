@@ -1688,15 +1688,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // FERMAVETRO — un tap dentro una cella o un'anta. Crea 4 fermavetri autonomi (anello)
                               // attorno al rettangolo del vetro: bordo interno offset di TK_ANTA o TK_FRAME.
                               if (drawMode === "place-fermavetro") {
-                                // Cerca prima un'anta (innerRect) sotto il dito
+                                let bx = 0, by = 0, bw = 0, bh = 0;
+                                // 1. Anta innerRect (rettangolare) sotto il dito
                                 const anta = els.find((e: any) => e.type === "innerRect" &&
                                   mx >= e.x && mx <= e.x + e.w && my >= e.y && my <= e.y + e.h);
-                                let bx = 0, by = 0, bw = 0, bh = 0, inset = 0;
+                                // 2. Anta poligonale sotto il dito
+                                const polyAnta = !anta && els.find((e: any) => e.type === "polyAnta" && e.poly &&
+                                  (() => {
+                                    const xs = e.poly.map((p: number[]) => p[0]);
+                                    const ys = e.poly.map((p: number[]) => p[1]);
+                                    return mx >= Math.min(...xs) && mx <= Math.max(...xs) && my >= Math.min(...ys) && my <= Math.max(...ys);
+                                  })()
+                                );
                                 if (anta) {
-                                  inset = TK_ANTA;
-                                  bx = anta.x + inset; by = anta.y + inset;
-                                  bw = anta.w - inset * 2; bh = anta.h - inset * 2;
+                                  // Fermavetro dentro anta: offset = TK_ANTA dal bordo dell'anta
+                                  bx = anta.x + TK_ANTA; by = anta.y + TK_ANTA;
+                                  bw = anta.w - TK_ANTA * 2; bh = anta.h - TK_ANTA * 2;
+                                } else if (polyAnta) {
+                                  const xs = polyAnta.poly.map((p: number[]) => p[0]);
+                                  const ys = polyAnta.poly.map((p: number[]) => p[1]);
+                                  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+                                  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+                                  bx = xMin + TK_ANTA; by = yMin + TK_ANTA;
+                                  bw = (xMax - xMin) - TK_ANTA * 2; bh = (yMax - yMin) - TK_ANTA * 2;
                                 } else {
+                                  // 3. Cella telaio (parte fissa). Fermavetro aderente al telaio: offset minimo (1px).
                                   let cell = findCellAt(mx, my);
                                   if (!cell && cells.length > 0) {
                                     let best = null, bestD = Infinity;
@@ -1708,13 +1724,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     cell = best;
                                   }
                                   if (cell) {
-                                    inset = TK_FRAME;
-                                    bx = cell.x + inset; by = cell.y + inset;
-                                    bw = cell.w - inset * 2; bh = cell.h - inset * 2;
+                                    // Aderente: solo 1px di gap dal bordo cella
+                                    bx = cell.x + 1; by = cell.y + 1;
+                                    bw = cell.w - 2; bh = cell.h - 2;
                                   } else { return; }
                                 }
                                 if (bw < 20 || bh < 20) return;
-                                // Tipo autonomo "fermavetroRect": rect con bordo (anello), non interferisce con freeLine.
                                 setDW([...els, {
                                   id: Date.now(), type: "fermavetroRect",
                                   x: bx, y: by, w: bw, h: bh,
@@ -2830,7 +2845,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
                                   <div onClick={() => {
                                     // Riattiva pallini angoli su tutte le ante (innerRect + polyAnta)
-                                    const upd = els.map(e => (e.type === "innerRect" || e.type === "polyAnta") ? { ...e, _userSetCorners: false } : e);
+                                    // E rimuove anche i flag _hidden manuali sul telaio
+                                    const upd = els.map(e => {
+                                      if (e.type === "innerRect" || e.type === "polyAnta") return { ...e, _userSetCorners: false };
+                                      if (e.type === "freeLine" && e.cornerModes) {
+                                        const cm = { ...e.cornerModes };
+                                        delete cm.start_hidden; delete cm.end_hidden;
+                                        return { ...e, cornerModes: cm };
+                                      }
+                                      return e;
+                                    });
                                     setDW(upd);
                                   }} style={{ ...bs(), color: "#3B7FE0", border: `1.5px solid #3B7FE0` }}>● Pallini Angoli</div>
                                   <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="5" y="3" width="14" height="18" rx="1"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Distinta</div>
