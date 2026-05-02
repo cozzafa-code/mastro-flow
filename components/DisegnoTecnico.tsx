@@ -3592,13 +3592,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const cm = (r.line.cornerModes || {})[r.which];
                                         if (cm && cm !== 'auto') { curMode = cm; break; }
                                       }
-                                      const fillColor = curMode === '45' ? '#3B7FE0' : curMode === 'V' ? '#1A9E73' : curMode === 'H' ? '#D08008' : '#888';
+                                      const isConfigured = curMode !== 'auto';
                                       return (
                                         <g key={`vtx-${i}`} style={{ cursor: 'pointer' }}
                                           onClick={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y }); }}
                                           onTouchStart={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y }); }}>
-                                          <circle cx={v.x} cy={v.y} r={14} fill="#fff" stroke={fillColor} strokeWidth={2} opacity={0.85} />
-                                          <circle cx={v.x} cy={v.y} r={6} fill={fillColor} />
+                                          {/* Hit area trasparente per ri-tap anche quando configurato */}
+                                          <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
+                                          {!isConfigured && <>
+                                            <circle cx={v.x} cy={v.y} r={14} fill="#fff" stroke="#888" strokeWidth={2} opacity={0.85} />
+                                            <circle cx={v.x} cy={v.y} r={6} fill="#888" />
+                                          </>}
                                         </g>
                                       );
                                     });
