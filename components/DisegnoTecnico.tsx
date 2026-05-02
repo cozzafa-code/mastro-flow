@@ -2724,6 +2724,41 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       {selEl.type !== "polyPersiana" && <div onClick={() => changeType("polyPersiana")} style={bDel("#666")}>Persiana</div>}
                                     </>;
                                   })()}
+                                  {selId && (() => {
+                                    const selEl = els.find(e => e.id === selId);
+                                    if (!selEl || selEl.type !== "freeLine") return null;
+                                    const cm = selEl.cornerModes || {};
+                                    const setCorner = (which: 'start' | 'end', mode: string) => {
+                                      const upd = els.map(e => {
+                                        if (e.id !== selId) return e;
+                                        const newCm = { ...(e.cornerModes || {}) };
+                                        newCm[which] = mode;
+                                        return { ...e, cornerModes: newCm };
+                                      });
+                                      setDW(upd, { selectedId: selId });
+                                    };
+                                    const Btn = ({ which, mode, label, color }: any) => {
+                                      const active = (cm[which] || 'auto') === mode;
+                                      return <div onClick={() => setCorner(which, mode)}
+                                        style={{ padding: "4px 7px", borderRadius: 5, fontSize: 9, fontWeight: 800, cursor: "pointer", border: active ? `1.5px solid ${color}` : `1px solid ${T.bdr}`, background: active ? `${color}20` : "#fff", color: active ? color : "#666" }}>{label}</div>;
+                                    };
+                                    return <>
+                                      <div style={{ display: "flex", gap: 2, alignItems: "center", padding: "0 4px", borderLeft: `1px solid ${T.bdr}` }}>
+                                        <span style={{ fontSize: 8, fontWeight: 700, color: "#888", marginRight: 2 }}>P1</span>
+                                        <Btn which="start" mode="V" label="V" color="#1A9E73" />
+                                        <Btn which="start" mode="H" label="H" color="#D08008" />
+                                        <Btn which="start" mode="45" label="45°" color="#3B7FE0" />
+                                        <Btn which="start" mode="auto" label="A" color="#888" />
+                                      </div>
+                                      <div style={{ display: "flex", gap: 2, alignItems: "center", padding: "0 4px", borderLeft: `1px solid ${T.bdr}` }}>
+                                        <span style={{ fontSize: 8, fontWeight: 700, color: "#888", marginRight: 2 }}>P2</span>
+                                        <Btn which="end" mode="V" label="V" color="#1A9E73" />
+                                        <Btn which="end" mode="H" label="H" color="#D08008" />
+                                        <Btn which="end" mode="45" label="45°" color="#3B7FE0" />
+                                        <Btn which="end" mode="auto" label="A" color="#888" />
+                                      </div>
+                                    </>;
+                                  })()}
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setDW([], { selectedId: null, drawMode: null, _pendingLine: null, history: [] })} style={bDel()}>🗑 Reset</div>
                                   {frame && <div onClick={() => {
@@ -2769,22 +2804,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
-                                  onPointerDown={(e2: any) => {
-                                    // Memorizza posizione iniziale per drift-check
-                                    (e2.currentTarget as any).__tapStartX = e2.clientX;
-                                    (e2.currentTarget as any).__tapStartY = e2.clientY;
-                                  }}
-                                  onPointerUp={(e2: any) => {
-                                    // Se il dito/mouse si e' mosso < 6px = tap valido (anche con microvibrazione iPhone)
-                                    const sx = (e2.currentTarget as any).__tapStartX;
-                                    const sy = (e2.currentTarget as any).__tapStartY;
-                                    if (sx == null || sy == null) return;
-                                    const dx = Math.abs(e2.clientX - sx);
-                                    const dy = Math.abs(e2.clientY - sy);
-                                    if (dx < 6 && dy < 6) {
-                                      onSvgClick(e2);
-                                    }
-                                  }}
+                                  onClick={onSvgClick}
                                   onWheelDISABLED={(e2: any) => {
                                     e2.preventDefault();
                                     const newZoom = Math.max(0.15, Math.min(6, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
@@ -3442,8 +3462,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       
                                       // ext1: si estende verso montante sx (SVG) = dx utente
                                       // ext2: si ferma su el.x2, non esce
-                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -TK_MONT : halfT;
-                                      const ext2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
+                                      const _autoExt1 = (hasMontAt1 || hasVertAt1) ? -TK_MONT : halfT;
+                                      const _autoExt2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
+                                      // Override esplicito solo se cornerModes settato (V/H/45). Default = auto = comportamento attuale intoccato.
+                                      const _cm = el.cornerModes || {};
+                                      const _resolveE = (m: any, autoVal: number) => {
+                                        if (m === 'V') return halfT;
+                                        if (m === 'H') return -TK_MONT;
+                                        if (m === '45') return halfT;
+                                        return autoVal;
+                                      };
+                                      const ext1 = _resolveE(_cm.start, _autoExt1);
+                                      const ext2 = _resolveE(_cm.end, _autoExt2);
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali: bordo basso polygon = el.y1
@@ -3452,7 +3482,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         ey2 = el.y2 - halfT + TK_FRAME;
                                       }
                                       // Taglio 45° sul profilo freeLine orizzontale
-                                      const flCorners = el.corners || [];
+                                      const flCorners = [...(el.corners || [])];
+                                      if (_cm.start === '45') flCorners.push({ cx: el.x1, cy: el.y1 });
+                                      if (_cm.end === '45') flCorners.push({ cx: el.x2, cy: el.y2 });
                                       const buildFreePoly = () => {
                                         // pts4 base: TL, TR, BR, BL (top=ey+ny, bot=ey-ny)
                                         let p = [
