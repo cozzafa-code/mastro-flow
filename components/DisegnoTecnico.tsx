@@ -3750,24 +3750,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const xMin = Math.min(...xs), xMax = Math.max(...xs);
                                       const yMin = Math.min(...ys), yMax = Math.max(...ys);
                                       const acm = a.cornerModes || {};
+                                      const userSet = !!a._userSetCorners;
                                       [
                                         { key: 'tl', x: xMin, y: yMin, mode: acm.tl || '45' },
                                         { key: 'tr', x: xMax, y: yMin, mode: acm.tr || '45' },
                                         { key: 'br', x: xMax, y: yMax, mode: acm.br || '45' },
                                         { key: 'bl', x: xMin, y: yMax, mode: acm.bl || '45' },
-                                      ].forEach(c => dots.push({ ...c, antaId: a.id }));
+                                      ].forEach(c => dots.push({ ...c, antaId: a.id, userSet }));
                                     });
                                     rectAntas.forEach((a: any) => {
                                       const acm = a.cornerModes || {};
+                                      const userSet = !!a._userSetCorners;
                                       [
                                         { key: 'tl', x: a.x, y: a.y, mode: acm.tl || '45' },
                                         { key: 'tr', x: a.x + a.w, y: a.y, mode: acm.tr || '45' },
                                         { key: 'br', x: a.x + a.w, y: a.y + a.h, mode: acm.br || '45' },
                                         { key: 'bl', x: a.x, y: a.y + a.h, mode: acm.bl || '45' },
-                                      ].forEach(c => dots.push({ ...c, antaId: a.id }));
+                                      ].forEach(c => dots.push({ ...c, antaId: a.id, userSet }));
                                     });
                                     return dots.map((v, i) => {
-                                      const isDefault = v.mode === '45';
+                                      // Pallino visibile solo finché l'utente non ha mai scelto un angolo per quell'anta
+                                      const showDot = !v.userSet;
                                       const dotColor = v.mode === '45' ? '#3B7FE0' : v.mode === 'V' ? '#1A9E73' : v.mode === 'H' ? '#D08008' : '#888';
                                       const openPopup = (e3: any) => {
                                         e3.stopPropagation();
@@ -3779,7 +3782,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           onClick={openPopup}
                                           onPointerDown={openPopup}>
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
-                                          {isDefault && <>
+                                          {showDot && <>
                                             <circle cx={v.x} cy={v.y} r={9} fill="#fff" stroke={dotColor} strokeWidth={1.5} opacity={0.9} />
                                             <circle cx={v.x} cy={v.y} r={4} fill={dotColor} />
                                           </>}
@@ -4072,7 +4075,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (e.id !== ce.antaId) return e;
                                       const newCm = { ...(e.cornerModes || {}) };
                                       newCm[ce.antaCorner] = m;
-                                      return { ...e, cornerModes: newCm };
+                                      return { ...e, cornerModes: newCm, _userSetCorners: true };
                                     });
                                     setDW(upd);
                                     setCornerEdit(null);
