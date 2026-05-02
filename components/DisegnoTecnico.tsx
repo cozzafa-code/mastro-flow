@@ -3505,27 +3505,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali: bordo basso polygon = el.y1
                                       if (isHorzEl && !isPartOfPoly) {
-                                        // Se il profilo è dentro un'anta innerRect con lato bot/top nascosto, usa TK_ANTA/TK_PORTA invece di TK_FRAME
-                                        let edgeTk = TK_FRAME;
-                                        const insideAnta = els.find((a: any) => {
-                                          if (a.type !== "innerRect") return false;
-                                          const hidden = a.hiddenSides || [];
-                                          if (hidden.length === 0) return false;
-                                          // verifico che la freeLine zoccolo sia in zona del lato hidden
-                                          const tol = 30;
-                                          const xMid = (el.x1 + el.x2) / 2, yMid = (el.y1 + el.y2) / 2;
-                                          if (xMid < a.x - tol || xMid > a.x + a.w + tol) return false;
-                                          // top hidden e zoccolo vicino al top dell'anta
-                                          if (hidden.includes("top") && Math.abs(yMid - a.y) < a.h * 0.3 + tol) return true;
-                                          // bot hidden e zoccolo vicino al bot dell'anta
-                                          if (hidden.includes("bot") && Math.abs(yMid - (a.y + a.h)) < a.h * 0.3 + tol) return true;
-                                          return false;
-                                        });
-                                        if (insideAnta) {
-                                          edgeTk = insideAnta.subType === "porta" ? TK_PORTA : TK_ANTA;
-                                        }
-                                        ey1 = el.y1 - halfT + edgeTk;
-                                        ey2 = el.y2 - halfT + edgeTk;
+                                        ey1 = el.y1 - halfT + TK_FRAME;
+                                        ey2 = el.y2 - halfT + TK_FRAME;
                                       }
                                       // Taglio 45° sul profilo: usa cornerModes esplicito (non tocca el.corners legacy)
                                       const cut45Start = _cm.start === '45';
