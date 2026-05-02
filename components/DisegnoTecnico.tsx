@@ -3699,6 +3699,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (drawMode) return null;
                                     const polyAntas = els.filter((e: any) => e.type === "polyAnta" && e.poly);
                                     const rectAntas = els.filter((e: any) => e.type === "innerRect");
+                                    // DEBUG: mostro i tipi di tutti gli elementi nel titolo della tab
+                                    if (typeof document !== 'undefined') {
+                                      const types = els.map((e: any) => e.type).join(',');
+                                      document.title = `T:${types}`;
+                                    }
                                     if (polyAntas.length === 0 && rectAntas.length === 0) return null;
                                     const dots: any[] = [];
                                     polyAntas.forEach((a: any) => {
