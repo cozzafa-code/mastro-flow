@@ -2769,7 +2769,22 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
-                                  onClick={onSvgClick}
+                                  onPointerDown={(e2: any) => {
+                                    // Memorizza posizione iniziale per drift-check
+                                    (e2.currentTarget as any).__tapStartX = e2.clientX;
+                                    (e2.currentTarget as any).__tapStartY = e2.clientY;
+                                  }}
+                                  onPointerUp={(e2: any) => {
+                                    // Se il dito/mouse si e' mosso < 6px = tap valido (anche con microvibrazione iPhone)
+                                    const sx = (e2.currentTarget as any).__tapStartX;
+                                    const sy = (e2.currentTarget as any).__tapStartY;
+                                    if (sx == null || sy == null) return;
+                                    const dx = Math.abs(e2.clientX - sx);
+                                    const dy = Math.abs(e2.clientY - sy);
+                                    if (dx < 6 && dy < 6) {
+                                      onSvgClick(e2);
+                                    }
+                                  }}
                                   onWheelDISABLED={(e2: any) => {
                                     e2.preventDefault();
                                     const newZoom = Math.max(0.15, Math.min(6, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
