@@ -1655,7 +1655,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (Math.abs(lY - y1) < lHT*2+10) y1 = lY - lHT;
                                   });
                                   if (Math.abs(y2 - y1) < 3) return;
-                                  setDW([...els, { id: Date.now(), type: "montante", x, y1, y2 }], { _pendingLine: null });
+                                  setDW([...els, { id: Date.now(), type: "montante", x, y1, y2, _libero: true }], { _pendingLine: null });
                                 }
                                 return;
                               }
@@ -3312,6 +3312,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       let my2 = my2raw;
                                       if (zoccoloEl) my2 = zoccoloEl.y1 + TK_FRAME;
                                       else if (zoccoloLibEl) my2 = zoccoloLibEl.y; // attacca al bordo top dello zoccolo libero
+                                      else if (el._libero) my2 = my2raw + 7;       // Mont.Lib. senza zoccolo: allunga di 7px in basso
                                       const HM2 = TK_MONT / 2;
                                       const mX1 = el.x - HM2, mX2 = el.x + HM2;
                                       // Calcola tagli 45° agli angoli
