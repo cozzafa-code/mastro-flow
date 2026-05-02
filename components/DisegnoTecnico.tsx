@@ -1681,11 +1681,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Zocc.Lib — due tap. Snap intelligente ai bordi interni del telaio (profileMode).
                               if (drawMode === "place-zocc-free") {
                                 const pending = dw._pendingLine;
-                                // Forza profileMode temporaneamente per attivare snap _antaSnap nei bordi interni
-                                const savedSub = dw._lineSubType;
-                                if (savedSub !== "zoccolo") {
-                                  // Settiamo flag temporaneo per findSnap (legge dw.drawMode === "line" && _lineSubType in profili)
-                                }
                                 // Trick: chiamo findSnap simulando profileMode
                                 const wasDrawMode = dw.drawMode;
                                 const wasSub = dw._lineSubType;
@@ -1694,18 +1689,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const snapPt = findSnap(Math.round(mx), Math.round(my));
                                 (dw as any).drawMode = wasDrawMode;
                                 (dw as any)._lineSubType = wasSub;
-                                const rx = snapPt ? snapPt.x : Math.round(mx);
-                                const ry = snapPt ? snapPt.y : Math.round(my);
+                                // Accetta lo snap solo se è entro 50px dal punto del dito reale
+                                const snapDist = snapPt ? Math.hypot(snapPt.x - mx, snapPt.y - my) : Infinity;
+                                const snapOk = snapPt && snapDist < 50;
+                                const rx = snapOk ? snapPt.x : Math.round(mx);
+                                const ry = snapOk ? snapPt.y : Math.round(my);
                                 if (!pending) {
                                   setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "zoccolo_free" } });
                                 } else {
-                                  // 2° tap: snap solo X (Y mantiene quella del 1° tap), niente snap aggressivo
+                                  // 2° tap: Y mantiene quella del 1° tap. X = punto del dito (con snap solo entro 50px).
                                   const y = pending.y1;
-                                  // Snap X solo a estremi del telaio orizzontali (bordi interni laterali)
-                                  let finalX = Math.round(mx);
-                                  if (snapPt && snapPt._antaSnap) {
-                                    finalX = snapPt.x;
-                                  }
+                                  const finalX = rx; // solo X del snapPt (Y resta pending.y1)
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
                                   if (Math.abs(x2 - x1) < 5) return;
