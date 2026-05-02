@@ -1688,18 +1688,67 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // 1° tap: salva punto inizio. Y libera dove tappa l'utente.
                                   setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(my), _subType: "zoccolo_free" } });
                                 } else {
-                                  // 2° tap: crea rect. X dal min al max. Y centrata su pending.y1.
-                                  // Spessore: TK_ZOCC*2 (16px). Bordo basso = pending.y1, bordo alto = pending.y1 - 16.
+                                  // 2° tap: crea rect con SNAP FINALE a bordi telaio + altri zoccolo.
                                   const finalX = Math.round(mx);
-                                  const x1 = Math.min(pending.x1, finalX);
-                                  const x2 = Math.max(pending.x1, finalX);
+                                  let x1 = Math.min(pending.x1, finalX);
+                                  let x2 = Math.max(pending.x1, finalX);
+                                  let yBot = pending.y1;  // bordo basso (dove ha tappato)
                                   if (Math.abs(x2 - x1) < 5) return;
-                                  // Crea rect: x, y, w, h. y = top del rect, quindi y1 - 2*halfT
+
+                                  const SNAP = 25;  // raggio snap finale
+                                  const TK_FR = 6;
+
+                                  // Trova bbox telaio (freeLine senza subType)
+                                  const frameLines = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                  let frameTop = Infinity, frameBot = -Infinity, frameLeft = Infinity, frameRight = -Infinity;
+                                  frameLines.forEach((l: any) => {
+                                    frameTop = Math.min(frameTop, l.y1, l.y2);
+                                    frameBot = Math.max(frameBot, l.y1, l.y2);
+                                    frameLeft = Math.min(frameLeft, l.x1, l.x2);
+                                    frameRight = Math.max(frameRight, l.x1, l.x2);
+                                  });
+                                  const innerTop = frameTop + TK_FR;
+                                  const innerBot = frameBot - TK_FR;
+                                  const innerLeft = frameLeft + TK_FR;
+                                  const innerRight = frameRight - TK_FR;
+
+                                  // Snap Y: bordo basso del rect aggancia al bordo bot interno se vicino
+                                  if (frameLines.length > 0) {
+                                    if (Math.abs(yBot - innerBot) < SNAP) yBot = innerBot;
+                                    else if (Math.abs(yBot - innerTop) < SNAP) yBot = innerTop + TK_ZOCC * 2; // come fascia attaccata sotto
+                                  }
+
+                                  // Snap X1/X2: ai bordi interni del telaio + a bordi di altri zoccoloLibero/montanti adiacenti
+                                  if (frameLines.length > 0) {
+                                    if (Math.abs(x1 - innerLeft) < SNAP) x1 = innerLeft;
+                                    if (Math.abs(x2 - innerRight) < SNAP) x2 = innerRight;
+                                  }
+                                  // Snap a montanti (verticali)
+                                  els.forEach((m: any) => {
+                                    if (m.type === "montante") {
+                                      const mxL = m.x - TK_MONT / 2, mxR = m.x + TK_MONT / 2;
+                                      if (Math.abs(x1 - mxR) < SNAP) x1 = mxR;
+                                      if (Math.abs(x2 - mxL) < SNAP) x2 = mxL;
+                                      if (Math.abs(x1 - mxL) < SNAP) x1 = mxL;
+                                      if (Math.abs(x2 - mxR) < SNAP) x2 = mxR;
+                                    }
+                                    if (m.type === "freeLine" && m.subType === "montante") {
+                                      const mvX = (m.x1 + m.x2) / 2;
+                                      const mxL2 = mvX - TK_MONT / 2, mxR2 = mvX + TK_MONT / 2;
+                                      if (Math.abs(x1 - mxR2) < SNAP) x1 = mxR2;
+                                      if (Math.abs(x2 - mxL2) < SNAP) x2 = mxL2;
+                                    }
+                                    if (m.type === "zoccoloLibero") {
+                                      if (Math.abs(x1 - (m.x + m.w)) < SNAP) x1 = m.x + m.w;
+                                      if (Math.abs(x2 - m.x) < SNAP) x2 = m.x;
+                                    }
+                                  });
+
                                   const rectEl = {
                                     id: Date.now(),
-                                    type: "zoccoloLibero",  // tipo a sé, non interferisce con freeLine
+                                    type: "zoccoloLibero",
                                     x: x1,
-                                    y: pending.y1 - TK_ZOCC * 2,
+                                    y: yBot - TK_ZOCC * 2,
                                     w: x2 - x1,
                                     h: TK_ZOCC * 2,
                                   };
