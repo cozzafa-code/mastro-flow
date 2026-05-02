@@ -1681,17 +1681,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Zocc.Lib — due click, crea freeLine isolata con subType="zoccolo"
                               if (drawMode === "place-zocc-free") {
                                 const pending = dw._pendingLine;
-                                const snapPt = findSnap(Math.round(mx), Math.round(my));
-                                let rx = snapPt ? snapPt.x : Math.round(mx);
-                                let ry = snapPt ? snapPt.y : Math.round(my);
                                 if (!pending) {
+                                  // 1° tap: snap solo se vicinissimo a un punto esistente
+                                  const snapPt = findSnap(Math.round(mx), Math.round(my));
+                                  let rx = Math.round(mx), ry = Math.round(my);
+                                  if (snapPt && Math.hypot(snapPt.x - mx, snapPt.y - my) < 12) {
+                                    rx = snapPt.x; ry = snapPt.y;
+                                  }
                                   setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "zoccolo_free" } });
                                 } else {
+                                  // 2° tap: NIENTE snap. Lo zoccolo si ferma esattamente dove il dito.
                                   const y = pending.y1;
-                                  // Snap solo se molto vicino al punto cliccato (max 12px), altrimenti usa il punto esatto
-                                  const snap2 = findSnap(Math.round(mx), Math.round(my));
-                                  let finalX = Math.round(mx);
-                                  if (snap2 && Math.abs(snap2.x - mx) < 12) finalX = snap2.x;
+                                  const finalX = Math.round(mx);
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
                                   if (Math.abs(x2 - x1) < 3) return;
