@@ -4439,13 +4439,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const isVert = (l: any) => Math.abs(l.x2 - l.x1) < Math.abs(l.y2 - l.y1);
                                 const apply = (m: string) => {
                                   const upd = (dw.elements || []).map((e: any) => {
-                                    const r = refs.find((rr: any) => rr.id === e.id);
-                                    if (!r) return e;
+                                    const myRefs = refs.filter((rr: any) => rr.id === e.id);
+                                    if (myRefs.length === 0) return e;
                                     const newCm = { ...(e.cornerModes || {}) };
-                                    if (m === 'auto') newCm[r.which] = 'auto';
-                                    else if (m === '45') newCm[r.which] = '45';
-                                    else if (m === 'V') newCm[r.which] = isVert(e) ? 'V' : 'H';
-                                    else if (m === 'H') newCm[r.which] = isVert(e) ? 'H' : 'V';
+                                    myRefs.forEach((r: any) => {
+                                      if (m === 'auto') newCm[r.which] = 'auto';
+                                      else if (m === '45') newCm[r.which] = '45';
+                                      else if (m === 'V') newCm[r.which] = isVert(e) ? 'V' : 'H';
+                                      else if (m === 'H') newCm[r.which] = isVert(e) ? 'H' : 'V';
+                                      // Pulisci flag _hidden quando l'utente sceglie un mode esplicito
+                                      delete newCm[`${r.which}_hidden`];
+                                    });
                                     return { ...e, cornerModes: newCm };
                                   });
                                   setDW(upd);
