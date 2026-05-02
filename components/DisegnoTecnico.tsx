@@ -3310,23 +3310,73 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // ═══ POLYGON ANTA — follows actual shape ═══
                                     if (el.type === "polyAnta" && el.poly) {
                                       const pts = el.poly;
-                                      const tk = el.subType === "porta" ? 4 : 3; // ridotto per anta piu grande
-                                      // Outer polygon — riempie tutta la cella
+                                      const tk = el.subType === "porta" ? 4 : 3;
                                       const outerPts = pts.map(p => p.join(",")).join(" ");
-                                      // Inner polygon — inset rettangolare di tk (profilo anta)
                                       const apAllX = pts.map(p => p[0]);
                                       const apAllY = pts.map(p => p[1]);
-                                      const apMinX = Math.min(...apAllX) + tk, apMaxX = Math.max(...apAllX) - tk;
-                                      const apMinY = Math.min(...apAllY) + tk, apMaxY = Math.max(...apAllY) - tk;
-                                      const innerPts = [[apMinX,apMinY],[apMaxX,apMinY],[apMaxX,apMaxY],[apMinX,apMaxY]];
+                                      const apMinX = Math.min(...apAllX), apMaxX = Math.max(...apAllX);
+                                      const apMinY = Math.min(...apAllY), apMaxY = Math.max(...apAllY);
+                                      // 4 angoli base (TL, TR, BR, BL) — coordinate inset di tk
+                                      const ix1 = apMinX + tk, ix2 = apMaxX - tk;
+                                      const iy1 = apMinY + tk, iy2 = apMaxY - tk;
+                                      // cornerModes anta: default 45 su tutti
+                                      const acm = el.cornerModes || {};
+                                      const mTL = acm.tl || '45';
+                                      const mTR = acm.tr || '45';
+                                      const mBR = acm.br || '45';
+                                      const mBL = acm.bl || '45';
+                                      // Costruisco inner polygon: per ogni angolo decido se è 1 punto (no taglio) o 2 punti (taglio 45)
+                                      // Step 45 = arretramento dall'angolo lungo i due lati
+                                      const cut = tk * 1.5;
+                                      const innerPoly: number[][] = [];
+                                      // TL
+                                      if (mTL === '45') { innerPoly.push([ix1+cut, iy1]); innerPoly.push([ix1, iy1+cut]); }
+                                      else { innerPoly.push([ix1, iy1]); }
+                                      // BL (going CCW: TL -> BL on left edge)
+                                      // riordino: TL -> TR -> BR -> BL (CW)
+                                      // Riazzero e rifaccio in ordine CW
+                                      innerPoly.length = 0;
+                                      // TL corner
+                                      if (mTL === '45') { innerPoly.push([ix1+cut, iy1], [ix1, iy1+cut]); }
+                                      else { innerPoly.push([ix1, iy1]); }
+                                      // BL corner
+                                      if (mBL === '45') { innerPoly.push([ix1, iy2-cut], [ix1+cut, iy2]); }
+                                      else { innerPoly.push([ix1, iy2]); }
+                                      // BR corner
+                                      if (mBR === '45') { innerPoly.push([ix2-cut, iy2], [ix2, iy2-cut]); }
+                                      else { innerPoly.push([ix2, iy2]); }
+                                      // TR corner
+                                      if (mTR === '45') { innerPoly.push([ix2, iy1+cut], [ix2-cut, iy1]); }
+                                      else { innerPoly.push([ix2, iy1]); }
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-                                      const innerStr = innerPts.map(p => p.join(",")).join(" ");
+                                      const innerStr = innerPoly.map(p => p.join(",")).join(" ");
+                                      // Vertici outer per pallini
+                                      const _antaVerts = [
+                                        { key: 'tl', x: apMinX, y: apMinY, mode: mTL },
+                                        { key: 'tr', x: apMaxX, y: apMinY, mode: mTR },
+                                        { key: 'br', x: apMaxX, y: apMaxY, mode: mBR },
+                                        { key: 'bl', x: apMinX, y: apMaxY, mode: mBL },
+                                      ];
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
                                           <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
                                           <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
+                                          {!drawMode && _antaVerts.map(v => {
+                                            const isDefault = v.mode === '45';
+                                            return (
+                                              <g key={`av-${v.key}`} style={{ cursor: 'pointer' }}
+                                                onClick={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: el.id, antaCorner: v.key } as any); }}
+                                                onTouchStart={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: el.id, antaCorner: v.key } as any); }}>
+                                                <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
+                                                {!isDefault && <>
+                                                  <circle cx={v.x} cy={v.y} r={10} fill="#fff" stroke="#888" strokeWidth={1.5} opacity={0.7} />
+                                                  <circle cx={v.x} cy={v.y} r={4} fill="#888" />
+                                                </>}
+                                              </g>
+                                            );
+                                          })}
                                         </g>
                                       );
                                     }
@@ -3908,40 +3958,80 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               {/* ══ POPUP SCELTA ANGOLO ══ */}
                               {cornerEdit && (() => {
+                                const ce: any = cornerEdit;
+                                // Caso ANTA: angolo singolo di un polyAnta
+                                if (ce.antaId !== undefined) {
+                                  const antaEl = (dw.elements || []).find((e: any) => e.id === ce.antaId);
+                                  if (!antaEl) return null;
+                                  const acm = antaEl.cornerModes || {};
+                                  const curMode = acm[ce.antaCorner] || '45';
+                                  const apply = (m: string) => {
+                                    const upd = (dw.elements || []).map((e: any) => {
+                                      if (e.id !== ce.antaId) return e;
+                                      const newCm = { ...(e.cornerModes || {}) };
+                                      newCm[ce.antaCorner] = m;
+                                      return { ...e, cornerModes: newCm };
+                                    });
+                                    setDW(upd);
+                                    setCornerEdit(null);
+                                  };
+                                  const CornerIcon = ({ m, active }: any) => {
+                                    const V_C = "#1A9E73", H_C = "#D08008", BG = active ? "#fff" : "#888";
+                                    const sw = 5;
+                                    if (m === 'V') return (<svg width="40" height="40" viewBox="0 0 40 40"><rect x="6" y="6" width={sw} height="28" fill={active ? "#fff" : V_C} /><rect x="11" y="6" width="23" height={sw} fill={active ? "#fff" : H_C} /></svg>);
+                                    if (m === 'H') return (<svg width="40" height="40" viewBox="0 0 40 40"><rect x="6" y="6" width="28" height={sw} fill={active ? "#fff" : H_C} /><rect x="6" y="11" width={sw} height="23" fill={active ? "#fff" : V_C} /></svg>);
+                                    if (m === '45') return (<svg width="40" height="40" viewBox="0 0 40 40"><polygon points="11,6 34,6 34,11 11,11" fill={active ? "#fff" : H_C} /><polygon points="6,11 11,11 11,34 6,34" fill={active ? "#fff" : V_C} /><line x1="6" y1="11" x2="11" y2="6" stroke={active ? "#fff" : "#1A1A1C"} strokeWidth="1.5" /></svg>);
+                                    return (<svg width="40" height="40" viewBox="0 0 40 40"><rect x="6" y="6" width="28" height={sw} fill={active ? "#fff" : BG} opacity="0.4"/><rect x="6" y="6" width={sw} height="28" fill={active ? "#fff" : BG} opacity="0.4"/><text x="20" y="28" textAnchor="middle" fontSize="14" fontWeight="900" fill={active ? "#fff" : BG}>?</text></svg>);
+                                  };
+                                  const Btn = ({ m, hint, color }: any) => (
+                                    <div onClick={() => apply(m)}
+                                      style={{ flex: 1, padding: "12px 4px 8px", borderRadius: 10, background: curMode === m ? color : "#F2F1EC", border: curMode === m ? `2px solid ${color}` : "1.5px solid #ddd", textAlign: "center", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                                      <CornerIcon m={m} active={curMode === m} />
+                                      <div style={{ fontSize: 9, fontWeight: 700, color: curMode === m ? "#fff" : "#1A1A1C", opacity: 0.9 }}>{hint}</div>
+                                    </div>
+                                  );
+                                  return (
+                                    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }}
+                                      onClick={() => setCornerEdit(null)}>
+                                      <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 300, display: "flex", flexDirection: "column", gap: 12 }}
+                                        onClick={e => e.stopPropagation()}>
+                                        <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1C" }}>📐 Angolo anta</div>
+                                        <div style={{ fontSize: 11, color: "#888" }}>Default: taglio 45°</div>
+                                        <div style={{ display: "flex", gap: 8 }}>
+                                          <Btn m="V" hint="Vert. vince" color="#1A9E73" />
+                                          <Btn m="H" hint="Oriz. vince" color="#D08008" />
+                                          <Btn m="45" hint="Taglio 45°" color="#3B7FE0" />
+                                          <Btn m="auto" hint="Squadra" color="#666" />
+                                        </div>
+                                        <div onClick={() => setCornerEdit(null)} style={{ padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Chiudi</div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                // Caso TELAIO (esistente)
                                 const flAll = (dw.elements || []).filter((e: any) => e.type === "freeLine" && !e.subType);
                                 const tol = 2;
-                                // Trova le linee toccate dal vertice
                                 const refs: any[] = [];
                                 flAll.forEach((l: any) => {
                                   if (Math.abs(l.x1 - cornerEdit.vx) < tol && Math.abs(l.y1 - cornerEdit.vy) < tol) refs.push({ id: l.id, which: 'start', line: l });
                                   if (Math.abs(l.x2 - cornerEdit.vx) < tol && Math.abs(l.y2 - cornerEdit.vy) < tol) refs.push({ id: l.id, which: 'end', line: l });
                                 });
                                 if (refs.length < 2) return null;
-                                // Determina mode corrente
                                 let curMode = 'auto';
                                 for (const r of refs) {
                                   const cm = (r.line.cornerModes || {})[r.which];
                                   if (cm && cm !== 'auto') { curMode = cm; break; }
                                 }
-                                // Identifica orientamento di ogni linea (V/H)
                                 const isVert = (l: any) => Math.abs(l.x2 - l.x1) < Math.abs(l.y2 - l.y1);
-                                // Applica scelta: per V vince la verticale → linea V mantiene halfT, linea H si ferma
                                 const apply = (m: string) => {
                                   const upd = (dw.elements || []).map((e: any) => {
                                     const r = refs.find((rr: any) => rr.id === e.id);
                                     if (!r) return e;
                                     const newCm = { ...(e.cornerModes || {}) };
-                                    if (m === 'auto') {
-                                      newCm[r.which] = 'auto';
-                                    } else if (m === '45') {
-                                      newCm[r.which] = '45';
-                                    } else if (m === 'V') {
-                                      // verticale vince: la linea verticale "passa" (V), l'orizzontale "si ferma" (H)
-                                      newCm[r.which] = isVert(e) ? 'V' : 'H';
-                                    } else if (m === 'H') {
-                                      // orizzontale vince
-                                      newCm[r.which] = isVert(e) ? 'H' : 'V';
-                                    }
+                                    if (m === 'auto') newCm[r.which] = 'auto';
+                                    else if (m === '45') newCm[r.which] = '45';
+                                    else if (m === 'V') newCm[r.which] = isVert(e) ? 'V' : 'H';
+                                    else if (m === 'H') newCm[r.which] = isVert(e) ? 'H' : 'V';
                                     return { ...e, cornerModes: newCm };
                                   });
                                   setDW(upd);
