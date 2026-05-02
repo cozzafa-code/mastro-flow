@@ -2847,16 +2847,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
-                                  onClick={onSvgClick}
+                                  onClick={(e2: any) => {
+                                    (e2.currentTarget as any).__lastClickAt = Date.now();
+                                    onSvgClick(e2);
+                                  }}
                                   onPointerUp={(e2: any) => {
-                                    // iOS cancella onClick se il dito si muove tra touchstart e touchend.
-                                    // In modo "place-*-free" il movimento è normale (1° tap → trascini → 2° tap),
-                                    // quindi gestiamo manualmente il pointerup come click — solo touch, non mouse.
                                     if (e2.pointerType !== "touch") return;
                                     const dm = drawMode;
-                                    if (dm === "place-mont-free" || dm === "place-trav-free" || dm === "place-zocc-free") {
-                                      onSvgClick(e2);
-                                    }
+                                    if (dm !== "place-mont-free" && dm !== "place-trav-free" && dm !== "place-zocc-free") return;
+                                    // Anti-doppio: se onClick ha già processato il tap entro 400ms, salta
+                                    const last = (e2.currentTarget as any).__lastClickAt || 0;
+                                    if (Date.now() - last < 400) return;
+                                    (e2.currentTarget as any).__lastClickAt = Date.now();
+                                    onSvgClick(e2);
                                   }}
                                   onWheelDISABLED={(e2: any) => {
                                     e2.preventDefault();
