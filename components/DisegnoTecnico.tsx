@@ -3915,11 +3915,43 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   setDW(upd);
                                   setCornerEdit(null);
                                 };
-                                const Btn = ({ m, label, hint, color }: any) => (
+                                const CornerIcon = ({ m, active }: any) => {
+                                  // 36x36 viewBox, mostra angolo top-left del telaio (V=verde verticale, H=ambra orizzontale)
+                                  const V_C = "#1A9E73", H_C = "#D08008", BG = active ? "#fff" : "#888";
+                                  const sw = 5;
+                                  if (m === 'V') return (
+                                    <svg width="40" height="40" viewBox="0 0 40 40">
+                                      <rect x="6" y="6" width={sw} height="28" fill={active ? "#fff" : V_C} />
+                                      <rect x="11" y="6" width="23" height={sw} fill={active ? "#fff" : H_C} />
+                                    </svg>
+                                  );
+                                  if (m === 'H') return (
+                                    <svg width="40" height="40" viewBox="0 0 40 40">
+                                      <rect x="6" y="6" width="28" height={sw} fill={active ? "#fff" : H_C} />
+                                      <rect x="6" y="11" width={sw} height="23" fill={active ? "#fff" : V_C} />
+                                    </svg>
+                                  );
+                                  if (m === '45') return (
+                                    <svg width="40" height="40" viewBox="0 0 40 40">
+                                      <polygon points="11,6 34,6 34,11 11,11" fill={active ? "#fff" : H_C} />
+                                      <polygon points="6,11 11,11 11,34 6,34" fill={active ? "#fff" : V_C} />
+                                      <line x1="6" y1="11" x2="11" y2="6" stroke={active ? "#fff" : "#1A1A1C"} strokeWidth="1.5" />
+                                    </svg>
+                                  );
+                                  // auto = pittogramma con "?" dentro un angolo neutro
+                                  return (
+                                    <svg width="40" height="40" viewBox="0 0 40 40">
+                                      <rect x="6" y="6" width="28" height={sw} fill={active ? "#fff" : BG} opacity="0.4"/>
+                                      <rect x="6" y="6" width={sw} height="28" fill={active ? "#fff" : BG} opacity="0.4"/>
+                                      <text x="20" y="28" textAnchor="middle" fontSize="14" fontWeight="900" fill={active ? "#fff" : BG}>?</text>
+                                    </svg>
+                                  );
+                                };
+                                const Btn = ({ m, hint, color }: any) => (
                                   <div onClick={() => apply(m)}
-                                    style={{ flex: 1, padding: "16px 6px", borderRadius: 10, background: curMode === m ? color : "#F2F1EC", border: curMode === m ? `2px solid ${color}` : "1.5px solid #ddd", textAlign: "center", cursor: "pointer", color: curMode === m ? "#fff" : "#1A1A1C" }}>
-                                    <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1 }}>{label}</div>
-                                    <div style={{ fontSize: 10, fontWeight: 600, marginTop: 5, opacity: 0.85 }}>{hint}</div>
+                                    style={{ flex: 1, padding: "12px 4px 8px", borderRadius: 10, background: curMode === m ? color : "#F2F1EC", border: curMode === m ? `2px solid ${color}` : "1.5px solid #ddd", textAlign: "center", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                                    <CornerIcon m={m} active={curMode === m} />
+                                    <div style={{ fontSize: 9, fontWeight: 700, color: curMode === m ? "#fff" : "#1A1A1C", opacity: 0.9 }}>{hint}</div>
                                   </div>
                                 );
                                 return (
@@ -3928,12 +3960,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 300, display: "flex", flexDirection: "column", gap: 12 }}
                                       onClick={e => e.stopPropagation()}>
                                       <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1C" }}>📐 Angolo</div>
-                                      <div style={{ fontSize: 11, color: "#888" }}>Quale lato vince in questo angolo?</div>
+                                      <div style={{ fontSize: 11, color: "#888" }}>Come si chiude questo angolo?</div>
                                       <div style={{ display: "flex", gap: 8 }}>
-                                        <Btn m="V" label="V" hint="Vert. vince" color="#1A9E73" />
-                                        <Btn m="H" label="H" hint="Oriz. vince" color="#D08008" />
-                                        <Btn m="45" label="45°" hint="Taglio" color="#3B7FE0" />
-                                        <Btn m="auto" label="A" hint="Auto" color="#666" />
+                                        <Btn m="V" hint="Vert. vince" color="#1A9E73" />
+                                        <Btn m="H" hint="Oriz. vince" color="#D08008" />
+                                        <Btn m="45" hint="Taglio 45°" color="#3B7FE0" />
+                                        <Btn m="auto" hint="Auto" color="#666" />
                                       </div>
                                       <div onClick={() => setCornerEdit(null)} style={{ padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Chiudi</div>
                                     </div>
