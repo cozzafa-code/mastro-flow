@@ -3432,8 +3432,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const _autoExt2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
                                       const _cm = el.cornerModes || {};
                                       const _resolveE = (m: any, autoVal: number) => {
-                                        if (m === 'V' || m === '45') return halfT;
+                                        if (m === 'V') return halfT;
                                         if (m === 'H') return -TK_MONT;
+                                        if (m === '45') return halfT;
                                         return autoVal;
                                       };
                                       const ext1 = _resolveE(_cm.start, _autoExt1);
@@ -3449,40 +3450,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const cut45Start = _cm.start === '45';
                                       const cut45End = _cm.end === '45';
                                       const flCorners = (cut45Start || cut45End) ? [] : (el.corners || []);
+                                      // Per giunto 45° pulito: il lato ESTERNO (verso angolo telaio) ha lunghezza piena,
+                                      // il lato INTERNO è accorciato di halfT*2 lato per ogni estremo a 45.
+                                      // Identifico l'esterno via baricentro delle altre freeLine telaio.
+                                      const elsAll2 = els || [];
+                                      const otherFL2 = elsAll2.filter((o: any) => o.type === "freeLine" && !o.subType && o.id !== el.id);
+                                      let bcX = 0, bcY = 0, bcN = 0;
+                                      otherFL2.forEach((o: any) => { bcX += (o.x1+o.x2)/2; bcY += (o.y1+o.y2)/2; bcN++; });
+                                      if (bcN > 0) { bcX /= bcN; bcY /= bcN; } else { bcX = midX; bcY = midY; }
+                                      const dotN2 = (bcX - midX) * nx + (bcY - midY) * ny;
+                                      const innerSign = dotN2 >= 0 ? 1 : -1;
+                                      const outerSign = -innerSign;
                                       const buildPts45 = () => {
-                                        // Quando 45 è attivo su un estremo, accorcio quel lato di halfT lungo la direzione e creo 1 solo vertice centrale arretrato
-                                        // Lati base (rettangolo): TL=(ex1+nx,ey1+ny) TR=(ex2+nx,ey2+ny) BR=(ex2-nx,ey2-ny) BL=(ex1-nx,ey1-ny)
-                                        const back = halfT; // arretramento lungo la direzione
-                                        // Punto medio arretrato sull'estremo start: (ex1 + ux*back, ey1 + uy*back)
-                                        // Punto medio arretrato sull'estremo end: (ex2 - ux*back, ey2 - uy*back)
-                                        const sx = ex1 + ux * back, sy = ey1 + uy * back;
-                                        const ex_ = ex2 - ux * back, ey_ = ey2 - uy * back;
-                                        const TL = [ex1+nx, ey1+ny], TR = [ex2+nx, ey2+ny];
-                                        const BR = [ex2-nx, ey2-ny], BL = [ex1-nx, ey1-ny];
-                                        // 4 casi
-                                        if (cut45Start && cut45End) {
-                                          // Esagono: TL spostato a sx+nx, TR a ex+nx, BR a ex-nx, BL a sx-nx
-                                          return [
-                                            [sx+nx, sy+ny], [ex_+nx, ey_+ny],
-                                            [ex2+nx*0, ey2+ny*0], // punto end (taglio)
-                                            [ex_-nx, ey_-ny], [sx-nx, sy-ny],
-                                            [ex1+nx*0, ey1+ny*0]  // punto start (taglio)
-                                          ];
-                                        }
-                                        if (cut45Start) {
-                                          return [
-                                            [sx+nx, sy+ny], TR, BR, [sx-nx, sy-ny],
-                                            [ex1+nx*0, ey1+ny*0]
-                                          ];
-                                        }
-                                        if (cut45End) {
-                                          return [
-                                            TL, [ex_+nx, ey_+ny],
-                                            [ex2+nx*0, ey2+ny*0],
-                                            [ex_-nx, ey_-ny], BL
-                                          ];
-                                        }
-                                        return [TL, TR, BR, BL];
+                                        const back = halfT * 2;
+                                        // Outer edge: punti pieni ex1, ex2 (estesi normalmente)
+                                        const outStart: number[] = [ex1 + nx * outerSign, ey1 + ny * outerSign];
+                                        const outEnd: number[] = [ex2 + nx * outerSign, ey2 + ny * outerSign];
+                                        // Inner edge: arretrato lungo la direzione se l'estremo è a 45
+                                        const inStartShift = cut45Start ? back : 0;
+                                        const inEndShift = cut45End ? back : 0;
+                                        const inStart: number[] = [ex1 + ux * inStartShift + nx * innerSign, ey1 + uy * inStartShift + ny * innerSign];
+                                        const inEnd: number[] = [ex2 - ux * inEndShift + nx * innerSign, ey2 - uy * inEndShift + ny * innerSign];
+                                        // Ordine: out_start -> out_end -> in_end -> in_start
+                                        return [outStart, outEnd, inEnd, inStart];
                                       };
                                       const buildFreePoly = () => {
                                         // pts4 base: TL, TR, BR, BL (top=ey+ny, bot=ey-ny)
