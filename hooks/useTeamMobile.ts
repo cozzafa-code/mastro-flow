@@ -1,10 +1,10 @@
 // hooks/useTeamMobile.ts
-// FASE 5I - ottimizzato: single setState batch, skip polling, notify manual fetch
+// FASE 1+2+3+4+5B - dati reali Supabase + realtime + squadre con capo/colore
 "use client";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Operator, Team, TeamProblem, TimelineEvent, OperatorStatus } from "@/lib/types/team";
-import { useTeamRealtime, notifyManualFetch } from "./useTeamRealtime";
+import { useTeamRealtime } from "./useTeamRealtime";
 
 const POLL_MS = 90_000;
 
@@ -23,7 +23,8 @@ function tempoTrascorso(fromIso: string | null): string {
   if (m < 60) return `${m}m fa`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h fa`;
-  return `${Math.floor(h / 24)}g fa`;
+  const d = Math.floor(h / 24);
+  return `${d}g fa`;
 }
 
 function isToday(dateStr: string | null): boolean {
@@ -102,23 +103,14 @@ function deriveOperatorStatus(opId: string, montaggi: any[], anomalie: any[]): {
   return { status: "offline" };
 }
 
-interface TeamData {
-  operators: Operator[];
-  teams: Team[];
-  problems: TeamProblem[];
-  eventiByOp: Record<string, TimelineEvent[]>;
-}
-
-const EMPTY_DATA: TeamData = { operators: [], teams: [], problems: [], eventiByOp: {} };
-
 export function useTeamMobile() {
-  // FASE 5I: single state object per evitare 4 setState consecutivi
-  const [data, setData] = useState<TeamData>(EMPTY_DATA);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [problems, setProblems] = useState<TeamProblem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [aziendaId, setAziendaId] = useState<string | null>(null);
-  // Flag ref per skip polling se fetch in corso
-  const fetchingRef = useRef(false);
+  const [eventiByOp, setEventiByOp] = useState<Record<string, TimelineEvent[]>>({});
 
   useEffect(() => {
     let alive = true;
@@ -140,65 +132,64 @@ export function useTeamMobile() {
 
   const fetchAll = useCallback(async () => {
     if (!aziendaId) return;
-    if (fetchingRef.current) return; // evita fetch sovrapposti
-    fetchingRef.current = true;
-    notifyManualFetch(); // segnala al realtime di entrare in cooldown
     try {
       setError(null);
 
+      const { data: opsRows, error: opsErr } = await supabase
+        .from("operatori")
+        .select("id, nome, cognome, ruolo, telefono, avatar_url, colore, attivo")
+        .eq("azienda_id", aziendaId).eq("attivo", true).neq("ruolo", "titolare")
+        .order("nome");
+      if (opsErr) throw opsErr;
+
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const { data: mRows, error: mErr } = await supabase
+        .from("montaggi")
+        .select(`id, commessa_id, operatore_id, data_montaggio, stato, avviato_at, completato_at,
+                 motivo_pausa, timer_secondi, squadra, ore_preventivate, ora_inizio,
+                 commesse:commessa_id (code, cliente, cognome, indirizzo)`)
+        .eq("azienda_id", aziendaId)
+        .gte("data_montaggio", yesterday.toISOString().slice(0, 10))
+        .order("avviato_at", { ascending: false, nullsFirst: false });
+      if (mErr) throw mErr;
 
-      // Fetch parallelo (5 query in parallelo invece che sequenziali)
-      const [opsRes, mRes, anomRes, sqRes, sqMembriRes, eventiRes] = await Promise.all([
-        supabase.from("operatori")
-          .select("id, nome, cognome, ruolo, telefono, avatar_url, colore, attivo")
-          .eq("azienda_id", aziendaId).eq("attivo", true).neq("ruolo", "titolare")
-          .order("nome"),
-        supabase.from("montaggi")
-          .select(`id, commessa_id, operatore_id, data_montaggio, stato, avviato_at, completato_at,
-                   motivo_pausa, timer_secondi, squadra, ore_preventivate, ora_inizio,
-                   commesse:commessa_id (code, cliente, cognome, indirizzo)`)
-          .eq("azienda_id", aziendaId)
-          .gte("data_montaggio", yesterday.toISOString().slice(0, 10))
-          .order("avviato_at", { ascending: false, nullsFirst: false }),
-        supabase.from("anomalie")
-          .select("id, operatore_id, commessa_id, titolo, descrizione, stato, severita, rilevata_at")
-          .eq("azienda_id", aziendaId).neq("stato", "risolta")
-          .order("rilevata_at", { ascending: false }),
-        supabase.from("squadre")
-          .select("id, nome, descrizione, capo_squadra_id, zona, specializzazione, colore, attiva")
-          .eq("azienda_id", aziendaId).order("nome"),
-        supabase.from("squadre_membri")
-          .select("squadra_id, team_id, ruolo_in_squadra")
-          .is("data_uscita", null),
-        supabase.from("operatore_eventi_stato")
-          .select("id, operatore_id, evento, stato_da, stato_a, motivo, note, creato_at, commessa_id, montaggio_id")
-          .eq("azienda_id", aziendaId)
-          .gte("creato_at", todayStart.toISOString())
-          .order("creato_at", { ascending: true }),
-      ]);
-
-      if (opsRes.error) throw opsRes.error;
-      if (mRes.error) throw mRes.error;
-
-      const opsRows = opsRes.data || [];
-      const montaggi = (mRes.data || []).map((m: any) => ({
+      const montaggi = (mRows || []).map((m: any) => ({
         ...m,
         commessa_code: m.commesse?.code || null,
         cliente: m.commesse?.cliente || null,
         cliente_cognome: m.commesse?.cognome || null,
         indirizzo: m.commesse?.indirizzo || null,
       }));
-      const anomRows = anomRes.data || [];
-      const sqRows = sqRes.data || [];
-      const sqMembri = sqMembriRes.data || [];
-      const eventiRows = eventiRes.data || [];
 
-      // Build operators
-      const ops: Operator[] = opsRows.map((o: any) => {
+      const { data: anomRows } = await supabase
+        .from("anomalie")
+        .select("id, operatore_id, commessa_id, titolo, descrizione, stato, severita, rilevata_at")
+        .eq("azienda_id", aziendaId).neq("stato", "risolta")
+        .order("rilevata_at", { ascending: false });
+
+      // FASE 5B: squadre con nuovi campi
+      const { data: sqRows } = await supabase
+        .from("squadre")
+        .select("id, nome, descrizione, capo_squadra_id, zona, specializzazione, colore, attiva")
+        .eq("azienda_id", aziendaId)
+        .order("nome");
+
+      const { data: sqMembri } = await supabase
+        .from("squadre_membri")
+        .select("squadra_id, team_id, ruolo_in_squadra")
+        .is("data_uscita", null); // solo membri attivi
+
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const { data: eventiRows } = await supabase
+        .from("operatore_eventi_stato")
+        .select("id, operatore_id, evento, stato_da, stato_a, motivo, note, creato_at, commessa_id, montaggio_id")
+        .eq("azienda_id", aziendaId)
+        .gte("creato_at", todayStart.toISOString())
+        .order("creato_at", { ascending: true });
+
+      const ops: Operator[] = (opsRows || []).map((o: any) => {
         const fullName = [o.nome, o.cognome].filter(Boolean).join(" ");
-        const derived = deriveOperatorStatus(o.id, montaggi, anomRows);
+        const derived = deriveOperatorStatus(o.id, montaggi, anomRows || []);
         return {
           id: o.id, name: fullName || "Operatore",
           avatar_url: o.avatar_url || undefined,
@@ -206,10 +197,10 @@ export function useTeamMobile() {
           ...derived,
         };
       });
+      setOperators(ops);
 
-      // Build timeline
       const tl: Record<string, TimelineEvent[]> = {};
-      eventiRows.forEach((e: any) => {
+      (eventiRows || []).forEach((e: any) => {
         const opId = e.operatore_id as string;
         if (!opId) return;
         const linkedM = montaggi.find(m => m.id === e.montaggio_id);
@@ -227,8 +218,10 @@ export function useTeamMobile() {
         if (!tl[opId]) tl[opId] = [];
         tl[opId].push({ id: e.id, operator_id: opId, time, type, label, detail: e.note || undefined });
       });
-      anomRows.forEach((a: any) => {
-        if (!a.operatore_id || !isToday(a.rilevata_at)) return;
+
+      (anomRows || []).forEach((a: any) => {
+        if (!a.operatore_id) return;
+        if (!isToday(a.rilevata_at)) return;
         const opId = a.operatore_id as string;
         if (!tl[opId]) tl[opId] = [];
         tl[opId].push({
@@ -238,18 +231,21 @@ export function useTeamMobile() {
           label: `Problema: ${a.titolo || a.descrizione || "segnalazione"}`,
         });
       });
-      Object.keys(tl).forEach(k => { tl[k].sort((x, y) => x.time.localeCompare(y.time)); });
 
-      // Build teams
-      const tms: Team[] = sqRows.map((sq: any) => {
-        const memberIds = sqMembri.filter((sm: any) => sm.squadra_id === sq.id).map((sm: any) => sm.team_id);
+      Object.keys(tl).forEach(k => { tl[k].sort((x, y) => x.time.localeCompare(y.time)); });
+      setEventiByOp(tl);
+
+      // Build teams with new fields
+      const tms: Team[] = (sqRows || []).map((sq: any) => {
+        const memberIds = (sqMembri || []).filter((sm: any) => sm.squadra_id === sq.id).map((sm: any) => sm.team_id);
         const memberOps = ops.filter(o => memberIds.includes(o.id));
         const active = memberOps.filter(o => o.status === "attivo" || o.status === "pausa" || o.status === "viaggio").length;
         const probl = memberOps.filter(o => o.status === "problema").length;
         const progValues = memberOps.map(o => o.progress || 0).filter(p => p > 0);
         const avgProg = progValues.length ? Math.round(progValues.reduce((a, b) => a + b, 0) / progValues.length) : 0;
         return {
-          id: sq.id, name: sq.nome,
+          id: sq.id,
+          name: sq.nome,
           members: memberOps.map(o => o.name),
           member_ids: memberIds,
           current_job: sq.descrizione || sq.specializzazione || sq.zona || undefined,
@@ -257,9 +253,9 @@ export function useTeamMobile() {
           problem_count: probl, active_count: active, progress: avgProg,
         };
       });
+      setTeams(tms);
 
-      // Build problems
-      const probs: TeamProblem[] = anomRows.map((a: any) => {
+      const probs: TeamProblem[] = (anomRows || []).map((a: any) => {
         const linkedM = montaggi.find(m => m.commessa_id === a.commessa_id);
         const reporterOp = ops.find(o => o.id === a.operatore_id);
         const sev = (a.severita || "media").toLowerCase();
@@ -277,15 +273,11 @@ export function useTeamMobile() {
           priority, status: a.stato === "risolta" ? "risolto" : "aperto",
         };
       });
-
-      // SINGLE setState (vs 4 separati)
-      setData({ operators: ops, teams: tms, problems: probs, eventiByOp: tl });
+      setProblems(probs);
     } catch (e: any) {
       setError(e?.message || "fetch_error");
     } finally {
       setLoading(false);
-      fetchingRef.current = false;
-      notifyManualFetch(); // re-update timestamp post-fetch per cooldown realtime
     }
   }, [aziendaId]);
 
@@ -298,27 +290,17 @@ export function useTeamMobile() {
 
   useTeamRealtime(aziendaId, fetchAll);
 
-  // Memo per stats (era ricalcolato a ogni render del componente consumer)
   const stats = useMemo(() => ({
-    attivi:  data.operators.filter(o => o.status === "attivo").length,
-    pausa:   data.operators.filter(o => o.status === "pausa").length,
-    probl:   data.operators.filter(o => o.status === "problema").length,
-    offline: data.operators.filter(o => o.status === "offline").length,
-    total:   data.operators.length,
-  }), [data.operators]);
+    attivi:  operators.filter(o => o.status === "attivo").length,
+    pausa:   operators.filter(o => o.status === "pausa").length,
+    probl:   operators.filter(o => o.status === "problema").length,
+    offline: operators.filter(o => o.status === "offline").length,
+    total:   operators.length,
+  }), [operators]);
 
-  // getTimelineFor stable
   const getTimelineFor = useCallback((id: string): TimelineEvent[] => {
-    return data.eventiByOp[id] || [];
-  }, [data.eventiByOp]);
+    return eventiByOp[id] || [];
+  }, [eventiByOp]);
 
-  return {
-    operators: data.operators,
-    teams: data.teams,
-    problems: data.problems,
-    stats,
-    getTimelineFor,
-    loading, error,
-    refetch: fetchAll,
-  };
+  return { operators, teams, problems, stats, getTimelineFor, loading, error, refetch: fetchAll };
 }
