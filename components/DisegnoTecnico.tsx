@@ -3986,15 +3986,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // Pallino visibile solo finché l'utente non ha mai scelto un angolo per quell'anta
                                       const showDot = !v.userSet;
                                       const dotColor = v.mode === '45' ? '#3B7FE0' : v.mode === 'V' ? '#1A9E73' : v.mode === 'H' ? '#D08008' : '#888';
-                                      const openPopup = (e3: any) => {
+                                      const onTap = (e3: any) => {
                                         e3.stopPropagation();
                                         if (e3.preventDefault) e3.preventDefault();
+                                        const now = Date.now();
+                                        const last = (e3.currentTarget as any).__lastTap || 0;
+                                        if (now - last < 400) {
+                                          // Doppio tap = nascondi i 4 pallini di quest'anta
+                                          (e3.currentTarget as any).__lastTap = 0;
+                                          const upd = (dw.elements || []).map((e: any) =>
+                                            e.id === v.antaId ? { ...e, _userSetCorners: true } : e
+                                          );
+                                          setDW(upd);
+                                          return;
+                                        }
+                                        (e3.currentTarget as any).__lastTap = now;
                                         setCornerEdit({ ...{ vx: v.x, vy: v.y, antaId: v.antaId, antaCorner: v.key }, _t: Date.now() } as any);
                                       };
                                       return (
-                                        <g key={`avx-${i}`} style={{ cursor: 'pointer' }}
-                                          onClick={openPopup}
-                                          onPointerDown={openPopup}>
+                                        <g key={`avx-${i}`} style={{ cursor: 'pointer' }} onClick={onTap}>
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
                                           {showDot && <>
                                             <circle cx={v.x} cy={v.y} r={9} fill="#fff" stroke={dotColor} strokeWidth={1.5} opacity={0.9} />
