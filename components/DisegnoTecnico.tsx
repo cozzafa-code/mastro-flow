@@ -3329,15 +3329,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           if (Math.abs(my2raw - frameBot) < 40) my2raw = frameBot - TK_FRAME + 12;
                                         }
                                       }
-                                      // Aggancio zoccolo: cerca freeLine subType=zoccolo OPPURE zoccoloLibero adiacente
+                                      // Aggancio zoccolo: cerca SOLO freeLine subType=zoccolo (vecchio sistema, fonde sopra).
+                                      // Lo zoccoloLibero è separato: il montante NON si ferma su di lui, gli passa a fianco e va fino al bordo telaio.
                                       const zoccoloEl = els.find((e: any) => e.type === "freeLine" && e.subType === "zoccolo" &&
                                         Math.max(e.x1, e.x2) >= el.x - TK_MONT && Math.min(e.x1, e.x2) <= el.x + TK_MONT);
-                                      const zoccoloLibEl = els.find((e: any) => e.type === "zoccoloLibero" &&
-                                        e.x <= el.x + TK_MONT && e.x + e.w >= el.x - TK_MONT &&
-                                        e.y >= my1raw - 5 && e.y <= my2raw + TK_MONT * 3);
                                       let my2 = my2raw;
                                       if (zoccoloEl) my2 = zoccoloEl.y1 + TK_FRAME;
-                                      else if (zoccoloLibEl) my2 = zoccoloLibEl.y; // attacca al bordo top dello zoccolo libero
                                       const HM2 = TK_MONT / 2;
                                       const mXcenter = el._libero ? el.x + 4.5 : el.x;
                                       const mX1 = mXcenter - HM2, mX2 = mXcenter + HM2;
@@ -3676,19 +3673,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     );
 
                                     if (el.type === "freeLine") {
-                                      // Aggancio montante libero a zoccolo libero: accorcia y2 al bordo top dello zoccoloLibero
-                                      const isVertMontFree = el.subType === "montante" && Math.abs(el.x2 - el.x1) < Math.abs(el.y2 - el.y1);
-                                      if (isVertMontFree) {
-                                        const xMid = (el.x1 + el.x2) / 2;
-                                        const yBot = Math.max(el.y1, el.y2);
-                                        const yTop = Math.min(el.y1, el.y2);
-                                        const zlSotto = els.find((z: any) => z.type === "zoccoloLibero" &&
-                                          z.x <= xMid + TK_MONT && z.x + z.w >= xMid - TK_MONT &&
-                                          z.y >= yTop && z.y <= yBot + TK_MONT * 3);
-                                        if (zlSotto) {
-                                          el = { ...el, [el.y2 > el.y1 ? "y2" : "y1"]: zlSotto.y };
-                                        }
-                                      }
+                                      // (Nessun aggancio Mont.Lib. → zoccoloLibero: il montante va a fianco dello zoccolo, non sopra.)
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
                                       const subType = el.subType || null;
