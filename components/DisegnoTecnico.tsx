@@ -2848,6 +2848,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
                                   onClick={onSvgClick}
+                                  onPointerUp={(e2: any) => {
+                                    // iOS cancella onClick se il dito si muove tra touchstart e touchend.
+                                    // In modo "place-*-free" il movimento è normale (1° tap → trascini → 2° tap),
+                                    // quindi gestiamo manualmente il pointerup come click — solo touch, non mouse.
+                                    if (e2.pointerType !== "touch") return;
+                                    const dm = drawMode;
+                                    if (dm === "place-mont-free" || dm === "place-trav-free" || dm === "place-zocc-free") {
+                                      onSvgClick(e2);
+                                    }
+                                  }}
                                   onWheelDISABLED={(e2: any) => {
                                     e2.preventDefault();
                                     const newZoom = Math.max(0.15, Math.min(6, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
