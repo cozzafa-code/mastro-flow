@@ -3285,10 +3285,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // ═══ TELAIO — doppio rettangolo con spessore ═══
                                     // ═══ ZOCCOLO LIBERO — rect autonomo, indipendente da telaio ═══
                                     if (el.type === "zoccoloLibero") {
+                                      // Se ci sono Mont.Lib. che attraversano in verticale e il loro bordo
+                                      // tocca il rect dello zoccolo, lo zoccolo si accorcia per non sovrapporsi.
+                                      let zx = el.x, zw = el.w;
+                                      els.filter((m: any) => m.type === "montante" && m._libero).forEach((m: any) => {
+                                        const HM = TK_MONT / 2;
+                                        const mLeft = m.x - HM, mRight = m.x + HM;
+                                        // Il montante attraversa in altezza l'area dello zoccolo?
+                                        const my1 = m.y1 ?? -Infinity, my2 = m.y2 ?? Infinity;
+                                        const overlapY = Math.min(my2, el.y + el.h) > Math.max(my1, el.y);
+                                        if (!overlapY) return;
+                                        // Bordo destro del montante intersecta bordo sinistro zoccolo
+                                        if (mRight > zx && mRight < zx + zw && mLeft <= zx + 2) {
+                                          const newLeft = mRight;
+                                          zw = zx + zw - newLeft;
+                                          zx = newLeft;
+                                        }
+                                        // Bordo sinistro del montante intersecta bordo destro zoccolo
+                                        if (mLeft < zx + zw && mLeft > zx && mRight >= zx + zw - 2) {
+                                          zw = mLeft - zx;
+                                        }
+                                      });
                                       return (
                                         <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : undefined}>
-                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill={sel ? "#1A9E7322" : "#c8c6c0"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} />
-                                          <text x={el.x + el.w / 2} y={el.y + el.h / 2 + 3} textAnchor="middle" fontSize={6} fontWeight={800} fill="#fff" pointerEvents="none">ZOCCOLO</text>
+                                          <rect x={zx} y={el.y} width={zw} height={el.h} fill={sel ? "#1A9E7322" : "#c8c6c0"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} />
+                                          {zw > 30 && <text x={zx + zw / 2} y={el.y + el.h / 2 + 3} textAnchor="middle" fontSize={6} fontWeight={800} fill="#fff" pointerEvents="none">ZOCCOLO</text>}
                                         </g>
                                       );
                                     }
