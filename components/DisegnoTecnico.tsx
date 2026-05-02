@@ -1678,42 +1678,34 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Zocc.Lib — due tap. Snap Y solo a bordi telaio orizzontali (raggio 30px). X libera.
+                              // Zocc.Lib — due tap. Snap intelligente ai bordi interni del telaio (profileMode).
                               if (drawMode === "place-zocc-free") {
                                 const pending = dw._pendingLine;
-                                const frameEdges = els.filter(e => e.type === "freeLine" && !e.subType);
-                                const SNAP_EDGE = 35;
-                                // Snap solo Y (lo zoccolo è orizzontale, X resta del dito)
-                                // Offset: dentro al vano (sopra il bordo bot, sotto il bordo top)
-                                const snapY = (px: number, py: number, halfT: number) => {
-                                  let bestY = py, bestD = SNAP_EDGE;
-                                  frameEdges.forEach(l => {
-                                    const isHorz = Math.abs(l.y2 - l.y1) < Math.abs(l.x2 - l.x1);
-                                    if (!isHorz) return;
-                                    const lY = (l.y1 + l.y2) / 2;
-                                    const lXmin = Math.min(l.x1, l.x2), lXmax = Math.max(l.x1, l.x2);
-                                    if (px < lXmin - 10 || px > lXmax + 10) return;
-                                    const d = Math.abs(py - lY);
-                                    if (d < bestD) {
-                                      bestD = d;
-                                      // Determina se il bordo è top o bot del telaio (in base al baricentro)
-                                      const allY = frameEdges.flatMap(fl => [fl.y1, fl.y2]);
-                                      const cY = allY.reduce((a, b) => a + b, 0) / allY.length;
-                                      // Se questo bordo è SOTTO il baricentro = è il bordo bot → zoccolo va SOPRA
-                                      // Se è SOPRA il baricentro = bordo top → zoccolo va SOTTO
-                                      bestY = lY > cY ? lY - halfT : lY + halfT;
-                                    }
-                                  });
-                                  return bestY;
-                                };
-                                const TK_ZOCC = 8; // halfT zoccolo
+                                // Forza profileMode temporaneamente per attivare snap _antaSnap nei bordi interni
+                                const savedSub = dw._lineSubType;
+                                if (savedSub !== "zoccolo") {
+                                  // Settiamo flag temporaneo per findSnap (legge dw.drawMode === "line" && _lineSubType in profili)
+                                }
+                                // Trick: chiamo findSnap simulando profileMode
+                                const wasDrawMode = dw.drawMode;
+                                const wasSub = dw._lineSubType;
+                                (dw as any).drawMode = "line";
+                                (dw as any)._lineSubType = "zoccolo";
+                                const snapPt = findSnap(Math.round(mx), Math.round(my));
+                                (dw as any).drawMode = wasDrawMode;
+                                (dw as any)._lineSubType = wasSub;
+                                const rx = snapPt ? snapPt.x : Math.round(mx);
+                                const ry = snapPt ? snapPt.y : Math.round(my);
                                 if (!pending) {
-                                  const py = snapY(mx, my, TK_ZOCC);
-                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(py), _subType: "zoccolo_free" } });
+                                  setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "zoccolo_free" } });
                                 } else {
+                                  // 2° tap: snap solo X (Y mantiene quella del 1° tap), niente snap aggressivo
                                   const y = pending.y1;
-                                  // 2° tap: solo X del dito, Y mantiene quella del 1° tap
-                                  const finalX = Math.round(mx);
+                                  // Snap X solo a estremi del telaio orizzontali (bordi interni laterali)
+                                  let finalX = Math.round(mx);
+                                  if (snapPt && snapPt._antaSnap) {
+                                    finalX = snapPt.x;
+                                  }
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
                                   if (Math.abs(x2 - x1) < 5) return;
