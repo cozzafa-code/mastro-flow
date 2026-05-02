@@ -928,7 +928,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
-  const [cornerEdit, setCornerEdit] = React.useState<{vx: number, vy: number} | null>(null);
+  const [cornerEdit, setCornerEdit] = React.useState<{vx: number, vy: number, _t?: number} | null>(null);
+  const openCornerEdit = React.useCallback((data: any) => setCornerEdit({ ...data, _t: Date.now() }), []);
   const realW = propRealW || 1200;
   const realH = propRealH || 1000;
                             const dw = vanoDisegno || { elements: [], selectedId: null, drawMode: null, history: [] };
@@ -3680,8 +3681,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const isConfigured = curMode !== 'auto';
                                       return (
                                         <g key={`vtx-${i}`} style={{ cursor: 'pointer' }}
-                                          onClick={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y }); }}
-                                          onTouchStart={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y }); }}>
+                                          onClick={(e3) => { e3.stopPropagation(); openCornerEdit({ vx: v.x, vy: v.y }); }}
+                                          onTouchStart={(e3) => { e3.stopPropagation(); openCornerEdit({ vx: v.x, vy: v.y }); }}>
                                           {/* Hit area trasparente per ri-tap anche quando configurato */}
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
                                           {!isConfigured && <>
@@ -3723,13 +3724,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       ].forEach(c => dots.push({ ...c, antaId: a.id }));
                                     });
                                     return dots.map((v, i) => {
-                                      // Default = 45 (anta tagliata). Pallino visibile solo se modificato.
                                       const isDefault = v.mode === '45';
                                       const dotColor = v.mode === '45' ? '#3B7FE0' : v.mode === 'V' ? '#1A9E73' : v.mode === 'H' ? '#D08008' : '#888';
+                                      const openPopup = (e3: any) => {
+                                        e3.stopPropagation();
+                                        if (e3.preventDefault) e3.preventDefault();
+                                        setCornerEdit({ ...{ vx: v.x, vy: v.y, antaId: v.antaId, antaCorner: v.key }, _t: Date.now() } as any);
+                                      };
                                       return (
                                         <g key={`avx-${i}`} style={{ cursor: 'pointer' }}
-                                          onClick={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: v.antaId, antaCorner: v.key } as any); }}
-                                          onTouchStart={(e3) => { e3.stopPropagation(); setCornerEdit({ vx: v.x, vy: v.y, antaId: v.antaId, antaCorner: v.key } as any); }}>
+                                          onClick={openPopup}
+                                          onPointerDown={openPopup}>
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
                                           {isDefault && <>
                                             <circle cx={v.x} cy={v.y} r={9} fill="#fff" stroke={dotColor} strokeWidth={1.5} opacity={0.9} />
@@ -4046,7 +4051,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   );
                                   return (
                                     <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }}
-                                      onClick={() => setCornerEdit(null)}>
+                                      onClick={() => { const ce: any = cornerEdit; if (ce && ce._t && Date.now() - ce._t < 350) return; setCornerEdit(null); }}>
                                       <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 300, display: "flex", flexDirection: "column", gap: 12 }}
                                         onClick={e => e.stopPropagation()}>
                                         <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1C" }}>📐 Angolo anta</div>
@@ -4132,7 +4137,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 );
                                 return (
                                   <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }}
-                                    onClick={() => setCornerEdit(null)}>
+                                    onClick={() => { const ce: any = cornerEdit; if (ce && ce._t && Date.now() - ce._t < 350) return; setCornerEdit(null); }}>
                                     <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 300, display: "flex", flexDirection: "column", gap: 12 }}
                                       onClick={e => e.stopPropagation()}>
                                       <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1C" }}>📐 Angolo</div>
