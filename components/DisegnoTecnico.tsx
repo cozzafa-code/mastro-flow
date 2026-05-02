@@ -2798,7 +2798,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       document.addEventListener("mouseup", onPU);
                                     }
                                   }}
-                                  onMouseMove={(e2: any) => { return; /* DIAG: disabilitato per test perf iPhone */
+                                  onMouseMove={(e2) => {
                                     const dw = dwRef.current;
                                     const els = dw.elements || [];
                                     const drawMode = dw.drawMode || null;
