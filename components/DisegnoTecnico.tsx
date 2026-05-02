@@ -2568,6 +2568,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {(drawMode === "place-mont" || drawMode === "place-trav") && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {drawMode === "place-mont" ? "MONTANTE" : "TRAVERSO"} — click cella</span>}
                                   {drawMode === "place-mont-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine montante" : "1° click → inizio montante"}</span>}
                                   {drawMode === "place-trav-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine traverso" : "1° click → inizio traverso"}</span>}
+                                  {drawMode === "place-zocc-free" && <span style={{ fontSize: 9, background: "#8B5E3C", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine zoccolo" : "1° click → inizio zoccolo"}</span>}
                                   {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
                                 </div>
 
@@ -2884,7 +2885,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
                                       return;
                                     }
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free")) return;
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free")) return;
                                     const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
                                     let gx = Math.round(gmx), gy = Math.round(gmy);
                                     const p = dw._pendingLine;
@@ -2902,7 +2903,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy));
                                     }
                                     // Trav.Lib: forza orizzontale
-                                    if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") {
+                                    if (drawMode === "place-trav-free" || drawMode === "place-zocc-free" || dw._lineSubType === "traverso") {
                                       gy = p.y1;
                                       if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx));
                                     }
@@ -2957,7 +2958,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
                                       return;
                                     }
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free")) return;
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free")) return;
                                     let gx = Math.round(gmx), gy = Math.round(gmy);
                                     const pp = dw._pendingLine;
                                     const snapPtT = findSnap(gx, gy);
@@ -2967,7 +2968,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (adxT < 25 && adyT > adxT * 1.5) gx = pp.x1;
                                     if (adyT < 25 && adxT > adyT * 1.5) gy = pp.y1;
                                     if (drawMode === "place-mont-free" || dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
-                                    if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
+                                    if (drawMode === "place-trav-free" || drawMode === "place-zocc-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - pp.x1, gy - pp.y1) / fW * realW);
                                     if (dw._guideX !== gx || dw._guideY !== gy) {
@@ -3851,7 +3852,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     let gx = dw._guideX, gy = dw._guideY;
                                     const _subType = p._subType || dw._lineSubType;
                                     if (_subType === "montante" || drawMode === "place-mont-free") gx = p.x1;
-                                    if (_subType === "traverso" || drawMode === "place-trav-free") gy = p.y1;
+                                    if (_subType === "traverso" || drawMode === "place-trav-free" || drawMode === "place-zocc-free") gy = p.y1;
                                     document.title = `sub=${_subType} dm=${drawMode} gx=${gx} px1=${p.x1}`;
                                     // Raccoglie tutti i vertici esistenti dei freeLine
                                     const existingPts = els.filter(e => e.type === "freeLine").flatMap(l => [
