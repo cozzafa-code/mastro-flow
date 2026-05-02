@@ -3256,7 +3256,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const leftYEnd = (hidBot ? el.y + el.h : el.y + el.h - TK);
                                       const rightYStart = leftYStart;
                                       const rightYEnd = leftYEnd;
-                                      // Top: shape diventa polygon se ci sono tagli
                                       const sideShape = (side: string) => {
                                         if (hiddenSides.includes(side)) return null;
                                         const sideId = `${el.id}:${side}`;
@@ -3264,34 +3263,39 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const sideClr = isSelSide ? "#1A9E73" : clrBase;
                                         const sideFill = isSelSide ? "#1A9E7333" : "#e8e8e4";
                                         const sideSw = isSelSide ? 2 : 1;
+                                        // Logica taglio 45°:
+                                        // - cutTL/cutTR/cutBR/cutBL true → angolo è 45 (trapezio)
+                                        // - false → angolo squadrato (rettangolo: outer = inner)
+                                        // Per ogni angolo a 45, il lato INNER si ritira di TK su quel angolo
+                                        // Per ogni angolo squadrato, inner = outer (nessun ritiro)
                                         let pts = "";
                                         if (side === "top") {
-                                          // polygon: outer (el.y) full width o accorciato + inner (el.y+TK) sempre tagliato di TK se 45
-                                          const oxL = el.x + (cutTL ? TK : 0);
-                                          const oxR = el.x + el.w - (cutTR ? TK : 0);
-                                          const ixL = el.x + TK;
-                                          const ixR = el.x + el.w - TK;
-                                          pts = `${oxL},${el.y} ${oxR},${el.y} ${ixR},${el.y+TK} ${ixL},${el.y+TK}`;
+                                          const xL = el.x, xR = el.x + el.w;
+                                          const yT = el.y, yB = el.y + TK;
+                                          const ixL = xL + (cutTL ? TK : 0);
+                                          const ixR = xR - (cutTR ? TK : 0);
+                                          // outer top edge: full width xL..xR; inner bot edge: ritirato dove 45
+                                          pts = `${xL},${yT} ${xR},${yT} ${ixR},${yB} ${ixL},${yB}`;
                                         } else if (side === "bot") {
-                                          const oxL = el.x + (cutBL ? TK : 0);
-                                          const oxR = el.x + el.w - (cutBR ? TK : 0);
-                                          const ixL = el.x + TK;
-                                          const ixR = el.x + el.w - TK;
+                                          const xL = el.x, xR = el.x + el.w;
                                           const yB = el.y + el.h;
-                                          pts = `${ixL},${yB-TK} ${ixR},${yB-TK} ${oxR},${yB} ${oxL},${yB}`;
+                                          const yT = yB - TK;
+                                          const ixL = xL + (cutBL ? TK : 0);
+                                          const ixR = xR - (cutBR ? TK : 0);
+                                          pts = `${ixL},${yT} ${ixR},${yT} ${xR},${yB} ${xL},${yB}`;
                                         } else if (side === "left") {
-                                          const oyT = el.y + (cutTL ? TK : 0);
-                                          const oyB = el.y + el.h - (cutBL ? TK : 0);
-                                          const iyT = el.y + TK;
-                                          const iyB = el.y + el.h - TK;
-                                          pts = `${el.x},${oyT} ${el.x+TK},${iyT} ${el.x+TK},${iyB} ${el.x},${oyB}`;
+                                          const yT = el.y, yB = el.y + el.h;
+                                          const xL = el.x, xR = el.x + TK;
+                                          const iyT = yT + (cutTL ? TK : 0);
+                                          const iyB = yB - (cutBL ? TK : 0);
+                                          pts = `${xL},${yT} ${xR},${iyT} ${xR},${iyB} ${xL},${yB}`;
                                         } else if (side === "right") {
-                                          const oyT = el.y + (cutTR ? TK : 0);
-                                          const oyB = el.y + el.h - (cutBR ? TK : 0);
-                                          const iyT = el.y + TK;
-                                          const iyB = el.y + el.h - TK;
+                                          const yT = el.y, yB = el.y + el.h;
                                           const xR = el.x + el.w;
-                                          pts = `${xR-TK},${iyT} ${xR},${oyT} ${xR},${oyB} ${xR-TK},${iyB}`;
+                                          const xL = xR - TK;
+                                          const iyT = yT + (cutTR ? TK : 0);
+                                          const iyB = yB - (cutBR ? TK : 0);
+                                          pts = `${xL},${iyT} ${xR},${yT} ${xR},${yB} ${xL},${iyB}`;
                                         }
                                         return (
                                           <polygon key={side} points={pts} fill={sideFill} stroke={sideClr} strokeWidth={sideSw}
@@ -3699,11 +3703,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (drawMode) return null;
                                     const polyAntas = els.filter((e: any) => e.type === "polyAnta" && e.poly);
                                     const rectAntas = els.filter((e: any) => e.type === "innerRect");
-                                    // DEBUG: mostro i tipi di tutti gli elementi nel titolo della tab
-                                    if (typeof document !== 'undefined') {
-                                      const types = els.map((e: any) => e.type).join(',');
-                                      document.title = `T:${types}`;
-                                    }
                                     if (polyAntas.length === 0 && rectAntas.length === 0) return null;
                                     const dots: any[] = [];
                                     polyAntas.forEach((a: any) => {
