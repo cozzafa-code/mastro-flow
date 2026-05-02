@@ -2162,19 +2162,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if(bestX!==null) px=bestX;
                                     // Se nessuno snap: accetta px grezzo
                                   }
-                                  // Telaio libero / altri: snap normale
+                                  // Telaio libero / altri: snap normale, ma scarta snap troppo distanti dal dito
                                   else {
+                                    const origPx = px, origPy = py;
                                     const sp = findSnap(px, py);
-                                    if (sp) { px = sp.x; py = sp.y; }
+                                    if (sp) {
+                                      // Accetta lo snap solo se è entro 50px dal punto del dito.
+                                      // Altrimenti il dito viene tirato a un bordo lontano del telaio.
+                                      const snapDist = Math.hypot(sp.x - origPx, sp.y - origPy);
+                                      if (snapDist < 50) { px = sp.x; py = sp.y; }
+                                    }
                                     // H/V: forza allineamento anche dopo snap
                                     const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
                                     if (adxC < 25 && adyC > adxC * 1.5) px=pending.x1;
                                     if (adyC < 25 && adxC > adyC * 1.5) py=pending.y1;
-                                    // chiusura forma — solo per telaio libero senza subType, e solo dal 4° click in poi (≥3 lati)
+                                    // chiusura forma — solo per telaio libero senza subType, ≥3 lati, snap ravvicinato 30px
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
-                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<SNAP_R+6) { px=cs.x; py=cs.y; }
+                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<30) { px=cs.x; py=cs.y; }
                                     }
                                   }
 
@@ -2235,15 +2241,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Snap i punti del NUOVO elemento ai vicini esistenti
                                   let snappedX1=pending.x1, snappedY1=pending.y1, snappedX2=px, snappedY2=py;
                                   const existingWeldPts = buildWeldPts2(els);
-                                  // FIX TRIANGOLO: escludi chainStart dalla weld finché non hai ≥3 lati piazzati.
-                                  // Altrimenti il 3° click entro 120px dal primo vertice chiude la forma senza volerlo.
-                                  const cs = dw._chainStart;
-                                  const freeLineCount = els.filter((e: any) => e.type === "freeLine").length;
-                                  const canCloseShape = freeLineCount >= 3;
-                                  const filteredWeldPts = (cs && !canCloseShape)
-                                    ? existingWeldPts.filter(p => Math.hypot(p.x - cs.x, p.y - cs.y) > 4)
-                                    : existingWeldPts;
-                                  filteredWeldPts.forEach(p => {
+                                  existingWeldPts.forEach(p => {
                                     if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
                                     if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
                                   });
