@@ -2313,13 +2313,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   });
                                   newEl.x1=snappedX1; newEl.y1=snappedY1; newEl.x2=snappedX2; newEl.y2=snappedY2;
                                   // Snap i freeLine ESISTENTI ai punti del nuovo elemento
+                                  // Per telaio (no subType): raggio piccolo (10px) per non deformare lati esistenti.
+                                  const WELD_EXIST = subTypeVal ? WELD2 : 10;
                                   const weldedEls = els.map(x => {
                                     if (x.x1 === undefined) return x;
                                     let nx1=x.x1, ny1=x.y1, nx2=x.x2, ny2=x.y2;
-                                    if (Math.hypot(nx1-snappedX1, ny1-snappedY1)<WELD2) { nx1=snappedX1; ny1=snappedY1; }
-                                    if (Math.hypot(nx2-snappedX1, ny2-snappedY1)<WELD2) { nx2=snappedX1; ny2=snappedY1; }
-                                    if (Math.hypot(nx1-snappedX2, ny1-snappedY2)<WELD2) { nx1=snappedX2; ny1=snappedY2; }
-                                    if (Math.hypot(nx2-snappedX2, ny2-snappedY2)<WELD2) { nx2=snappedX2; ny2=snappedY2; }
+                                    if (Math.hypot(nx1-snappedX1, ny1-snappedY1)<WELD_EXIST) { nx1=snappedX1; ny1=snappedY1; }
+                                    if (Math.hypot(nx2-snappedX1, ny2-snappedY1)<WELD_EXIST) { nx2=snappedX1; ny2=snappedY1; }
+                                    if (Math.hypot(nx1-snappedX2, ny1-snappedY2)<WELD_EXIST) { nx1=snappedX2; ny1=snappedY2; }
+                                    if (Math.hypot(nx2-snappedX2, ny2-snappedY2)<WELD_EXIST) { nx2=snappedX2; ny2=snappedY2; }
                                     if (nx1!==x.x1||ny1!==x.y1||nx2!==x.x2||ny2!==x.y2) return {...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2};
                                     return x;
                                   });
@@ -3277,10 +3279,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   })()}
 
                                   {/* ══ ELEMENTS ══ */}
-                                  {/* Render in z-order: montanti/traversi prima, freeLine orizzontali sopra */}
+                                  {/* Render in z-order: montanti/traversi prima, freeLine in mezzo, zoccoloLibero ULTIMO (sopra a tutto) */}
                                   {[
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
-                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso"),
+                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso" && e.type !== "zoccoloLibero"),
+                                    ...els.filter(e => e.type === "zoccoloLibero"),
                                   ].map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? "#1A9E73" : undefined;
