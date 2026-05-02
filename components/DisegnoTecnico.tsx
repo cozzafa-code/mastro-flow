@@ -2770,12 +2770,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
                                   onClick={onSvgClick}
-                                  onWheel={(e2) => {
+                                  onWheelDISABLED={(e2: any) => {
                                     e2.preventDefault();
                                     const newZoom = Math.max(0.15, Math.min(6, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
                                     setMode({ _zoom: newZoom });
                                   }}
-                                  onMouseDown={(e2) => {
+                                  onMouseDownDISABLED={(e2: any) => {
                                     // Pen mode — inizia tracciato
                                     if (drawMode === "pen" && e2.button === 0) {
                                       const svg = e2.currentTarget;
@@ -2798,7 +2798,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       document.addEventListener("mouseup", onPU);
                                     }
                                   }}
-                                  onMouseMove={(e2) => {
+                                  onMouseMoveDISABLED={(e2: any) => {
                                     const dw = dwRef.current;
                                     const els = dw.elements || [];
                                     const drawMode = dw.drawMode || null;
@@ -2838,7 +2838,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
                                     }
                                   }}
-                                  onMouseUp={(e2) => {
+                                  onMouseUpDISABLED={(e2: any) => {
                                     // Pen mode — salva path come elemento
                                     if (drawMode === "pen" && dw._penActive) {
                                       const pts2 = dw._penPath || [];
@@ -2850,7 +2850,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       }
                                     }
                                   }}
-                                  onTouchStart={(e2) => {
+                                  onTouchStartDISABLED={(e2: any) => {
                                     if (drawMode === "pen") {
                                       e2.preventDefault();
                                       const svg = e2.currentTarget;
@@ -2864,7 +2864,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penActive: true, _penPath: [[gmx, gmy]] });
                                     }
                                   }}
-                                  onTouchMove={(e2) => {
+                                  onTouchMoveDISABLED={(e2: any) => {
                                     const dw = dwRef.current;
                                     const els = dw.elements || [];
                                     const drawMode = dw.drawMode || null;
