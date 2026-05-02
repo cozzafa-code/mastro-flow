@@ -1752,8 +1752,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const rectEl = {
                                     id: Date.now(),
                                     type: "zoccoloLibero",
-                                    x: x1 - 5,
-                                    y: yBot - TK_ZOCC * 2 + 5,
+                                    x: x1 - 6,
+                                    y: yBot - TK_ZOCC * 2 + 6,
                                     w: x2 - x1,
                                     h: TK_ZOCC * 2,
                                   };
