@@ -3314,8 +3314,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           });
                                           // Top: aggancia al bordo interno top del telaio se vicino
                                           if (Math.abs(my1raw - frameTop) < 40) my1raw = frameTop + TK_FRAME;
-                                          // Bot: aggancia al bordo interno bot, e si allunga di 7px in più verso il basso
-                                          if (Math.abs(my2raw - frameBot) < 40) my2raw = frameBot - TK_FRAME + 7;
+                                          // Bot: aggancia al bordo interno bot, e si allunga di 12px in più verso il basso
+                                          if (Math.abs(my2raw - frameBot) < 40) my2raw = frameBot - TK_FRAME + 12;
                                         }
                                       }
                                       // Aggancio zoccolo: cerca freeLine subType=zoccolo OPPURE zoccoloLibero adiacente
@@ -3328,7 +3328,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (zoccoloEl) my2 = zoccoloEl.y1 + TK_FRAME;
                                       else if (zoccoloLibEl) my2 = zoccoloLibEl.y; // attacca al bordo top dello zoccolo libero
                                       const HM2 = TK_MONT / 2;
-                                      const mX1 = el.x - HM2, mX2 = el.x + HM2;
+                                      const mXcenter = el._libero ? el.x + 5 : el.x;
+                                      const mX1 = mXcenter - HM2, mX2 = mXcenter + HM2;
                                       // Calcola tagli 45° agli angoli
                                       const mCorners = el.corners || [];
                                       // Costruisci polygon con tagli 45° dove richiesto
