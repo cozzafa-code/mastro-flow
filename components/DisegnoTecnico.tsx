@@ -3301,8 +3301,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                     // ═══ MONTANTE — render semplice, freeLine non si estende verso di lui ═══
                                     if (el.type === "montante") {
-                                      const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
-                                      const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
+                                      let my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
+                                      let my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
+                                      // Mont.Lib.: snap automatico al bordo top/bot interno del telaio (TEL.LIB.)
+                                      if (el._libero) {
+                                        const frameLines = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                        if (frameLines.length > 0) {
+                                          let frameTop = Infinity, frameBot = -Infinity;
+                                          frameLines.forEach((l: any) => {
+                                            frameTop = Math.min(frameTop, l.y1, l.y2);
+                                            frameBot = Math.max(frameBot, l.y1, l.y2);
+                                          });
+                                          // Top: aggancia al bordo top del telaio se vicino
+                                          if (Math.abs(my1raw - frameTop) < 40) my1raw = frameTop + TK_FRAME;
+                                          // Bot: aggancia al bordo bot interno se vicino e nessun zoccolo
+                                          if (Math.abs(my2raw - frameBot) < 40) my2raw = frameBot - TK_FRAME;
+                                        }
+                                      }
                                       // Aggancio zoccolo: cerca freeLine subType=zoccolo OPPURE zoccoloLibero adiacente
                                       const zoccoloEl = els.find((e: any) => e.type === "freeLine" && e.subType === "zoccolo" &&
                                         Math.max(e.x1, e.x2) >= el.x - TK_MONT && Math.min(e.x1, e.x2) <= el.x + TK_MONT);
@@ -3312,7 +3327,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       let my2 = my2raw;
                                       if (zoccoloEl) my2 = zoccoloEl.y1 + TK_FRAME;
                                       else if (zoccoloLibEl) my2 = zoccoloLibEl.y; // attacca al bordo top dello zoccolo libero
-                                      else if (el._libero) my2 = my2raw + 7;       // Mont.Lib. senza zoccolo: allunga di 7px in basso
                                       const HM2 = TK_MONT / 2;
                                       const mX1 = el.x - HM2, mX2 = el.x + HM2;
                                       // Calcola tagli 45° agli angoli
