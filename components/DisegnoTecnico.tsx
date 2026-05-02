@@ -2787,7 +2787,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
-                                  {/* Distinta materiali */}
+                                  <div onClick={() => {
+                                    // Riattiva pallini angoli su tutte le ante (innerRect + polyAnta)
+                                    const upd = els.map(e => (e.type === "innerRect" || e.type === "polyAnta") ? { ...e, _userSetCorners: false } : e);
+                                    setDW(upd);
+                                  }} style={{ ...bs(), color: "#3B7FE0", border: `1.5px solid #3B7FE0` }}>● Pallini Angoli</div>
                                   <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="5" y="3" width="14" height="18" rx="1"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Distinta</div>
                                   {/* Giunzioni */}
                                   {junctions.length > 0 && <div onClick={() => setMode({ drawMode: drawMode === "junction" ? null : "junction", _pendingLine: null })} style={{ ...bs(drawMode === "junction"), background: drawMode === "junction" ? "#3B7FE012" : undefined, color: drawMode === "junction" ? T.blue : undefined, border: `1.5px solid ${drawMode === "junction" ? T.blue : T.bdr}` }}>⌐ Giunzioni ({junctions.length})</div>}
