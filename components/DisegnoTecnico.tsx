@@ -3622,6 +3622,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         ey1 = el.y1 - halfT + TK_FRAME;
                                         ey2 = el.y2 - halfT + TK_FRAME;
                                       }
+                                      // Per complementi orizzontali (zoccolo/soglia/fascia/sog.rib./prof.comp.):
+                                      // posiziona il polygon SOPRA el.y1 (bordo basso polygon = el.y1).
+                                      // L'utente tappa sul bordo interno del telaio bot → zoccolo cresce verso il vano.
+                                      if (isHorzEl && !isPartOfPoly && isComplemento) {
+                                        ey1 = el.y1 - halfT;
+                                        ey2 = el.y2 - halfT;
+                                      }
                                       // Taglio 45° sul profilo: usa cornerModes esplicito (non tocca el.corners legacy)
                                       const cut45Start = _cm.start === '45';
                                       const cut45End = _cm.end === '45';
