@@ -928,6 +928,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
   const [telaioBatch, setTelaioBatch] = React.useState<{open: boolean, L: string, H: string, N: string} | null>(null);
   const telaioTapRef = React.useRef<number>(0);
+  const [savingTipologia, setSavingTipologia] = React.useState<{open: boolean, nome: string, categoria: string, n_ante: string, note: string} | null>(null);
+  const [savingTipoStatus, setSavingTipoStatus] = React.useState<string>("");
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
@@ -952,7 +954,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // Touch detection: dita richiedono raggio molto piu' grande del mouse
                             const _isTouch = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
                             // Base: 120 su touch (pollice + imprecisione), 28 mouse. Diviso per zoom.
-                            const SNAP_R = (_isTouch ? 120 : 28) / Math.max(0.4, (dw._zoom || 1));
+                            const SNAP_R = (_isTouch ? 180 : 40) / Math.max(0.4, (dw._zoom || 1));
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -2480,7 +2482,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (sp) {
                                       const snapDist = Math.hypot(sp.x - origPx, sp.y - origPy);
                                       snapInfo = `sp=${Math.round(sp.x)},${Math.round(sp.y)} d=${Math.round(snapDist)}`;
-                                      if (snapDist < 50) { px = sp.x; py = sp.y; snapApplied = "yes"; }
+                                      if (snapDist < 80) { px = sp.x; py = sp.y; snapApplied = "yes"; }
                                     }
                                     // H/V: forza allineamento se la linea è prevalentemente orizzontale o verticale (ratio 2:1).
                                     const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
@@ -2492,7 +2494,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
-                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<30) { px=cs.x; py=cs.y; closeApplied="yes"; }
+                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<50) { px=cs.x; py=cs.y; closeApplied="yes"; }
                                       if (typeof document !== 'undefined') {
                                         // debug rimosso (era document.title)
                                       }
@@ -3116,6 +3118,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     });
                                     setDW(upd);
                                   }} style={{ ...bs(), color: "#3B7FE0", border: `1.5px solid #3B7FE0` }}>● Pallini Angoli</div>
+                                  <div onClick={() => setSavingTipologia({ open: true, nome: "", categoria: "Finestre", n_ante: "", note: "" })}
+                                    style={{ ...bs(), color: "#1A9E73", border: `1.5px solid #1A9E73`, background: "#1A9E7308" }}>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}>
+                                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" strokeLinejoin="round"/>
+                                      <polyline points="17 21 17 13 7 13 7 21" strokeLinejoin="round"/>
+                                      <polyline points="7 3 7 8 15 8" strokeLinejoin="round"/>
+                                    </svg>
+                                    Salva tipologia
+                                  </div>
                                   <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="5" y="3" width="14" height="18" rx="1"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Distinta</div>
                                   {/* Giunzioni */}
                                   {junctions.length > 0 && <div onClick={() => setMode({ drawMode: drawMode === "junction" ? null : "junction", _pendingLine: null })} style={{ ...bs(drawMode === "junction"), background: drawMode === "junction" ? "#3B7FE012" : undefined, color: drawMode === "junction" ? T.blue : undefined, border: `1.5px solid ${drawMode === "junction" ? T.blue : T.bdr}` }}>⌐ Giunzioni ({junctions.length})</div>}
@@ -3505,7 +3516,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // Per altri modi: snap solo se entro 25px dal dito (no jump a bordi lontani).
                                     if (drawMode !== "place-zocc-free") {
                                       const snapPtT = findSnap(gx, gy);
-                                      if (snapPtT && Math.hypot(snapPtT.x - gx, snapPtT.y - gy) < 25) {
+                                      if (snapPtT && Math.hypot(snapPtT.x - gx, snapPtT.y - gy) < 40) {
                                         gx = snapPtT.x; gy = snapPtT.y;
                                       }
                                     }
@@ -4894,6 +4905,83 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         setDW([...els, ...newRects]);
                                         setTelaioBatch(null);
                                       }} style={{ padding: "10px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>Crea {telaioBatch.N} telaio{parseInt(telaioBatch.N)>1?"i":""}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Modal SALVA TIPOLOGIA */}
+                              {savingTipologia && savingTipologia.open && (
+                                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)" }}
+                                  onClick={() => { setSavingTipologia(null); setSavingTipoStatus(""); }}>
+                                  <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: 20, minWidth: 300, maxWidth: 360, boxShadow: "0 12px 40px rgba(0,0,0,0.3)" }}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1A9E73", marginBottom: 4 }}>💾 Salva come tipologia</div>
+                                    <div style={{ fontSize: 10, color: "#888", marginBottom: 14 }}>Il disegno sarà disponibile in libreria per altri vani</div>
+                                    <div style={{ marginBottom: 10 }}>
+                                      <div style={{ fontSize: 9, fontWeight: 700, color: "#666", marginBottom: 3 }}>Nome tipologia *</div>
+                                      <input type="text" value={savingTipologia.nome} onChange={(e) => setSavingTipologia({ ...savingTipologia, nome: e.target.value })}
+                                        placeholder="es. Bilico 1 anta DX"
+                                        style={{ width: "100%", padding: "8px 10px", fontSize: 13, fontWeight: 600, border: "1.5px solid #ddd", borderRadius: 6 }} />
+                                    </div>
+                                    <div style={{ marginBottom: 10 }}>
+                                      <div style={{ fontSize: 9, fontWeight: 700, color: "#666", marginBottom: 3 }}>Categoria</div>
+                                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                                        {["Finestre", "Balconi", "Scorrevoli", "Porte", "Altro"].map(cat => (
+                                          <div key={cat} onClick={() => setSavingTipologia({ ...savingTipologia, categoria: cat })}
+                                            style={{
+                                              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                                              background: savingTipologia.categoria === cat ? "#1A9E73" : "#fff",
+                                              color: savingTipologia.categoria === cat ? "#fff" : "#666",
+                                              border: `1.5px solid ${savingTipologia.categoria === cat ? "#1A9E73" : "#ddd"}`,
+                                            }}>{cat}</div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div style={{ marginBottom: 10 }}>
+                                      <div style={{ fontSize: 9, fontWeight: 700, color: "#666", marginBottom: 3 }}>N° ante (opz.)</div>
+                                      <input type="number" value={savingTipologia.n_ante} onChange={(e) => setSavingTipologia({ ...savingTipologia, n_ante: e.target.value })}
+                                        placeholder="es. 2" min="1" max="10"
+                                        style={{ width: "100%", padding: "8px 10px", fontSize: 13, fontWeight: 600, border: "1.5px solid #ddd", borderRadius: 6, fontFamily: "monospace" }} />
+                                    </div>
+                                    <div style={{ marginBottom: 14 }}>
+                                      <div style={{ fontSize: 9, fontWeight: 700, color: "#666", marginBottom: 3 }}>Note (opz.)</div>
+                                      <textarea value={savingTipologia.note} onChange={(e) => setSavingTipologia({ ...savingTipologia, note: e.target.value })}
+                                        placeholder="Apertura DX, vetro doppio, ecc."
+                                        style={{ width: "100%", padding: "8px 10px", fontSize: 11, border: "1.5px solid #ddd", borderRadius: 6, minHeight: 50, resize: "vertical", fontFamily: "inherit" }} />
+                                    </div>
+                                    {savingTipoStatus && (
+                                      <div style={{ padding: 8, marginBottom: 10, borderRadius: 6, fontSize: 10, fontWeight: 600,
+                                        background: savingTipoStatus.startsWith("OK") ? "#1A9E7315" : "#DC444415",
+                                        color: savingTipoStatus.startsWith("OK") ? "#1A9E73" : "#DC4444",
+                                      }}>{savingTipoStatus}</div>
+                                    )}
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8 }}>
+                                      <div onClick={() => { setSavingTipologia(null); setSavingTipoStatus(""); }} style={{ padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Annulla</div>
+                                      <div onClick={async () => {
+                                        if (!savingTipologia.nome.trim()) { setSavingTipoStatus("⚠ Nome obbligatorio"); return; }
+                                        setSavingTipoStatus("Salvataggio in corso...");
+                                        try {
+                                          const payload = {
+                                            nome: savingTipologia.nome.trim(),
+                                            categoria: savingTipologia.categoria,
+                                            n_ante: savingTipologia.n_ante ? parseInt(savingTipologia.n_ante) : null,
+                                            note: savingTipologia.note.trim() || null,
+                                            disegno: { elements: dw.elements || [], realW, realH, _articoli: dw._articoli || {} },
+                                            dimensioni_default: `${realW}x${realH}`,
+                                            attivo: true,
+                                          };
+                                          const res = await fetch("/api/tipologie-infisso", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify(payload),
+                                          });
+                                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                                          setSavingTipoStatus(`OK Tipologia "${savingTipologia.nome}" salvata`);
+                                          setTimeout(() => { setSavingTipologia(null); setSavingTipoStatus(""); }, 1500);
+                                        } catch (err: any) {
+                                          setSavingTipoStatus(`Errore: ${err.message}`);
+                                        }
+                                      }} style={{ padding: "10px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>💾 Salva tipologia</div>
                                     </div>
                                   </div>
                                 </div>
