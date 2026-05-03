@@ -1361,6 +1361,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
                             const setMode = (extra) => onUpdate({ ...dw, ...extra });
 
+                            // ══ ARTICOLI PROFILO — chiede UNA volta l'articolo per ogni tipo, lo memorizza in dw._articoli ══
+                            const askArticolo = (tipo: string): string | null => {
+                              const articoli = dw._articoli || {};
+                              if (articoli[tipo]) return articoli[tipo]; // già impostato
+                              const labels: any = {
+                                telaio: "TELAIO", anta: "ANTA", montante: "MONTANTE", traverso: "TRAVERSO",
+                                zoccolo: "ZOCCOLO", soglia: "SOGLIA", soglia_rib: "SOGLIA RIB.", fascia: "FASCIA",
+                                profcomp: "PROF.COMP.", fermavetro: "FERMAVETRO", maniglione: "MANIGLIONE",
+                              };
+                              const lbl = labels[tipo] || tipo.toUpperCase();
+                              const placeholder = vanoSistema ? `es. ${vanoSistema} - ${lbl}` : `es. IDEAL 7000 - ${lbl}`;
+                              const v = prompt(`Articolo ${lbl}\n(verrà usato per tutti i ${lbl.toLowerCase()} di questo vano)`, placeholder);
+                              if (!v || v === placeholder) return null;
+                              onUpdate({ ...dw, _articoli: { ...articoli, [tipo]: v } });
+                              return v;
+                            };
+                            // Helper: attiva mode E chiede l'articolo se non già salvato per quel tipo
+                            const setProfileMode = (tipo: string, modeExtra: any) => {
+                              const articoli = dw._articoli || {};
+                              if (!articoli[tipo]) askArticolo(tipo);
+                              setMode(modeExtra);
+                            };
+
                             // ══ JUNCTIONS — rilevamento automatico punti di contatto ══
                             const junctions = React.useMemo(() => {
                               const result: any[] = [];
@@ -1687,19 +1710,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               // FERMAVETRO — un tap dentro una cella o un'anta. Crea 4 fermavetri autonomi (anello)
                               // attorno al rettangolo del vetro: bordo interno offset di TK_ANTA o TK_FRAME.
-                              // MANIGLIONE TUBOLARE — un tap piazza un maniglione standard (200x35mm reali, scala canvas)
+                              // MANIGLIONE TUBOLARE — un tap piazza un maniglione visibile (dimensione canvas)
                               if (drawMode === "place-maniglione") {
-                                const refLen = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
-                                const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
-                                const pxPerMm = refLen / refReal;
-                                const W_MM = 220, H_MM = 35; // 220mm lung × 35mm largh interasse staffe
-                                const wPx = Math.round(W_MM * pxPerMm);
-                                const hPx = Math.round(H_MM * pxPerMm);
+                                const articolo = askArticolo("maniglione");
+                                const wPx = 80, hPx = 22;
                                 setDW([...els, {
                                   id: Date.now(), type: "maniglione",
                                   x: Math.round(mx - wPx / 2),
                                   y: Math.round(my - hPx / 2),
                                   w: wPx, h: hPx, orient: "H",
+                                  articolo: articolo || undefined,
                                 }], { drawMode: null });
                                 return;
                               }
@@ -2791,7 +2811,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       setDW([...els, { id: Date.now(), type: "rect", x: snap(lastF.x + lastF.w - TK_FRAME), y: snap(lastF.y + lastF.h - nh), w: snap(nw), h: snap(nh) }]);
                                     }
                                   }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="1"/></svg>Telaio</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,8 21,17 12,22 3,17 3,8"/></svg>Tel.Lib.</div>
+                                  <div onClick={() => setProfileMode("telaio", { drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,8 21,17 12,22 3,17 3,8"/></svg>Tel.Lib.</div>
                                   {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine" && !e.subType).length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
@@ -2811,23 +2831,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 {/* ═══ TAB 2: PROFILI ═══ */}
                                 {menuTab === "profili" && <>
                                 <div style={{ display: "flex", gap: 3, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-mont-free" ? null : "place-mont-free", _pendingLine: null })}
+                                  <div onClick={() => setProfileMode("montante", { drawMode: drawMode === "place-mont-free" ? null : "place-mont-free", _pendingLine: null })}
                                     style={bs(drawMode === "place-mont-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.Lib.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-trav-free" ? null : "place-trav-free", _pendingLine: null })}
+                                  <div onClick={() => setProfileMode("traverso", { drawMode: drawMode === "place-trav-free" ? null : "place-trav-free", _pendingLine: null })}
                                     style={bs(drawMode === "place-trav-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.Lib.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-zocc-free" ? null : "place-zocc-free", _pendingLine: null })}
+                                  <div onClick={() => setProfileMode("zoccolo", { drawMode: drawMode === "place-zocc-free" ? null : "place-zocc-free", _pendingLine: null })}
                                     style={bs(drawMode === "place-zocc-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="16" width="18" height="6" rx="0.5" fill="currentColor" fillOpacity="0.15"/></svg>Zocc.Lib.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-fermavetro" ? null : "place-fermavetro", _pendingLine: null })}
+                                  <div onClick={() => setProfileMode("fermavetro", { drawMode: drawMode === "place-fermavetro" ? null : "place-fermavetro", _pendingLine: null })}
                                     style={bs(drawMode === "place-fermavetro")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="4" y="4" width="16" height="16" rx="0.5"/><rect x="7" y="7" width="10" height="10" rx="0.5"/></svg>Fermavetro</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
+                                  <div onClick={() => setProfileMode("soglia", { drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "soglia")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="14" width="18" height="4" rx="0.5"/></svg>Soglia</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
+                                  <div onClick={() => setProfileMode("zoccolo", { drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "zoccolo")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="16" width="18" height="6" rx="0.5" fill="currentColor" fillOpacity="0.15"/></svg>Zoccolo</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "fascia" ? null : "line", _lineSubType: "fascia", _pendingLine: null })}
+                                  <div onClick={() => setProfileMode("fascia", { drawMode: drawMode === "line" && dw._lineSubType === "fascia" ? null : "line", _lineSubType: "fascia", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "fascia")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="2" width="18" height="5" rx="0.5"/></svg>Fascia</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia_rib" ? null : "line", _lineSubType: "soglia_rib", _pendingLine: null })}
+                                  <div onClick={() => setProfileMode("soglia_rib", { drawMode: drawMode === "line" && dw._lineSubType === "soglia_rib" ? null : "line", _lineSubType: "soglia_rib", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "soglia_rib")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 18 L8 14 L16 14 L21 18 Z"/></svg>Sog.Rib.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "profcomp" ? null : "line", _lineSubType: "profcomp", _pendingLine: null })}
+                                  <div onClick={() => setProfileMode("profcomp", { drawMode: drawMode === "line" && dw._lineSubType === "profcomp" ? null : "line", _lineSubType: "profcomp", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "profcomp")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12" strokeWidth="3"/></svg>Prof.Comp.</div>
                                 </div>
                                 </>}
@@ -3415,26 +3435,28 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // ═══ MANIGLIONE TUBOLARE — accessorio maniglia tubolare U-shape ═══
                                     if (el.type === "maniglione") {
                                       const isH = el.orient !== "V";
-                                      const ww = isH ? el.w : el.h;
-                                      const hh = isH ? el.h : el.w;
-                                      const ex = isH ? el.x : el.x;
-                                      const ey = isH ? el.y : el.y;
                                       const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
-                                      const C = sel ? "#1A9E73" : "#5a5a5c";
-                                      // Ruota se verticale
+                                      const C = sel ? "#1A9E73" : "#3A3A3C";
                                       const rot = isH ? 0 : 90;
-                                      const tubR = Math.min(hh / 2, 6);
+                                      // Tubo a U: corpo orizzontale + 2 gambe verticali
+                                      const tubT = 4; // spessore tubo
                                       return (
                                         <g key={el.id} {...dp} transform={`rotate(${rot} ${cx} ${cy})`} style={drawMode ? { pointerEvents: "none" } : { cursor: "move" }}>
-                                          {/* Asta principale orizzontale (tubo) */}
-                                          <rect x={el.x + tubR} y={cy - tubR/2} width={el.w - tubR*2} height={tubR} fill={C} rx={tubR/2} />
-                                          {/* Bracci verticali (gambe del U) ai 2 estremi che vanno verso il basso = montaggio anta */}
-                                          <rect x={el.x} y={cy - tubR/2} width={tubR*1.6} height={el.h/2 + tubR/2} fill={C} rx={tubR*0.4} />
-                                          <rect x={el.x + el.w - tubR*1.6} y={cy - tubR/2} width={tubR*1.6} height={el.h/2 + tubR/2} fill={C} rx={tubR*0.4} />
-                                          {/* Curve agli angoli per il look tubolare */}
-                                          <circle cx={el.x + tubR} cy={cy} r={tubR*0.8} fill={C}/>
-                                          <circle cx={el.x + el.w - tubR} cy={cy} r={tubR*0.8} fill={C}/>
-                                          {sel && <rect x={el.x - 2} y={el.y - 2} width={el.w + 4} height={el.h + 4} fill="none" stroke="#1A9E73" strokeWidth={1} strokeDasharray="3,2" />}
+                                          {/* Background sottile per visibilità */}
+                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#fff" opacity={0.4} rx={3} />
+                                          {/* Corpo orizzontale principale (tubo) */}
+                                          <rect x={el.x + 4} y={el.y + el.h - tubT*2} width={el.w - 8} height={tubT} fill={C} rx={tubT/2} />
+                                          {/* Gamba sinistra */}
+                                          <rect x={el.x + 4} y={el.y + 2} width={tubT} height={el.h - tubT*2} fill={C} rx={tubT/2} />
+                                          {/* Gamba destra */}
+                                          <rect x={el.x + el.w - 4 - tubT} y={el.y + 2} width={tubT} height={el.h - tubT*2} fill={C} rx={tubT/2} />
+                                          {/* Tappi terminali (estremi del tubo) */}
+                                          <circle cx={el.x + 4 + tubT/2} cy={el.y + el.h - tubT*1.5} r={tubT*0.7} fill={C}/>
+                                          <circle cx={el.x + el.w - 4 - tubT/2} cy={el.y + el.h - tubT*1.5} r={tubT*0.7} fill={C}/>
+                                          {/* Selezione */}
+                                          {sel && <rect x={el.x - 3} y={el.y - 3} width={el.w + 6} height={el.h + 6} fill="none" stroke="#1A9E73" strokeWidth={1} strokeDasharray="3,2" rx={3} />}
+                                          {/* Etichetta articolo */}
+                                          {el.articolo && <text x={cx} y={el.y - 4} textAnchor="middle" fontSize={6} fontWeight={700} fill="#1A9E73" fontFamily="monospace">{el.articolo}</text>}
                                         </g>
                                       );
                                     }
