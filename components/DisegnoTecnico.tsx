@@ -3256,6 +3256,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     setDW([...elsBase, ...newTravs]);
                                   }} style={bs()} title="Inserisci N traversi equidistanti"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Trav.xN</div>
+                                  <div onClick={() => {
+                                    if (!frame) { alert("Crea prima un telaio"); return; }
+                                    const inputD = prompt("Crea 4 punti di riferimento a quanti mm dal centro?\n(usali come snap per disegnare il colmo casetta o altre forme)", "800");
+                                    if (!inputD) return;
+                                    const Dmm = parseFloat(inputD);
+                                    if (!Number.isFinite(Dmm) || Dmm < 1) { alert("Distanza non valida"); return; }
+                                    const pxPerMm = fW / (realW || 1200);
+                                    const Dpx = Math.round(Dmm * pxPerMm);
+                                    const cx = frame.x + frame.w / 2;
+                                    const cy = frame.y + frame.h / 2;
+                                    const t0 = Date.now();
+                                    // 4 marker: SOPRA, SOTTO, SX, DX (linee tratteggiate corte di 4px = visibili come marker, endpoints snap-target)
+                                    const refs = [
+                                      { id: t0 + 1, type: "freeLine", x1: cx, y1: cy - Dpx - 2, x2: cx, y2: cy - Dpx + 2, _isReference: true },
+                                      { id: t0 + 2, type: "freeLine", x1: cx, y1: cy + Dpx - 2, x2: cx, y2: cy + Dpx + 2, _isReference: true },
+                                      { id: t0 + 3, type: "freeLine", x1: cx - Dpx - 2, y1: cy, x2: cx - Dpx + 2, y2: cy, _isReference: true },
+                                      { id: t0 + 4, type: "freeLine", x1: cx + Dpx - 2, y1: cy, x2: cx + Dpx + 2, y2: cy, _isReference: true },
+                                    ];
+                                    setDW([...els, ...refs]);
+                                  }} style={bs()} title="Crea 4 punti di riferimento a distanza N mm dal centro telaio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><circle cx="12" cy="12" r="2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/><line x1="3" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="21" y2="12"/></svg>Rif.</div>
                                 </div>
                                 </>}
 
