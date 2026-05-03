@@ -1712,10 +1712,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               // FERMAVETRO — un tap dentro una cella o un'anta. Crea 4 fermavetri autonomi (anello)
                               // attorno al rettangolo del vetro: bordo interno offset di TK_ANTA o TK_FRAME.
-                              // MANIGLIONE TUBOLARE — un tap piazza un maniglione visibile (dimensione canvas)
                               if (drawMode === "place-maniglione") {
                                 const articolo = askArticolo("maniglione");
-                                const wPx = 80, hPx = 22;
+                                const wPx = 110, hPx = 32;
                                 setDW([...els, {
                                   id: Date.now(), type: "maniglione",
                                   x: Math.round(mx - wPx / 2),
@@ -2403,10 +2402,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
                                   });
                                   newEl.x1=snappedX1; newEl.y1=snappedY1; newEl.x2=snappedX2; newEl.y2=snappedY2;
-                                  // Snap i freeLine ESISTENTI ai punti del nuovo elemento
-                                  // Per telaio (no subType): raggio piccolo (10px) per non deformare lati esistenti.
-                                  const WELD_EXIST = subTypeVal ? WELD2 : 10;
-                                  const weldedEls = els.map(x => {
+                                  // Per TELAIO LIBERO (no subType): NESSUNA modifica dei lati esistenti.
+                                  // I vertici già piazzati restano dove sono — l'utente è libero di disegnare qualsiasi forma.
+                                  // Solo i profili (subType) hanno weld a 120px per saldarli al telaio.
+                                  const WELD_EXIST = subTypeVal ? WELD2 : 0;
+                                  const weldedEls = WELD_EXIST === 0 ? els : els.map(x => {
                                     if (x.x1 === undefined) return x;
                                     let nx1=x.x1, ny1=x.y1, nx2=x.x2, ny2=x.y2;
                                     if (Math.hypot(nx1-snappedX1, ny1-snappedY1)<WELD_EXIST) { nx1=snappedX1; ny1=snappedY1; }
@@ -3472,8 +3472,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {/* Render in z-order: montanti/traversi prima, freeLine in mezzo, zoccoloLibero ULTIMO (sopra a tutto) */}
                                   {[
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
-                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso" && e.type !== "zoccoloLibero"),
+                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso" && e.type !== "zoccoloLibero" && e.type !== "maniglione"),
                                     ...els.filter(e => e.type === "zoccoloLibero"),
+                                    ...els.filter(e => e.type === "maniglione"),
                                   ].map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? "#1A9E73" : undefined;
@@ -3485,27 +3486,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "maniglione") {
                                       const isH = el.orient !== "V";
                                       const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
-                                      const C = sel ? "#1A9E73" : "#3A3A3C";
+                                      const C = sel ? "#1A9E73" : "#1A1A1C";
                                       const rot = isH ? 0 : 90;
-                                      // Tubo a U: corpo orizzontale + 2 gambe verticali
-                                      const tubT = 4; // spessore tubo
+                                      const tubT = 5;
                                       return (
                                         <g key={el.id} {...dp} transform={`rotate(${rot} ${cx} ${cy})`} style={drawMode ? { pointerEvents: "none" } : { cursor: "move" }}>
-                                          {/* Background sottile per visibilità */}
-                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#fff" opacity={0.4} rx={3} />
-                                          {/* Corpo orizzontale principale (tubo) */}
-                                          <rect x={el.x + 4} y={el.y + el.h - tubT*2} width={el.w - 8} height={tubT} fill={C} rx={tubT/2} />
+                                          {/* Background bianco evidente */}
+                                          <rect x={el.x - 2} y={el.y - 2} width={el.w + 4} height={el.h + 4} fill="#fff" stroke={C} strokeWidth={0.6} rx={4} />
+                                          {/* Corpo orizzontale (tubo principale) */}
+                                          <rect x={el.x + 6} y={el.y + el.h - tubT*2 - 2} width={el.w - 12} height={tubT} fill={C} rx={tubT/2} />
                                           {/* Gamba sinistra */}
-                                          <rect x={el.x + 4} y={el.y + 2} width={tubT} height={el.h - tubT*2} fill={C} rx={tubT/2} />
+                                          <rect x={el.x + 6} y={el.y + 4} width={tubT} height={el.h - tubT*2 - 2} fill={C} rx={tubT/2} />
                                           {/* Gamba destra */}
-                                          <rect x={el.x + el.w - 4 - tubT} y={el.y + 2} width={tubT} height={el.h - tubT*2} fill={C} rx={tubT/2} />
-                                          {/* Tappi terminali (estremi del tubo) */}
-                                          <circle cx={el.x + 4 + tubT/2} cy={el.y + el.h - tubT*1.5} r={tubT*0.7} fill={C}/>
-                                          <circle cx={el.x + el.w - 4 - tubT/2} cy={el.y + el.h - tubT*1.5} r={tubT*0.7} fill={C}/>
+                                          <rect x={el.x + el.w - 6 - tubT} y={el.y + 4} width={tubT} height={el.h - tubT*2 - 2} fill={C} rx={tubT/2} />
+                                          {/* Tappi alle 2 estremità (curva esterna del tubo) */}
+                                          <circle cx={el.x + 6 + tubT/2} cy={el.y + el.h - tubT*1.5 - 2} r={tubT*0.8} fill={C}/>
+                                          <circle cx={el.x + el.w - 6 - tubT/2} cy={el.y + el.h - tubT*1.5 - 2} r={tubT*0.8} fill={C}/>
                                           {/* Selezione */}
-                                          {sel && <rect x={el.x - 3} y={el.y - 3} width={el.w + 6} height={el.h + 6} fill="none" stroke="#1A9E73" strokeWidth={1} strokeDasharray="3,2" rx={3} />}
+                                          {sel && <rect x={el.x - 4} y={el.y - 4} width={el.w + 8} height={el.h + 8} fill="none" stroke="#1A9E73" strokeWidth={1.2} strokeDasharray="4,3" rx={4} />}
                                           {/* Etichetta articolo */}
-                                          {el.articolo && <text x={cx} y={el.y - 4} textAnchor="middle" fontSize={6} fontWeight={700} fill="#1A9E73" fontFamily="monospace">{el.articolo}</text>}
+                                          {el.articolo && <text x={cx} y={el.y - 6} textAnchor="middle" fontSize={7} fontWeight={700} fill="#1A9E73" fontFamily="monospace">{el.articolo}</text>}
                                         </g>
                                       );
                                     }
