@@ -970,7 +970,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // Touch detection: dita richiedono raggio molto piu' grande del mouse
                             const _isTouch = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
                             // Base: 120 su touch (pollice + imprecisione), 28 mouse. Diviso per zoom.
-                            const SNAP_R = (_isTouch ? 180 : 40) / Math.max(0.4, (dw._zoom || 1));
+                            const SNAP_R = (_isTouch ? 300 : 60) / Math.max(0.4, (dw._zoom || 1));
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -2578,7 +2578,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (sp) {
                                       const snapDist = Math.hypot(sp.x - origPx, sp.y - origPy);
                                       snapInfo = `sp=${Math.round(sp.x)},${Math.round(sp.y)} d=${Math.round(snapDist)}`;
-                                      if (snapDist < 80) { px = sp.x; py = sp.y; snapApplied = "yes"; }
+                                      if (snapDist < 140) { px = sp.x; py = sp.y; snapApplied = "yes"; }
                                     }
                                     // H/V: forza allineamento se la linea è prevalentemente orizzontale o verticale (ratio 2:1).
                                     const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
@@ -2590,7 +2590,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
-                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<50) { px=cs.x; py=cs.y; closeApplied="yes"; }
+                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<90) { px=cs.x; py=cs.y; closeApplied="yes"; }
                                       if (typeof document !== 'undefined') {
                                         // debug rimosso (era document.title)
                                       }
@@ -3706,7 +3706,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // Per altri modi: snap solo se entro 25px dal dito (no jump a bordi lontani).
                                     if (drawMode !== "place-zocc-free") {
                                       const snapPtT = findSnap(gx, gy);
-                                      if (snapPtT && Math.hypot(snapPtT.x - gx, snapPtT.y - gy) < 40) {
+                                      if (snapPtT && Math.hypot(snapPtT.x - gx, snapPtT.y - gy) < 70) {
                                         gx = snapPtT.x; gy = snapPtT.y;
                                       }
                                     }
@@ -5023,20 +5023,54 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           </>;
                                         })()}
                                         {/* Angle + length label */}
-                                        {/* Badge — si adatta per restare visibile */}
+                                        {/* Badge — si adatta per restare visibile, TAP per editare misura */}
                                         {(() => {
                                           const bw = 110, bh = 66;
                                           const bx = gx + 16 + bw > canvasW ? gx - bw - 16 : gx + 16;
                                           const by = gy - bh - 8 < 0 ? gy + 8 : gy - bh - 8;
                                           const isH = gy === p.y1, isV = gx === p.x1;
                                           const line2 = isV ? "\u2195 VERT" : isH ? "\u2194 ORIZ" : dw._guideDeg != null ? `${dw._guideDeg}\u00b0` : "";
+                                          const handleEditMisura = (ev: any) => {
+                                            ev?.stopPropagation?.();
+                                            ev?.preventDefault?.();
+                                            const cur = dw._guideLen || 0;
+                                            const inp = prompt(`Misura del lato in mm:\n(direzione: ${line2 || "libera"})`, String(cur));
+                                            if (!inp) return;
+                                            const newLen = parseInt(inp.trim());
+                                            if (isNaN(newLen) || newLen < 1) { alert("Misura non valida"); return; }
+                                            // Calcola nuovo endpoint mantenendo direzione corrente
+                                            const dx0 = gx - p.x1, dy0 = gy - p.y1;
+                                            const distPx = Math.hypot(dx0, dy0);
+                                            if (distPx < 0.5) return;
+                                            // Px corrispondenti alla nuova misura
+                                            const newDistPx = (newLen / realW) * fW;
+                                            const ux = dx0 / distPx, uy = dy0 / distPx;
+                                            const newGx = p.x1 + ux * newDistPx;
+                                            const newGy = p.y1 + uy * newDistPx;
+                                            // Conferma il punto (simula click finale: aggiunge linea + sposta start)
+                                            const newLine = { id: Date.now(), type: "freeLine", subType: dw._pendingLine?.subType || null, x1: p.x1, y1: p.y1, x2: newGx, y2: newGy };
+                                            const els2 = [...(dw.elements || []), newLine];
+                                            const newPending = { x1: newGx, y1: newGy, subType: dw._pendingLine?.subType || null };
+                                            onUpdate({ ...dw, elements: els2, _pendingLine: newPending, _guideX: newGx, _guideY: newGy, _guideLen: 0, _chainStart: dw._chainStart || { x: p.x1, y: p.y1 } });
+                                          };
                                           return <>
-                                            <rect x={bx} y={by} width={bw} height={bh} fill="#1A1A1C" rx={6} opacity={0.96}/>
-                                            <text x={bx+bw/2} y={by+22} textAnchor="middle" fontSize={16} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">
+                                            <rect x={bx} y={by} width={bw} height={bh} fill="#1A1A1C" rx={6} opacity={0.96}
+                                              style={{ cursor: "pointer", touchAction: "manipulation" }}
+                                              onClick={handleEditMisura}
+                                              onTouchEnd={handleEditMisura}
+                                            />
+                                            <text x={bx+bw/2} y={by+22} textAnchor="middle" fontSize={16} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace"
+                                              style={{ cursor: "pointer", pointerEvents: "none" }}>
                                               {`${dw._guideLen ?? ""} mm`}
                                             </text>
-                                            <text x={bx+bw/2} y={by+50} textAnchor="middle" fontSize={14} fontWeight={700} fill={isH||isV ? "#1A9E73" : "rgba(255,255,255,0.8)"} fontFamily="'JetBrains Mono',monospace">
+                                            <text x={bx+bw/2} y={by+50} textAnchor="middle" fontSize={14} fontWeight={700} fill={isH||isV ? "#1A9E73" : "rgba(255,255,255,0.8)"} fontFamily="'JetBrains Mono',monospace"
+                                              style={{ pointerEvents: "none" }}>
                                               {line2}
+                                            </text>
+                                            {/* Indicatore "tap qui" piccolo in alto a destra */}
+                                            <text x={bx+bw-6} y={by+12} textAnchor="end" fontSize={9} fontWeight={800} fill="#1A9E73" fontFamily="'SF Mono',monospace"
+                                              style={{ pointerEvents: "none" }}>
+                                              ✏ TAP
                                             </text>
                                           </>;
                                         })()}
