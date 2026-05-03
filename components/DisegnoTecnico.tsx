@@ -1530,6 +1530,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               onUpdate({ ...dw, _articoli: { ...articoli, [tipo]: v } });
                               return v;
                             };
+                            // Helper: chiede altezza installazione in mm da terra
+                            const askAltezzaInstall = (tipo: string, defaultMm: number): { altezza: number; mostra: boolean } | null => {
+                              const lblMap: any = {
+                                martellina: "Martellina", maniglia: "Maniglia", leva: "Maniglia leva",
+                                leva_cilindro: "Maniglia+cilindro", pomolo: "Pomolo", antipanico: "Antipanico",
+                                cremonese: "Cremonese", oliva: "Oliva", paletto: "Paletto",
+                              };
+                              const lbl = lblMap[tipo] || tipo;
+                              const inp = prompt(`${lbl} — altezza da terra (mm):\n(misura da pavimento a centro accessorio)\n\nLascia vuoto per default ${defaultMm}mm`, String(defaultMm));
+                              if (inp === null) return null;
+                              const v = inp.trim() === "" ? defaultMm : parseInt(inp.trim());
+                              if (isNaN(v) || v < 0 || v > 5000) { alert("Altezza non valida (0-5000mm)"); return null; }
+                              return { altezza: v, mostra: true };
+                            };
                             // Helper: attiva mode E chiede l'articolo se non già salvato per quel tipo
                             const setProfileMode = (tipo: string, modeExtra: any) => {
                               const articoli = dw._articoli || {};
@@ -1867,13 +1881,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               if (drawMode === "place-catalogo" && pendingCatAcc) {
                                 const anta = els.find((e: any) => e.type === "innerRect" &&
                                   mx >= e.x && mx <= e.x + e.w && my >= e.y && my <= e.y + e.h);
+                                // Default altezza basato sul pittogramma o categoria del catalogo
+                                const pittog = pendingCatAcc.pittogramma || "leva";
+                                const ALTEZZE_DEFAULT: any = {
+                                  martellina: 1500, leva: 1050, leva_cilindro: 1050, pomolo: 1050,
+                                  pomolo_girevole: 1050, oliva: 1050, cremonese: 1500, paletto: 1900,
+                                  catenaccio: 1500, spioncino: 1600, antipanico_1p: 1050, antipanico_3p: 1050,
+                                };
+                                const defH = ALTEZZE_DEFAULT[pittog] || 1050;
+                                const altInfo = askAltezzaInstall(pittog, defH);
+                                if (!altInfo) return;
                                 let wPx = 24, hPx = 24, ax = mx - 12, ay = my - 12;
                                 if (anta) {
-                                  // Pittogramma proporzionato all'anta (max 8% larghezza)
                                   wPx = Math.max(20, Math.min(40, Math.round(anta.w * 0.08)));
                                   hPx = wPx;
                                   ax = Math.round(mx - wPx / 2);
-                                  ay = Math.round(my - hPx / 2);
+                                  if (altInfo.altezza > 0) {
+                                    const ratio = Math.max(0, Math.min(1, altInfo.altezza / realH));
+                                    ay = Math.round(anta.y + anta.h - ratio * anta.h - hPx / 2);
+                                  } else {
+                                    ay = Math.round(my - hPx / 2);
+                                  }
                                 }
                                 setDW([...els, {
                                   id: Date.now(), type: "accessorio_catalogo",
@@ -1884,6 +1912,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   prezzo: pendingCatAcc.prezzo_unitario || pendingCatAcc.prezzo || 0,
                                   fornitore: pendingCatAcc.fornitore,
                                   pittogramma: pendingCatAcc.pittogramma || "leva",
+                                  altezza_install: altInfo.altezza,
+                                  mostra_quota: altInfo.mostra,
                                 }], { drawMode: null });
                                 setPendingCatAcc(null);
                                 return;
@@ -1893,17 +1923,40 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               if (drawMode === "place-veloce" && pendingVeloce) {
                                 const anta = els.find((e: any) => e.type === "innerRect" &&
                                   mx >= e.x && mx <= e.x + e.w && my >= e.y && my <= e.y + e.h);
+                                // Altezze default per tipo accessorio (mm da terra)
+                                const ALTEZZE_DEFAULT: any = {
+                                  martellina: 1500, leva: 1050, leva_cilindro: 1050, pomolo: 1050,
+                                  pomolo_girevole: 1050, oliva: 1050, cremonese: 1500, paletto: 1900,
+                                  catenaccio: 1500, spioncino: 1600, molla_aerea: 2050, cerniera_vista: 0,
+                                };
+                                const defH = ALTEZZE_DEFAULT[pendingVeloce] || 1050;
+                                // Chiedi altezza solo se accessorio è tipo "puntuale" (non cerniere o aste)
+                                const skipAltezza = ["cerniera_vista", "molla_aerea"].includes(pendingVeloce);
+                                let altInfo = { altezza: defH, mostra: false };
+                                if (!skipAltezza) {
+                                  const a = askAltezzaInstall(pendingVeloce, defH);
+                                  if (!a) return;
+                                  altInfo = a;
+                                }
                                 let wPx = 24, hPx = 24, ax = mx - 12, ay = my - 12;
                                 if (anta) {
                                   wPx = Math.max(20, Math.min(40, Math.round(anta.w * 0.08)));
                                   hPx = wPx;
                                   ax = Math.round(mx - wPx / 2);
-                                  ay = Math.round(my - hPx / 2);
+                                  // Se altezza specificata: posiziona Y in base all'altezza scelta
+                                  if (!skipAltezza && altInfo.altezza > 0) {
+                                    const ratio = Math.max(0, Math.min(1, altInfo.altezza / realH));
+                                    ay = Math.round(anta.y + anta.h - ratio * anta.h - hPx / 2);
+                                  } else {
+                                    ay = Math.round(my - hPx / 2);
+                                  }
                                 }
                                 setDW([...els, {
                                   id: Date.now(), type: "accessorio_veloce",
                                   x: ax, y: ay, w: wPx, h: hPx,
                                   pittogramma: pendingVeloce,
+                                  altezza_install: altInfo.altezza,
+                                  mostra_quota: altInfo.mostra,
                                 }], { drawMode: null });
                                 setPendingVeloce(null);
                                 return;
@@ -1919,16 +1972,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const tp = tipoStr.trim();
                                 if (!["1","3","4"].includes(tp)) { alert("Inserire 1, 3, o 4"); return; }
                                 const tipoChiusura = tp + "p"; // "1p" | "3p" | "4p"
-                                const articolo = askArticolo("antipanico");
+                                // Chiedi altezza installazione (default 1050mm)
+                                const altInfo = askAltezzaInstall("antipanico", 1050);
+                                if (!altInfo) return;
+                                const articolo = askArticolo("maniglione");
                                 let wPx = 110, hPx = 22, ax = mx - 55, ay = my - 11;
                                 let antaRect: any = undefined;
                                 if (anta) {
-                                  // Determina lato CENTRO PORTA (lato dove va l'asta verticale)
-                                  // Se ci sono altre ante: lato verso il centro = lato vicino all'altra anta
+                                  // Determina lato CENTRO PORTA
                                   const otherAnta = els.filter((e: any) => e.type === "innerRect" && e.id !== anta.id);
-                                  let side: "left" | "right" = "right"; // default
+                                  let side: "left" | "right" = "right";
                                   if (otherAnta.length > 0) {
-                                    // Trova l'anta più vicina lateralmente
                                     const closest = otherAnta.reduce((best: any, e: any) => {
                                       const dx = Math.abs((e.x + e.w/2) - (anta.x + anta.w/2));
                                       const dy = Math.abs((e.y + e.h/2) - (anta.y + anta.h/2));
@@ -1943,7 +1997,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   wPx = Math.round(anta.w * 0.85);
                                   hPx = Math.max(18, Math.round(anta.h * 0.04));
                                   ax = Math.round(anta.x + (anta.w - wPx) / 2);
-                                  ay = Math.round(anta.y + anta.h * 0.5 - hPx / 2);
+                                  // Posizione Y in base all'altezza scelta: altezza_install in mm → px sull'anta
+                                  // Convertiamo: anta.h px = realH mm → 1px = realH/anta.h mm
+                                  // Ma realH è altezza VANO. Per posizionare a 1050mm da terra serve sapere
+                                  // dove inizia l'anta dal pavimento. Usiamo: l'anta inizia a anta.y (top) e finisce a anta.y+anta.h (bottom = pavimento).
+                                  // Quindi y_px = anta.y + anta.h - (altezza_mm / realH * anta.h)
+                                  const ratio = altInfo.altezza / realH;
+                                  const yMm = Math.max(0, Math.min(1, ratio));
+                                  ay = Math.round(anta.y + anta.h - yMm * anta.h - hPx / 2);
                                   antaRect = { x: anta.x, y: anta.y, w: anta.w, h: anta.h, side };
                                 }
                                 setDW([...els, {
@@ -1951,6 +2012,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   x: ax, y: ay, w: wPx, h: hPx, orient: "H",
                                   tipoChiusura,
                                   antaRect,
+                                  altezza_install: altInfo.altezza,
+                                  mostra_quota: altInfo.mostra,
                                   articolo: articolo || undefined,
                                 }], { drawMode: null });
                                 return;
@@ -4051,6 +4114,35 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {sel && <rect x={el.x - 4} y={el.y - 4} width={W + 8} height={H + 8} fill="none" stroke="#1A9E73" strokeWidth={1.2} strokeDasharray="4,3" rx={4} />}
                                           {/* Etichetta articolo + tipo */}
                                           {(el.articolo || hasAste) && <text x={cx} y={el.y - 6} textAnchor="middle" fontSize={7} fontWeight={700} fill="#1A9E73" fontFamily="monospace">{el.articolo || ""}{el.articolo && tipoChiusura !== "1p" ? " · " : ""}{tipoChiusura !== "1p" ? tipoChiusura.toUpperCase() : ""}</text>}
+                                          {/* Badge altezza installazione - cliccabile */}
+                                          {el.altezza_install != null && (el.mostra_quota || sel) && (
+                                            <g onClick={(e3: any) => {
+                                              e3?.stopPropagation?.();
+                                              const inp = prompt("Altezza antipanico (mm da terra):", String(el.altezza_install));
+                                              if (!inp) return;
+                                              const newH = parseInt(inp.trim());
+                                              if (isNaN(newH) || newH < 0 || newH > 5000) return;
+                                              const ant = ar;
+                                              let newY = el.y;
+                                              if (ant) {
+                                                const ratio = Math.max(0, Math.min(1, newH / realH));
+                                                newY = Math.round(ant.y + ant.h - ratio * ant.h - H / 2);
+                                              }
+                                              setDW(els.map((e2: any) => e2.id === el.id ? { ...e2, altezza_install: newH, y: newY, mostra_quota: true } : e2));
+                                            }} style={{ cursor: "pointer" }}>
+                                              <rect x={el.x + W + 3} y={cy - 8} width={36} height={16} rx={3} fill="#1A1A1C" opacity={0.85} />
+                                              <text x={el.x + W + 21} y={cy + 3} textAnchor="middle" fontSize={8} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">↕{el.altezza_install}</text>
+                                            </g>
+                                          )}
+                                          {sel && el.altezza_install != null && (
+                                            <g onClick={(e3: any) => {
+                                              e3?.stopPropagation?.();
+                                              setDW(els.map((e2: any) => e2.id === el.id ? { ...e2, mostra_quota: !el.mostra_quota } : e2));
+                                            }} style={{ cursor: "pointer" }}>
+                                              <circle cx={el.x - 10} cy={cy} r={7} fill={el.mostra_quota ? "#1A9E73" : "#fff"} stroke="#1A9E73" strokeWidth={1.2} />
+                                              <text x={el.x - 10} y={cy + 3} textAnchor="middle" fontSize={8} fontWeight={800} fill={el.mostra_quota ? "#fff" : "#1A9E73"}>👁</text>
+                                            </g>
+                                          )}
                                         </g>
                                       );
                                     }
@@ -4175,9 +4267,41 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {shape}
                                           {sel && <rect x={el.x - 3} y={el.y - 3} width={W + 6} height={H + 6} fill="none" stroke="#1A9E73" strokeWidth={1.2} strokeDasharray="3,2" rx={3} />}
                                           {el.codice && <text x={cx} y={el.y - 4} textAnchor="middle" fontSize={6} fontWeight={700} fill={accentC} fontFamily="monospace">{el.codice}</text>}
-                                          {/* Indicatore catalogo (cerchio verde) vs veloce (triangolo arancione) */}
+                                          {/* Indicatore catalogo vs veloce */}
                                           {el.type === "accessorio_catalogo" && <circle cx={el.x + W - 2} cy={el.y + 2} r={1.5} fill="#1A9E73" />}
                                           {el.type === "accessorio_veloce" && <circle cx={el.x + W - 2} cy={el.y + 2} r={1.2} fill="#D08008" />}
+                                          {/* Quota altezza - cliccabile per editare */}
+                                          {el.altezza_install != null && (el.mostra_quota || sel) && (
+                                            <g onClick={(e3: any) => {
+                                              e3?.stopPropagation?.();
+                                              const inp = prompt(`Altezza installazione (mm da terra):`, String(el.altezza_install));
+                                              if (!inp) return;
+                                              const newH = parseInt(inp.trim());
+                                              if (isNaN(newH) || newH < 0 || newH > 5000) return;
+                                              // Trova anta sotto + ricalcola Y
+                                              const ant = els.find((e2: any) => e2.type === "innerRect" &&
+                                                el.x >= e2.x && el.x + W <= e2.x + e2.w && el.y >= e2.y && el.y + H <= e2.y + e2.h);
+                                              let newY = el.y;
+                                              if (ant) {
+                                                const ratio = Math.max(0, Math.min(1, newH / realH));
+                                                newY = Math.round(ant.y + ant.h - ratio * ant.h - H / 2);
+                                              }
+                                              setDW(els.map((e2: any) => e2.id === el.id ? { ...e2, altezza_install: newH, y: newY, mostra_quota: true } : e2));
+                                            }} style={{ cursor: "pointer" }}>
+                                              <rect x={el.x + W + 3} y={el.y + H/2 - 7} width={32} height={14} rx={3} fill="#1A1A1C" opacity={0.85} />
+                                              <text x={el.x + W + 19} y={el.y + H/2 + 3} textAnchor="middle" fontSize={7} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">↕{el.altezza_install}</text>
+                                            </g>
+                                          )}
+                                          {/* Toggle "mostra quota": se accessorio selezionato + ha altezza, bottoncino on/off */}
+                                          {sel && el.altezza_install != null && (
+                                            <g onClick={(e3: any) => {
+                                              e3?.stopPropagation?.();
+                                              setDW(els.map((e2: any) => e2.id === el.id ? { ...e2, mostra_quota: !el.mostra_quota } : e2));
+                                            }} style={{ cursor: "pointer" }}>
+                                              <circle cx={el.x - 8} cy={el.y + H/2} r={6} fill={el.mostra_quota ? "#1A9E73" : "#fff"} stroke="#1A9E73" strokeWidth={1} />
+                                              <text x={el.x - 8} y={el.y + H/2 + 3} textAnchor="middle" fontSize={7} fontWeight={800} fill={el.mostra_quota ? "#fff" : "#1A9E73"}>👁</text>
+                                            </g>
+                                          )}
                                         </g>
                                       );
                                     }
