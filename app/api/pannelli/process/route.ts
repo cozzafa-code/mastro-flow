@@ -1,24 +1,24 @@
 // app/api/pannelli/process/route.ts
-// Riceve { import_id, pdf_url }, scarica il PDF da Supabase Storage,
+// Riceve { import_id, pdf_url, categoria }, scarica il PDF da Supabase Storage,
 // lo manda ad Anthropic (Claude Sonnet 4.5) via document API,
-// estrae i pannelli e li salva in pannelli_estratti_temp.
+// estrae i pannelli e li salva in pannelli_estratti_temp (campo dati jsonb).
 //
-// Mantiene flusso: pannelli_imports → review → finalize.
-// Codici_errore standardizzati: API_KEY_MISSING, PDF_FETCH_ERROR,
-// ANTHROPIC_ERROR, JSON_PARSE_ERROR, DB_INSERT_ERROR, CREDITS_INSUFFICIENT.
+// Schema reale: pannelli_imports usa filename/file_size_bytes/file_url/metodo/errore_msg.
+// ai_credits usa budget_corrente (numeric).
+// pannelli_estratti_temp usa pagina/posizione_in_pagina/dati(jsonb)/confermato.
+//
+// Codici_errore: API_KEY_MISSING, BAD_REQUEST, IMPORT_NOT_FOUND, CREDITS_INSUFFICIENT,
+// PDF_FETCH_ERROR, ANTHROPIC_ERROR, JSON_PARSE_ERROR, DB_INSERT_ERROR, INTERNAL_ERROR.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
-export const maxDuration = 300; // 5 min: PDF grandi + Anthropic
+export const maxDuration = 300;
 
 const AZIENDA_ID = "ccca51c1-656b-4e7c-a501-55753e20da29";
 const ANTHROPIC_MODEL = "claude-sonnet-4-5-20250929";
-const COSTO_CREDITI_PER_IMPORT = 1;
-
-// ─────────────────────────────────────────────────────────────────────────
-// Helpers
+const COSTO_STIMATO_EUR = 0.30;
 
 function supabaseAdmin() {
   return createClient(
@@ -31,36 +31,39 @@ function supabaseAdmin() {
 async function setImportError(
   supabase: ReturnType<typeof supabaseAdmin>,
   import_id: string,
-  codice_errore: string,
+  codice: string,
   dettaglio: string
 ) {
   await supabase
     .from("pannelli_imports")
     .update({
       stato: "errore",
-      codice_errore,
-      dettaglio_errore: dettaglio.slice(0, 2000),
-      updated_at: new Date().toISOString(),
+      errore_msg: `[${codice}] ${dettaglio}`.slice(0, 2000),
     })
     .eq("id", import_id);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Prompt estrazione
-
 const SYSTEM_PROMPT = `Sei un assistente che estrae dati strutturati da PDF tecnici di pannelli/serramenti italiani.
-Devi restituire SOLO JSON valido, nessun testo prima o dopo, nessun markdown.
+Restituisci SOLO JSON valido, nessun testo prima o dopo, nessun markdown.
 
-Schema richiesto:
+Schema:
 {
   "pannelli": [
     {
-      "codice": string,
-      "descrizione": string,
-      "larghezza_mm": number | null,
-      "altezza_mm": number | null,
-      "quantita": number,
-      "prezzo_unitario": number | null,
+      "codice": string | null,
+      "nome": string,
+      "descrizione": string | null,
+      "produttore": string | null,
+      "serie": string | null,
+      "modello": string | null,
+      "colore_finitura": string | null,
+      "larghezza_min": number | null,
+      "larghezza_max": number | null,
+      "altezza_min": number | null,
+      "altezza_max": number | null,
+      "spessore_mm": number | null,
+      "prezzo": number | null,
+      "pagina": number,
       "note": string | null
     }
   ],
@@ -72,21 +75,17 @@ Schema richiesto:
 }
 
 Regole:
-- Se un campo non è presente, usa null (mai stringa vuota per i numerici).
-- Misure sempre in millimetri.
-- Prezzi in euro senza simbolo, punto come separatore decimale.
-- Quantità intera, default 1 se non specificata.
+- Misure in millimetri.
+- Prezzi in euro, punto come separatore decimale, senza simbolo.
+- pagina = numero pagina del PDF dove appare il pannello (default 1).
+- Se manca un campo numerico usa null, non 0 o stringa vuota.
 - Restituisci array vuoto se non trovi pannelli.`;
-
-// ─────────────────────────────────────────────────────────────────────────
-// POST handler
 
 export async function POST(req: NextRequest) {
   let import_id: string | null = null;
   const supabase = supabaseAdmin();
 
   try {
-    // 1. Parse body
     const body = await req.json().catch(() => null);
     if (!body || typeof body.import_id !== "string" || typeof body.pdf_url !== "string") {
       return NextResponse.json(
@@ -96,8 +95,8 @@ export async function POST(req: NextRequest) {
     }
     import_id = body.import_id;
     const pdf_url: string = body.pdf_url;
+    const categoria: string = typeof body.categoria === "string" ? body.categoria : "porte_interne";
 
-    // 2. API key check
     const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
     if (!ANTHROPIC_API_KEY) {
       await setImportError(supabase, import_id!, "API_KEY_MISSING", "ANTHROPIC_API_KEY non configurata");
@@ -107,10 +106,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Carica import e verifica crediti
     const { data: importRow, error: importErr } = await supabase
       .from("pannelli_imports")
-      .select("id, azienda_id, stato")
+      .select("id, azienda_id, stato, pre_analisi")
       .eq("id", import_id!)
       .eq("azienda_id", AZIENDA_ID)
       .single();
@@ -124,35 +122,37 @@ export async function POST(req: NextRequest) {
 
     const { data: credits } = await supabase
       .from("ai_credits")
-      .select("crediti_residui")
+      .select("budget_corrente")
       .eq("azienda_id", AZIENDA_ID)
       .single();
 
-    if (!credits || (credits.crediti_residui ?? 0) < COSTO_CREDITI_PER_IMPORT) {
-      await setImportError(supabase, import_id!, "CREDITS_INSUFFICIENT", "Crediti AI insufficienti");
+    const budget = Number(credits?.budget_corrente ?? 0);
+    if (budget < COSTO_STIMATO_EUR) {
+      await setImportError(supabase, import_id!, "CREDITS_INSUFFICIENT", `Budget AI insufficiente (€${budget.toFixed(2)})`);
       return NextResponse.json(
-        { ok: false, codice_errore: "CREDITS_INSUFFICIENT", dettaglio: "Crediti AI insufficienti" },
+        { ok: false, codice_errore: "CREDITS_INSUFFICIENT", dettaglio: `Budget AI insufficiente (€${budget.toFixed(2)})` },
         { status: 402 }
       );
     }
 
-    // 4. Aggiorna stato → processing
     await supabase
       .from("pannelli_imports")
-      .update({ stato: "processing", pdf_url, updated_at: new Date().toISOString() })
+      .update({
+        stato: "processing",
+        file_url: pdf_url,
+        pre_analisi: { ...(importRow.pre_analisi || {}), categoria, file_url: pdf_url },
+      })
       .eq("id", import_id!);
 
-    // 5. Verifica accessibilità PDF (HEAD)
     const headRes = await fetch(pdf_url, { method: "HEAD" }).catch(() => null);
     if (!headRes || !headRes.ok) {
-      await setImportError(supabase, import_id!, "PDF_FETCH_ERROR", `PDF non accessibile (status ${headRes?.status ?? "n/a"})`);
+      await setImportError(supabase, import_id!, "PDF_FETCH_ERROR", `PDF non accessibile (${headRes?.status ?? "n/a"})`);
       return NextResponse.json(
         { ok: false, codice_errore: "PDF_FETCH_ERROR", dettaglio: "PDF non raggiungibile dallo Storage" },
         { status: 400 }
       );
     }
 
-    // 6. Chiamata Anthropic con document URL
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -168,14 +168,8 @@ export async function POST(req: NextRequest) {
           {
             role: "user",
             content: [
-              {
-                type: "document",
-                source: { type: "url", url: pdf_url },
-              },
-              {
-                type: "text",
-                text: "Estrai tutti i pannelli da questo documento e restituisci il JSON.",
-              },
+              { type: "document", source: { type: "url", url: pdf_url } },
+              { type: "text", text: `Estrai tutti i pannelli (categoria: ${categoria}) e restituisci JSON.` },
             ],
           },
         ],
@@ -195,18 +189,12 @@ export async function POST(req: NextRequest) {
     const rawText: string =
       anthropicJson?.content?.find((b: { type: string }) => b.type === "text")?.text ?? "";
 
-    // 7. Parse JSON (tollerante a fence ```json)
     let parsed: { pannelli?: Array<Record<string, unknown>>; metadata?: Record<string, unknown> } | null = null;
     try {
       const cleaned = rawText.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
       parsed = JSON.parse(cleaned);
-    } catch (e) {
-      await setImportError(
-        supabase,
-        import_id!,
-        "JSON_PARSE_ERROR",
-        `Risposta non parseabile: ${rawText.slice(0, 300)}`
-      );
+    } catch {
+      await setImportError(supabase, import_id!, "JSON_PARSE_ERROR", `Risposta non parseabile: ${rawText.slice(0, 200)}`);
       return NextResponse.json(
         { ok: false, codice_errore: "JSON_PARSE_ERROR", dettaglio: "JSON Anthropic non valido" },
         { status: 502 }
@@ -215,19 +203,13 @@ export async function POST(req: NextRequest) {
 
     const pannelli = Array.isArray(parsed?.pannelli) ? parsed!.pannelli! : [];
 
-    // 8. Insert pannelli_estratti_temp
     if (pannelli.length > 0) {
-      const rows = pannelli.map((p) => ({
+      const rows = pannelli.map((p, idx) => ({
         import_id: import_id!,
-        azienda_id: AZIENDA_ID,
-        codice: (p.codice as string | null) ?? null,
-        descrizione: (p.descrizione as string | null) ?? null,
-        larghezza_mm: (p.larghezza_mm as number | null) ?? null,
-        altezza_mm: (p.altezza_mm as number | null) ?? null,
-        quantita: (p.quantita as number | null) ?? 1,
-        prezzo_unitario: (p.prezzo_unitario as number | null) ?? null,
-        note: (p.note as string | null) ?? null,
-        stato_review: "pending",
+        pagina: typeof p.pagina === "number" ? p.pagina : 1,
+        posizione_in_pagina: idx + 1,
+        dati: { ...p, categoria, sorgente_import: "ai_catalogo" },
+        confermato: false,
       }));
 
       const { error: insErr } = await supabase.from("pannelli_estratti_temp").insert(rows);
@@ -240,24 +222,36 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 9. Scala crediti + finalize import
-    await supabase.rpc("decrementa_crediti_ai", {
-      p_azienda_id: AZIENDA_ID,
-      p_quantita: COSTO_CREDITI_PER_IMPORT,
-    });
-
     const usage = anthropicJson?.usage ?? {};
+    const inTok = Number(usage.input_tokens ?? 0);
+    const outTok = Number(usage.output_tokens ?? 0);
+    const costoReale = (inTok * 3 / 1_000_000) + (outTok * 15 / 1_000_000);
+
+    await supabase
+      .from("ai_credits")
+      .update({
+        budget_corrente: Math.max(0, budget - costoReale),
+        totale_speso_mese: (Number(credits?.budget_corrente ?? 0) > 0 ? undefined : undefined),
+      })
+      .eq("azienda_id", AZIENDA_ID);
+
+    await supabase.rpc("increment_speso_mese", { p_azienda_id: AZIENDA_ID, p_amount: costoReale }).then(() => null, () => null);
+
     await supabase
       .from("pannelli_imports")
       .update({
         stato: "review",
-        numero_pannelli_estratti: pannelli.length,
-        metadata_estratto: parsed?.metadata ?? null,
-        tokens_input: usage.input_tokens ?? null,
-        tokens_output: usage.output_tokens ?? null,
-        codice_errore: null,
-        dettaglio_errore: null,
-        updated_at: new Date().toISOString(),
+        pannelli_estratti: pannelli.length,
+        costo_reale: costoReale,
+        errore_msg: null,
+        pre_analisi: {
+          ...(importRow.pre_analisi || {}),
+          categoria,
+          file_url: pdf_url,
+          metadata: parsed?.metadata ?? null,
+          tokens_input: inTok,
+          tokens_output: outTok,
+        },
       })
       .eq("id", import_id!);
 
@@ -266,6 +260,7 @@ export async function POST(req: NextRequest) {
       import_id: import_id!,
       numero_pannelli: pannelli.length,
       stato: "review",
+      costo_reale: costoReale,
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -278,28 +273,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-/* ─────────────────────────────────────────────────────────────────────────
-   NOTA: se la colonna pdf_url non esiste in pannelli_imports, esegui una
-   tantum su Supabase SQL Editor:
-
-   ALTER TABLE pannelli_imports
-     ADD COLUMN IF NOT EXISTS pdf_url text,
-     ADD COLUMN IF NOT EXISTS codice_errore text,
-     ADD COLUMN IF NOT EXISTS dettaglio_errore text,
-     ADD COLUMN IF NOT EXISTS tokens_input int,
-     ADD COLUMN IF NOT EXISTS tokens_output int,
-     ADD COLUMN IF NOT EXISTS metadata_estratto jsonb,
-     ADD COLUMN IF NOT EXISTS numero_pannelli_estratti int;
-
-   E la RPC per scalare crediti (se non esiste):
-
-   CREATE OR REPLACE FUNCTION decrementa_crediti_ai(
-     p_azienda_id uuid, p_quantita int
-   ) RETURNS void LANGUAGE sql AS $$
-     UPDATE ai_credits
-        SET crediti_residui = GREATEST(0, crediti_residui - p_quantita),
-            updated_at = now()
-      WHERE azienda_id = p_azienda_id;
-   $$;
-   ───────────────────────────────────────────────────────────────────── */
