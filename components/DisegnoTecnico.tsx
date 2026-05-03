@@ -940,6 +940,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // dwRef: sempre aggiornato, usato nei click handler per evitare stale closure
                             const dwRef = React.useRef(dw);
                             dwRef.current = dw;
+                            // Stato gesture multi-touch per pinch-zoom + pan a 2 dita
+                            const pinchRef = React.useRef<any>({ active: false, startDist: 0, startZoom: 1, startPanX: 0, startPanY: 0, startMidX: 0, startMidY: 0 });
                             const placeApType = dw._placeApType || "SX";
                             const zoom = dw._zoom || 1;
                             const panX = dw._panX || 0, panY = dw._panY || 0;
@@ -3056,10 +3058,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     setDW(fixed);
                                   }} style={{...bDel("#1A9E73"), background:"#1A9E7312"}}>⚡ Aggiusta</div>}
                                   <div style={{ flex: 1 }} />
-                                  <div onClick={() => setMode({ _zoom: Math.max(0.5, (zoom || 1) - 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>−</div>
+                                  <div onClick={() => setMode({ _zoom: Math.max(0.2, (zoom || 1) - 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>−</div>
                                   <div style={{ fontSize: 9, fontWeight: 800, color: T.sub, minWidth: 32, textAlign: "center" }}>{Math.round(zoom * 100)}%</div>
-                                  <div onClick={() => setMode({ _zoom: Math.min(4, (zoom || 1) + 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>+</div>
+                                  <div onClick={() => setMode({ _zoom: Math.min(8, (zoom || 1) + 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>+</div>
                                   <div onClick={() => setMode({ _zoom: 1, _panX: 0, _panY: 0 })} style={{ ...bs(), fontSize: 9 }}>Fit</div>
+                                  {/* Pan controls — sposta il disegno (utile su disegni grandi) */}
+                                  <div style={{ display: "flex", gap: 1, marginLeft: 4, padding: "1px", background: "#f5f5f5", borderRadius: 4 }}>
+                                    <div onClick={() => setMode({ _panX: panX - 80/zoom })} style={{ ...bs(), padding: "2px 6px", fontSize: 12 }} title="Sposta a sinistra">◀</div>
+                                    <div onClick={() => setMode({ _panY: panY - 80/zoom })} style={{ ...bs(), padding: "2px 6px", fontSize: 12 }} title="Sposta in alto">▲</div>
+                                    <div onClick={() => setMode({ _panY: panY + 80/zoom })} style={{ ...bs(), padding: "2px 6px", fontSize: 12 }} title="Sposta in basso">▼</div>
+                                    <div onClick={() => setMode({ _panX: panX + 80/zoom })} style={{ ...bs(), padding: "2px 6px", fontSize: 12 }} title="Sposta a destra">▶</div>
+                                  </div>
                                 </div>
 
                                 {/* SVG Canvas — zoomable with wheel + pannable */}
@@ -3160,6 +3169,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       }
                                     }
                                   }}
+                                  onTouchStart={(e2: any) => {
+                                    // Avvia gesture pinch+pan se 2 dita
+                                    if (e2.touches.length === 2) {
+                                      const t1 = e2.touches[0], t2 = e2.touches[1];
+                                      const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+                                      pinchRef.current = {
+                                        active: true,
+                                        startDist: Math.hypot(dx, dy),
+                                        startZoom: dw._zoom || 1,
+                                        startPanX: dw._panX || 0,
+                                        startPanY: dw._panY || 0,
+                                        startMidX: (t1.clientX + t2.clientX) / 2,
+                                        startMidY: (t1.clientY + t2.clientY) / 2,
+                                      };
+                                      e2.preventDefault();
+                                    }
+                                  }}
                                   onTouchStartDISABLED={(e2: any) => {
                                     if (drawMode === "pen") {
                                       e2.preventDefault();
@@ -3175,6 +3201,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchMove={(e2) => {
+                                    // Gesture pinch+pan a 2 dita
+                                    if (e2.touches.length === 2 && pinchRef.current.active) {
+                                      e2.preventDefault();
+                                      const t1 = e2.touches[0], t2 = e2.touches[1];
+                                      const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+                                      const newDist = Math.hypot(dx, dy);
+                                      const ratio = newDist / Math.max(1, pinchRef.current.startDist);
+                                      const newZoom = Math.max(0.15, Math.min(8, pinchRef.current.startZoom * ratio));
+                                      const newMidX = (t1.clientX + t2.clientX) / 2;
+                                      const newMidY = (t1.clientY + t2.clientY) / 2;
+                                      const dPanX = (newMidX - pinchRef.current.startMidX) / newZoom;
+                                      const dPanY = (newMidY - pinchRef.current.startMidY) / newZoom;
+                                      onUpdate({ ...dwRef.current,
+                                        _zoom: newZoom,
+                                        _panX: pinchRef.current.startPanX - dPanX,
+                                        _panY: pinchRef.current.startPanY - dPanY,
+                                      });
+                                      return;
+                                    }
                                     const dw = dwRef.current;
                                     const els = dw.elements || [];
                                     const drawMode = dw.drawMode || null;
@@ -3217,6 +3262,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchEnd={(e2) => {
+                                    // Reset gesture pinch quando si rilascia
+                                    if (pinchRef.current.active && e2.touches.length < 2) {
+                                      pinchRef.current.active = false;
+                                    }
                                     if (drawMode === "pen" && dw._penActive) {
                                       const pts2 = dw._penPath || [];
                                       if (pts2.length > 2) {
