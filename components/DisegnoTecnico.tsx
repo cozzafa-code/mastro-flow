@@ -3061,7 +3061,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ _zoom: Math.max(0.2, (zoom || 1) - 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>−</div>
                                   <div style={{ fontSize: 9, fontWeight: 800, color: T.sub, minWidth: 32, textAlign: "center" }}>{Math.round(zoom * 100)}%</div>
                                   <div onClick={() => setMode({ _zoom: Math.min(8, (zoom || 1) + 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>+</div>
-                                  <div onClick={() => setMode({ _zoom: 1, _panX: 0, _panY: 0 })} style={{ ...bs(), fontSize: 9 }}>Fit</div>
+                                  <div onClick={() => {
+                                    // FIT auto: calcola bbox di tutti gli elementi e zooma per inquadrarli
+                                    if (els.length === 0) { setMode({ _zoom: 1, _panX: 0, _panY: 0 }); return; }
+                                    let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+                                    els.forEach((e: any) => {
+                                      if (e.x !== undefined && e.w !== undefined) {
+                                        xMin = Math.min(xMin, e.x); xMax = Math.max(xMax, e.x + e.w);
+                                        yMin = Math.min(yMin, e.y); yMax = Math.max(yMax, e.y + e.h);
+                                      } else if (e.x1 !== undefined) {
+                                        xMin = Math.min(xMin, e.x1, e.x2); xMax = Math.max(xMax, e.x1, e.x2);
+                                        yMin = Math.min(yMin, e.y1, e.y2); yMax = Math.max(yMax, e.y1, e.y2);
+                                      } else if (e.poly) {
+                                        e.poly.forEach((p: number[]) => { xMin = Math.min(xMin, p[0]); xMax = Math.max(xMax, p[0]); yMin = Math.min(yMin, p[1]); yMax = Math.max(yMax, p[1]); });
+                                      }
+                                    });
+                                    if (!isFinite(xMin)) { setMode({ _zoom: 1, _panX: 0, _panY: 0 }); return; }
+                                    const margin = 80;
+                                    const bw = (xMax - xMin) + margin * 2;
+                                    const bh = (yMax - yMin) + margin * 2;
+                                    const zw = canvasW / bw, zh = canvasH / bh;
+                                    const newZoom = Math.max(0.15, Math.min(8, Math.min(zw, zh)));
+                                    setMode({ _zoom: newZoom, _panX: xMin - margin, _panY: yMin - margin });
+                                  }} style={{ ...bs(), fontSize: 9 }}>Fit</div>
                                   {/* Pan controls — sposta il disegno (utile su disegni grandi) */}
                                   <div style={{ display: "flex", gap: 1, marginLeft: 4, padding: "1px", background: "#f5f5f5", borderRadius: 4 }}>
                                     <div onClick={() => setMode({ _panX: panX - 80/zoom })} style={{ ...bs(), padding: "2px 6px", fontSize: 12 }} title="Sposta a sinistra">◀</div>
@@ -3085,6 +3107,66 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 }}>
                                   {vista === "interna" ? "🏠 VISTA INTERNA" : "🌳 VISTA ESTERNA (specchiata)"}
                                 </div>
+
+                                {/* Mini-mappa overview (visibile quando zoom > 1.2) */}
+                                {zoom > 1.2 && els.length > 0 && (() => {
+                                  // Calcola bbox di tutti gli elementi
+                                  let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+                                  els.forEach((e: any) => {
+                                    if (e.x !== undefined && e.w !== undefined) {
+                                      xMin = Math.min(xMin, e.x); xMax = Math.max(xMax, e.x + e.w);
+                                      yMin = Math.min(yMin, e.y); yMax = Math.max(yMax, e.y + e.h);
+                                    } else if (e.x1 !== undefined) {
+                                      xMin = Math.min(xMin, e.x1, e.x2); xMax = Math.max(xMax, e.x1, e.x2);
+                                      yMin = Math.min(yMin, e.y1, e.y2); yMax = Math.max(yMax, e.y1, e.y2);
+                                    }
+                                  });
+                                  if (!isFinite(xMin)) return null;
+                                  const padM = 30;
+                                  const bw = (xMax - xMin) + padM * 2;
+                                  const bh = (yMax - yMin) + padM * 2;
+                                  if (bw < 10 || bh < 10) return null;
+                                  const MM_W = 130, MM_H = Math.max(60, Math.min(120, MM_W * bh / bw));
+                                  const sf = MM_W / bw;
+                                  // Viewport corrente nella mini-mappa
+                                  const viewX = panX, viewY = panY;
+                                  const viewW = canvasW / zoom, viewH = canvasH / zoom;
+                                  const mmX = (viewX - (xMin - padM)) * sf;
+                                  const mmY = (viewY - (yMin - padM)) * sf;
+                                  const mmVW = viewW * sf;
+                                  const mmVH = viewH * sf;
+                                  return (
+                                    <div style={{ position: "absolute", top: 8, right: 8, zIndex: 10, background: "rgba(255,255,255,0.95)", border: "1.5px solid #1A9E73", borderRadius: 6, padding: 3, boxShadow: "0 2px 6px rgba(0,0,0,0.2)" }}
+                                      onClick={(e) => {
+                                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                        const tx = e.clientX - rect.left - 3;
+                                        const ty = e.clientY - rect.top - 3;
+                                        const newPanX = (tx / sf) + (xMin - padM) - viewW / 2;
+                                        const newPanY = (ty / sf) + (yMin - padM) - viewH / 2;
+                                        setMode({ _panX: newPanX, _panY: newPanY });
+                                      }}>
+                                      <svg width={MM_W} height={MM_H} style={{ display: "block", cursor: "pointer" }}>
+                                        {/* Sfondo bbox */}
+                                        <rect x={0} y={0} width={MM_W} height={MM_H} fill="#FAFAF7" />
+                                        {/* Elementi semplificati */}
+                                        {els.map((e: any, i: number) => {
+                                          const tx = (v: number) => (v - (xMin - padM)) * sf;
+                                          const ty = (v: number) => (v - (yMin - padM)) * sf;
+                                          if (e.type === "freeLine" && e.x1 !== undefined) {
+                                            return <line key={i} x1={tx(e.x1)} y1={ty(e.y1)} x2={tx(e.x2)} y2={ty(e.y2)} stroke="#666" strokeWidth={0.8} />;
+                                          }
+                                          if ((e.type === "innerRect" || e.type === "zoccoloLibero" || e.type === "fermavetroRect" || e.type === "maniglione" || e.type === "rect") && e.x !== undefined) {
+                                            const c = e.type === "zoccoloLibero" ? "#c8c6c0" : e.type === "innerRect" ? "#1A9E7320" : "#888";
+                                            return <rect key={i} x={tx(e.x)} y={ty(e.y)} width={e.w * sf} height={e.h * sf} fill={c} stroke="#444" strokeWidth={0.4} />;
+                                          }
+                                          return null;
+                                        })}
+                                        {/* Viewport corrente */}
+                                        <rect x={mmX} y={mmY} width={mmVW} height={mmVH} fill="rgba(26,158,115,0.15)" stroke="#1A9E73" strokeWidth={1.2} />
+                                      </svg>
+                                    </div>
+                                  );
+                                })()}
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
@@ -4086,29 +4168,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const isH = Math.abs(el.y1 - el.y2) < 2;
                                       const mx2 = (el.x1 + el.x2) / 2, my2 = (el.y1 + el.y2) / 2;
                                       const labelStr = String(el.label);
-                                      const tw = labelStr.length * 5.5 + 10;
+                                      // Inverse zoom: tutti gli elementi UI delle quote restano leggibili
+                                      const iz = 1 / zoom;
+                                      const fs = 8 * iz;
+                                      const tw = (labelStr.length * 5.5 + 10) * iz;
+                                      const th = 13 * iz;
                                       const DIM_C = "#1A1A1C";
-                                      const tickL = 4;
-                                      // Tacche rivolte verso l'esterno (frecce diagonali a 45°)
+                                      const tickL = 4 * iz;
+                                      const sw = 0.5 * iz, sw2 = 0.7 * iz;
                                       return (
                                         <g key={el.id} onClick={(e3) => {
                                           e3.stopPropagation();
                                           if (drawMode) return;
                                           setDimEdit({ id: el.id, val: el.label, x: 0, y: 0, isDim: true });
                                         }} style={{ cursor: "pointer" }}>
-                                          {/* Linea quotata principale */}
-                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={DIM_C} strokeWidth={0.5} />
-                                          {/* Tacche oblique professionali (45°) */}
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={DIM_C} strokeWidth={sw} />
                                           {isH ? <>
-                                            <line x1={el.x1-tickL} y1={el.y1-tickL} x2={el.x1+tickL} y2={el.y1+tickL} stroke={DIM_C} strokeWidth={0.7}/>
-                                            <line x1={el.x2-tickL} y1={el.y2-tickL} x2={el.x2+tickL} y2={el.y2+tickL} stroke={DIM_C} strokeWidth={0.7}/>
+                                            <line x1={el.x1-tickL} y1={el.y1-tickL} x2={el.x1+tickL} y2={el.y1+tickL} stroke={DIM_C} strokeWidth={sw2}/>
+                                            <line x1={el.x2-tickL} y1={el.y2-tickL} x2={el.x2+tickL} y2={el.y2+tickL} stroke={DIM_C} strokeWidth={sw2}/>
                                           </> : <>
-                                            <line x1={el.x1-tickL} y1={el.y1-tickL} x2={el.x1+tickL} y2={el.y1+tickL} stroke={DIM_C} strokeWidth={0.7}/>
-                                            <line x1={el.x2-tickL} y1={el.y2-tickL} x2={el.x2+tickL} y2={el.y2+tickL} stroke={DIM_C} strokeWidth={0.7}/>
+                                            <line x1={el.x1-tickL} y1={el.y1-tickL} x2={el.x1+tickL} y2={el.y1+tickL} stroke={DIM_C} strokeWidth={sw2}/>
+                                            <line x1={el.x2-tickL} y1={el.y2-tickL} x2={el.x2+tickL} y2={el.y2+tickL} stroke={DIM_C} strokeWidth={sw2}/>
                                           </>}
-                                          {/* Box bianco sottile sotto al numero per leggibilità */}
-                                          <rect x={mx2-tw/2} y={my2-6.5} width={tw} height={13} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={2} stroke={dimEdit?.id === el.id ? "#1A9E73" : DIM_C} strokeWidth={0.4} opacity={0.95}/>
-                                          <text x={mx2} y={my2+3} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : DIM_C} fontFamily="'SF Mono', 'Menlo', monospace" letterSpacing="0.3">{labelStr}</text>
+                                          <rect x={mx2-tw/2} y={my2-th/2} width={tw} height={th} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={2*iz} stroke={dimEdit?.id === el.id ? "#1A9E73" : DIM_C} strokeWidth={0.4*iz} opacity={0.95}/>
+                                          <text x={mx2} y={my2+fs/3} textAnchor="middle" fontSize={fs} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : DIM_C} fontFamily="'SF Mono', 'Menlo', monospace" letterSpacing="0.3">{labelStr}</text>
                                         </g>
                                       );
                                     }
@@ -4195,8 +4278,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           onTouchStart={(e3) => { e3.stopPropagation(); }}>
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
                                           {!isConfigured && <>
-                                            <circle cx={v.x} cy={v.y} r={14} fill="#fff" stroke="#888" strokeWidth={2} opacity={0.85} />
-                                            <circle cx={v.x} cy={v.y} r={6} fill="#888" />
+                                            <circle cx={v.x} cy={v.y} r={14/zoom} fill="#fff" stroke="#888" strokeWidth={2/zoom} opacity={0.85} />
+                                            <circle cx={v.x} cy={v.y} r={6/zoom} fill="#888" />
                                           </>}
                                         </g>
                                       );
@@ -4259,8 +4342,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         <g key={`avx-${i}`} style={{ cursor: 'pointer' }} onClick={onTap}>
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
                                           {showDot && <>
-                                            <circle cx={v.x} cy={v.y} r={9} fill="#fff" stroke={dotColor} strokeWidth={1.5} opacity={0.9} />
-                                            <circle cx={v.x} cy={v.y} r={4} fill={dotColor} />
+                                            <circle cx={v.x} cy={v.y} r={9/zoom} fill="#fff" stroke={dotColor} strokeWidth={1.5/zoom} opacity={0.9} />
+                                            <circle cx={v.x} cy={v.y} r={4/zoom} fill={dotColor} />
                                           </>}
                                         </g>
                                       );
