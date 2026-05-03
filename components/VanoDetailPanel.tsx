@@ -184,6 +184,14 @@ export default function VanoDetailPanel() {
   ];
   const [detailOpen, setDetailOpen] = useState<Record<string,boolean>>({});
   const [showDisegno, setShowDisegno] = useState(false);
+  // Tipologie custom dal DB (salvate dal CAD)
+  const [dbTipologie, setDbTipologie] = useState<any[]>([]);
+  useEffect(() => {
+    fetch("/api/tipologie-infisso")
+      .then(r => r.ok ? r.json() : [])
+      .then(data => { if (Array.isArray(data)) setDbTipologie(data); })
+      .catch(() => {});
+  }, []);
   // === FLASH CONFIGURATORE ===
   const [flashSec, setFlashSec] = useState<string|null>(null);
   const [completedSecs, setCompletedSecs] = useState<Set<string>>(new Set());
@@ -701,11 +709,29 @@ export default function VanoDetailPanel() {
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   <select
                     value={v.tipo || ""}
-                    onChange={e => { updateV("tipo", e.target.value); flashAndAdvance("tipologia"); }}
+                    onChange={e => {
+                      const val = e.target.value;
+                      // Se è una tipologia DB (formato "DB:<id>"), copia il disegno nel vano
+                      if (val.startsWith("DB:")) {
+                        const dbId = parseInt(val.substring(3));
+                        const tipo = dbTipologie.find(t => t.id === dbId);
+                        if (tipo) {
+                          updateV("tipo", tipo.codice || tipo.nome);
+                          updateV("tipologia_id", tipo.id);
+                          updateV("tipologia_nome", tipo.nome);
+                          if (tipo.disegno) updateV("disegno", tipo.disegno);
+                          flashAndAdvance("tipologia");
+                        }
+                        return;
+                      }
+                      updateV("tipo", val);
+                      flashAndAdvance("tipologia");
+                    }}
                     style={{ width:"100%", padding:"10px 14px", borderRadius:10, border:`1.5px solid ${v.tipo?T.acc:T.bdr}`,
                       fontSize:15, fontWeight:600, background:v.tipo?T.accLt:T.card, color:v.tipo?T.acc:T.sub,
                       fontFamily:"Inter", boxSizing:"border-box", cursor:"pointer" }}>
                     <option value="">— Seleziona tipologia —</option>
+                    {/* Tipologie standard hardcoded */}
                     {cats.map(cat => (
                       <optgroup key={cat} label={cat}>
                         {tipologieFiltrate.filter(t=>t.cat===cat).map(t=>(
@@ -713,10 +739,22 @@ export default function VanoDetailPanel() {
                         ))}
                       </optgroup>
                     ))}
+                    {/* Tipologie custom dal DB (salvate dal CAD) - filtrate per categoria attiva */}
+                    {dbTipologie.length > 0 && (
+                      <optgroup label={`★ Mie tipologie${tipCat ? " (" + tipCat + ")" : ""}`}>
+                        {dbTipologie
+                          .filter(t => !tipCat || t.categoria === tipCat || (tipCat === "Finestre" && !t.categoria))
+                          .map(t => (
+                            <option key={`db-${t.id}`} value={`DB:${t.id}`}>
+                              ★ {t.nome}{t.n_ante ? ` (${t.n_ante}a)` : ""}{t.dimensioni_default ? ` ${t.dimensioni_default}mm` : ""}
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
                   </select>
                   {v.tipo && (
                     <div style={{fontSize:11,color:T.acc,fontWeight:600,padding:"4px 8px",background:T.accLt,borderRadius:8,display:"inline-block"}}>
-                      {TIPOLOGIE_RAPIDE.find(t=>t.code===v.tipo)?.label || v.tipo}
+                      {v.tipologia_nome || TIPOLOGIE_RAPIDE.find(t=>t.code===v.tipo)?.label || v.tipo}
                     </div>
                   )}
                 </div>
