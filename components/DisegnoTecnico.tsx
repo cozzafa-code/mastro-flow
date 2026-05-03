@@ -2036,18 +2036,53 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 // Regular cell handling
                                 if (drawMode === "place-anta") {
-                                  const existingAnta = els.find(e => (e.type === "innerRect" || e.type === "persiana") && inCell(e));
-                                  if (existingAnta) {
-                                    const midX = snap(cell.x + cell.w / 2);
-                                    const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana" || e.type === "glass") && inCell(e)));
-                                    newEls.push({ id: Date.now(), type: "montante", x: midX, y1: cellY - HM, y2: cellY + cellH + HM });
-                                    setDW(newEls);
-                                  } else {
-                                    const newEls = [...els];
-                                    // Anta esattamente dentro la cella, no overflow
-                                    newEls.push({ id: Date.now() + Math.floor(Math.random()*10000), type: "innerRect", x: cell.x + 1, y: cellY + 1, w: cell.w - 2, h: cellH - 2, cellId: cell.id });
-                                    setDW(newEls, { drawMode: null });
+                                  // Conta ante esistenti nella cella; ogni click ne aggiunge una.
+                                  const existingAnte = els.filter(e => e.type === "innerRect" && !e.subType && inCell(e));
+                                  const existingRiporti = els.filter(e => e.type === "profiloRiporto" && e.cellId === cell.id);
+                                  // Rimuovi tutto e ricrea con N+1 ante e N riporti
+                                  const numAnte = existingAnte.length + 1;
+                                  const newEls = els.filter(e => !(
+                                    (e.type === "innerRect" && !e.subType && inCell(e)) ||
+                                    (e.type === "profiloRiporto" && e.cellId === cell.id) ||
+                                    (e.type === "glass" && inCell(e))
+                                  ));
+                                  // Larghezza divisa equamente tra le ante
+                                  const TK_RIP = 6; // spessore profilo di riporto (px canvas)
+                                  const usableW = cell.w - 2;
+                                  const totalRiporti = numAnte - 1;
+                                  const antaW = (usableW - totalRiporti * TK_RIP) / numAnte;
+                                  let curX = cell.x + 1;
+                                  for (let i = 0; i < numAnte; i++) {
+                                    // Anta i-esima
+                                    newEls.push({
+                                      id: Date.now() + i * 7,
+                                      type: "innerRect",
+                                      x: Math.round(curX),
+                                      y: cellY + 1,
+                                      w: Math.round(antaW),
+                                      h: cellH - 2,
+                                      cellId: cell.id,
+                                      _antaIndex: i,            // indice nella sequenza ante (0=primo apri)
+                                      _antaCount: numAnte,      // totale ante in questa cella
+                                    });
+                                    curX += antaW;
+                                    // Profilo di riporto fra anta-i e anta-(i+1) — solo se c'è un'anta successiva
+                                    // Sta sull'anta che apri per prima, cioè l'anta i (la sinistra)
+                                    if (i < numAnte - 1) {
+                                      newEls.push({
+                                        id: Date.now() + i * 7 + 100,
+                                        type: "profiloRiporto",
+                                        x: Math.round(curX),
+                                        y: cellY + 1,
+                                        w: TK_RIP,
+                                        h: cellH - 2,
+                                        cellId: cell.id,
+                                        _ownerAntaIndex: i,     // appartiene all'anta i (sinistra)
+                                      });
+                                      curX += TK_RIP;
+                                    }
                                   }
+                                  setDW(newEls); // drawMode resta attivo: il prossimo click aggiunge un'altra anta
                                 } else if (drawMode === "place-porta") {
                                   const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana") && inCell(e)));
                                   newEls.push({ id: Date.now() + Math.floor(Math.random()*10000), type: "innerRect", subType: "porta", x: cell.x + 1, y: cellY + 1, w: cell.w - 2, h: cellH - 2, cellId: cell.id });
@@ -3594,6 +3629,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
 
                                     // ═══ FERMAVETRO — anello sottile attorno al vetro ═══
+                                    // ═══ PROFILO DI RIPORTO — sta sull'anta che apre per prima (a sinistra) ═══
+                                    if (el.type === "profiloRiporto") {
+                                      return (
+                                        <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : { cursor: "move" }}>
+                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill={sel ? "#1A9E7322" : "#b8b6b0"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.2 : 0.5} />
+                                          {/* Linea verticale al centro per look profilo */}
+                                          <line x1={el.x + el.w / 2} y1={el.y + 4} x2={el.x + el.w / 2} y2={el.y + el.h - 4} stroke="#3A3A3C" strokeWidth={0.4} opacity={0.5} />
+                                        </g>
+                                      );
+                                    }
+
                                     if (el.type === "fermavetroRect") {
                                       const T = 3;
                                       return (
