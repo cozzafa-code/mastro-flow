@@ -1,5 +1,5 @@
 // app/api/pannelli/list/route.ts
-// Lista catalogo pannelli + CRUD inserimento manuale + DXF
+// Lista catalogo pannelli + CRUD inserimento manuale + DXF + assegnazione tipo
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -18,9 +18,8 @@ export async function GET(req: NextRequest) {
     let q = supabase
       .from("catalogo_pannelli")
       .select("*")
-      .eq("azienda_id", AZIENDA_ID)
       .eq("attivo", true)
-      .order("produttore", { ascending: true })
+      .order("produttore", { ascending: true, nullsFirst: false })
       .order("nome", { ascending: true });
 
     if (tipo) q = q.eq("tipo", tipo);
@@ -36,7 +35,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // Inserimento manuale singolo pannello
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     const body = await req.json();
@@ -47,6 +45,21 @@ export async function POST(req: NextRequest) {
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data);
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id richiesto" }, { status: 400 });
+    const body = await req.json();
+    const { error } = await supabase.from("catalogo_pannelli").update(body).eq("id", id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
