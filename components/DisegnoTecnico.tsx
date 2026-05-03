@@ -1287,6 +1287,99 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               let best = null, bestD = SNAP_R;
                               const ANTA_SNAP_R = 60; // raggio snap per lati ante eliminati (domina su vertici telaio)
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
+
+                              // ══ OSNAP AVANZATI ══ (priorità alta su disegni TEL.LIB.)
+                              // Solo se non siamo in profileMode (i profili hanno snap dedicato).
+                              if (!isProfileMode && dw.drawMode === "line" && !dw._lineSubType) {
+                                const OSNAP_R = SNAP_R * 0.8;
+                                const lines = freeLines.filter(l => l.x1 !== undefined);
+                                // 1. ENDPOINT (già coperto da pts ma con label esplicita)
+                                lines.forEach(l => {
+                                  [{x:l.x1, y:l.y1}, {x:l.x2, y:l.y2}].forEach(p => {
+                                    const d = Math.hypot(p.x - mx, p.y - my);
+                                    if (d < OSNAP_R && d < bestD) { bestD = d; best = { ...p, _osnap: 'END' }; }
+                                  });
+                                });
+                                // 2. MIDPOINT — punto medio di ogni linea
+                                lines.forEach(l => {
+                                  const mp = { x: (l.x1+l.x2)/2, y: (l.y1+l.y2)/2 };
+                                  const d = Math.hypot(mp.x - mx, mp.y - my);
+                                  if (d < OSNAP_R && d < bestD) { bestD = d; best = { ...mp, _osnap: 'MID' }; }
+                                });
+                                // 3. INTERSECTION — intersezione tra coppie di linee
+                                for (let i = 0; i < lines.length; i++) {
+                                  for (let j = i+1; j < lines.length; j++) {
+                                    const a = lines[i], b = lines[j];
+                                    const ax1=a.x1,ay1=a.y1,ax2=a.x2,ay2=a.y2;
+                                    const bx1=b.x1,by1=b.y1,bx2=b.x2,by2=b.y2;
+                                    const denom = (ax1-ax2)*(by1-by2) - (ay1-ay2)*(bx1-bx2);
+                                    if (Math.abs(denom) < 0.01) continue; // linee parallele
+                                    const t = ((ax1-bx1)*(by1-by2) - (ay1-by1)*(bx1-bx2)) / denom;
+                                    const u = -((ax1-ax2)*(ay1-by1) - (ay1-ay2)*(ax1-bx1)) / denom;
+                                    // Intersezione effettiva sui segmenti (0<=t<=1 e 0<=u<=1) → 'INT' rosso
+                                    // Se proiezione fuori → 'EXT' (extension) opzionale
+                                    if (t >= -0.1 && t <= 1.1 && u >= -0.1 && u <= 1.1) {
+                                      const ix = ax1 + t*(ax2-ax1);
+                                      const iy = ay1 + t*(ay2-ay1);
+                                      const d = Math.hypot(ix - mx, iy - my);
+                                      if (d < OSNAP_R && d < bestD) { bestD = d; best = { x: ix, y: iy, _osnap: 'INT' }; }
+                                    }
+                                  }
+                                }
+                                // 4. PERPENDICULAR — dal pending point, perpendicolare a una linea
+                                const pp = dw._pendingLine;
+                                if (pp) {
+                                  lines.forEach(l => {
+                                    const dx = l.x2 - l.x1, dy = l.y2 - l.y1;
+                                    const len2 = dx*dx + dy*dy;
+                                    if (len2 < 1) return;
+                                    // Proiezione di pp su linea
+                                    const t = ((pp.x1 - l.x1)*dx + (pp.y1 - l.y1)*dy) / len2;
+                                    const px = l.x1 + t*dx;
+                                    const py = l.y1 + t*dy;
+                                    // Filtro: il punto deve essere sul segmento (0..1) e vicino al cursore
+                                    if (t >= 0 && t <= 1) {
+                                      const d = Math.hypot(px - mx, py - my);
+                                      if (d < OSNAP_R && d < bestD) { bestD = d; best = { x: px, y: py, _osnap: 'PERP' }; }
+                                    }
+                                  });
+                                }
+                                // 5. NEAREST — punto più vicino su una linea (lower priority)
+                                lines.forEach(l => {
+                                  const dx = l.x2 - l.x1, dy = l.y2 - l.y1;
+                                  const len2 = dx*dx + dy*dy;
+                                  if (len2 < 1) return;
+                                  const t = Math.max(0, Math.min(1, ((mx - l.x1)*dx + (my - l.y1)*dy) / len2));
+                                  const npx = l.x1 + t*dx, npy = l.y1 + t*dy;
+                                  const d = Math.hypot(npx - mx, npy - my);
+                                  // Solo se molto vicino, e solo se nessun snap forte è stato trovato
+                                  if (d < OSNAP_R * 0.4 && d < bestD - 3) { bestD = d; best = { x: npx, y: npy, _osnap: 'NEAR' }; }
+                                });
+                                // 6. EXTENSION — estensione di una linea oltre i suoi endpoint
+                                lines.forEach(l => {
+                                  const dx = l.x2 - l.x1, dy = l.y2 - l.y1;
+                                  const len2 = dx*dx + dy*dy;
+                                  if (len2 < 1) return;
+                                  const t = ((mx - l.x1)*dx + (my - l.y1)*dy) / len2;
+                                  if (t > 1.05 || t < -0.05) {
+                                    // Punto sull'estensione
+                                    const ex = l.x1 + t*dx, ey = l.y1 + t*dy;
+                                    const d = Math.hypot(ex - mx, ey - my);
+                                    if (d < OSNAP_R * 0.5 && d < bestD - 5) { bestD = d; best = { x: ex, y: ey, _osnap: 'EXT' }; }
+                                  }
+                                });
+                                // 7. QUADRANT — 4 punti cardinali di rect (zoccoloLibero, fermavetroRect, innerRect)
+                                els.filter(e => ["zoccoloLibero","fermavetroRect","innerRect","rect"].includes(e.type)).forEach(r => {
+                                  const cx = r.x + r.w/2, cy = r.y + r.h/2;
+                                  const quads = [
+                                    {x: cx, y: r.y}, {x: r.x + r.w, y: cy}, {x: cx, y: r.y + r.h}, {x: r.x, y: cy}
+                                  ];
+                                  quads.forEach(q => {
+                                    const d = Math.hypot(q.x - mx, q.y - my);
+                                    if (d < OSNAP_R && d < bestD) { bestD = d; best = { ...q, _osnap: 'QUAD' }; }
+                                  });
+                                });
+                              }
                               // FIX: in profileMode, i punti _antaSnap hanno PRIORITA' ASSOLUTA.
                               // Prima passo: cerco solo tra i punti _antaSnap con raggio esteso. Se trovo, vince.
                               if (isProfileMode) {
@@ -4481,11 +4574,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const snapped = findSnap(gx, gy);
                                           const iz = 1 / zoom;
                                           if (snapped && Math.hypot(snapped.x - gx, snapped.y - gy) < 3) {
+                                            // Colore + simbolo per ogni tipo OSNAP (standard CAD)
+                                            const osnapType = (snapped as any)._osnap || 'END';
+                                            const osnapColors: any = { END:"#1A9E73", MID:"#D08008", INT:"#DC4444", PERP:"#3B7FE0", NEAR:"#999", EXT:"#9333EA", QUAD:"#0EA5E9" };
+                                            const osnapLabels: any = { END:"END", MID:"MID", INT:"INT", PERP:"PERP", NEAR:"NEAR", EXT:"EXT", QUAD:"QUAD" };
+                                            const oc = osnapColors[osnapType] || "#1A9E73";
+                                            const lbl = osnapLabels[osnapType] || "";
+                                            const shape = osnapType;
                                             return <>
-                                              <circle cx={gx} cy={gy} r={14*iz} fill="none" stroke="#1A9E73" strokeWidth={2.5*iz} />
-                                              <circle cx={gx} cy={gy} r={5*iz} fill="#1A9E73" />
-                                              <line x1={gx-22*iz} y1={gy} x2={gx+22*iz} y2={gy} stroke="#1A9E73" strokeWidth={1.5*iz} opacity={0.7} />
-                                              <line x1={gx} y1={gy-22*iz} x2={gx} y2={gy+22*iz} stroke="#1A9E73" strokeWidth={1.5*iz} opacity={0.7} />
+                                              {/* Forma del marker: ogni OSNAP ha simbolo CAD standard */}
+                                              {shape === 'END' && <rect x={gx-7*iz} y={gy-7*iz} width={14*iz} height={14*iz} fill="none" stroke={oc} strokeWidth={2*iz} />}
+                                              {shape === 'MID' && <polygon points={`${gx},${gy-9*iz} ${gx+9*iz},${gy} ${gx},${gy+9*iz} ${gx-9*iz},${gy}`} fill="none" stroke={oc} strokeWidth={2*iz} />}
+                                              {shape === 'INT' && <><line x1={gx-9*iz} y1={gy-9*iz} x2={gx+9*iz} y2={gy+9*iz} stroke={oc} strokeWidth={2.2*iz}/><line x1={gx-9*iz} y1={gy+9*iz} x2={gx+9*iz} y2={gy-9*iz} stroke={oc} strokeWidth={2.2*iz}/></>}
+                                              {shape === 'PERP' && <><rect x={gx-7*iz} y={gy-7*iz} width={14*iz} height={14*iz} fill="none" stroke={oc} strokeWidth={1.8*iz}/><line x1={gx-7*iz} y1={gy} x2={gx} y2={gy} stroke={oc} strokeWidth={1.8*iz}/><line x1={gx} y1={gy-7*iz} x2={gx} y2={gy} stroke={oc} strokeWidth={1.8*iz}/></>}
+                                              {shape === 'NEAR' && <><line x1={gx-9*iz} y1={gy-9*iz} x2={gx+9*iz} y2={gy+9*iz} stroke={oc} strokeWidth={1.5*iz} strokeDasharray={`${3*iz},${2*iz}`}/></>}
+                                              {shape === 'EXT' && <><line x1={gx-12*iz} y1={gy} x2={gx+12*iz} y2={gy} stroke={oc} strokeWidth={1.5*iz} strokeDasharray={`${4*iz},${2*iz}`}/><line x1={gx} y1={gy-3*iz} x2={gx} y2={gy+3*iz} stroke={oc} strokeWidth={2*iz}/></>}
+                                              {shape === 'QUAD' && <polygon points={`${gx},${gy-9*iz} ${gx+9*iz},${gy} ${gx},${gy+9*iz} ${gx-9*iz},${gy}`} fill={oc} fillOpacity={0.2} stroke={oc} strokeWidth={2*iz} />}
+                                              {/* Punto centrale */}
+                                              <circle cx={gx} cy={gy} r={3*iz} fill={oc} />
+                                              {/* Etichetta tipo OSNAP */}
+                                              <rect x={gx + 12*iz} y={gy - 8*iz} width={26*iz} height={11*iz} fill={oc} rx={2*iz} />
+                                              <text x={gx + 25*iz} y={gy + 0.5*iz} textAnchor="middle" fontSize={7*iz} fontWeight={800} fill="#fff" fontFamily="'SF Mono',monospace" letterSpacing="0.5">{lbl}</text>
                                             </>;
                                           }
                                           if (drawMode === "place-mont-free" || drawMode === "place-trav-free") return null;
