@@ -1,6 +1,6 @@
 // app/api/pannelli/stima/route.ts
-// Riceve { import_id, pdf_url }, conta pagine PDF, restituisce stima costo.
-// Niente chiamata Anthropic: solo parse pagine + formula deterministica.
+// Calcola pagine PDF e prezzo CLIENTE (markup 1.5x sul costo provider).
+// Il client riceve solo costo_eur (prezzo finale) - mai il costo provider.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -10,12 +10,10 @@ export const maxDuration = 60;
 
 const AZIENDA_ID = "ccca51c1-656b-4e7c-a501-55753e20da29";
 
-// Costi Anthropic Sonnet 4.5: $3/M input, $15/M output
-// PDF document: ~2k token per pagina input, ~150 token output per pannello
-// Formula prudente:
-const COSTO_BASE_EUR = 0.05;
-const COSTO_PER_PAGINA_EUR = 0.04;
+// Costi provider (USD - convertiti in EUR)
 const EUR_PER_USD = 0.93;
+const COSTO_PROVIDER_BASE_USD = 0.05;
+const COSTO_PROVIDER_PER_PAGINA_USD = 0.04;
 
 function supabaseAdmin() {
   return createClient(
@@ -30,11 +28,9 @@ async function contaPaginePdf(pdfUrl: string): Promise<number | null> {
     const res = await fetch(pdfUrl);
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
-    // Conteggio pagine via regex su /Type /Page (non /Pages)
     const text = buf.toString("latin1");
     const matches = text.match(/\/Type\s*\/Page[^s]/g);
     if (matches && matches.length > 0) return matches.length;
-    // Fallback: /Count nel root /Pages
     const countMatch = text.match(/\/Count\s+(\d+)/);
     if (countMatch) return parseInt(countMatch[1], 10);
     return null;
@@ -53,29 +49,37 @@ export async function POST(req: NextRequest) {
       );
     }
     const { import_id, pdf_url } = body;
-
     const supabase = supabaseAdmin();
 
     const pagine = await contaPaginePdf(pdf_url);
-    const pagineSafe = pagine ?? 5; // default prudente
+    const pagineSafe = pagine ?? 5;
 
-    const costoStimato = COSTO_BASE_EUR + pagineSafe * COSTO_PER_PAGINA_EUR;
-    const costoStimatoMax = costoStimato * 1.5; // margine
+    // Costo provider INTERNO (mai esposto al client)
+    const costoProviderUsd = COSTO_PROVIDER_BASE_USD + pagineSafe * COSTO_PROVIDER_PER_PAGINA_USD;
+    const costoProviderEur = costoProviderUsd * EUR_PER_USD;
 
-    const { data: credits } = await supabase
+    // Markup factor del cliente (default 1.5x)
+    const { data: aiCredits } = await supabase
       .from("ai_credits")
-      .select("budget_corrente")
+      .select("wallet_balance_eur, markup_factor")
       .eq("azienda_id", AZIENDA_ID)
       .single();
 
-    const budget = Number(credits?.budget_corrente ?? 0);
-    const budgetSufficiente = budget >= costoStimatoMax;
+    const markup = Number(aiCredits?.markup_factor ?? 1.5);
+    const saldo = Number(aiCredits?.wallet_balance_eur ?? 0);
 
+    // Prezzo CLIENTE (questo è quello che vede)
+    const costoClienteEur = costoProviderEur * markup;
+    const costoClienteMaxEur = costoClienteEur * 1.5; // safety margin per cataloghi imprevedibili
+
+    const saldoSufficiente = saldo >= costoClienteMaxEur;
+
+    // Salva costo_stimato (PROVIDER, non cliente) sull'import per audit interno
     await supabase
       .from("pannelli_imports")
       .update({
         pagine_totali: pagine,
-        costo_stimato: costoStimato,
+        costo_stimato: costoProviderEur, // costo INTERNO
         stato: "preventivo",
       })
       .eq("id", import_id);
@@ -83,11 +87,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       pagine: pagine,
-      pagine_usate_per_stima: pagineSafe,
-      costo_stimato_eur: Number(costoStimato.toFixed(2)),
-      costo_stimato_max_eur: Number(costoStimatoMax.toFixed(2)),
-      budget_corrente_eur: Number(budget.toFixed(2)),
-      budget_sufficiente: budgetSufficiente,
+      // Risposta al CLIENT: solo prezzi finali, niente costi provider
+      costo_eur: Number(costoClienteEur.toFixed(2)),
+      costo_max_eur: Number(costoClienteMaxEur.toFixed(2)),
+      saldo_eur: Number(saldo.toFixed(2)),
+      saldo_sufficiente: saldoSufficiente,
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);

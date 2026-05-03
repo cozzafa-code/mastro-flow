@@ -1,11 +1,6 @@
 // components/ImportPannelli.tsx
-// MODAL import pannelli con flusso completo:
-// 1. metodo: AI / Manuale
-// 2. categoria: Porte Interne / Blindati / Pannelli
-// 3. upload PDF -> Storage
-// 4. (solo AI) stima costo -> conferma utente
-// 5. estrazione AI -> promozione a catalogo_pannelli
-// 6. done con count reale promossi
+// MODAL import pannelli - Wallet system.
+// Mostra solo prezzo cliente. Nessun riferimento a Anthropic/provider/markup.
 
 "use client";
 
@@ -19,7 +14,7 @@ const BUCKET = "pannelli-pdf";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-type Step = "metodo" | "categoria" | "upload" | "stima" | "estrazione" | "done" | "errore";
+type Step = "metodo" | "categoria" | "upload" | "stima" | "estrazione" | "done" | "errore" | "saldo_basso";
 type Categoria = "porte_interne" | "blindati" | "pannelli";
 
 const CATEGORIE: { id: Categoria; label: string; icon: string; color: string; desc: string }[] = [
@@ -37,10 +32,10 @@ type Props = {
 
 type Stima = {
   pagine: number | null;
-  costo_stimato_eur: number;
-  costo_stimato_max_eur: number;
-  budget_corrente_eur: number;
-  budget_sufficiente: boolean;
+  costo_eur: number;
+  costo_max_eur: number;
+  saldo_eur: number;
+  saldo_sufficiente: boolean;
 };
 
 export default function ImportPannelli({ open, onClose, onComplete, defaultCategoria }: Props) {
@@ -54,6 +49,7 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [stima, setStima] = useState<Stima | null>(null);
   const [promossi, setPromossi] = useState<number | null>(null);
+  const [addebito, setAddebito] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -68,6 +64,7 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
       setPdfUrl(null);
       setStima(null);
       setPromossi(null);
+      setAddebito(null);
     }
   }, [open, defaultCategoria]);
 
@@ -103,14 +100,14 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
         if (importErr || !importRow) throw new Error(importErr?.message || "Insert fallito");
         setImportId(importRow.id);
 
-        setMessaggio("Upload PDF su Storage...");
+        setMessaggio("Caricamento PDF...");
         setProgress(25);
 
         const safeName = file.name.replace(/[^\w.\-]/g, "_");
         const path = `${AZIENDA_ID}/${importRow.id}/${Date.now()}_${safeName}`;
         const { error: upErr } = await supabase.storage.from(BUCKET)
           .upload(path, file, { contentType: "application/pdf", cacheControl: "3600", upsert: false });
-        if (upErr) throw new Error(`Storage: ${upErr.message}`);
+        if (upErr) throw new Error(`Caricamento fallito`);
 
         const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
         const fileUrl = pub.publicUrl;
@@ -131,8 +128,8 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
           return;
         }
 
-        // AI: pre-stima costo
-        setMessaggio("Analisi PDF e stima costo...");
+        // AI: stima costo
+        setMessaggio("Analisi documento...");
         setProgress(80);
         const stimaRes = await fetch("/api/pannelli/stima", {
           method: "POST", headers: { "content-type": "application/json" },
@@ -140,19 +137,25 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
         });
         const stimaJson = await stimaRes.json();
         if (!stimaRes.ok || !stimaJson.ok) {
-          return handleError(stimaJson.codice_errore || "STIMA_ERROR", stimaJson.dettaglio || "Errore stima");
+          return handleError(stimaJson.codice_errore || "STIMA_ERROR", "Analisi documento fallita");
         }
         setStima({
           pagine: stimaJson.pagine,
-          costo_stimato_eur: stimaJson.costo_stimato_eur,
-          costo_stimato_max_eur: stimaJson.costo_stimato_max_eur,
-          budget_corrente_eur: stimaJson.budget_corrente_eur,
-          budget_sufficiente: stimaJson.budget_sufficiente,
+          costo_eur: stimaJson.costo_eur,
+          costo_max_eur: stimaJson.costo_max_eur,
+          saldo_eur: stimaJson.saldo_eur,
+          saldo_sufficiente: stimaJson.saldo_sufficiente,
         });
-        setStep("stima");
+
+        if (!stimaJson.saldo_sufficiente) {
+          setStep("saldo_basso");
+        } else {
+          setStep("stima");
+        }
         setProgress(0);
       } catch (e: unknown) {
-        handleError("CLIENT_ERROR", e instanceof Error ? e.message : String(e));
+        const msg = e instanceof Error ? e.message : String(e);
+        handleError("CLIENT_ERROR", msg);
       }
     }, [metodo, categoria, onComplete]
   );
@@ -161,7 +164,7 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
     if (!importId || !pdfUrl || !categoria) return;
     try {
       setStep("estrazione");
-      setMessaggio("Estrazione AI in corso...");
+      setMessaggio("Estrazione automatica in corso...");
       setProgress(30);
 
       const res = await fetch("/api/pannelli/process", {
@@ -170,21 +173,25 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        return handleError(json.codice_errore || "AI_ERROR", json.dettaglio || "Errore AI");
+        if (json.codice_errore === "WALLET_INSUFFICIENT") {
+          return handleError("WALLET_INSUFFICIENT", "Saldo insufficiente. Ricarica il tuo wallet MASTRO.");
+        }
+        return handleError(json.codice_errore || "EXTRACTION_ERROR", json.dettaglio || "Errore estrazione");
       }
 
-      // Caso 0 pannelli estratti: mostra warning, non promuovere
+      setAddebito(json.addebito_eur ?? null);
+
       if ((json.numero_pannelli ?? 0) === 0) {
         setPromossi(0);
         setProgress(100);
         setStep("done");
-        setMessaggio(json.warning || "Nessun pannello estratto dal PDF. Prova con inserimento manuale.");
+        setMessaggio(json.warning || "Nessuna variante estratta. Prova con inserimento manuale.");
         onComplete?.(importId);
         return;
       }
 
       setProgress(70);
-      setMessaggio(`Estratti ${json.numero_pannelli} pannelli. Salvataggio in catalogo...`);
+      setMessaggio(`Estratte ${json.numero_pannelli} varianti. Salvataggio nel catalogo...`);
 
       const promRes = await fetch("/api/pannelli/promote", {
         method: "POST", headers: { "content-type": "application/json" },
@@ -192,7 +199,7 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
       });
       const promJson = await promRes.json();
       if (!promRes.ok || !promJson.ok) {
-        return handleError(promJson.codice_errore || "PROMOTE_ERROR", promJson.dettaglio || "Errore salvataggio catalogo");
+        return handleError(promJson.codice_errore || "PROMOTE_ERROR", "Errore salvataggio catalogo");
       }
 
       setPromossi(promJson.promossi ?? 0);
@@ -201,7 +208,8 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
       setMessaggio(`${promJson.promossi} pannelli salvati nel catalogo`);
       onComplete?.(importId);
     } catch (e: unknown) {
-      handleError("CLIENT_ERROR", e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      handleError("CLIENT_ERROR", msg);
     }
   }, [importId, pdfUrl, categoria, onComplete]);
 
@@ -217,6 +225,7 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
     categoria: "In quale sezione?",
     upload: "Carica il PDF",
     stima: "Conferma costo",
+    saldo_basso: "Saldo insufficiente",
     estrazione: "Elaborazione...",
     done: "Completato",
     errore: "Errore",
@@ -249,11 +258,11 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
               cursor: "pointer", textAlign: "left",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                <span style={{ fontSize: 24 }}>🤖</span>
-                <span style={{ fontWeight: 800, color: "#D08008", fontSize: 14 }}>Estrazione AI automatica</span>
+                <span style={{ fontSize: 24 }}>⚡</span>
+                <span style={{ fontWeight: 800, color: "#D08008", fontSize: 14 }}>Estrazione automatica</span>
               </div>
               <div style={{ fontSize: 11, color: "#666", lineHeight: 1.4 }}>
-                Carica un PDF, l&apos;AI estrae tutti i pannelli. Vedrai una stima costo prima di confermare.
+                Carica un PDF, MASTRO estrae tutti i pannelli automaticamente. Vedrai il costo prima di confermare.
               </div>
             </button>
             <button onClick={() => { setMetodo("manuale"); setStep(categoria ? "upload" : "categoria"); }} style={{
@@ -300,7 +309,7 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
               fontSize: 11, color: "#666", display: "flex", justifyContent: "space-between", alignItems: "center",
             }}>
               <span>
-                <strong>{metodo === "ai" ? "🤖 AI" : "✍️ Manuale"}</strong> ·{" "}
+                <strong>{metodo === "ai" ? "⚡ Automatica" : "✍️ Manuale"}</strong> ·{" "}
                 <strong>{CATEGORIE.find(c => c.id === categoria)?.label}</strong>
               </span>
               <button onClick={() => setStep("metodo")} style={{
@@ -323,45 +332,59 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
 
         {step === "stima" && stima && (
           <div>
-            <div style={{ padding: 14, background: "#fafafa", borderRadius: 10, marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>📄 Analisi PDF completata</div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 12 }}>
-                <span style={{ color: "#666" }}>Pagine rilevate:</span>
-                <strong>{stima.pagine ?? "n.d."}</strong>
+            <div style={{ padding: 18, background: "#fafafa", borderRadius: 10, marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: "#666", marginBottom: 14 }}>
+                📄 Analisi completata · {stima.pagine ?? "n.d."} pagine rilevate
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 12 }}>
-                <span style={{ color: "#666" }}>Costo stimato:</span>
-                <strong style={{ color: "#1A9E73" }}>€{stima.costo_stimato_eur.toFixed(2)}</strong>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: "1px solid #eee" }}>
+                <span style={{ fontSize: 13, color: "#1A1A1C" }}>Costo estrazione</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: "#D08008" }}>€{stima.costo_eur.toFixed(2)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 11 }}>
-                <span style={{ color: "#888" }}>Costo massimo:</span>
-                <span style={{ color: "#888" }}>€{stima.costo_stimato_max_eur.toFixed(2)}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 11, borderTop: "1px solid #eee", marginTop: 6, paddingTop: 10 }}>
-                <span style={{ color: "#888" }}>Budget AI corrente:</span>
-                <span style={{ color: stima.budget_sufficiente ? "#1A9E73" : "#DC4444", fontWeight: 700 }}>
-                  €{stima.budget_corrente_eur.toFixed(2)}
-                </span>
+
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", fontSize: 11, color: "#888", borderTop: "1px solid #eee" }}>
+                <span>Saldo Wallet MASTRO</span>
+                <span style={{ fontWeight: 700, color: "#1A9E73" }}>€{stima.saldo_eur.toFixed(2)}</span>
               </div>
             </div>
-
-            {!stima.budget_sufficiente && (
-              <div style={{ padding: 10, background: "#DC444415", borderRadius: 8, fontSize: 11, color: "#DC4444", marginBottom: 12 }}>
-                ⚠️ Budget insufficiente. Ricarica il budget AI per procedere.
-              </div>
-            )}
 
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setStep("upload")} style={{
                 flex: 1, padding: "12px 16px", borderRadius: 8, background: "#fff",
                 border: "1.5px solid #ccc", color: "#666", fontSize: 12, fontWeight: 700, cursor: "pointer",
               }}>Annulla</button>
-              <button onClick={confermaEstrazione} disabled={!stima.budget_sufficiente} style={{
-                flex: 2, padding: "12px 16px", borderRadius: 8,
-                background: stima.budget_sufficiente ? "#D08008" : "#ccc",
-                color: "#fff", fontSize: 12, fontWeight: 800,
-                border: "none", cursor: stima.budget_sufficiente ? "pointer" : "not-allowed",
-              }}>🤖 Conferma estrazione (€{stima.costo_stimato_eur.toFixed(2)})</button>
+              <button onClick={confermaEstrazione} style={{
+                flex: 2, padding: "12px 16px", borderRadius: 8, background: "#D08008",
+                color: "#fff", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer",
+              }}>⚡ Conferma e paga €{stima.costo_eur.toFixed(2)}</button>
+            </div>
+          </div>
+        )}
+
+        {step === "saldo_basso" && stima && (
+          <div>
+            <div style={{ padding: 16, background: "#DC444415", border: "1.5px solid #DC4444", borderRadius: 10, marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 20 }}>💰</span>
+                <span style={{ fontWeight: 800, color: "#DC4444", fontSize: 13 }}>Saldo insufficiente</span>
+              </div>
+              <div style={{ fontSize: 12, color: "#1A1A1C", lineHeight: 1.5 }}>
+                Costo estrazione: <strong>€{stima.costo_eur.toFixed(2)}</strong><br/>
+                Saldo Wallet MASTRO: <strong style={{ color: "#DC4444" }}>€{stima.saldo_eur.toFixed(2)}</strong>
+              </div>
+            </div>
+            <div style={{ padding: 12, background: "#fafafa", borderRadius: 8, fontSize: 11, color: "#666", marginBottom: 12, lineHeight: 1.5 }}>
+              Ricarica il tuo Wallet MASTRO per continuare. Una volta ricaricato, potrai estrarre cataloghi finché c&apos;è saldo disponibile.
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={onClose} style={{
+                flex: 1, padding: "12px 16px", borderRadius: 8, background: "#fff",
+                border: "1.5px solid #ccc", color: "#666", fontSize: 12, fontWeight: 700, cursor: "pointer",
+              }}>Chiudi</button>
+              <button onClick={() => alert("Ricarica Wallet: in arrivo - Stripe in fase di integrazione")} style={{
+                flex: 2, padding: "12px 16px", borderRadius: 8, background: "#1A9E73",
+                color: "#fff", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer",
+              }}>💳 Ricarica Wallet</button>
             </div>
           </div>
         )}
@@ -397,11 +420,16 @@ export default function ImportPannelli({ open, onClose, onComplete, defaultCateg
                 {(promossi ?? 0) > 0 ? "Completato" : "Nessun pannello estratto"}
               </span>
             </div>
-            <div style={{ fontSize: 12, color: "#1A1A1C", marginBottom: 12, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: "#1A1A1C", marginBottom: 8, lineHeight: 1.5 }}>
               {(promossi ?? 0) > 0
-                ? `${promossi} pannelli salvati nel catalogo. Trovali nella sezione "${CATEGORIE.find(c => c.id === categoria)?.label}".`
+                ? `${promossi} pannelli salvati nel catalogo "${CATEGORIE.find(c => c.id === categoria)?.label}".`
                 : messaggio || "PDF analizzato ma senza pannelli estraibili."}
             </div>
+            {addebito !== null && addebito > 0 && (
+              <div style={{ fontSize: 10, color: "#888", marginBottom: 12, fontStyle: "italic" }}>
+                Addebitato dal Wallet: €{addebito.toFixed(2)}
+              </div>
+            )}
             <button onClick={() => { onComplete?.(importId ?? undefined); onClose(); }} style={{
               padding: "10px 16px", borderRadius: 8,
               background: (promossi ?? 0) > 0 ? "#1A9E73" : "#D08008",
