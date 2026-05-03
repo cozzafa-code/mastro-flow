@@ -2602,11 +2602,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       snapInfo = `sp=${Math.round(sp.x)},${Math.round(sp.y)} d=${Math.round(snapDist)}`;
                                       if (snapDist < 140) { px = sp.x; py = sp.y; snapApplied = "yes"; }
                                     }
-                                    // H/V: forza allineamento se la linea è prevalentemente orizzontale o verticale (ratio 2:1).
+                                    // ═══ ORTHO FORTE su click finale: ratio 2:1 → snap a H o V ═══
                                     const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
-                                    // FORZATURA H/V DISATTIVATA - ora il TEL.LIB. permette qualsiasi angolo (anche 1°)
-                                    // if (adxC > 0 && adyC / Math.max(adxC, 1) > 8) px = pending.x1;
-                                    // else if (adyC > 0 && adxC / Math.max(adyC, 1) > 8) py = pending.y1;
+                                    if (adyC > adxC * 2 && adyC > 8) px = pending.x1;
+                                    else if (adxC > adyC * 2 && adxC > 8) py = pending.y1;
                                     // chiusura forma — solo per telaio libero senza subType, ≥3 lati, snap ravvicinato 30px
                                     let closeApplied = "no";
                                     if (!subTypeVal) {
@@ -3628,24 +3627,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // Snap a punti esistenti durante il movimento
                                     const snapPt = findSnap(gx, gy);
                                     if (snapPt) { gx = snapPt.x; gy = snapPt.y; }
-                                    // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
-                                    // (anche dopo findSnap — priorita' all'allineamento)
-                                    const adx = Math.abs(gx - p.x1), ady = Math.abs(gy - p.y1);
-                                    // H/V disattivata: nessuno snap forzato
+                                    // ═══ ORTHO FORTE: ratio 2:1 → snap a H o V ═══
+                                    let orthoApplied: "h" | "v" | null = null;
+                                    if (!snapPt) {
+                                      const adx = Math.abs(gx - p.x1), ady = Math.abs(gy - p.y1);
+                                      // Se ady > 2*adx → snap verticale
+                                      if (ady > adx * 2 && ady > 8) { gx = p.x1; orthoApplied = "v"; }
+                                      // Se adx > 2*ady → snap orizzontale
+                                      else if (adx > ady * 2 && adx > 8) { gy = p.y1; orthoApplied = "h"; }
+                                    }
                                     // Mont.Lib: forza verticale
                                     if (drawMode === "place-mont-free" || dw._lineSubType === "montante") {
                                       gx = p.x1;
                                       if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy));
+                                      orthoApplied = "v";
                                     }
                                     // Trav.Lib: forza orizzontale
                                     if (drawMode === "place-trav-free" || drawMode === "place-zocc-free" || dw._lineSubType === "traverso") {
                                       gy = p.y1;
                                       if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx));
+                                      orthoApplied = "h";
                                     }
                                     const deg = Math.round(Math.atan2(-(gy - p.y1), gx - p.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - p.x1, gy - p.y1) / fW * realW);
-                                    if (dw._guideX !== gx || dw._guideY !== gy) {
-                                      onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
+                                    if (dw._guideX !== gx || dw._guideY !== gy || dw._orthoActive !== orthoApplied) {
+                                      onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len, _orthoActive: orthoApplied });
                                     }
                                   }}
                                   onMouseUpDISABLED={(e2: any) => {
@@ -3740,15 +3746,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         gx = snapPtT.x; gy = snapPtT.y;
                                       }
                                     }
-                                    // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
+                                    // ═══ ORTHO FORTE: ratio 2:1 → snap a H o V ═══
+                                    let orthoTouchApplied: "h" | "v" | null = null;
                                     const adxT = Math.abs(gx - pp.x1), adyT = Math.abs(gy - pp.y1);
-                                    // H/V disattivata su touch: nessuno snap forzato
-                                    if (drawMode === "place-mont-free" || dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
-                                    if (drawMode === "place-trav-free" || drawMode === "place-zocc-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
+                                    if (adyT > adxT * 2 && adyT > 8) { gx = pp.x1; orthoTouchApplied = "v"; }
+                                    else if (adxT > adyT * 2 && adxT > 8) { gy = pp.y1; orthoTouchApplied = "h"; }
+                                    if (drawMode === "place-mont-free" || dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); orthoTouchApplied = "v"; }
+                                    if (drawMode === "place-trav-free" || drawMode === "place-zocc-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); orthoTouchApplied = "h"; }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - pp.x1, gy - pp.y1) / fW * realW);
-                                    if (dw._guideX !== gx || dw._guideY !== gy) {
-                                      onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
+                                    if (dw._guideX !== gx || dw._guideY !== gy || dw._orthoActive !== orthoTouchApplied) {
+                                      onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len, _orthoActive: orthoTouchApplied });
                                     }
                                   }}
                                   onTouchEnd={(e2) => {
@@ -5039,10 +5047,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       })}
                                       {/* Live guide line to mouse */}
                                       {gx != null && gy != null && <>
-                                        <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={2.5} strokeDasharray="8,4" opacity={0.8} />
-                                        {/* H/V snap indicator */}
-                                        {gx === p.x1 && <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke="#1A9E73" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.7} />}
-                                        {gy === p.y1 && <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke="#1A9E73" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.7} />}
+                                        {/* Linea principale: VERDE GRASSA quando ORTHO attivo, altrimenti normale */}
+                                        {dw._orthoActive ? (
+                                          <>
+                                            <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke="#1A9E73" strokeWidth={5} opacity={0.45} />
+                                            <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke="#1A9E73" strokeWidth={2.5} strokeDasharray="10,4" opacity={1} />
+                                          </>
+                                        ) : (
+                                          <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={2.5} strokeDasharray="8,4" opacity={0.8} />
+                                        )}
+                                        {/* H/V snap indicator: linee guida full-canvas più visibili */}
+                                        {dw._orthoActive === "v" && (
+                                          <>
+                                            <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke="#1A9E73" strokeWidth={2} strokeDasharray="8,4" opacity={0.9} />
+                                            <rect x={gx + 8} y={(p.y1 + gy) / 2 - 12} width={56} height={20} fill="#1A9E73" rx={4} />
+                                            <text x={gx + 36} y={(p.y1 + gy) / 2 + 1} textAnchor="middle" fontSize={11} fontWeight={800} fill="#fff" fontFamily="'SF Mono',monospace">ORTHO ⊥</text>
+                                          </>
+                                        )}
+                                        {dw._orthoActive === "h" && (
+                                          <>
+                                            <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke="#1A9E73" strokeWidth={2} strokeDasharray="8,4" opacity={0.9} />
+                                            <rect x={(p.x1 + gx) / 2 - 28} y={gy - 26} width={56} height={20} fill="#1A9E73" rx={4} />
+                                            <text x={(p.x1 + gx) / 2} y={gy - 12} textAnchor="middle" fontSize={11} fontWeight={800} fill="#fff" fontFamily="'SF Mono',monospace">ORTHO —</text>
+                                          </>
+                                        )}
                                         {/* Snap indicator sul punto target — cerchio verde se agganciato */}
                                         {(() => {
                                           const snapped = findSnap(gx, gy);
