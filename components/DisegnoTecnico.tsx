@@ -7,6 +7,7 @@
 // ═══════════════════════════════════════════════════════════
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import GestioneTipologie from "./GestioneTipologie";
+import SelettoreVetri from "./SelettoreVetri";
 
 // ═══════════════════════════════════════════════════════════
 // 3D ISOMETRIC VIEW — 6 Faces + Per-face drawing + Render
@@ -935,6 +936,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   // Accessori: sub-tab + modal catalogo
   const [accSubTab, setAccSubTab] = React.useState<"catalogo" | "veloci">("veloci");
   const [showCatalogo, setShowCatalogo] = React.useState<boolean>(false);
+  // Selettore vetri intelligente
+  const [showSelettoreVetri, setShowSelettoreVetri] = React.useState<boolean>(false);
+  const [selectedVetro, setSelectedVetro] = React.useState<any | null>(null); // vetro scelto da applicare al prossimo place-vetro
   const [catalogoData, setCatalogoData] = React.useState<any[]>([]);
   const [pendingCatAcc, setPendingCatAcc] = React.useState<any | null>(null); // accessorio scelto, in attesa di click sul disegno
   const [pendingVeloce, setPendingVeloce] = React.useState<string | null>(null); // pittogramma veloce in attesa
@@ -2222,7 +2226,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     setDW(newEls);
                                   } else if (drawMode === "place-vetro") {
                                     const newEls = els.filter(e => e.type !== "polyGlass");
-                                    newEls.push({ id: Date.now(), type: "polyGlass", poly: cellPoly });
+                                    const vetroData = selectedVetro ? {
+                                      vetro_id: selectedVetro.id,
+                                      vetro_codice: selectedVetro.codice,
+                                      vetro_nome: selectedVetro.nome,
+                                      vetro_composizione: selectedVetro.composizione,
+                                      vetro_ug: selectedVetro.ug,
+                                      vetro_rw: selectedVetro.abbattimento_acustico,
+                                      vetro_prezzo_mq: selectedVetro.prezzo_mq,
+                                    } : {};
+                                    newEls.push({ id: Date.now(), type: "polyGlass", poly: cellPoly, ...vetroData });
                                     setDW(newEls);
                                   } else if (drawMode === "place-persiana") {
                                     const newEls = els.filter(e => e.type !== "polyPersiana");
@@ -2322,7 +2335,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const tk = anta ? (anta.subType === "porta" ? TK_PORTA : TK_ANTA) : 1;
                                   const base = anta || { x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2 };
                                   const newEls = els.filter(e => !(e.type === "glass" && inCell(e)));
-                                  newEls.push({ id: Date.now(), type: "glass", x: base.x + tk, y: base.y + tk, w: base.w - tk * 2, h: base.h - tk * 2, cellId: cell.id });
+                                  const vetroData = selectedVetro ? {
+                                    vetro_id: selectedVetro.id,
+                                    vetro_codice: selectedVetro.codice,
+                                    vetro_nome: selectedVetro.nome,
+                                    vetro_composizione: selectedVetro.composizione,
+                                    vetro_ug: selectedVetro.ug,
+                                    vetro_rw: selectedVetro.abbattimento_acustico,
+                                    vetro_prezzo_mq: selectedVetro.prezzo_mq,
+                                  } : {};
+                                  newEls.push({ id: Date.now(), type: "glass", x: base.x + tk, y: base.y + tk, w: base.w - tk * 2, h: base.h - tk * 2, cellId: cell.id, ...vetroData });
                                   setDW(newEls);
                                 }
                                 return;
@@ -3137,7 +3159,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-anta" ? null : "place-anta", _pendingLine: null })} style={bs(drawMode === "place-anta")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="4" y="3" width="16" height="18" rx="0.5"/><line x1="12" y1="3" x2="12" y2="21"/></svg>Anta</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-porta" ? null : "place-porta", _pendingLine: null })} style={bs(drawMode === "place-porta")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M4 21 V4 Q4 3 5 3 H19 Q20 3 20 4 V21"/><circle cx="16" cy="12" r="1" fill="currentColor"/></svg>Porta</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-persiana" ? null : "place-persiana", _pendingLine: null })} style={bs(drawMode === "place-persiana")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="0.5"/><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="16" x2="21" y2="16"/></svg>Pers.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-vetro" ? null : "place-vetro", _pendingLine: null })} style={bs(drawMode === "place-vetro")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="0.5"/><line x1="6" y1="6" x2="10" y2="6"/><line x1="6" y1="6" x2="6" y2="10"/></svg>Vetro</div>
+                                  <div onClick={() => {
+                                    if (drawMode === "place-vetro") {
+                                      setMode({ drawMode: null, _pendingLine: null });
+                                      setSelectedVetro(null);
+                                    } else {
+                                      // Apri selettore vetri PRIMA di andare in modalità placement
+                                      setShowSelettoreVetri(true);
+                                    }
+                                  }} style={bs(drawMode === "place-vetro")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="0.5"/><line x1="6" y1="6" x2="10" y2="6"/><line x1="6" y1="6" x2="6" y2="10"/></svg>Vetro{selectedVetro ? ` ✓` : ""}</div>
                                   <div onClick={() => { const cx=frame?frame.x+frame.w/2:fX+fW/2; const cy=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"circle",cx,cy,r:Math.min(fW,fH)/4}]); }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><circle cx="12" cy="12" r="9"/></svg>Oblò</div>
                                 </div>
                                 </>}
@@ -4783,23 +4813,51 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const lenR = Math.hypot(dx2r, dy2r) || 1;
                                       const angR = Math.atan2(dy2r, dx2r) * 180 / Math.PI;
                                       const midXR = (el.x1 + el.x2) / 2, midYR = (el.y1 + el.y2) / 2;
-                                      const nxR = -dy2r / lenR * 10, nyR = dx2r / lenR * 10;
+                                      // Vettore normale (perpendicolare alla linea)
+                                      const nxR = -dy2r / lenR, nyR = dx2r / lenR;
+                                      // Offset per le tacche (8px)
+                                      const tackOff = 9;
+                                      // Direzione lungo linea
+                                      const ux = dx2r / lenR, uy = dy2r / lenR;
                                       const BLUE = T.blue || "#3B7FE0";
+                                      const SEL_COLOR = sel ? "#1A9E73" : BLUE;
+                                      const handleEdit = (e3: any) => {
+                                        e3?.stopPropagation?.();
+                                        const cur = parseInt(el.label) || 0;
+                                        const inp = prompt("Misura righello (mm):", String(cur));
+                                        if (!inp) return;
+                                        const newLen = parseInt(inp.trim());
+                                        if (isNaN(newLen) || newLen < 1) return;
+                                        // Aggiorna solo il label (la lunghezza pixel non cambia, è una misura riferita)
+                                        const newEls = els.map(e => e.id === el.id ? { ...e, label: String(newLen), labelOverride: true } : e);
+                                        setDW(newEls);
+                                      };
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}
                                           {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "move" }}>
-                                          {/* Linea tratteggiata blu */}
-                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={BLUE} strokeWidth={1.2} strokeDasharray="6,3" opacity={0.7} />
-                                          {/* Tacche estremità */}
-                                          <line x1={el.x1-nxR*0.6} y1={el.y1-nyR*0.6} x2={el.x1+nxR*0.6} y2={el.y1+nyR*0.6} stroke={BLUE} strokeWidth={1.5} />
-                                          <line x1={el.x2-nxR*0.6} y1={el.y2-nyR*0.6} x2={el.x2+nxR*0.6} y2={el.y2+nyR*0.6} stroke={BLUE} strokeWidth={1.5} />
-                                          {/* Punti di ancoraggio */}
-                                          <circle cx={el.x1} cy={el.y1} r={sel ? 5 : 3} fill={BLUE} opacity={0.8} />
-                                          <circle cx={el.x2} cy={el.y2} r={sel ? 5 : 3} fill={BLUE} opacity={0.8} />
-                                          {/* Badge misura */}
-                                          <g transform={`rotate(${angR > 90 || angR < -90 ? angR + 180 : angR}, ${midXR + nxR}, ${midYR + nyR})`}>
-                                            <rect x={midXR + nxR - 20} y={midYR + nyR - 8} width={40} height={16} fill={BLUE} rx={4} opacity={0.9} />
-                                            <text x={midXR + nxR} y={midYR + nyR + 5} textAnchor="middle" fontSize={9} fontWeight={800} fill="#fff" fontFamily="monospace">{el.label}</text>
+                                          {/* Linea PRINCIPALE (più spessa) */}
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={SEL_COLOR} strokeWidth={2} opacity={0.95} />
+                                          {/* Linea tratteggiata sottile sopra (effetto quotatura tecnica) */}
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="#fff" strokeWidth={0.6} strokeDasharray="3,3" opacity={0.6} />
+                                          {/* FRECCE alle estremità (tipo quotatura tecnica) */}
+                                          <polygon points={`${el.x1},${el.y1} ${el.x1 + ux*8 + nxR*3},${el.y1 + uy*8 + nyR*3} ${el.x1 + ux*8 - nxR*3},${el.y1 + uy*8 - nyR*3}`} fill={SEL_COLOR} />
+                                          <polygon points={`${el.x2},${el.y2} ${el.x2 - ux*8 + nxR*3},${el.y2 - uy*8 + nyR*3} ${el.x2 - ux*8 - nxR*3},${el.y2 - uy*8 - nyR*3}`} fill={SEL_COLOR} />
+                                          {/* Tacche perpendicolari estremità (più grandi) */}
+                                          <line x1={el.x1+nxR*tackOff} y1={el.y1+nyR*tackOff} x2={el.x1-nxR*tackOff} y2={el.y1-nyR*tackOff} stroke={SEL_COLOR} strokeWidth={2} />
+                                          <line x1={el.x2+nxR*tackOff} y1={el.y2+nyR*tackOff} x2={el.x2-nxR*tackOff} y2={el.y2-nyR*tackOff} stroke={SEL_COLOR} strokeWidth={2} />
+                                          {/* Tacche intermedie ogni 25% */}
+                                          {[0.25, 0.5, 0.75].map(p => (
+                                            <line key={p} x1={el.x1 + ux*lenR*p + nxR*4} y1={el.y1 + uy*lenR*p + nyR*4} x2={el.x1 + ux*lenR*p - nxR*4} y2={el.y1 + uy*lenR*p - nyR*4} stroke={SEL_COLOR} strokeWidth={1} opacity={0.5} />
+                                          ))}
+                                          {/* Punti di ancoraggio finali */}
+                                          <circle cx={el.x1} cy={el.y1} r={sel ? 5 : 3.5} fill={SEL_COLOR} stroke="#fff" strokeWidth={1.2} />
+                                          <circle cx={el.x2} cy={el.y2} r={sel ? 5 : 3.5} fill={SEL_COLOR} stroke="#fff" strokeWidth={1.2} />
+                                          {/* Badge misura GRANDE e cliccabile */}
+                                          <g transform={`rotate(${angR > 90 || angR < -90 ? angR + 180 : angR}, ${midXR + nxR*16}, ${midYR + nyR*16})`}
+                                            onClick={handleEdit} onTouchEnd={handleEdit} style={{ cursor: "pointer", touchAction: "manipulation" }}>
+                                            <rect x={midXR + nxR*16 - 28} y={midYR + nyR*16 - 11} width={56} height={22} fill={SEL_COLOR} rx={5} opacity={0.98} />
+                                            <text x={midXR + nxR*16} y={midYR + nyR*16 + 2} textAnchor="middle" fontSize={11} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">{el.label}</text>
+                                            <text x={midXR + nxR*16} y={midYR + nyR*16 + 11} textAnchor="middle" fontSize={6} fontWeight={700} fill="#fff" opacity={0.85} fontFamily="'JetBrains Mono',monospace">mm ✏</text>
                                           </g>
                                         </g>
                                       );
@@ -5304,6 +5362,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   </div>
                                 </div>
                               )}
+
+                              {/* Modal SELETTORE VETRI INTELLIGENTE */}
+                              <SelettoreVetri
+                                open={showSelettoreVetri}
+                                onClose={() => setShowSelettoreVetri(false)}
+                                currentVetroId={selectedVetro?.id}
+                                onSelect={(v) => {
+                                  setSelectedVetro(v);
+                                  setShowSelettoreVetri(false);
+                                  setMode({ drawMode: "place-vetro", _pendingLine: null });
+                                }}
+                              />
 
                               {/* Modal CATALOGO ACCESSORI */}
                               {showCatalogo && (
