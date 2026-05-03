@@ -1976,7 +1976,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       cpTop = Math.max(cpTop, hMidY);
                                     }
                                   });
-                                  document.title = `POLY cpT=${cpTop.toFixed(0)} cpB=${cpBot.toFixed(0)} subs=${horzSubEls.length} ${horzSubEls.map(h=>`${h.subType||"?"}@y=${((h.y1+h.y2)/2).toFixed(0)}`).join(",")}`;
+                                  // document.title = `POLY cpT=${cpTop.toFixed(0)} cpB=${cpBot.toFixed(0)} subs=${horzSubEls.length} ${horzSubEls.map(h=>`${h.subType||"?"}@y=${((h.y1+h.y2)/2).toFixed(0)}`).join(",")}`;
                                   cellPoly = [
                                     [cellPoly[0][0], cpTop],
                                     [cellPoly[1][0], cpTop],
@@ -2019,7 +2019,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   e.type === "freeLine" && e.subType && 
                                   Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1
                                 );
-                                document.title = `cell[${cell.y.toFixed(0)}-${(cell.y+cell.h).toFixed(0)}] hSubs=${horzSubInCell.length} ${horzSubInCell.map(h=>`${h.subType}@${((h.y1+h.y2)/2).toFixed(0)}`).join(",")}`;
+                                // document.title = `cell[${cell.y.toFixed(0)}-${(cell.y+cell.h).toFixed(0)}] hSubs=${horzSubInCell.length} ${horzSubInCell.map(h=>`${h.subType}@${((h.y1+h.y2)/2).toFixed(0)}`).join(",")}`;
                                 horzSubInCell.forEach(h => {
                                   const hMidY = (h.y1 + h.y2) / 2;
                                   const hMinX = Math.min(h.x1, h.x2), hMaxX = Math.max(h.x1, h.x2);
@@ -2106,7 +2106,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               if (drawMode === "place-ap") {
                                 let cell = findCellAt(mx, my);
-                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
+                                // document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
                                   const lines = els.filter(e => e.type === "freeLine" || e.type === "apLine");
                                   if (lines.length > 0) {
@@ -2269,6 +2269,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 let px = Math.round(mx);
                                 let py = Math.round(my);
 
+                                // GRID SNAP DINAMICO DISATTIVATO: arrotondava i tap a una griglia ma rompeva la concatenazione
+                                // dei lati quando il pending era a coords non-multiple della griglia.
+                                // Lasciamo px,py raw — la fluidità del dito viene garantita dal mirino visivo durante il preview.
                                 if (!pending) {
                                   // PRIMO CLICK
                                   if (isMont) {
@@ -2365,7 +2368,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const freeLines = els.filter(e=>e.type==="freeLine");
                                       if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<30) { px=cs.x; py=cs.y; closeApplied="yes"; }
                                       if (typeof document !== 'undefined') {
-                                        document.title = `TEL.LIB. clk#${freeLines.length+1} orig=${Math.round(origPx)},${Math.round(origPy)} ${snapInfo} sn=${snapApplied} cs=${cs?Math.round(cs.x)+","+Math.round(cs.y):"-"} cl=${closeApplied} fin=${Math.round(px)},${Math.round(py)}`;
+                                        // debug rimosso (era document.title)
                                       }
                                     }
                                   }
@@ -2454,8 +2457,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     return x;
                                   });
                                   // Per montante/traverso: reset pendingLine (no catena), per telaio libero: concatena
+                                  // FIX CATENA: il prossimo lato deve cominciare ESATTAMENTE dove finisce questo (snappedX2/Y2),
+                                  // non dal punto raw px/py (che può essere stato deviato dallo snap).
                                   const newChainStart = (isMont || isTrav) ? null : dw._chainStart;
-                                  const newPending = (isMont || isTrav) ? null : { x1: px, y1: py, _subType: subTypeVal || null };
+                                  const newPending = (isMont || isTrav) ? null : { x1: snappedX2, y1: snappedY2, _subType: subTypeVal || null };
                                   setDW([...weldedEls, newEl], { _pendingLine: newPending, _chainStart: newChainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
@@ -4424,7 +4429,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const _subType = p._subType || dw._lineSubType;
                                     if (_subType === "montante" || drawMode === "place-mont-free") gx = p.x1;
                                     if (_subType === "traverso" || drawMode === "place-trav-free" || drawMode === "place-zocc-free") gy = p.y1;
-                                    document.title = `sub=${_subType} dm=${drawMode} gx=${gx} px1=${p.x1}`;
+                                    // debug rimosso (era document.title)
                                     // Raccoglie tutti i vertici esistenti dei freeLine
                                     const existingPts = els.filter(e => e.type === "freeLine").flatMap(l => [
                                       { x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 }
@@ -4474,16 +4479,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         {/* Snap indicator sul punto target — cerchio verde se agganciato */}
                                         {(() => {
                                           const snapped = findSnap(gx, gy);
+                                          const iz = 1 / zoom;
                                           if (snapped && Math.hypot(snapped.x - gx, snapped.y - gy) < 3) {
                                             return <>
-                                              <circle cx={gx} cy={gy} r={10} fill="none" stroke="#1A9E73" strokeWidth={2} />
-                                              <circle cx={gx} cy={gy} r={4} fill="#1A9E73" />
-                                              <line x1={gx-14} y1={gy} x2={gx+14} y2={gy} stroke="#1A9E73" strokeWidth={1} opacity={0.6} />
-                                              <line x1={gx} y1={gy-14} x2={gx} y2={gy+14} stroke="#1A9E73" strokeWidth={1} opacity={0.6} />
+                                              <circle cx={gx} cy={gy} r={14*iz} fill="none" stroke="#1A9E73" strokeWidth={2.5*iz} />
+                                              <circle cx={gx} cy={gy} r={5*iz} fill="#1A9E73" />
+                                              <line x1={gx-22*iz} y1={gy} x2={gx+22*iz} y2={gy} stroke="#1A9E73" strokeWidth={1.5*iz} opacity={0.7} />
+                                              <line x1={gx} y1={gy-22*iz} x2={gx} y2={gy+22*iz} stroke="#1A9E73" strokeWidth={1.5*iz} opacity={0.7} />
                                             </>;
                                           }
                                           if (drawMode === "place-mont-free" || drawMode === "place-trav-free") return null;
-                                          return <circle cx={gx} cy={gy} r={5} fill={clr} fillOpacity={0.7} />;
+                                          // Mirino grande nel preview live: SEMPRE visibile sul punto del tap
+                                          return <>
+                                            <circle cx={gx} cy={gy} r={12*iz} fill="none" stroke={clr} strokeWidth={2*iz} opacity={0.85} />
+                                            <circle cx={gx} cy={gy} r={4*iz} fill={clr} />
+                                            <line x1={gx-18*iz} y1={gy} x2={gx+18*iz} y2={gy} stroke={clr} strokeWidth={1.2*iz} opacity={0.5} />
+                                            <line x1={gx} y1={gy-18*iz} x2={gx} y2={gy+18*iz} stroke={clr} strokeWidth={1.2*iz} opacity={0.5} />
+                                          </>;
                                         })()}
                                         {/* Angle + length label */}
                                         {/* Badge — si adatta per restare visibile */}
