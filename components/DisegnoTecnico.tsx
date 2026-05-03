@@ -8,6 +8,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import GestioneTipologie from "./GestioneTipologie";
 import SelettoreVetri from "./SelettoreVetri";
+import SelettoreProfilo from "./SelettoreProfilo";
 
 // ═══════════════════════════════════════════════════════════
 // 3D ISOMETRIC VIEW — 6 Faces + Per-face drawing + Render
@@ -938,7 +939,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [showCatalogo, setShowCatalogo] = React.useState<boolean>(false);
   // Selettore vetri intelligente
   const [showSelettoreVetri, setShowSelettoreVetri] = React.useState<boolean>(false);
-  const [selectedVetro, setSelectedVetro] = React.useState<any | null>(null); // vetro scelto da applicare al prossimo place-vetro
+  const [selectedVetro, setSelectedVetro] = React.useState<any | null>(null);
+  // Selettore profili (catalogo articoli)
+  const [showSelettoreProfilo, setShowSelettoreProfilo] = React.useState<boolean>(false);
+  const [profiloTargetEl, setProfiloTargetEl] = React.useState<{ id: number; ruolo: string } | null>(null); // vetro scelto da applicare al prossimo place-vetro
   const [catalogoData, setCatalogoData] = React.useState<any[]>([]);
   const [pendingCatAcc, setPendingCatAcc] = React.useState<any | null>(null); // accessorio scelto, in attesa di click sul disegno
   const [pendingVeloce, setPendingVeloce] = React.useState<string | null>(null); // pittogramma veloce in attesa
@@ -4457,6 +4461,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {mCorners.map((c,ci) => (
                                             <circle key={ci} cx={c.cx} cy={c.cy} r={3} fill="#D08008" opacity={0.6} />
                                           ))}
+                                          {/* Badge ARTICOLO */}
+                                          {(() => {
+                                            const hasC = !!el.profilo_codice;
+                                            const cy = (my1raw + my2) / 2;
+                                            const handleArt = (e3: any) => {
+                                              e3.stopPropagation();
+                                              if (drawMode) return;
+                                              setProfiloTargetEl({ id: el.id, ruolo: "montante" });
+                                              setShowSelettoreProfilo(true);
+                                            };
+                                            return (
+                                              <g onClick={handleArt} onTouchEnd={handleArt} style={{ cursor: "pointer" }}>
+                                                <rect x={el.x + TK_MONT/2 + 4} y={cy - 6} width={hasC ? 44 : 28} height={12} rx={3}
+                                                  fill={hasC ? "#3B7FE0" : "#fff"} stroke="#3B7FE0" strokeWidth={0.8} opacity={0.92} strokeDasharray={hasC ? "0" : "2,2"} />
+                                                <text x={el.x + TK_MONT/2 + 4 + (hasC ? 22 : 14)} y={cy + 3} textAnchor="middle" fontSize={6} fontWeight={800}
+                                                  fill={hasC ? "#fff" : "#3B7FE0"} fontFamily="monospace">
+                                                  {hasC ? el.profilo_codice : "+ ART"}
+                                                </text>
+                                              </g>
+                                            );
+                                          })()}
                                         </g>
                                       );
                                     }
@@ -4501,6 +4526,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <rect key={si} x={seg.x1} y={el.y - HM2} width={seg.x2 - seg.x1} height={TK_MONT} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
                                           ))}
                                           {sel && <><circle cx={tx1raw} cy={el.y} r={4} fill="#1A9E73"/><circle cx={tx2raw} cy={el.y} r={4} fill="#1A9E73"/></>}
+                                          {/* Badge ARTICOLO traverso */}
+                                          {(() => {
+                                            const hasC = !!el.profilo_codice;
+                                            const cx = (tx1raw + tx2raw) / 2;
+                                            const handleArt = (e3: any) => {
+                                              e3.stopPropagation();
+                                              if (drawMode) return;
+                                              setProfiloTargetEl({ id: el.id, ruolo: "traverso" });
+                                              setShowSelettoreProfilo(true);
+                                            };
+                                            return (
+                                              <g onClick={handleArt} onTouchEnd={handleArt} style={{ cursor: "pointer" }}>
+                                                <rect x={cx - (hasC ? 22 : 14)} y={el.y - HM2 - 16} width={hasC ? 44 : 28} height={12} rx={3}
+                                                  fill={hasC ? "#3B7FE0" : "#fff"} stroke="#3B7FE0" strokeWidth={0.8} opacity={0.92} strokeDasharray={hasC ? "0" : "2,2"} />
+                                                <text x={cx} y={el.y - HM2 - 7} textAnchor="middle" fontSize={6} fontWeight={800}
+                                                  fill={hasC ? "#fff" : "#3B7FE0"} fontFamily="monospace">
+                                                  {hasC ? el.profilo_codice : "+ ART"}
+                                                </text>
+                                              </g>
+                                            );
+                                          })()}
                                         </g>
                                       );
                                     }
@@ -4607,6 +4653,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {sideShape("left")}
                                           {sideShape("right")}
                                           {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 12} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700} pointerEvents="none">PORTA</text>}
+                                          {/* Badge ARTICOLO ANTA */}
+                                          {(() => {
+                                            const hasC = !!el.profilo_codice;
+                                            const cx = el.x + el.w / 2;
+                                            const cy = el.y + el.h - 14;
+                                            const handleArt = (e3: any) => {
+                                              e3.stopPropagation();
+                                              if (drawMode) return;
+                                              const r = el.subType === "porta" ? "anta" : "anta";
+                                              setProfiloTargetEl({ id: el.id, ruolo: r });
+                                              setShowSelettoreProfilo(true);
+                                            };
+                                            return (
+                                              <g onClick={handleArt} onTouchEnd={handleArt} style={{ cursor: "pointer" }}>
+                                                <rect x={cx - (hasC ? 22 : 14)} y={cy - 6} width={hasC ? 44 : 28} height={12} rx={3}
+                                                  fill={hasC ? "#3B7FE0" : "#fff"} stroke="#3B7FE0" strokeWidth={0.8} opacity={0.92} strokeDasharray={hasC ? "0" : "2,2"} />
+                                                <text x={cx} y={cy + 3} textAnchor="middle" fontSize={6} fontWeight={800}
+                                                  fill={hasC ? "#fff" : "#3B7FE0"} fontFamily="monospace">
+                                                  {hasC ? el.profilo_codice : "+ ART ANTA"}
+                                                </text>
+                                              </g>
+                                            );
+                                          })()}
                                         </g>
                                       );
                                     }
@@ -4876,6 +4945,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               <text x={lxN} y={lyN + 3} textAnchor="middle" fontSize={7} fontWeight={800} fill="#fff" fontFamily="monospace">{labelTxt}</text>
                                             </g>
                                           )}
+                                          {/* Badge ARTICOLO PROFILO — cliccabile per assegnare/cambiare codice articolo */}
+                                          {(() => {
+                                            const ruoloMap: any = { soglia: "soglia", soglia_rib: "soglia", zoccolo: "zoccolo", fascia: "fascia", profcomp: "profcomp", montante: "montante", traverso: "traverso" };
+                                            const ruolo = subType ? (ruoloMap[subType] || subType) : "telaio";
+                                            const hasCodice = !!el.profilo_codice;
+                                            const handleClickArt = (e3: any) => {
+                                              e3.stopPropagation();
+                                              if (drawMode) return;
+                                              setProfiloTargetEl({ id: el.id, ruolo });
+                                              setShowSelettoreProfilo(true);
+                                            };
+                                            // Posiziona il badge sull'altro lato (lx + nx*4 invece che lx - nx*8)
+                                            const ax = midX + nx * 4, ay2 = midY + ny * 4;
+                                            return (
+                                              <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${ax}, ${ay2})`}
+                                                onClick={handleClickArt} onTouchEnd={handleClickArt}
+                                                style={{ cursor: "pointer", touchAction: "manipulation" }}>
+                                                <rect x={ax - (hasCodice ? 22 : 14)} y={ay2 - 6} width={hasCodice ? 44 : 28} height={12} rx={3}
+                                                  fill={hasCodice ? "#3B7FE0" : "#fff"}
+                                                  stroke={hasCodice ? "#3B7FE0" : "#3B7FE0"} strokeWidth={0.8} opacity={0.92} strokeDasharray={hasCodice ? "0" : "2,2"} />
+                                                <text x={ax} y={ay2 + 3} textAnchor="middle" fontSize={6} fontWeight={800}
+                                                  fill={hasCodice ? "#fff" : "#3B7FE0"} fontFamily="monospace">
+                                                  {hasCodice ? el.profilo_codice : "+ ART"}
+                                                </text>
+                                              </g>
+                                            );
+                                          })()}
                                           <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lx}, ${ly})`}
                                             onClick={(e3) => { e3.stopPropagation(); if (drawMode) return; const svgEl = e3.currentTarget.closest("svg"); const r = svgEl?.getBoundingClientRect(); setDimEdit({ id: el.id, val: String(mmLen), curMM: mmLen, lenPx: len, x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 }); }}
                                             style={{ cursor: "pointer" }}>
@@ -5527,6 +5623,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   setSelectedVetro(v);
                                   setShowSelettoreVetri(false);
                                   setMode({ drawMode: "place-vetro", _pendingLine: null });
+                                }}
+                              />
+
+                              {/* Modal SELETTORE PROFILO (catalogo articoli) */}
+                              <SelettoreProfilo
+                                open={showSelettoreProfilo}
+                                onClose={() => { setShowSelettoreProfilo(false); setProfiloTargetEl(null); }}
+                                ruolo={profiloTargetEl?.ruolo}
+                                vanoSistema={vanoSistema}
+                                onSelect={(p) => {
+                                  if (!profiloTargetEl) { setShowSelettoreProfilo(false); return; }
+                                  // Applica il profilo all'elemento target
+                                  const newEls = els.map((e: any) => {
+                                    if (e.id !== profiloTargetEl.id) return e;
+                                    return {
+                                      ...e,
+                                      profilo_id: p.id,
+                                      profilo_codice: p.codice,
+                                      profilo_descrizione: p.descrizione,
+                                      profilo_prezzo_ml: p.prezzo_ml,
+                                      profilo_larghezza: p.larghezza_mm,
+                                      profilo_altezza: p.altezza_mm,
+                                    };
+                                  });
+                                  setDW(newEls);
+                                  setShowSelettoreProfilo(false);
+                                  setProfiloTargetEl(null);
                                 }}
                               />
 
