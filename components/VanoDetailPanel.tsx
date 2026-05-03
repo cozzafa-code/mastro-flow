@@ -192,6 +192,14 @@ export default function VanoDetailPanel() {
       .then(data => { if (Array.isArray(data)) setDbTipologie(data); })
       .catch(() => {});
   }, []);
+  // Catalogo pannelli (porte interne, blindati, pannelli PVC) dal DB
+  const [catalogoPannelli, setCatalogoPannelli] = useState<any[]>([]);
+  useEffect(() => {
+    fetch("/api/pannelli/list")
+      .then(r => r.ok ? r.json() : [])
+      .then(data => { if (Array.isArray(data)) setCatalogoPannelli(data); })
+      .catch(() => {});
+  }, []);
   // === FLASH CONFIGURATORE ===
   const [flashSec, setFlashSec] = useState<string|null>(null);
   const [completedSecs, setCompletedSecs] = useState<Set<string>>(new Set());
@@ -665,7 +673,10 @@ export default function VanoDetailPanel() {
             setSelectedCM(prev => prev ? ({ ...prev, rilievi: prev.rilievi.map(r => r.id === selectedRilievo?.id ? (updRil || r) : r) }) : prev);
             setSelectedVano(prev => ({ ...prev, [field]: val }));
           };
-          const cats = [...new Set(tipologieFiltrate.map(t => t.cat))];
+          // Categorie tipologia: standard hardcoded + serramenti/porte
+          // Aggiungo "Porte Interne" e "Porte Blindate" (alimentate da catalogo_pannelli)
+          const catsBase = [...new Set(tipologieFiltrate.map(t => t.cat))];
+          const cats = [...catsBase, "Porte Interne", "Porte Blindate"].filter((c, i, a) => a.indexOf(c) === i);
           const pianiList = ["S2","S1","PT","P1","P2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12","P13","P14","P15","P16","P17","P18","P19","P20","M"];
           const coloriRAL = ["RAL 9010","RAL 9016","RAL 9001","RAL 7016","RAL 7021","RAL 8014","RAL 8016","RAL 1013","Altro"];
 
@@ -772,6 +783,80 @@ export default function VanoDetailPanel() {
                       </>;
                     })()}
                   </select>
+                  {/* GRIGLIA PANNELLI dal catalogo: appare se categoria = Porte Interne o Blindate */}
+                  {(tipCat === "Porte Interne" || tipCat === "Porte Blindate") && (() => {
+                    const tipiFiltro = tipCat === "Porte Interne" ? ["porta_interna"] : ["blindato", "ingresso_alluminio"];
+                    const pannelliFiltrati = catalogoPannelli.filter(p => p.tipo && tipiFiltro.includes(p.tipo));
+                    if (pannelliFiltrati.length === 0) {
+                      return (
+                        <div style={{ padding: 14, marginTop: 8, background: "#fff8e8", borderRadius: 10, border: `1.5px solid ${T.acc}30`, fontSize: 11, color: T.sub, lineHeight: 1.5 }}>
+                          <div style={{ fontWeight: 700, color: T.acc, marginBottom: 4 }}>📭 Nessuna {tipCat.toLowerCase()} in catalogo</div>
+                          <div style={{ fontSize: 10 }}>Vai su <a href="/pannelli" style={{ color: T.acc, fontWeight: 700 }}>Catalogo Pannelli</a> per importare cataloghi (Garofoli, Dierre, ecc.) — l'AI estrae automaticamente nomi, foto, misure, colori.</div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                          📦 {pannelliFiltrati.length} modelli in catalogo
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 6, maxHeight: 280, overflowY: "auto", padding: 4 }}>
+                          {pannelliFiltrati.map(p => {
+                            const isSel = v.pannello_id === p.id;
+                            return (
+                              <div key={p.id}
+                                onClick={() => {
+                                  updateV("pannello_id", p.id);
+                                  updateV("pannello_nome", p.nome);
+                                  updateV("pannello_codice", p.codice);
+                                  updateV("pannello_immagine", p.immagine_url);
+                                  // Imposta tipo come "PI" (Porta Interna) o "PB" (Porta Blindata)
+                                  updateV("tipo", tipCat === "Porte Interne" ? "PI" : "PB");
+                                  updateV("tipologia_nome", `${p.nome}${p.codice ? ` (${p.codice})` : ""}`);
+                                  // Auto-imposta colori se disponibili
+                                  if (p.colori_disponibili && Array.isArray(p.colori_disponibili) && p.colori_disponibili.length > 0) {
+                                    updateV("colore_int", p.colori_disponibili[0]);
+                                  } else if (p.colore_finitura) {
+                                    updateV("colore_int", p.colore_finitura);
+                                  }
+                                  // Auto-imposta misure standard se disponibili
+                                  if (p.larghezza_std) updateV("larghezza_std_pannello", p.larghezza_std);
+                                  if (p.altezza_std) updateV("altezza_std_pannello", p.altezza_std);
+                                  if (p.larghezza_min) updateV("larghezza_min_pannello", p.larghezza_min);
+                                  if (p.larghezza_max) updateV("larghezza_max_pannello", p.larghezza_max);
+                                  if (p.altezza_min) updateV("altezza_min_pannello", p.altezza_min);
+                                  if (p.altezza_max) updateV("altezza_max_pannello", p.altezza_max);
+                                  flashAndAdvance("tipologia");
+                                }}
+                                style={{
+                                  border: `2px solid ${isSel ? T.acc : T.bdr}`,
+                                  background: isSel ? T.accLt : T.card,
+                                  borderRadius: 8, overflow: "hidden", cursor: "pointer",
+                                  display: "flex", flexDirection: "column",
+                                }}>
+                                <div style={{ height: 75, background: "#fafafa", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: `1px solid ${T.bdr}`, position: "relative" }}>
+                                  {p.immagine_url ? (
+                                    <img src={p.immagine_url} alt={p.nome} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                                  ) : (
+                                    <div style={{ fontSize: 26, opacity: 0.3 }}>{tipCat === "Porte Interne" ? "🚪" : "🛡"}</div>
+                                  )}
+                                  {isSel && <div style={{ position: "absolute", top: 4, right: 4, width: 18, height: 18, borderRadius: "50%", background: T.acc, color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>✓</div>}
+                                </div>
+                                <div style={{ padding: 6, fontSize: 10, fontWeight: 700, color: T.txt, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {p.nome}
+                                </div>
+                                {(p.codice || p.produttore) && (
+                                  <div style={{ padding: "0 6px 6px", fontSize: 8, color: T.sub, fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {p.produttore || p.codice}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {v.tipo && (
                     <div style={{fontSize:11,color:T.acc,fontWeight:600,padding:"4px 8px",background:T.accLt,borderRadius:8,display:"inline-block"}}>
                       {v.tipologia_nome || TIPOLOGIE_RAPIDE.find(t=>t.code===v.tipo)?.label || v.tipo}
@@ -2061,6 +2146,124 @@ export default function VanoDetailPanel() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               )}
+              {/* TOGGLE MISURE STANDARD vs FUORI MISURA — appare se è selezionato un pannello porta interna/blindata */}
+              {(v.tipo === "PI" || v.tipo === "PB" || v.pannello_id) && (() => {
+                const isPortaInterna = v.tipo === "PI";
+                const isBlindato = v.tipo === "PB";
+                if (!isPortaInterna && !isBlindato) return null;
+                const isFuoriMisura = !!v.fuori_misura;
+
+                // Misure standard tipiche italiane (in mm)
+                const LARGHEZZE_STD = isBlindato
+                  ? [800, 850, 900, 950, 1000, 1100, 1200]
+                  : [600, 700, 800, 900];
+                const ALTEZZE_STD = [2000, 2100, 2200, 2400];
+
+                // Override: se il pannello ha misure specifiche, le uso
+                if (v.larghezza_min_pannello && v.larghezza_max_pannello) {
+                  // Filtra solo quelle nel range
+                  const lMin = v.larghezza_min_pannello;
+                  const lMax = v.larghezza_max_pannello;
+                  for (let i = LARGHEZZE_STD.length - 1; i >= 0; i--) {
+                    if (LARGHEZZE_STD[i] < lMin || LARGHEZZE_STD[i] > lMax) LARGHEZZE_STD.splice(i, 1);
+                  }
+                }
+                const lCorrente = m.lCentro || m.lAlto || 0;
+                const hCorrente = m.hCentro || m.hSx || 0;
+
+                return (
+                  <div style={{ marginBottom: 14, padding: 14, borderRadius: 12, background: isFuoriMisura ? "#FEF2E0" : T.accLt, border: `1.5px solid ${isFuoriMisura ? "#D08008" : T.acc}40` }}>
+                    <div style={{ display: "flex", gap: 6, marginBottom: 12, background: T.card, padding: 4, borderRadius: 10 }}>
+                      <div onClick={() => updateV("fuori_misura", false)}
+                        style={{
+                          flex: 1, padding: "10px 12px", borderRadius: 8, textAlign: "center",
+                          background: !isFuoriMisura ? T.acc : "transparent",
+                          color: !isFuoriMisura ? "#fff" : T.sub,
+                          fontSize: 12, fontWeight: 800, cursor: "pointer",
+                        }}>
+                        ✓ Misura Standard
+                      </div>
+                      <div onClick={() => updateV("fuori_misura", true)}
+                        style={{
+                          flex: 1, padding: "10px 12px", borderRadius: 8, textAlign: "center",
+                          background: isFuoriMisura ? "#D08008" : "transparent",
+                          color: isFuoriMisura ? "#fff" : T.sub,
+                          fontSize: 12, fontWeight: 800, cursor: "pointer",
+                        }}>
+                        ⚙ Fuori Misura
+                      </div>
+                    </div>
+
+                    {!isFuoriMisura ? (
+                      <>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                          📏 Larghezza standard {isBlindato ? "(blindato)" : "(porta interna)"}
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+                          {LARGHEZZE_STD.map(l => {
+                            const sel = lCorrente === l;
+                            return (
+                              <div key={l} onClick={() => {
+                                updateMisura(v.id, "lAlto", l);
+                                updateMisura(v.id, "lCentro", l);
+                                updateMisura(v.id, "lBasso", l);
+                              }}
+                                style={{
+                                  padding: "10px 16px", borderRadius: 10,
+                                  background: sel ? T.acc : T.card,
+                                  color: sel ? "#fff" : T.txt,
+                                  border: `2px solid ${sel ? T.acc : T.bdr}`,
+                                  fontSize: 13, fontWeight: 800, cursor: "pointer",
+                                  fontFamily: "monospace",
+                                }}>
+                                {l} mm
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                          📐 Altezza standard
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {ALTEZZE_STD.map(h => {
+                            const sel = hCorrente === h;
+                            return (
+                              <div key={h} onClick={() => {
+                                updateMisura(v.id, "hSx", h);
+                                updateMisura(v.id, "hCentro", h);
+                                updateMisura(v.id, "hDx", h);
+                              }}
+                                style={{
+                                  padding: "10px 16px", borderRadius: 10,
+                                  background: sel ? T.acc : T.card,
+                                  color: sel ? "#fff" : T.txt,
+                                  border: `2px solid ${sel ? T.acc : T.bdr}`,
+                                  fontSize: 13, fontWeight: 800, cursor: "pointer",
+                                  fontFamily: "monospace",
+                                }}>
+                                {h} mm
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {(lCorrente > 0 || hCorrente > 0) && (
+                          <div style={{ marginTop: 12, padding: 10, background: T.card, borderRadius: 8, fontSize: 11, color: T.txt }}>
+                            <strong>Misure attuali:</strong> {lCorrente || "—"} × {hCorrente || "—"} mm
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ fontSize: 11, color: "#D08008", lineHeight: 1.5 }}>
+                        <div style={{ fontWeight: 700, marginBottom: 4 }}>⚙ Modalità fuori misura</div>
+                        <div>Inserisci sotto le misure esatte rilevate in cantiere. La porta verrà ordinata su misura speciale (potrebbe avere costi e tempi maggiorati).</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               <div style={{ fontSize: 11, fontWeight: 800, color: "#507aff", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><I d={ICO.ruler} /> Larghezze</div>
               {<VanoBInput key="lAlto" label={"Larghezza ALTO"} field="lAlto"
                   value={m["lAlto"] as number} stepColor={step.color}
