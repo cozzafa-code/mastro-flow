@@ -3200,6 +3200,64 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   )}
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.</div>
+                                  <div onClick={() => {
+                                    if (!frame) { alert("Crea prima un telaio"); return; }
+                                    const inputN = prompt("Quanti montanti vuoi inserire? (es. 4)", "4");
+                                    if (!inputN) return;
+                                    const n = parseInt(inputN, 10);
+                                    if (!Number.isFinite(n) || n < 1 || n > 50) { alert("Numero non valido (1-50)"); return; }
+                                    const existing = els.filter(e => e.type === "montante");
+                                    let elsBase = els;
+                                    if (existing.length > 0) {
+                                      const r = confirm(`Ci sono gia' ${existing.length} montanti.\n\nOK = sostituisci con ${n} nuovi equidistanti\nAnnulla = aggiungi ${n} nuovi`);
+                                      if (r) elsBase = els.filter(e => e.type !== "montante");
+                                    }
+                                    const innerL = frame.x + TK_FRAME;
+                                    const innerR = frame.x + frame.w - TK_FRAME;
+                                    const innerW = innerR - innerL;
+                                    const step = innerW / (n + 1);
+                                    const newMonts = [];
+                                    const t0 = Date.now();
+                                    for (let i = 1; i <= n; i++) {
+                                      newMonts.push({
+                                        id: t0 + i,
+                                        type: "montante",
+                                        x: Math.round(innerL + step * i),
+                                        y1: frame.y + TK_FRAME,
+                                        y2: frame.y + frame.h - TK_FRAME,
+                                      });
+                                    }
+                                    setDW([...elsBase, ...newMonts]);
+                                  }} style={bs()} title="Inserisci N montanti equidistanti"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="6" y1="3" x2="6" y2="21"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="18" y1="3" x2="18" y2="21"/></svg>Mont.xN</div>
+                                  <div onClick={() => {
+                                    if (!frame) { alert("Crea prima un telaio"); return; }
+                                    const inputN = prompt("Quanti traversi vuoi inserire? (es. 3)", "3");
+                                    if (!inputN) return;
+                                    const n = parseInt(inputN, 10);
+                                    if (!Number.isFinite(n) || n < 1 || n > 50) { alert("Numero non valido (1-50)"); return; }
+                                    const existing = els.filter(e => e.type === "traverso");
+                                    let elsBase = els;
+                                    if (existing.length > 0) {
+                                      const r = confirm(`Ci sono gia' ${existing.length} traversi.\n\nOK = sostituisci con ${n} nuovi equidistanti\nAnnulla = aggiungi ${n} nuovi`);
+                                      if (r) elsBase = els.filter(e => e.type !== "traverso");
+                                    }
+                                    const innerT = frame.y + TK_FRAME;
+                                    const innerB = frame.y + frame.h - TK_FRAME;
+                                    const innerH = innerB - innerT;
+                                    const step = innerH / (n + 1);
+                                    const newTravs = [];
+                                    const t0 = Date.now();
+                                    for (let i = 1; i <= n; i++) {
+                                      newTravs.push({
+                                        id: t0 + i,
+                                        type: "traverso",
+                                        y: Math.round(innerT + step * i),
+                                        x1: frame.x + TK_FRAME,
+                                        x2: frame.x + frame.w - TK_FRAME,
+                                      });
+                                    }
+                                    setDW([...elsBase, ...newTravs]);
+                                  }} style={bs()} title="Inserisci N traversi equidistanti"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Trav.xN</div>
                                 </div>
                                 </>}
 
