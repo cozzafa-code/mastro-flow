@@ -1,6 +1,6 @@
 // app/api/pannelli/promote/route.ts
-// Riceve { import_id }, legge pannelli_estratti_temp e li inserisce in catalogo_pannelli.
-// Marca temp come confermato=true. Aggiorna pannelli_imports.stato='completato'.
+// Promuove pannelli_estratti_temp -> catalogo_pannelli con codici univoci.
+// Gestisce nuovi campi: configurazione, finitura, tipo_apertura, materiale.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -18,12 +18,41 @@ function supabaseAdmin() {
   );
 }
 
-// Mappa categoria modal -> tipo catalogo_pannelli
 const CATEGORIA_TO_TIPO: Record<string, string> = {
   porte_interne: "porta_interna",
   blindati: "blindato",
   pannelli: "pvc",
 };
+
+function slug(s: string | null | undefined, max = 12): string {
+  if (!s) return "";
+  return s
+    .toString()
+    .toUpperCase()
+    .replace(/[ÀÁÂÃÄÅ]/g, "A").replace(/[ÈÉÊË]/g, "E")
+    .replace(/[ÌÍÎÏ]/g, "I").replace(/[ÒÓÔÕÖ]/g, "O").replace(/[ÙÚÛÜ]/g, "U")
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, max);
+}
+
+function buildCodice(d: Record<string, unknown>, fallback: string): string {
+  // Prima scelta: codice tecnico già fornito dall'AI
+  const codiceAI = d.codice as string | null;
+  if (codiceAI && codiceAI.length > 2 && codiceAI.length < 60 && /[A-Z0-9]/i.test(codiceAI)) {
+    return codiceAI.toString().slice(0, 60);
+  }
+
+  // Costruisco da modello + configurazione + finitura
+  const modello = slug(d.modello as string | null, 10);
+  const config = slug(d.configurazione as string | null, 8);
+  const finitura = slug(d.finitura as string | null, 14);
+  const apertura = slug(d.tipo_apertura as string | null, 6);
+
+  const parts = [modello, config, finitura, apertura].filter(Boolean);
+  if (parts.length >= 2) return parts.join("-").slice(0, 60);
+
+  return fallback;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,7 +66,6 @@ export async function POST(req: NextRequest) {
     const { import_id } = body;
     const supabase = supabaseAdmin();
 
-    // 1. Leggi import per categoria
     const { data: importRow, error: importErr } = await supabase
       .from("pannelli_imports")
       .select("id, azienda_id, pre_analisi")
@@ -55,7 +83,6 @@ export async function POST(req: NextRequest) {
     const categoria = (importRow.pre_analisi as { categoria?: string } | null)?.categoria || "porte_interne";
     const tipoCatalogo = CATEGORIA_TO_TIPO[categoria] || "porta_interna";
 
-    // 2. Carica temp non confermati
     const { data: temp, error: tempErr } = await supabase
       .from("pannelli_estratti_temp")
       .select("id, dati")
@@ -75,20 +102,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Mappa in catalogo_pannelli
-    const rows = temp.map((t) => {
+    // Costruisci righe e gestisci duplicati codice in batch
+    const codiciVisti = new Set<string>();
+    const rows = temp.map((t, idx) => {
       const d = (t.dati as Record<string, unknown>) || {};
-      const codice = (d.codice as string | null) || `AI-${import_id.slice(0, 8)}-${t.id.slice(0, 6)}`;
-      const nome = (d.nome as string | null) || (d.descrizione as string | null) || codice;
+      const fallback = `AI-${import_id.slice(0, 8)}-${String(idx).padStart(3, "0")}`;
+      let codice = buildCodice(d, fallback);
+
+      // Dedup: se duplicato in batch, aggiungo suffisso
+      let suffix = 1;
+      const baseCodice = codice;
+      while (codiciVisti.has(codice)) {
+        suffix++;
+        codice = `${baseCodice}-${suffix}`;
+      }
+      codiciVisti.add(codice);
+
+      const nome =
+        (d.nome as string | null) ||
+        (d.descrizione as string | null) ||
+        [d.modello, d.configurazione, d.finitura].filter(Boolean).join(" ") ||
+        codice;
+
       return {
         azienda_id: AZIENDA_ID,
         codice,
-        nome,
+        nome: String(nome).slice(0, 200),
         descrizione: (d.descrizione as string | null) ?? null,
         produttore: (d.produttore as string | null) ?? null,
         serie: (d.serie as string | null) ?? null,
         modello: (d.modello as string | null) ?? null,
-        colore_finitura: (d.colore_finitura as string | null) ?? null,
+        colore_finitura:
+          (d.colore_finitura as string | null) ??
+          (d.finitura as string | null) ??
+          null,
         larghezza_min: (d.larghezza_min as number | null) ?? null,
         larghezza_max: (d.larghezza_max as number | null) ?? null,
         altezza_min: (d.altezza_min as number | null) ?? null,
@@ -114,13 +161,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Marca temp come confermati
     await supabase
       .from("pannelli_estratti_temp")
       .update({ confermato: true })
       .eq("import_id", import_id);
 
-    // 5. Aggiorna import
     await supabase
       .from("pannelli_imports")
       .update({
