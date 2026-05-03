@@ -5775,7 +5775,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           newRects.push({ id: t0 + i, type: "rect", x: Math.round(curX), y: fY, w: wPx, h: hPx });
                                           curX += wPx + gap;
                                         }
-                                        setDW([...els, ...newRects]);
+                                        // FIX: sostituisce i telai esistenti invece di aggiungerne altri.
+                                        // Rimuovo anche montanti/traversi/zoccoli che finirebbero orfani fuori dal nuovo telaio.
+                                        const totalW = (wPx * Nv) + (gap * Math.max(0, Nv - 1));
+                                        const xMin = fX, xMax = fX + totalW;
+                                        const yMin = fY, yMax = fY + hPx;
+                                        const elsKept = els.filter((e: any) => {
+                                          if (e.type === "rect") return false; // tutti i vecchi telai via
+                                          // Tieni solo elementi che cadono dentro la nuova area complessiva
+                                          if (e.type === "montante") {
+                                            return e.x >= xMin && e.x <= xMax;
+                                          }
+                                          if (e.type === "traverso") {
+                                            return e.y >= yMin && e.y <= yMax;
+                                          }
+                                          // Tutto il resto (aperture, vetri, accessori) lo tengo: l'utente puo' rimuoverlo a mano
+                                          return true;
+                                        });
+                                        setDW([...elsKept, ...newRects]);
                                         setTelaioBatch(null);
                                       }} style={{ padding: "10px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>Crea {telaioBatch.N} telaio{parseInt(telaioBatch.N)>1?"i":""}</div>
                                     </div>
