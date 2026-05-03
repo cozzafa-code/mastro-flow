@@ -740,17 +740,37 @@ export default function VanoDetailPanel() {
                       </optgroup>
                     ))}
                     {/* Tipologie custom dal DB (salvate dal CAD) - filtrate per categoria attiva */}
-                    {dbTipologie.length > 0 && (
-                      <optgroup label={`★ Mie tipologie${tipCat ? " (" + tipCat + ")" : ""}`}>
-                        {dbTipologie
-                          .filter(t => !tipCat || t.categoria === tipCat || (tipCat === "Finestre" && !t.categoria))
-                          .map(t => (
-                            <option key={`db-${t.id}`} value={`DB:${t.id}`}>
-                              ★ {t.nome}{t.n_ante ? ` (${t.n_ante}a)` : ""}{t.dimensioni_default ? ` ${t.dimensioni_default}mm` : ""}
-                            </option>
-                          ))}
-                      </optgroup>
-                    )}
+                    {dbTipologie.length > 0 && (() => {
+                      const filtered = dbTipologie.filter(t => !tipCat || t.categoria === tipCat || (tipCat === "Finestre" && !t.categoria));
+                      // Split in 2 gruppi: compatibili con sistema corrente vs altre
+                      const sistemaCorrente = v.sistema;
+                      const compatibili = sistemaCorrente
+                        ? filtered.filter(t => Array.isArray(t.sistemi_compatibili) && t.sistemi_compatibili.includes(sistemaCorrente))
+                        : [];
+                      const altre = sistemaCorrente
+                        ? filtered.filter(t => !Array.isArray(t.sistemi_compatibili) || !t.sistemi_compatibili.includes(sistemaCorrente))
+                        : filtered;
+                      return <>
+                        {compatibili.length > 0 && (
+                          <optgroup label={`✓ Compatibili con ${sistemaCorrente}`}>
+                            {compatibili.map(t => (
+                              <option key={`db-c-${t.id}`} value={`DB:${t.id}`}>
+                                ✓ {t.nome}{t.n_ante ? ` (${t.n_ante}a)` : ""}{t.dimensioni_default ? ` ${t.dimensioni_default}mm` : ""}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {altre.length > 0 && (
+                          <optgroup label={`★ Mie tipologie${tipCat ? " (" + tipCat + ")" : ""}`}>
+                            {altre.map(t => (
+                              <option key={`db-${t.id}`} value={`DB:${t.id}`}>
+                                ★ {t.nome}{t.n_ante ? ` (${t.n_ante}a)` : ""}{t.dimensioni_default ? ` ${t.dimensioni_default}mm` : ""}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </>;
+                    })()}
                   </select>
                   {v.tipo && (
                     <div style={{fontSize:11,color:T.acc,fontWeight:600,padding:"4px 8px",background:T.accLt,borderRadius:8,display:"inline-block"}}>

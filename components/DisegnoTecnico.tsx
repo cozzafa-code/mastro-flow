@@ -6,6 +6,7 @@
 // Usato da: CMDetailPanel (preventivo) + VanoDetailPanel (rilievo)
 // ═══════════════════════════════════════════════════════════
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import GestioneTipologie from "./GestioneTipologie";
 
 // ═══════════════════════════════════════════════════════════
 // 3D ISOMETRIC VIEW — 6 Faces + Per-face drawing + Render
@@ -930,6 +931,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const telaioTapRef = React.useRef<number>(0);
   const [savingTipologia, setSavingTipologia] = React.useState<{open: boolean, nome: string, categoria: string, n_ante: string, note: string} | null>(null);
   const [savingTipoStatus, setSavingTipoStatus] = React.useState<string>("");
+  const [showGestioneTipo, setShowGestioneTipo] = React.useState<boolean>(false);
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
@@ -3140,6 +3142,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     </svg>
                                     Salva tipologia
                                   </div>
+                                  <div onClick={() => setShowGestioneTipo(true)}
+                                    style={{ ...bs(), color: "#3B7FE0", border: `1.5px solid #3B7FE0`, background: "#3B7FE008" }}>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}>
+                                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" strokeLinejoin="round"/>
+                                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" strokeLinejoin="round"/>
+                                    </svg>
+                                    Gestione
+                                  </div>
                                   <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="5" y="3" width="14" height="18" rx="1"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Distinta</div>
                                   {/* Giunzioni */}
                                   {junctions.length > 0 && <div onClick={() => setMode({ drawMode: drawMode === "junction" ? null : "junction", _pendingLine: null })} style={{ ...bs(drawMode === "junction"), background: drawMode === "junction" ? "#3B7FE012" : undefined, color: drawMode === "junction" ? T.blue : undefined, border: `1.5px solid ${drawMode === "junction" ? T.blue : T.bdr}` }}>⌐ Giunzioni ({junctions.length})</div>}
@@ -4923,6 +4933,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
                               )}
 
+                              {/* Modal GESTIONE TIPOLOGIE */}
+                              <GestioneTipologie
+                                open={showGestioneTipo}
+                                onClose={() => setShowGestioneTipo(false)}
+                                onSelect={(t) => {
+                                  // Carica il disegno della tipologia nel vano corrente
+                                  if (t.disegno && t.disegno.elements) {
+                                    if (confirm(`Caricare la tipologia "${t.nome}" nel vano corrente?\n\n⚠ Il disegno attuale verrà sostituito.`)) {
+                                      onUpdate({ ...dw, elements: t.disegno.elements, _articoli: t.disegno._articoli || {} });
+                                      if (onUpdateField) {
+                                        onUpdateField("tipologia_id", t.id);
+                                        onUpdateField("tipologia_nome", t.nome);
+                                      }
+                                      setShowGestioneTipo(false);
+                                    }
+                                  }
+                                }}
+                              />
+
                               {/* Modal SALVA TIPOLOGIA */}
                               {savingTipologia && savingTipologia.open && (
                                 <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)" }}
@@ -5020,6 +5049,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             disegno: { elements: dw.elements || [], realW, realH, _articoli: dw._articoli || {} },
                                             dimensioni_default: `${realW}x${realH}`,
                                             thumbnail,
+                                            sistemi_compatibili: vanoSistema ? [vanoSistema] : [],
                                             attivo: true,
                                           };
                                           // EDIT modalità: se savingTipologia ha id, fa PATCH invece di POST
