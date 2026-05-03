@@ -923,7 +923,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   );
 }
 
-export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, vanoSistema, vanoColore, vanoProfilo }) {
+export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, vanoSistema, vanoColore, vanoProfilo, vanoTipologiaId, vanoTipologiaNome }) {
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
   const [telaioBatch, setTelaioBatch] = React.useState<{open: boolean, L: string, H: string, N: string} | null>(null);
@@ -3118,7 +3118,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     });
                                     setDW(upd);
                                   }} style={{ ...bs(), color: "#3B7FE0", border: `1.5px solid #3B7FE0` }}>● Pallini Angoli</div>
-                                  <div onClick={() => setSavingTipologia({ open: true, nome: "", categoria: "Finestre", n_ante: "", note: "" })}
+                                  <div onClick={() => {
+                                    // Se il vano ha già una tipologia caricata, chiedi se sovrascrivere o salvare nuova
+                                    if (vanoTipologiaId) {
+                                      const choice = confirm(`Stai modificando la tipologia "${vanoTipologiaNome || 'esistente'}".\n\n• OK = AGGIORNA tipologia esistente\n• Annulla = SALVA come NUOVA tipologia`);
+                                      if (choice) {
+                                        // Edit: pre-popola con dati esistenti
+                                        setSavingTipologia({ open: true, nome: vanoTipologiaNome || "", categoria: "Finestre", n_ante: "", note: "", id: vanoTipologiaId } as any);
+                                      } else {
+                                        setSavingTipologia({ open: true, nome: "", categoria: "Finestre", n_ante: "", note: "" });
+                                      }
+                                    } else {
+                                      setSavingTipologia({ open: true, nome: "", categoria: "Finestre", n_ante: "", note: "" });
+                                    }
+                                  }}
                                     style={{ ...bs(), color: "#1A9E73", border: `1.5px solid #1A9E73`, background: "#1A9E7308" }}>
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}>
                                       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" strokeLinejoin="round"/>
@@ -4915,8 +4928,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)" }}
                                   onClick={() => { setSavingTipologia(null); setSavingTipoStatus(""); }}>
                                   <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: 20, minWidth: 300, maxWidth: 360, boxShadow: "0 12px 40px rgba(0,0,0,0.3)" }}>
-                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1A9E73", marginBottom: 4 }}>💾 Salva come tipologia</div>
-                                    <div style={{ fontSize: 10, color: "#888", marginBottom: 14 }}>Il disegno sarà disponibile in libreria per altri vani</div>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1A9E73", marginBottom: 4 }}>{(savingTipologia as any).id ? "✏️ Modifica tipologia" : "💾 Salva come tipologia"}</div>
+                                    <div style={{ fontSize: 10, color: "#888", marginBottom: 14 }}>{(savingTipologia as any).id ? "Aggiornamento tipologia esistente" : "Il disegno sarà disponibile in libreria per altri vani"}</div>
                                     <div style={{ marginBottom: 10 }}>
                                       <div style={{ fontSize: 9, fontWeight: 700, color: "#666", marginBottom: 3 }}>Nome tipologia *</div>
                                       <input type="text" value={savingTipologia.nome} onChange={(e) => setSavingTipologia({ ...savingTipologia, nome: e.target.value })}
@@ -4961,17 +4974,59 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         if (!savingTipologia.nome.trim()) { setSavingTipoStatus("⚠ Nome obbligatorio"); return; }
                                         setSavingTipoStatus("Salvataggio in corso...");
                                         try {
-                                          const payload = {
+                                          // ── GENERAZIONE THUMBNAIL SVG ──
+                                          const els = dw.elements || [];
+                                          let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+                                          els.forEach((e: any) => {
+                                            if (e.x !== undefined && e.w !== undefined) {
+                                              xMin = Math.min(xMin, e.x); xMax = Math.max(xMax, e.x + e.w);
+                                              yMin = Math.min(yMin, e.y); yMax = Math.max(yMax, e.y + e.h);
+                                            } else if (e.x1 !== undefined) {
+                                              xMin = Math.min(xMin, e.x1, e.x2); xMax = Math.max(xMax, e.x1, e.x2);
+                                              yMin = Math.min(yMin, e.y1, e.y2); yMax = Math.max(yMax, e.y1, e.y2);
+                                            }
+                                          });
+                                          let thumbnail = "";
+                                          if (isFinite(xMin)) {
+                                            const padT = 10;
+                                            const tW = (xMax - xMin) + padT * 2;
+                                            const tH = (yMax - yMin) + padT * 2;
+                                            const shapes: string[] = [];
+                                            els.forEach((e: any) => {
+                                              if (e.type === "rect") {
+                                                shapes.push(`<rect x="${e.x-xMin+padT}" y="${e.y-yMin+padT}" width="${e.w}" height="${e.h}" fill="#f0efe8" stroke="#3A3A3C" stroke-width="2"/>`);
+                                              } else if (e.type === "freeLine" && !e.subType) {
+                                                shapes.push(`<line x1="${e.x1-xMin+padT}" y1="${e.y1-yMin+padT}" x2="${e.x2-xMin+padT}" y2="${e.y2-yMin+padT}" stroke="#3A3A3C" stroke-width="3"/>`);
+                                              } else if (e.type === "freeLine" && e.subType) {
+                                                shapes.push(`<line x1="${e.x1-xMin+padT}" y1="${e.y1-yMin+padT}" x2="${e.x2-xMin+padT}" y2="${e.y2-yMin+padT}" stroke="#888" stroke-width="2"/>`);
+                                              } else if (e.type === "innerRect") {
+                                                shapes.push(`<rect x="${e.x-xMin+padT}" y="${e.y-yMin+padT}" width="${e.w}" height="${e.h}" fill="#f8f8f6" stroke="#3A3A3C" stroke-width="1.5"/>`);
+                                              } else if (e.type === "montante") {
+                                                const my1 = e.y1 ?? yMin, my2 = e.y2 ?? yMax;
+                                                shapes.push(`<line x1="${e.x-xMin+padT}" y1="${my1-yMin+padT}" x2="${e.x-xMin+padT}" y2="${my2-yMin+padT}" stroke="#3A3A3C" stroke-width="6"/>`);
+                                              } else if (e.type === "traverso") {
+                                                const tx1 = e.x1 ?? xMin, tx2 = e.x2 ?? xMax;
+                                                shapes.push(`<line x1="${tx1-xMin+padT}" y1="${e.y-yMin+padT}" x2="${tx2-xMin+padT}" y2="${e.y-yMin+padT}" stroke="#3A3A3C" stroke-width="6"/>`);
+                                              }
+                                            });
+                                            thumbnail = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${tW} ${tH}" width="120" height="${Math.round(120*tH/tW)}">${shapes.join("")}</svg>`;
+                                          }
+                                          // ──────────────────────────────────
+                                          const payload: any = {
                                             nome: savingTipologia.nome.trim(),
                                             categoria: savingTipologia.categoria,
                                             n_ante: savingTipologia.n_ante ? parseInt(savingTipologia.n_ante) : null,
                                             note: savingTipologia.note.trim() || null,
                                             disegno: { elements: dw.elements || [], realW, realH, _articoli: dw._articoli || {} },
                                             dimensioni_default: `${realW}x${realH}`,
+                                            thumbnail,
                                             attivo: true,
                                           };
+                                          // EDIT modalità: se savingTipologia ha id, fa PATCH invece di POST
+                                          const editId = (savingTipologia as any).id;
+                                          if (editId) payload.id = editId;
                                           const res = await fetch("/api/tipologie-infisso", {
-                                            method: "POST",
+                                            method: editId ? "PATCH" : "POST",
                                             headers: { "Content-Type": "application/json" },
                                             body: JSON.stringify(payload),
                                           });

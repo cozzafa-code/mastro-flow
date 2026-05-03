@@ -1996,8 +1996,14 @@ export default function VanoDetailPanel() {
                         realW={m.lCentro||m.lAlto||1200}
                         realH={m.hCentro||m.hSx||1400}
                         onUpdate={(d:any)=>updateVanoField(v.id,"disegno",d)}
+                        onUpdateField={(field:string,val:any)=>updateVanoField(v.id,field,val)}
                         onClose={()=>setShowDisegno(false)}
                         T={T}
+                        vanoSistema={v.sistema}
+                        vanoColore={v.coloreInt}
+                        vanoProfilo={v.telaio}
+                        vanoTipologiaId={v.tipologia_id}
+                        vanoTipologiaNome={v.tipologia_nome}
                       />
                     </div>
                   </div>
