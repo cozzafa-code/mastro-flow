@@ -2355,8 +2355,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     // H/V: forza allineamento se la linea è prevalentemente orizzontale o verticale (ratio 2:1).
                                     const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
-                                    if (adxC > 0 && adyC / Math.max(adxC, 1) > 8) px = pending.x1;        // dominante verticale → forza X
-                                    else if (adyC > 0 && adxC / Math.max(adyC, 1) > 8) py = pending.y1;   // dominante orizzontale → forza Y
+                                    // FORZATURA H/V DISATTIVATA - ora il TEL.LIB. permette qualsiasi angolo (anche 1°)
+                                    // if (adxC > 0 && adyC / Math.max(adxC, 1) > 8) px = pending.x1;
+                                    // else if (adyC > 0 && adxC / Math.max(adyC, 1) > 8) py = pending.y1;
                                     // chiusura forma — solo per telaio libero senza subType, ≥3 lati, snap ravvicinato 30px
                                     let closeApplied = "no";
                                     if (!subTypeVal) {
@@ -3257,8 +3258,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
                                     // (anche dopo findSnap — priorita' all'allineamento)
                                     const adx = Math.abs(gx - p.x1), ady = Math.abs(gy - p.y1);
-                                    if (adx > 0 && ady / Math.max(adx, 1) > 8) gx = p.x1;
-                                    else if (ady > 0 && adx / Math.max(ady, 1) > 8) gy = p.y1;
+                                    // H/V disattivata: nessuno snap forzato
                                     // Mont.Lib: forza verticale
                                     if (drawMode === "place-mont-free" || dw._lineSubType === "montante") {
                                       gx = p.x1;
@@ -3369,8 +3369,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
                                     const adxT = Math.abs(gx - pp.x1), adyT = Math.abs(gy - pp.y1);
-                                    if (adxT > 0 && adyT / Math.max(adxT, 1) > 8) gx = pp.x1;
-                                    else if (adyT > 0 && adxT / Math.max(adyT, 1) > 8) gy = pp.y1;
+                                    // H/V disattivata su touch: nessuno snap forzato
                                     if (drawMode === "place-mont-free" || dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
                                     if (drawMode === "place-trav-free" || drawMode === "place-zocc-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
@@ -3687,13 +3686,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       );
                                     }
 
-                                    if (el.type === "rect") return (
-                                      <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : undefined}>
-                                        <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#f8f8f6" stroke={hc || "#1A1A1C"} strokeWidth={1.5} rx={1} />
-                                        <rect x={el.x + TK_FRAME} y={el.y + TK_FRAME} width={el.w - TK_FRAME * 2} height={el.h - TK_FRAME * 2} fill="none" stroke={hc || "#1A1A1C"} strokeWidth={1} rx={0.5} />
-                                        {sel && [[el.x,el.y],[el.x+el.w,el.y],[el.x,el.y+el.h],[el.x+el.w,el.y+el.h]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill={"#1A9E73"} />)}
-                                      </g>
-                                    );
+                                    if (el.type === "rect") {
+                                      // Rendering esteticamente identico al telaio libero (TEL.LIB.):
+                                      // 4 lati polygon con angoli a 45° + spessore TK_FRAME pieno + ombra leggera.
+                                      const x1 = el.x, x2 = el.x + el.w, y1 = el.y, y2 = el.y + el.h;
+                                      const T = TK_FRAME;
+                                      // Polygon esterno (path completo del telaio chiuso con spessore)
+                                      // Esterno: x1,y1 → x2,y1 → x2,y2 → x1,y2
+                                      // Interno: x1+T,y1+T → x2-T,y1+T → x2-T,y2-T → x1+T,y2-T
+                                      const outerPts = `${x1},${y1} ${x2},${y1} ${x2},${y2} ${x1},${y2}`;
+                                      const innerPts = `${x1+T},${y1+T} ${x1+T},${y2-T} ${x2-T},${y2-T} ${x2-T},${y1+T}`;
+                                      const fillC = "#f0efe8";
+                                      const strokeC = sel ? "#1A9E73" : "#3A3A3C";
+                                      return (
+                                        <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : undefined}>
+                                          {/* Bordo esterno con riempimento */}
+                                          <path d={`M${outerPts}Z M${innerPts}Z`} fillRule="evenodd" fill={fillC} stroke={strokeC} strokeWidth={sel ? 1.2 : 0.7} strokeLinejoin="miter" />
+                                          {/* Ombra interna sottile per profondità */}
+                                          <polygon points={innerPts} fill="none" stroke="#00000020" strokeWidth={0.4} />
+                                          {/* Selezione angoli */}
+                                          {sel && [[x1,y1],[x2,y1],[x1,y2],[x2,y2]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill="#1A9E73" />)}
+                                        </g>
+                                      );
+                                    }
 
                                     // ═══ MONTANTE — render semplice, freeLine non si estende verso di lui ═══
                                     if (el.type === "montante") {
