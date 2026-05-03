@@ -168,19 +168,67 @@ export default function Dashboard() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // ==================== AUTH LOGIC ====================
+  // ==================== AUTH LOGIC (bfcache-safe) ====================
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAuthUser(session?.user ?? null)
-      if (session?.user) loadProfilo(session.user.id)
-      else setAuthLoading(false)
+    let mounted = true
+    let initialized = false
+
+    const checkAuth = async (isPageShow = false) => {
+      try {
+        // getUser() valida il token contro Supabase (vs getSession che legge solo localStorage)
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!mounted) return
+
+        if (user) {
+          setAuthUser(user)
+          loadProfilo(user.id)
+        } else if (!isPageShow) {
+          // Solo all'avvio iniziale azzeriamo. Su pageshow non tocchiamo lo stato.
+          setAuthUser(null)
+          setProfilo(null)
+          setAuthLoading(false)
+        }
+        initialized = true
+      } catch (e) {
+        if (!mounted) return
+        if (!initialized) setAuthLoading(false)
+      }
+    }
+
+    // Check iniziale
+    checkAuth(false)
+
+    // Listener auth changes (login/logout dinamici)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return
+      if (event === 'SIGNED_IN' && session?.user) {
+        setAuthUser(session.user)
+        loadProfilo(session.user.id)
+      } else if (event === 'SIGNED_OUT') {
+        setAuthUser(null)
+        setProfilo(null)
+        setAuthLoading(false)
+      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        setAuthUser(session.user)
+      }
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthUser(session?.user ?? null)
-      if (session?.user) loadProfilo(session.user.id)
-      else { setProfilo(null); setAuthLoading(false) }
-    })
-    return () => subscription.unsubscribe()
+
+    // Fix bfcache: quando torni indietro da una pagina, il browser ricarica DAL CACHE
+    // ma la sessione potrebbe essere stale. Ri-validiamo senza azzerare se fallisce.
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        // Pagina caricata da bfcache → ri-valida senza distruggere lo stato
+        checkAuth(true)
+      }
+    }
+
+    window.addEventListener('pageshow', handlePageShow)
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+      window.removeEventListener('pageshow', handlePageShow)
+    }
   }, [])
 
   const loadProfilo = async (uid: string) => {
