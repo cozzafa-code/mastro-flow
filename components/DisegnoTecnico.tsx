@@ -9,6 +9,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import GestioneTipologie from "./GestioneTipologie";
 import SelettoreVetri from "./SelettoreVetri";
 import SelettoreProfilo from "./SelettoreProfilo";
+import SelettoreNodo from "./SelettoreNodo";
 
 // ═══════════════════════════════════════════════════════════
 // 3D ISOMETRIC VIEW — 6 Faces + Per-face drawing + Render
@@ -942,7 +943,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [selectedVetro, setSelectedVetro] = React.useState<any | null>(null);
   // Selettore profili (catalogo articoli)
   const [showSelettoreProfilo, setShowSelettoreProfilo] = React.useState<boolean>(false);
-  const [profiloTargetEl, setProfiloTargetEl] = React.useState<{ id: number; ruolo: string } | null>(null); // vetro scelto da applicare al prossimo place-vetro
+  const [profiloTargetEl, setProfiloTargetEl] = React.useState<{ id: number; ruolo: string } | null>(null);
+  // Selettore nodi costruttivi
+  const [showSelettoreNodo, setShowSelettoreNodo] = React.useState<boolean>(false);
+  const [nodoTarget, setNodoTarget] = React.useState<{ key: string; x: number; y: number; profili: string[] } | null>(null);
+  const [showNodi, setShowNodi] = React.useState<boolean>(false); // toggle visibilità nodi nel disegno // vetro scelto da applicare al prossimo place-vetro
   const [catalogoData, setCatalogoData] = React.useState<any[]>([]);
   const [pendingCatAcc, setPendingCatAcc] = React.useState<any | null>(null); // accessorio scelto, in attesa di click sul disegno
   const [pendingVeloce, setPendingVeloce] = React.useState<string | null>(null); // pittogramma veloce in attesa
@@ -3349,6 +3354,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="5" y1="19" x2="19" y2="5"/><polyline points="10,5 19,5 19,14"/></svg>Linea lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><line x1="2" y1="2" x2="7.586" y2="7.586"/></svg>Penna</div>
                                   <div onClick={() => { const txt = prompt("Testo:"); if (!txt) return; const cx2=frame?frame.x+frame.w/2:fX+fW/2; const cy2=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"label",x:cx2,y:cy2,text:txt,fontSize:11}]); }} style={bs()}>Aa Testo</div>
+                                  <div onClick={() => setShowNodi(!showNodi)}
+                                    style={{ ...bs(showNodi), background: showNodi ? "#3B7FE012" : undefined, color: showNodi ? "#3B7FE0" : undefined, border: `1.5px solid ${showNodi ? "#3B7FE0" : T.bdr}` }}>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}>
+                                      <circle cx="6" cy="6" r="3"/>
+                                      <circle cx="18" cy="6" r="3"/>
+                                      <circle cx="12" cy="18" r="3"/>
+                                      <line x1="9" y1="6" x2="15" y2="6"/>
+                                      <line x1="7.5" y1="8.5" x2="10.5" y2="15.5"/>
+                                      <line x1="16.5" y1="8.5" x2="13.5" y2="15.5"/>
+                                    </svg>
+                                    Nodi {(dw._nodi || []).length > 0 ? `(${(dw._nodi || []).length})` : ""}
+                                  </div>
                                   <div onClick={() => {
                                     const nEls = els.filter(e => e.type !== "dim");
                                     if (frame) {
@@ -5097,6 +5114,102 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     return null;
                                   })}
 
+                                  {/* ═══ NODI COSTRUTTIVI ═══ */}
+                                  {/* Pallini per gli incroci - cliccabili per assegnare nodo da catalogo */}
+                                  {showNodi && !drawMode && (() => {
+                                    const nodi = dw._nodi || [];
+                                    const items: any[] = [];
+
+                                    // 1. VERTICI ANGOLO TELAIO (intersezioni di freeLine senza subType)
+                                    const flTelaio = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                    const vMap: any = {};
+                                    flTelaio.forEach((l: any) => {
+                                      [[l.x1, l.y1], [l.x2, l.y2]].forEach(([x, y]: any) => {
+                                        const k = `${Math.round(x)},${Math.round(y)}`;
+                                        if (!vMap[k]) vMap[k] = { x, y, count: 0 };
+                                        vMap[k].count++;
+                                      });
+                                    });
+                                    Object.entries(vMap).forEach(([k, v]: any) => {
+                                      if (v.count >= 2) {
+                                        items.push({ key: `tel-${k}`, x: v.x, y: v.y, profili: ["telaio", "telaio"], tipo: "angolo" });
+                                      }
+                                    });
+
+                                    // 2. VERTICI ANGOLO RECT TELAIO (4 angoli del rect classico)
+                                    els.filter((e: any) => e.type === "rect").forEach((r: any) => {
+                                      [
+                                        [r.x, r.y, "tl"], [r.x + r.w, r.y, "tr"],
+                                        [r.x, r.y + r.h, "bl"], [r.x + r.w, r.y + r.h, "br"]
+                                      ].forEach(([x, y, c]: any) => {
+                                        items.push({ key: `rect-${r.id}-${c}`, x, y, profili: ["telaio", "telaio"], tipo: "angolo" });
+                                      });
+                                    });
+
+                                    // 3. T-JUNCTION: estremi montanti/traversi che toccano il telaio
+                                    const ftAll = els.filter((e: any) => e.type === "freeLine"); // tutte (anche complementi)
+                                    els.filter((e: any) => e.type === "montante").forEach((m: any) => {
+                                      const my1 = m.y1 ?? (frame ? frame.y : fY);
+                                      const my2 = m.y2 ?? (frame ? frame.y + frame.h : fY + fH);
+                                      [[m.x, my1, "top"], [m.x, my2, "bot"]].forEach(([x, y, w]: any) => {
+                                        items.push({ key: `mont-${m.id}-${w}`, x, y, profili: ["telaio", "montante"], tipo: "T" });
+                                      });
+                                    });
+                                    els.filter((e: any) => e.type === "traverso").forEach((t: any) => {
+                                      const tx1 = t.x1 ?? (frame ? frame.x : fX);
+                                      const tx2 = t.x2 ?? (frame ? frame.x + frame.w : fX + fW);
+                                      [[tx1, t.y, "left"], [tx2, t.y, "right"]].forEach(([x, y, w]: any) => {
+                                        // Filtra: skip se questo punto coincide con un vertice telaio già aggiunto
+                                        const k2 = `${Math.round(x)},${Math.round(y)}`;
+                                        if (vMap[k2] && vMap[k2].count >= 2) return;
+                                        items.push({ key: `trav-${t.id}-${w}`, x, y, profili: ["telaio", "traverso"], tipo: "T" });
+                                      });
+                                    });
+
+                                    // 4. INCROCIO MONTANTE x TRAVERSO
+                                    els.filter((e: any) => e.type === "traverso").forEach((t: any) => {
+                                      const tx1 = t.x1 ?? (frame ? frame.x : fX);
+                                      const tx2 = t.x2 ?? (frame ? frame.x + frame.w : fX + fW);
+                                      els.filter((e: any) => e.type === "montante").forEach((m: any) => {
+                                        const my1 = m.y1 ?? (frame ? frame.y : fY);
+                                        const my2 = m.y2 ?? (frame ? frame.y + frame.h : fY + fH);
+                                        if (m.x >= tx1 - 2 && m.x <= tx2 + 2 && t.y >= my1 - 2 && t.y <= my2 + 2) {
+                                          items.push({ key: `cross-${m.id}-${t.id}`, x: m.x, y: t.y, profili: ["montante", "traverso"], tipo: "X" });
+                                        }
+                                      });
+                                    });
+
+                                    // Dedup by key
+                                    const seen = new Set();
+                                    const uniq = items.filter(it => { if (seen.has(it.key)) return false; seen.add(it.key); return true; });
+
+                                    return uniq.map(it => {
+                                      const assigned = nodi.find((n: any) => n.key === it.key);
+                                      const r = 9 / zoom;
+                                      const handleClick = (e3: any) => {
+                                        e3.stopPropagation();
+                                        setNodoTarget({ key: it.key, x: it.x, y: it.y, profili: it.profili });
+                                        setShowSelettoreNodo(true);
+                                      };
+                                      return (
+                                        <g key={it.key} onClick={handleClick} onTouchEnd={handleClick} style={{ cursor: "pointer" }}>
+                                          <circle cx={it.x} cy={it.y} r={r * 1.6} fill="transparent" />
+                                          {assigned ? (
+                                            <>
+                                              <circle cx={it.x} cy={it.y} r={r} fill="#1A9E73" stroke="#fff" strokeWidth={2/zoom} />
+                                              <text x={it.x} y={it.y + r/2} textAnchor="middle" fontSize={9/zoom} fontWeight={800} fill="#fff" fontFamily="'SF Mono',monospace">✓</text>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <circle cx={it.x} cy={it.y} r={r} fill="#fff" stroke="#3B7FE0" strokeWidth={2/zoom} strokeDasharray={`${3/zoom},${2/zoom}`} />
+                                              <text x={it.x} y={it.y + r/2} textAnchor="middle" fontSize={10/zoom} fontWeight={800} fill="#3B7FE0" fontFamily="'SF Mono',monospace">?</text>
+                                            </>
+                                          )}
+                                        </g>
+                                      );
+                                    });
+                                  })()}
+
                                   {/* Pallini d'angolo: vertici condivisi da 2+ freeLine telaio */}
                                   {(() => {
                                     if (drawMode) return null;
@@ -5650,6 +5763,34 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   setDW(newEls);
                                   setShowSelettoreProfilo(false);
                                   setProfiloTargetEl(null);
+                                }}
+                              />
+
+                              {/* Modal SELETTORE NODO COSTRUTTIVO */}
+                              <SelettoreNodo
+                                open={showSelettoreNodo}
+                                onClose={() => { setShowSelettoreNodo(false); setNodoTarget(null); }}
+                                profiliCoinvolti={nodoTarget?.profili}
+                                vanoSistema={vanoSistema}
+                                currentNodoId={nodoTarget ? (dw._nodi || []).find((n: any) => n.key === nodoTarget.key)?.nodo_id : null}
+                                onSelect={(n) => {
+                                  if (!nodoTarget) { setShowSelettoreNodo(false); return; }
+                                  // Salva nodo nel campo dw._nodi
+                                  const existing = dw._nodi || [];
+                                  const newNodi = existing.filter((x: any) => x.key !== nodoTarget.key);
+                                  newNodi.push({
+                                    key: nodoTarget.key,
+                                    x: nodoTarget.x, y: nodoTarget.y,
+                                    profili: nodoTarget.profili,
+                                    nodo_id: n.id,
+                                    nodo_nome: n.nome,
+                                    nodo_tipo: n.tipo,
+                                    pdf_url: n.pdf_url,
+                                    dxf_url: n.dxf_url,
+                                  });
+                                  onUpdate({ ...dw, _nodi: newNodi });
+                                  setShowSelettoreNodo(false);
+                                  setNodoTarget(null);
                                 }}
                               />
 
