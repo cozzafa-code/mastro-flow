@@ -926,6 +926,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, vanoSistema, vanoColore, vanoProfilo }) {
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
+  const [telaioBatch, setTelaioBatch] = React.useState<{open: boolean, L: string, H: string, N: string} | null>(null);
+  const telaioTapRef = React.useRef<number>(0);
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
@@ -2940,6 +2942,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 {menuTab === "struttura" && <>
                                 <div style={{ display: "flex", gap: 3, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => {
+                                    const now = Date.now();
+                                    if (now - telaioTapRef.current < 400) {
+                                      // Doppio tap → modal batch
+                                      telaioTapRef.current = 0;
+                                      setTelaioBatch({ open: true, L: String(realW || 1200), H: String(realH || 1400), N: "1" });
+                                      return;
+                                    }
+                                    telaioTapRef.current = now;
                                     if (frames.length === 0) {
                                       setDW([...els, { id: Date.now(), type: "rect", x: fX, y: fY, w: fW, h: fH }]);
                                     } else {
@@ -2947,7 +2957,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const nw = lastF.w * 0.6, nh = lastF.h * 0.5;
                                       setDW([...els, { id: Date.now(), type: "rect", x: snap(lastF.x + lastF.w - TK_FRAME), y: snap(lastF.y + lastF.h - nh), w: snap(nw), h: snap(nh) }]);
                                     }
-                                  }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="1"/></svg>Telaio</div>
+                                  }} style={bs()} title="Tap singolo: aggiungi telaio · Doppio tap: pannello L×H×N pezzi"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="1"/></svg>Telaio</div>
                                   <div onClick={() => setProfileMode("telaio", { drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,8 21,17 12,22 3,17 3,8"/></svg>Tel.Lib.</div>
                                   {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine" && !e.subType).length >= 2 && (
                                     <div onClick={() => {
@@ -4804,6 +4814,57 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               )}
 
                               {/* ══ POPUP SCELTA ANGOLO ══ */}
+                              {/* Modal TELAIO BATCH (doppio-tap su Telaio) */}
+                              {telaioBatch && telaioBatch.open && (
+                                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)" }}
+                                  onClick={() => setTelaioBatch(null)}>
+                                  <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: 20, minWidth: 280, maxWidth: 340, boxShadow: "0 12px 40px rgba(0,0,0,0.3)" }}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1A9E73", marginBottom: 4 }}>📐 Telaio multiplo</div>
+                                    <div style={{ fontSize: 10, color: "#888", marginBottom: 14 }}>Inserisci dimensioni reali (mm) e numero pezzi</div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                                      <div>
+                                        <div style={{ fontSize: 9, fontWeight: 700, color: "#666", marginBottom: 3 }}>Larghezza (L)</div>
+                                        <input type="number" value={telaioBatch.L} onChange={(e) => setTelaioBatch({ ...telaioBatch, L: e.target.value })}
+                                          style={{ width: "100%", padding: "8px 10px", fontSize: 14, fontWeight: 700, border: "1.5px solid #ddd", borderRadius: 6, fontFamily: "monospace" }} />
+                                      </div>
+                                      <div>
+                                        <div style={{ fontSize: 9, fontWeight: 700, color: "#666", marginBottom: 3 }}>Altezza (H)</div>
+                                        <input type="number" value={telaioBatch.H} onChange={(e) => setTelaioBatch({ ...telaioBatch, H: e.target.value })}
+                                          style={{ width: "100%", padding: "8px 10px", fontSize: 14, fontWeight: 700, border: "1.5px solid #ddd", borderRadius: 6, fontFamily: "monospace" }} />
+                                      </div>
+                                    </div>
+                                    <div style={{ marginBottom: 14 }}>
+                                      <div style={{ fontSize: 9, fontWeight: 700, color: "#666", marginBottom: 3 }}>N° pezzi</div>
+                                      <input type="number" min="1" max="20" value={telaioBatch.N} onChange={(e) => setTelaioBatch({ ...telaioBatch, N: e.target.value })}
+                                        style={{ width: "100%", padding: "8px 10px", fontSize: 14, fontWeight: 700, border: "1.5px solid #ddd", borderRadius: 6, fontFamily: "monospace" }} />
+                                    </div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8 }}>
+                                      <div onClick={() => setTelaioBatch(null)} style={{ padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Annulla</div>
+                                      <div onClick={() => {
+                                        const Lmm = parseFloat(telaioBatch.L);
+                                        const Hmm = parseFloat(telaioBatch.H);
+                                        const Nv = Math.max(1, Math.min(20, parseInt(telaioBatch.N) || 1));
+                                        if (!Lmm || !Hmm) { setTelaioBatch(null); return; }
+                                        // Conversione mm → px canvas. Usa il rapporto del vano corrente.
+                                        const pxPerMm = fW / (realW || 1200);
+                                        const wPx = Math.round(Lmm * pxPerMm);
+                                        const hPx = Math.round(Hmm * pxPerMm);
+                                        const gap = Math.round(15 * pxPerMm); // 15mm spazio tra telai
+                                        const newRects: any[] = [];
+                                        const t0 = Date.now();
+                                        let curX = fX;
+                                        for (let i = 0; i < Nv; i++) {
+                                          newRects.push({ id: t0 + i, type: "rect", x: Math.round(curX), y: fY, w: wPx, h: hPx });
+                                          curX += wPx + gap;
+                                        }
+                                        setDW([...els, ...newRects]);
+                                        setTelaioBatch(null);
+                                      }} style={{ padding: "10px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>Crea {telaioBatch.N} telaio{parseInt(telaioBatch.N)>1?"i":""}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
                               {cornerEdit && (() => {
                                 const ce: any = cornerEdit;
                                 // Caso ANTA: angolo singolo di un polyAnta
