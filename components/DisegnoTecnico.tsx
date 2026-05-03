@@ -2563,9 +2563,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const filteredWeldPts = (cs0 && !subTypeVal && flCount0 < 3)
                                     ? existingWeldPts.filter(p => Math.hypot(p.x - cs0.x, p.y - cs0.y) > 4)
                                     : existingWeldPts;
+                                  // FIX: per TELAIO LIBERO il raggio weld è MINIMO (8px). L'utente passa vicino a vertici
+                                  // esistenti senza agganciarli per sbaglio. Per i profili WELD2 piena resta.
+                                  const WELD_NEW = subTypeVal ? WELD2 : 8;
                                   filteredWeldPts.forEach(p => {
-                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
-                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
+                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD_NEW) { snappedX1=p.x; snappedY1=p.y; }
+                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD_NEW) { snappedX2=p.x; snappedY2=p.y; }
                                   });
                                   newEl.x1=snappedX1; newEl.y1=snappedY1; newEl.x2=snappedX2; newEl.y2=snappedY2;
                                   // Per TELAIO LIBERO (no subType): NESSUNA modifica dei lati esistenti.
