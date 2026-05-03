@@ -1007,8 +1007,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const HM = TK_MONT / 2;
 
                             // ══ POLYGONS from freeLines — tutte le catene chiuse ══
+                            // FIX: solo freeLine SENZA subType (cioè il telaio puro TEL.LIB.).
+                            // Se includessimo zoccoli/soglie/fasce/profili, la catena risulterebbe
+                            // distorta o spezzata e il render del telaio sparirebbe.
                             const getPolygons = () => {
-                              const lines = els.filter(e => e.type === "freeLine");
+                              const lines = els.filter(e => e.type === "freeLine" && !e.subType);
                               if (lines.length < 3) return [];
                               const CONN = 15;
                               const usedGlobal = new Set();
