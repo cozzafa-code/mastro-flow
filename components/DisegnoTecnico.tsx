@@ -932,6 +932,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [savingTipologia, setSavingTipologia] = React.useState<{open: boolean, nome: string, categoria: string, n_ante: string, note: string} | null>(null);
   const [savingTipoStatus, setSavingTipoStatus] = React.useState<string>("");
   const [showGestioneTipo, setShowGestioneTipo] = React.useState<boolean>(false);
+  // Accessori: sub-tab + modal catalogo
+  const [accSubTab, setAccSubTab] = React.useState<"catalogo" | "veloci">("veloci");
+  const [showCatalogo, setShowCatalogo] = React.useState<boolean>(false);
+  const [catalogoData, setCatalogoData] = React.useState<any[]>([]);
+  const [pendingCatAcc, setPendingCatAcc] = React.useState<any | null>(null); // accessorio scelto, in attesa di click sul disegno
+  const [pendingVeloce, setPendingVeloce] = React.useState<string | null>(null); // pittogramma veloce in attesa
+  React.useEffect(() => {
+    if (showCatalogo && catalogoData.length === 0) {
+      fetch("/api/catalogo-accessori")
+        .then(r => r.ok ? r.json() : [])
+        .then(d => { if (Array.isArray(d)) setCatalogoData(d); })
+        .catch(() => {});
+    }
+  }, [showCatalogo, catalogoData.length]);
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
@@ -1500,7 +1514,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const labels: any = {
                                 telaio: "TELAIO", anta: "ANTA", montante: "MONTANTE", traverso: "TRAVERSO",
                                 zoccolo: "ZOCCOLO", soglia: "SOGLIA", soglia_rib: "SOGLIA RIB.", fascia: "FASCIA",
-                                profcomp: "PROF.COMP.", fermavetro: "FERMAVETRO", maniglione: "MANIGLIONE",
+                                profcomp: "PROF.COMP.", fermavetro: "FERMAVETRO", maniglione: "ANTIPANICO",
                               };
                               const lbl = labels[tipo] || tipo.toUpperCase();
                               const placeholder = vanoSistema ? `es. ${vanoSistema} - ${lbl}` : `es. IDEAL 7000 - ${lbl}`;
@@ -1842,14 +1856,94 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               // FERMAVETRO — un tap dentro una cella o un'anta. Crea 4 fermavetri autonomi (anello)
                               // attorno al rettangolo del vetro: bordo interno offset di TK_ANTA o TK_FRAME.
+                              // Place ACCESSORIO CATALOGO (con articolo/prezzo/fornitore)
+                              if (drawMode === "place-catalogo" && pendingCatAcc) {
+                                const anta = els.find((e: any) => e.type === "innerRect" &&
+                                  mx >= e.x && mx <= e.x + e.w && my >= e.y && my <= e.y + e.h);
+                                let wPx = 24, hPx = 24, ax = mx - 12, ay = my - 12;
+                                if (anta) {
+                                  // Pittogramma proporzionato all'anta (max 8% larghezza)
+                                  wPx = Math.max(20, Math.min(40, Math.round(anta.w * 0.08)));
+                                  hPx = wPx;
+                                  ax = Math.round(mx - wPx / 2);
+                                  ay = Math.round(my - hPx / 2);
+                                }
+                                setDW([...els, {
+                                  id: Date.now(), type: "accessorio_catalogo",
+                                  x: ax, y: ay, w: wPx, h: hPx,
+                                  catalogo_id: pendingCatAcc.id,
+                                  codice: pendingCatAcc.codice,
+                                  nome: pendingCatAcc.nome,
+                                  prezzo: pendingCatAcc.prezzo_unitario || pendingCatAcc.prezzo || 0,
+                                  fornitore: pendingCatAcc.fornitore,
+                                  pittogramma: pendingCatAcc.pittogramma || "leva",
+                                }], { drawMode: null });
+                                setPendingCatAcc(null);
+                                return;
+                              }
+
+                              // Place ACCESSORIO VELOCE (solo grafico, nessun articolo)
+                              if (drawMode === "place-veloce" && pendingVeloce) {
+                                const anta = els.find((e: any) => e.type === "innerRect" &&
+                                  mx >= e.x && mx <= e.x + e.w && my >= e.y && my <= e.y + e.h);
+                                let wPx = 24, hPx = 24, ax = mx - 12, ay = my - 12;
+                                if (anta) {
+                                  wPx = Math.max(20, Math.min(40, Math.round(anta.w * 0.08)));
+                                  hPx = wPx;
+                                  ax = Math.round(mx - wPx / 2);
+                                  ay = Math.round(my - hPx / 2);
+                                }
+                                setDW([...els, {
+                                  id: Date.now(), type: "accessorio_veloce",
+                                  x: ax, y: ay, w: wPx, h: hPx,
+                                  pittogramma: pendingVeloce,
+                                }], { drawMode: null });
+                                setPendingVeloce(null);
+                                return;
+                              }
+
                               if (drawMode === "place-maniglione") {
-                                const articolo = askArticolo("maniglione");
-                                const wPx = 110, hPx = 32;
+                                // Trova anta sotto il click
+                                const anta = els.find((e: any) => e.type === "innerRect" &&
+                                  mx >= e.x && mx <= e.x + e.w && my >= e.y && my <= e.y + e.h);
+                                // Chiedi tipo chiusura
+                                const tipoStr = prompt("Tipo chiusura antipanico:\n1 = solo barra centrale\n3 = 3 punti (alto + barra + basso)\n4 = 4 punti (alto + barra + basso, doppia asta)\n\nDigita 1, 3, o 4:", "3");
+                                if (tipoStr === null) return;
+                                const tp = tipoStr.trim();
+                                if (!["1","3","4"].includes(tp)) { alert("Inserire 1, 3, o 4"); return; }
+                                const tipoChiusura = tp + "p"; // "1p" | "3p" | "4p"
+                                const articolo = askArticolo("antipanico");
+                                let wPx = 110, hPx = 22, ax = mx - 55, ay = my - 11;
+                                let antaRect: any = undefined;
+                                if (anta) {
+                                  // Determina lato CENTRO PORTA (lato dove va l'asta verticale)
+                                  // Se ci sono altre ante: lato verso il centro = lato vicino all'altra anta
+                                  const otherAnta = els.filter((e: any) => e.type === "innerRect" && e.id !== anta.id);
+                                  let side: "left" | "right" = "right"; // default
+                                  if (otherAnta.length > 0) {
+                                    // Trova l'anta più vicina lateralmente
+                                    const closest = otherAnta.reduce((best: any, e: any) => {
+                                      const dx = Math.abs((e.x + e.w/2) - (anta.x + anta.w/2));
+                                      const dy = Math.abs((e.y + e.h/2) - (anta.y + anta.h/2));
+                                      const d = dx + dy * 0.3;
+                                      return !best || d < best.d ? { e, d } : best;
+                                    }, null);
+                                    if (closest) {
+                                      side = (closest.e.x + closest.e.w/2) > (anta.x + anta.w/2) ? "right" : "left";
+                                    }
+                                  }
+                                  // Antipanico proporzionato all'anta
+                                  wPx = Math.round(anta.w * 0.85);
+                                  hPx = Math.max(18, Math.round(anta.h * 0.04));
+                                  ax = Math.round(anta.x + (anta.w - wPx) / 2);
+                                  ay = Math.round(anta.y + anta.h * 0.5 - hPx / 2);
+                                  antaRect = { x: anta.x, y: anta.y, w: anta.w, h: anta.h, side };
+                                }
                                 setDW([...els, {
                                   id: Date.now(), type: "maniglione",
-                                  x: Math.round(mx - wPx / 2),
-                                  y: Math.round(my - hPx / 2),
-                                  w: wPx, h: hPx, orient: "H",
+                                  x: ax, y: ay, w: wPx, h: hPx, orient: "H",
+                                  tipoChiusura,
+                                  antaRect,
                                   articolo: articolo || undefined,
                                 }], { drawMode: null });
                                 return;
@@ -2727,7 +2821,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const bAp = (active = false) => ({ padding: "3px 6px", borderRadius: 5, border: `1px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
                             const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
 
-                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free" || drawMode === "place-fermavetro" || drawMode === "place-maniglione" ? "crosshair" : drawMode ? "pointer" : "default";
+                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free" || drawMode === "place-fermavetro" || drawMode === "place-maniglione" || drawMode === "place-catalogo" || drawMode === "place-veloce" ? "crosshair" : drawMode ? "pointer" : "default";
 
                             // ══ Apply dim change con propagazione catena ══
                             const dimEditRef = dimEdit; // accessibile in applyDimChange
@@ -3067,15 +3161,88 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 {/* ═══ GRUPPO 3: ANNOTAZIONI + STRUMENTI ═══ */}
                                 {menuTab === "accessori" && <>
-                                <div style={{ display: "flex", gap: 2, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-maniglione" ? null : "place-maniglione", _pendingLine: null })}
-                                    style={{ ...bs(drawMode === "place-maniglione"), color: drawMode === "place-maniglione" ? "#8B5E3C" : undefined, border: `1.5px solid ${drawMode === "place-maniglione" ? "#8B5E3C" : T.bdr}` }}>
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}>
-                                      <path d="M5 14 L5 10 L19 10 L19 14" strokeLinecap="round"/>
-                                    </svg>
-                                    Maniglione
+                                {/* Sub-tab toggle: Catalogo vs Veloci */}
+                                <div style={{ display: "flex", gap: 4, padding: "6px 6px 3px", borderBottom: `1px solid ${T.bdr}` }}>
+                                  <div onClick={() => setAccSubTab("catalogo")}
+                                    style={{ flex: 1, padding: "6px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer",
+                                      background: accSubTab === "catalogo" ? "#1A9E73" : T.card,
+                                      color: accSubTab === "catalogo" ? "#fff" : T.sub,
+                                      border: `1.5px solid ${accSubTab === "catalogo" ? "#1A9E73" : T.bdr}` }}>
+                                    📦 Catalogo
+                                  </div>
+                                  <div onClick={() => setAccSubTab("veloci")}
+                                    style={{ flex: 1, padding: "6px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer",
+                                      background: accSubTab === "veloci" ? "#D08008" : T.card,
+                                      color: accSubTab === "veloci" ? "#fff" : T.sub,
+                                      border: `1.5px solid ${accSubTab === "veloci" ? "#D08008" : T.bdr}` }}>
+                                    ⚡ Veloci
                                   </div>
                                 </div>
+
+                                {/* SEZIONE CATALOGO: apre modal per scegliere articolo + traccia per distinta */}
+                                {accSubTab === "catalogo" && (
+                                  <div style={{ padding: "8px 6px", borderBottom: `1px solid ${T.bdr}` }}>
+                                    <div onClick={() => setShowCatalogo(true)}
+                                      style={{ padding: "10px 12px", borderRadius: 8, background: "#1A9E73", color: "#fff", fontSize: 11, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>
+                                      📦 Sfoglia catalogo accessori
+                                    </div>
+                                    {pendingCatAcc && (
+                                      <div style={{ marginTop: 6, padding: "6px 8px", borderRadius: 6, background: "#1A9E7315", border: "1px solid #1A9E73", fontSize: 9, color: "#1A9E73", fontWeight: 600 }}>
+                                        ✓ {pendingCatAcc.nome} — tap sul disegno per piazzare
+                                      </div>
+                                    )}
+                                    <div style={{ marginTop: 6, fontSize: 9, color: T.sub, lineHeight: 1.4 }}>
+                                      Articoli con codice/prezzo/fornitore tracciati in distinta materiali.
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* SEZIONE VELOCI: pittogrammi senza articolo, solo grafici */}
+                                {accSubTab === "veloci" && (
+                                  <div style={{ padding: "6px", borderBottom: `1px solid ${T.bdr}` }}>
+                                    {/* Antipanico - speciale, ha multi-punto */}
+                                    <div onClick={() => setMode({ drawMode: drawMode === "place-maniglione" ? null : "place-maniglione", _pendingLine: null })}
+                                      style={{ ...bs(drawMode === "place-maniglione"), marginBottom: 4, color: drawMode === "place-maniglione" ? "#cc2222" : undefined, border: `1.5px solid ${drawMode === "place-maniglione" ? "#cc2222" : T.bdr}` }}>
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{display:"inline",verticalAlign:"middle",marginRight:3}}>
+                                        <rect x="2" y="9" width="3" height="6" rx="0.5" fill="#1c1c1e"/>
+                                        <rect x="19" y="9" width="3" height="6" rx="0.5" fill="#1c1c1e"/>
+                                        <rect x="5" y="11" width="14" height="2" fill="#cc2222"/>
+                                      </svg>
+                                      Antipanico (1/3/4 punti)
+                                    </div>
+                                    {/* Griglia pittogrammi veloci */}
+                                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 3 }}>
+                                      {[
+                                        { id: "martellina", nome: "Martellina" },
+                                        { id: "cremonese", nome: "Cremonese" },
+                                        { id: "leva", nome: "Maniglia leva" },
+                                        { id: "leva_cilindro", nome: "Leva+cilindro" },
+                                        { id: "pomolo", nome: "Pomolo" },
+                                        { id: "pomolo_girevole", nome: "Pomolo girev." },
+                                        { id: "oliva", nome: "Oliva scorr." },
+                                        { id: "molla_aerea", nome: "Molla aerea" },
+                                        { id: "cerniera_vista", nome: "Cerniera" },
+                                        { id: "paletto", nome: "Paletto" },
+                                        { id: "catenaccio", nome: "Catenaccio" },
+                                        { id: "spioncino", nome: "Spioncino" },
+                                      ].map(p => (
+                                        <div key={p.id} onClick={() => { setPendingVeloce(p.id); setMode({ drawMode: "place-veloce", _pendingLine: null }); }}
+                                          title={p.nome}
+                                          style={{ padding: "6px 2px", borderRadius: 5, fontSize: 8, fontWeight: 600, textAlign: "center", cursor: "pointer",
+                                            background: pendingVeloce === p.id ? "#D0800815" : T.card,
+                                            color: pendingVeloce === p.id ? "#D08008" : T.text,
+                                            border: `1px solid ${pendingVeloce === p.id ? "#D08008" : T.bdr}` }}>
+                                          {p.nome}
+                                        </div>
+                                      ))}
+                                    </div>
+                                    {pendingVeloce && (
+                                      <div style={{ marginTop: 6, padding: "5px 8px", borderRadius: 6, background: "#D0800815", border: "1px solid #D08008", fontSize: 9, color: "#D08008", fontWeight: 600 }}>
+                                        ⚡ {pendingVeloce} — tap sul disegno per piazzare
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                                 </>}
 
                                 {menuTab === "strumenti" && <>
@@ -3777,28 +3944,199 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // ═══ ZOCCOLO LIBERO — rect autonomo, indipendente da telaio ═══
                                     // ═══ MANIGLIONE TUBOLARE — accessorio maniglia tubolare U-shape ═══
                                     if (el.type === "maniglione") {
+                                      // ANTIPANICO CISA multi-punto: 1, 3, 4 punti chiusura
                                       const isH = el.orient !== "V";
                                       const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
-                                      const C = sel ? "#1A9E73" : "#1A1A1C";
                                       const rot = isH ? 0 : 90;
-                                      const tubT = 5;
+                                      const W = el.w, H = el.h;
+                                      // Testate proporzionate
+                                      const headW = Math.max(8, Math.min(14, W * 0.10));
+                                      const headH = Math.max(10, Math.min(18, H * 0.85));
+                                      const headY = (H - headH) / 2;
+                                      // Push-bar centrale
+                                      const barH = Math.max(4, H * 0.28);
+                                      const barY = (H - barH) / 2;
+                                      const barInner = barH * 0.85;
+                                      const barInnerY = barY + (barH - barInner) / 2;
+                                      const headColor = sel ? "#1A9E73" : "#1c1c1e";
+                                      const redColor = sel ? "#1A9E73" : "#cc2222";
+                                      const redLight = sel ? "#5BC9A0" : "#e84444";
+                                      // Multi-punto config
+                                      const tipoChiusura = el.tipoChiusura || "1p"; // 1p | 3p | 4p
+                                      const ar = el.antaRect; // {x,y,w,h, side: "left"|"right"} se piazzato dentro un'anta
+                                      const hasAste = (tipoChiusura === "3p" || tipoChiusura === "4p") && ar;
+                                      // Asta verticale: sul profilo verticale dell'anta lato CENTRO porta
+                                      // side="right" → asta a destra (anta sx, lato centrale a destra)
+                                      // side="left"  → asta a sinistra (anta dx, lato centrale a sinistra)
+                                      const profT = 6; // spessore profilo
+                                      const astaX = ar ? (ar.side === "right" ? ar.x + ar.w - profT/2 - 1 : ar.x + profT/2 - 1) : 0;
+                                      const astaTop = ar ? ar.y + 4 : 0;
+                                      const astaBottom = ar ? ar.y + ar.h - 4 : 0;
+                                      // Testata a contatto con asta (la testata centrale del maniglione)
+                                      const testataCentraleX = ar ? (ar.side === "right" ? el.x + W - headW : el.x) : 0;
+                                      // Segmenti neri sopra/sotto (chiusure verticali nel telaio)
+                                      const segH = Math.max(8, ar ? ar.h * 0.04 : 8);
                                       return (
                                         <g key={el.id} {...dp} transform={`rotate(${rot} ${cx} ${cy})`} style={drawMode ? { pointerEvents: "none" } : { cursor: "move" }}>
-                                          {/* Background bianco evidente */}
-                                          <rect x={el.x - 2} y={el.y - 2} width={el.w + 4} height={el.h + 4} fill="#fff" stroke={C} strokeWidth={0.6} rx={4} />
-                                          {/* Corpo orizzontale (tubo principale) */}
-                                          <rect x={el.x + 6} y={el.y + el.h - tubT*2 - 2} width={el.w - 12} height={tubT} fill={C} rx={tubT/2} />
-                                          {/* Gamba sinistra */}
-                                          <rect x={el.x + 6} y={el.y + 4} width={tubT} height={el.h - tubT*2 - 2} fill={C} rx={tubT/2} />
-                                          {/* Gamba destra */}
-                                          <rect x={el.x + el.w - 6 - tubT} y={el.y + 4} width={tubT} height={el.h - tubT*2 - 2} fill={C} rx={tubT/2} />
-                                          {/* Tappi alle 2 estremità (curva esterna del tubo) */}
-                                          <circle cx={el.x + 6 + tubT/2} cy={el.y + el.h - tubT*1.5 - 2} r={tubT*0.8} fill={C}/>
-                                          <circle cx={el.x + el.w - 6 - tubT/2} cy={el.y + el.h - tubT*1.5 - 2} r={tubT*0.8} fill={C}/>
+                                          {/* Sfondo trasparente cliccabile */}
+                                          <rect x={el.x} y={el.y} width={W} height={H} fill="transparent" />
+                                          {/* Aste verticali (3p/4p) — disegnate PRIMA del maniglione così passano sotto */}
+                                          {hasAste && (
+                                            <>
+                                              {/* Asta superiore: dal punto chiusura alto fino alla testata centrale */}
+                                              <rect x={astaX - 1} y={astaTop} width={2} height={cy - astaTop} fill="#9a9aa3" />
+                                              {/* Segmento nero sopra (chiusura nel telaio sopra) */}
+                                              <rect x={astaX - 2.5} y={astaTop - segH} width={5} height={segH} rx={1} fill={headColor} />
+                                              {/* Asta inferiore (solo per 4p): dalla testata centrale fino al pavimento */}
+                                              {tipoChiusura === "4p" && (
+                                                <>
+                                                  <rect x={astaX - 1} y={cy} width={2} height={astaBottom - cy} fill="#9a9aa3" />
+                                                  <rect x={astaX - 2.5} y={astaBottom} width={5} height={segH} rx={1} fill={headColor} />
+                                                </>
+                                              )}
+                                            </>
+                                          )}
+                                          {/* Testata sinistra */}
+                                          <rect x={el.x} y={el.y + headY} width={headW} height={headH} rx={2} fill={headColor} />
+                                          <rect x={el.x + 2} y={el.y + headY + headH * 0.35} width={headW - 4} height={headH * 0.3} rx={1} fill="#3a3a3e" opacity={sel ? 0 : 1} />
+                                          {/* Testata destra */}
+                                          <rect x={el.x + W - headW} y={el.y + headY} width={headW} height={headH} rx={2} fill={headColor} />
+                                          <rect x={el.x + W - headW + 2} y={el.y + headY + headH * 0.35} width={headW - 4} height={headH * 0.3} rx={1} fill="#3a3a3e" opacity={sel ? 0 : 1} />
+                                          {/* Push-bar: contorno nero + barra rossa + highlight */}
+                                          <rect x={el.x + headW} y={el.y + barY} width={W - headW * 2} height={barH} fill={headColor} />
+                                          <rect x={el.x + headW} y={el.y + barInnerY} width={W - headW * 2} height={barInner} fill={redColor} />
+                                          <rect x={el.x + headW} y={el.y + barInnerY} width={W - headW * 2} height={barInner * 0.3} fill={redLight} />
                                           {/* Selezione */}
-                                          {sel && <rect x={el.x - 4} y={el.y - 4} width={el.w + 8} height={el.h + 8} fill="none" stroke="#1A9E73" strokeWidth={1.2} strokeDasharray="4,3" rx={4} />}
-                                          {/* Etichetta articolo */}
-                                          {el.articolo && <text x={cx} y={el.y - 6} textAnchor="middle" fontSize={7} fontWeight={700} fill="#1A9E73" fontFamily="monospace">{el.articolo}</text>}
+                                          {sel && <rect x={el.x - 4} y={el.y - 4} width={W + 8} height={H + 8} fill="none" stroke="#1A9E73" strokeWidth={1.2} strokeDasharray="4,3" rx={4} />}
+                                          {/* Etichetta articolo + tipo */}
+                                          {(el.articolo || hasAste) && <text x={cx} y={el.y - 6} textAnchor="middle" fontSize={7} fontWeight={700} fill="#1A9E73" fontFamily="monospace">{el.articolo || ""}{el.articolo && tipoChiusura !== "1p" ? " · " : ""}{tipoChiusura !== "1p" ? tipoChiusura.toUpperCase() : ""}</text>}
+                                        </g>
+                                      );
+                                    }
+
+                                    // ═══ ACCESSORI (catalogo + veloci) — render pittogramma comune ═══
+                                    if (el.type === "accessorio_catalogo" || el.type === "accessorio_veloce") {
+                                      const W = el.w, H = el.h;
+                                      const cx = el.x + W / 2, cy = el.y + H / 2;
+                                      const C = sel ? "#1A9E73" : "#1c1c1e";
+                                      const accentC = el.type === "accessorio_catalogo" ? (sel ? "#1A9E73" : "#1A9E73") : (sel ? "#1A9E73" : "#D08008");
+                                      const sw = Math.max(0.5, W * 0.04);
+                                      // Helper: scala pittogramma 0..24 → el.x..el.x+W
+                                      const sx = (n: number) => el.x + (n / 24) * W;
+                                      const sy = (n: number) => el.y + (n / 24) * H;
+                                      const sl = (n: number) => (n / 24) * Math.min(W, H); // length scaled
+                                      const pittog = el.pittogramma || "leva";
+                                      let shape: any = null;
+                                      switch (pittog) {
+                                        case "martellina":
+                                          shape = <>
+                                            <rect x={sx(7)} y={sy(6)} width={sl(10)} height={sl(12)} rx={1.5} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <rect x={cx - sl(1.5)} y={cy - sl(1.5)} width={sl(3)} height={sl(3)} fill={C} />
+                                            <rect x={el.x} y={cy - sl(1)} width={sl(7)} height={sl(2)} rx={0.5} fill={C} />
+                                            <circle cx={el.x + sl(0.5)} cy={cy} r={sl(1.5)} fill={C} />
+                                          </>;
+                                          break;
+                                        case "cremonese":
+                                          shape = <>
+                                            <rect x={sx(7)} y={sy(2)} width={sl(10)} height={sl(12)} rx={1.5} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <rect x={cx - sl(1.5)} y={cy - sl(7)} width={sl(3)} height={sl(3)} fill={C} />
+                                            <rect x={cx - sl(1)} y={cy - sl(2)} width={sl(2)} height={sl(11)} fill={C} />
+                                            <circle cx={cx} cy={cy + sl(9)} r={sl(1.5)} fill={C} />
+                                          </>;
+                                          break;
+                                        case "leva":
+                                          shape = <>
+                                            <rect x={sx(7)} y={sy(6)} width={sl(10)} height={sl(12)} rx={1.5} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <circle cx={cx} cy={cy} r={sl(1.3)} fill={C} />
+                                            <rect x={el.x} y={cy - sl(1)} width={sl(7)} height={sl(2)} rx={0.5} fill={C} />
+                                            <rect x={el.x - sl(0.5)} y={cy - sl(1.5)} width={sl(2)} height={sl(3)} rx={0.5} fill={C} />
+                                          </>;
+                                          break;
+                                        case "leva_cilindro":
+                                          shape = <>
+                                            <rect x={sx(7)} y={sy(6)} width={sl(10)} height={sl(12)} rx={1.5} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <circle cx={cx} cy={cy - sl(1.5)} r={sl(1.5)} fill={C} />
+                                            <rect x={cx - sl(0.7)} y={cy} width={sl(1.5)} height={sl(4)} fill={C} />
+                                            <rect x={el.x} y={cy - sl(0.7)} width={sl(7)} height={sl(1.5)} rx={0.5} fill={C} />
+                                          </>;
+                                          break;
+                                        case "pomolo":
+                                          shape = <>
+                                            <circle cx={cx} cy={cy} r={sl(7)} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <circle cx={cx} cy={cy} r={sl(2.5)} fill={C} />
+                                            <rect x={cx - sl(1.5)} y={cy - sl(1.5)} width={sl(3)} height={sl(3)} fill="#fff" stroke={C} strokeWidth={0.4} />
+                                          </>;
+                                          break;
+                                        case "pomolo_girevole":
+                                          shape = <>
+                                            <circle cx={cx} cy={cy} r={sl(8)} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <rect x={cx - sl(0.7)} y={cy - sl(8)} width={sl(1.5)} height={sl(16)} fill={C} />
+                                            <rect x={cx - sl(8)} y={cy - sl(0.7)} width={sl(16)} height={sl(1.5)} fill={C} />
+                                          </>;
+                                          break;
+                                        case "oliva":
+                                          shape = <>
+                                            <circle cx={cx} cy={cy} r={sl(7)} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <rect x={cx - sl(1.2)} y={cy - sl(7)} width={sl(2.4)} height={sl(4.5)} fill={C} />
+                                            <rect x={cx - sl(1.2)} y={cy + sl(2.5)} width={sl(2.4)} height={sl(4.5)} fill={C} />
+                                            <rect x={cx - sl(7)} y={cy - sl(1.2)} width={sl(4.5)} height={sl(2.4)} fill={C} />
+                                            <rect x={cx + sl(2.5)} y={cy - sl(1.2)} width={sl(4.5)} height={sl(2.4)} fill={C} />
+                                            <circle cx={cx} cy={cy} r={sl(1.6)} fill={C} />
+                                          </>;
+                                          break;
+                                        case "molla_aerea":
+                                          shape = <>
+                                            <rect x={el.x + sl(2)} y={cy - sl(1.5)} width={sl(8)} height={sl(3)} rx={0.5} fill={C} />
+                                            <line x1={el.x + sl(10)} y1={cy} x2={el.x + sl(18)} y2={cy - sl(8)} stroke={C} strokeWidth={sw * 1.5} strokeLinecap="round" />
+                                            <line x1={el.x + sl(18)} y1={cy - sl(8)} x2={el.x + sl(18)} y2={cy - sl(15)} stroke={C} strokeWidth={sw * 1.5} strokeLinecap="round" />
+                                            <rect x={el.x + sl(16)} y={cy - sl(20)} width={sl(4)} height={sl(5)} rx={0.5} fill={C} />
+                                          </>;
+                                          break;
+                                        case "cerniera_vista":
+                                          shape = <>
+                                            <rect x={cx - sl(7)} y={cy - sl(2)} width={sl(14)} height={sl(4)} rx={2} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <line x1={cx - sl(7)} y1={cy - sl(7)} x2={cx - sl(7)} y2={cy - sl(2)} stroke={C} strokeWidth={sw} />
+                                            <line x1={cx + sl(7)} y1={cy - sl(7)} x2={cx + sl(7)} y2={cy - sl(2)} stroke={C} strokeWidth={sw} />
+                                            <line x1={cx - sl(7)} y1={cy + sl(2)} x2={cx - sl(7)} y2={cy + sl(7)} stroke={C} strokeWidth={sw} />
+                                            <line x1={cx + sl(7)} y1={cy + sl(2)} x2={cx + sl(7)} y2={cy + sl(7)} stroke={C} strokeWidth={sw} />
+                                          </>;
+                                          break;
+                                        case "paletto":
+                                          shape = <>
+                                            <rect x={cx - sl(8)} y={cy - sl(2)} width={sl(16)} height={sl(4)} rx={0.5} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <rect x={cx - sl(1.5)} y={cy - sl(2)} width={sl(3)} height={sl(8)} fill={C} />
+                                            <rect x={cx - sl(2.5)} y={cy + sl(6)} width={sl(5)} height={sl(2.5)} rx={0.5} fill={C} />
+                                          </>;
+                                          break;
+                                        case "catenaccio":
+                                          shape = <>
+                                            <rect x={cx - sl(8)} y={cy - sl(2)} width={sl(16)} height={sl(4)} fill={C} />
+                                            <rect x={cx - sl(1.5)} y={cy + sl(2)} width={sl(3)} height={sl(4)} fill={C} />
+                                          </>;
+                                          break;
+                                        case "spioncino":
+                                          shape = <>
+                                            <rect x={cx - sl(6)} y={cy - sl(6)} width={sl(12)} height={sl(12)} rx={2} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <circle cx={cx} cy={cy} r={sl(2.5)} fill={C} />
+                                            <rect x={cx - sl(1.2)} y={cy - sl(6)} width={sl(2.5)} height={sl(2.5)} fill={C} />
+                                          </>;
+                                          break;
+                                        default:
+                                          // Fallback: pomolo generico
+                                          shape = <>
+                                            <circle cx={cx} cy={cy} r={sl(7)} fill="#fff" stroke={C} strokeWidth={sw} />
+                                            <circle cx={cx} cy={cy} r={sl(2)} fill={C} />
+                                          </>;
+                                      }
+                                      return (
+                                        <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : { cursor: "move" }}>
+                                          <rect x={el.x} y={el.y} width={W} height={H} fill="transparent" />
+                                          {shape}
+                                          {sel && <rect x={el.x - 3} y={el.y - 3} width={W + 6} height={H + 6} fill="none" stroke="#1A9E73" strokeWidth={1.2} strokeDasharray="3,2" rx={3} />}
+                                          {el.codice && <text x={cx} y={el.y - 4} textAnchor="middle" fontSize={6} fontWeight={700} fill={accentC} fontFamily="monospace">{el.codice}</text>}
+                                          {/* Indicatore catalogo (cerchio verde) vs veloce (triangolo arancione) */}
+                                          {el.type === "accessorio_catalogo" && <circle cx={el.x + W - 2} cy={el.y + 2} r={1.5} fill="#1A9E73" />}
+                                          {el.type === "accessorio_veloce" && <circle cx={el.x + W - 2} cy={el.y + 2} r={1.2} fill="#D08008" />}
                                         </g>
                                       );
                                     }
@@ -4928,6 +5266,57 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         setDW([...els, ...newRects]);
                                         setTelaioBatch(null);
                                       }} style={{ padding: "10px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>Crea {telaioBatch.N} telaio{parseInt(telaioBatch.N)>1?"i":""}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Modal CATALOGO ACCESSORI */}
+                              {showCatalogo && (
+                                <div onClick={() => setShowCatalogo(false)}
+                                  style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, width: "min(94vw, 540px)", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+                                    <div style={{ padding: "12px 16px", borderBottom: "1px solid #eee", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                      <div>
+                                        <div style={{ fontSize: 14, fontWeight: 800, color: "#1A9E73" }}>📦 Catalogo Accessori</div>
+                                        <div style={{ fontSize: 9, color: "#888", marginTop: 2 }}>{catalogoData.length} articoli · seleziona e tap sul disegno</div>
+                                      </div>
+                                      <div onClick={() => setShowCatalogo(false)} style={{ width: 30, height: 30, borderRadius: 8, background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "#666" }}>✕</div>
+                                    </div>
+                                    <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+                                      {catalogoData.length === 0 ? (
+                                        <div style={{ padding: 30, textAlign: "center", fontSize: 11, color: "#888" }}>
+                                          Caricamento catalogo...<br/>
+                                          <span style={{ fontSize: 9, color: "#aaa" }}>Se persiste, controlla `/api/catalogo-accessori`</span>
+                                        </div>
+                                      ) : (
+                                        catalogoData
+                                          .filter((a: any) => a.attivo !== false)
+                                          .filter((a: any) => !vanoSistema || !a.compatibile_serie || (Array.isArray(a.compatibile_serie) && a.compatibile_serie.length === 0) || (Array.isArray(a.compatibile_serie) && a.compatibile_serie.includes(vanoSistema)))
+                                          .map((a: any) => (
+                                            <div key={a.id} onClick={() => { setPendingCatAcc(a); setShowCatalogo(false); setMode({ drawMode: "place-catalogo", _pendingLine: null }); }}
+                                              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: "1px solid #f5f5f5", cursor: "pointer" }}>
+                                              <div style={{ width: 44, height: 44, flexShrink: 0, border: "1px solid #eee", borderRadius: 6, background: "#fafafa", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                {a.immagine_url ? (
+                                                  <img src={a.immagine_url} alt={a.nome} style={{ maxWidth: 40, maxHeight: 40 }} />
+                                                ) : (
+                                                  <div style={{ fontSize: 9, color: "#bbb", fontWeight: 700 }}>{(a.categoria || "?").substring(0, 3).toUpperCase()}</div>
+                                                )}
+                                              </div>
+                                              <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1A1C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</div>
+                                                <div style={{ fontSize: 9, color: "#888", marginTop: 2, display: "flex", gap: 8 }}>
+                                                  {a.codice && <span style={{ fontFamily: "monospace" }}>{a.codice}</span>}
+                                                  {a.fornitore && <span>· {a.fornitore}</span>}
+                                                  {a.categoria && <span style={{ background: "#f0efe8", padding: "1px 5px", borderRadius: 3 }}>{a.categoria}</span>}
+                                                </div>
+                                              </div>
+                                              <div style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: "#1A9E73" }}>
+                                                {a.prezzo_unitario ? `€${(a.prezzo_unitario as number).toFixed(2)}` : a.prezzo ? `€${(a.prezzo as number).toFixed(2)}` : "—"}
+                                              </div>
+                                            </div>
+                                          ))
+                                      )}
                                     </div>
                                   </div>
                                 </div>
