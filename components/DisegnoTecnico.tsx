@@ -1290,6 +1290,37 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const ANTA_SNAP_R = 60; // raggio snap per lati ante eliminati (domina su vertici telaio)
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
 
+                              // ════════════════════════════════════════════════════════════════
+                              // TEL.LIB. PURO (no subType) — logica SEMPLICE come nei mesi passati.
+                              // Solo Endpoint vicini + chainStart vicino. Niente alignment, niente OSNAP avanzati,
+                              // niente punti artificiali. Massima libertà di disegno.
+                              // ════════════════════════════════════════════════════════════════
+                              if (dw.drawMode === "line" && !dw._lineSubType) {
+                                const SR = SNAP_R;
+                                // Endpoint linee esistenti
+                                freeLines.forEach((l: any) => {
+                                  [{x: l.x1, y: l.y1}, {x: l.x2, y: l.y2}].forEach(p => {
+                                    const d = Math.hypot(p.x - mx, p.y - my);
+                                    if (d < SR && d < bestD) { bestD = d; best = { x: p.x, y: p.y, _osnap: 'END' }; }
+                                  });
+                                });
+                                // Vertici di rect (telaio classico)
+                                els.filter((e: any) => e.type === "rect").forEach((r: any) => {
+                                  [{x:r.x,y:r.y},{x:r.x+r.w,y:r.y},{x:r.x,y:r.y+r.h},{x:r.x+r.w,y:r.y+r.h}].forEach(p => {
+                                    const d = Math.hypot(p.x - mx, p.y - my);
+                                    if (d < SR && d < bestD) { bestD = d; best = { x: p.x, y: p.y, _osnap: 'END' }; }
+                                  });
+                                });
+                                // Snap al chainStart per chiudere la forma — solo se ≥3 lati esistenti
+                                if (canClose && chainStart) {
+                                  const d = Math.hypot(chainStart.x - mx, chainStart.y - my);
+                                  if (d < SR && d < bestD + 2) { best = { x: chainStart.x, y: chainStart.y, _osnap: 'END' }; bestD = d; }
+                                }
+                                // FINE: niente alignment, niente weld, niente forzature.
+                                return best;
+                              }
+                              // ════════════════════════════════════════════════════════════════
+
                               // ══ OSNAP AVANZATI ══ (priorità alta su disegni TEL.LIB.)
                               // Solo se non siamo in profileMode (i profili hanno snap dedicato).
                               if (!isProfileMode && dw.drawMode === "line" && !dw._lineSubType) {
