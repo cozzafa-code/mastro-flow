@@ -1,14 +1,9 @@
 // app/api/pannelli/process/route.ts
-// Riceve { import_id, pdf_url, categoria }, scarica il PDF da Supabase Storage,
-// lo manda ad Anthropic (Claude Sonnet 4.5) via document API,
-// estrae i pannelli e li salva in pannelli_estratti_temp (campo dati jsonb).
+// Riceve { import_id, pdf_url, categoria }, estrae pannelli via Anthropic,
+// salva in pannelli_estratti_temp.
 //
-// Schema reale: pannelli_imports usa filename/file_size_bytes/file_url/metodo/errore_msg.
-// ai_credits usa budget_corrente (numeric).
-// pannelli_estratti_temp usa pagina/posizione_in_pagina/dati(jsonb)/confermato.
-//
-// Codici_errore: API_KEY_MISSING, BAD_REQUEST, IMPORT_NOT_FOUND, CREDITS_INSUFFICIENT,
-// PDF_FETCH_ERROR, ANTHROPIC_ERROR, JSON_PARSE_ERROR, DB_INSERT_ERROR, INTERNAL_ERROR.
+// Parser JSON tollerante: estrae il primo blocco {...} valido anche se
+// preceduto/seguito da preamboli, ```json fence, o note finali.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -18,7 +13,6 @@ export const maxDuration = 300;
 
 const AZIENDA_ID = "ccca51c1-656b-4e7c-a501-55753e20da29";
 const ANTHROPIC_MODEL = "claude-sonnet-4-5-20250929";
-const COSTO_STIMATO_EUR = 0.30;
 
 function supabaseAdmin() {
   return createClient(
@@ -36,17 +30,15 @@ async function setImportError(
 ) {
   await supabase
     .from("pannelli_imports")
-    .update({
-      stato: "errore",
-      errore_msg: `[${codice}] ${dettaglio}`.slice(0, 2000),
-    })
+    .update({ stato: "errore", errore_msg: `[${codice}] ${dettaglio}`.slice(0, 2000) })
     .eq("id", import_id);
 }
 
-const SYSTEM_PROMPT = `Sei un assistente che estrae dati strutturati da PDF tecnici di pannelli/serramenti italiani.
-Restituisci SOLO JSON valido, nessun testo prima o dopo, nessun markdown.
+const SYSTEM_PROMPT = `Sei un assistente che estrae pannelli/serramenti da PDF tecnici italiani.
 
-Schema:
+REGOLA CRITICA: Restituisci SOLO il JSON, niente altro. Niente preamboli, niente backtick, niente note finali, niente markdown. La tua intera risposta DEVE iniziare con { e finire con }.
+
+Schema obbligatorio:
 {
   "pannelli": [
     {
@@ -74,12 +66,39 @@ Schema:
   }
 }
 
-Regole:
+Regole estrazione:
 - Misure in millimetri.
-- Prezzi in euro, punto come separatore decimale, senza simbolo.
-- pagina = numero pagina del PDF dove appare il pannello (default 1).
-- Se manca un campo numerico usa null, non 0 o stringa vuota.
-- Restituisci array vuoto se non trovi pannelli.`;
+- Prezzi in euro, punto come separatore decimale.
+- pagina = numero pagina del PDF (default 1 se non chiaro).
+- Se manca un campo numerico usa null, MAI 0 o stringa vuota.
+- Se il documento è un catalogo con MOLTI modelli, estraine almeno 20-30 anche se mancano alcuni campi.
+- Se vedi modelli illustrati con codice/nome ma senza prezzo, includili comunque (prezzo null).
+- Se davvero non trovi nessun pannello restituisci pannelli: [].`;
+
+// Estrae il primo blocco JSON {...} bilanciato dal testo
+function estraiJsonBlock(raw: string): string | null {
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return cleaned.slice(start, i + 1);
+    }
+  }
+  return null;
+}
 
 export async function POST(req: NextRequest) {
   let import_id: string | null = null;
@@ -109,9 +128,7 @@ export async function POST(req: NextRequest) {
     const { data: importRow, error: importErr } = await supabase
       .from("pannelli_imports")
       .select("id, azienda_id, stato, pre_analisi")
-      .eq("id", import_id!)
-      .eq("azienda_id", AZIENDA_ID)
-      .single();
+      .eq("id", import_id!).eq("azienda_id", AZIENDA_ID).single();
 
     if (importErr || !importRow) {
       return NextResponse.json(
@@ -121,34 +138,27 @@ export async function POST(req: NextRequest) {
     }
 
     const { data: credits } = await supabase
-      .from("ai_credits")
-      .select("budget_corrente")
-      .eq("azienda_id", AZIENDA_ID)
-      .single();
-
+      .from("ai_credits").select("budget_corrente, totale_speso_mese")
+      .eq("azienda_id", AZIENDA_ID).single();
     const budget = Number(credits?.budget_corrente ?? 0);
-    if (budget < COSTO_STIMATO_EUR) {
-      await setImportError(supabase, import_id!, "CREDITS_INSUFFICIENT", `Budget AI insufficiente (€${budget.toFixed(2)})`);
+    if (budget < 0.10) {
+      await setImportError(supabase, import_id!, "CREDITS_INSUFFICIENT", `Budget insufficiente (€${budget.toFixed(2)})`);
       return NextResponse.json(
-        { ok: false, codice_errore: "CREDITS_INSUFFICIENT", dettaglio: `Budget AI insufficiente (€${budget.toFixed(2)})` },
+        { ok: false, codice_errore: "CREDITS_INSUFFICIENT", dettaglio: `Budget insufficiente (€${budget.toFixed(2)})` },
         { status: 402 }
       );
     }
 
-    await supabase
-      .from("pannelli_imports")
-      .update({
-        stato: "processing",
-        file_url: pdf_url,
-        pre_analisi: { ...(importRow.pre_analisi || {}), categoria, file_url: pdf_url },
-      })
-      .eq("id", import_id!);
+    await supabase.from("pannelli_imports").update({
+      stato: "processing", file_url: pdf_url,
+      pre_analisi: { ...(importRow.pre_analisi || {}), categoria, file_url: pdf_url },
+    }).eq("id", import_id!);
 
     const headRes = await fetch(pdf_url, { method: "HEAD" }).catch(() => null);
     if (!headRes || !headRes.ok) {
       await setImportError(supabase, import_id!, "PDF_FETCH_ERROR", `PDF non accessibile (${headRes?.status ?? "n/a"})`);
       return NextResponse.json(
-        { ok: false, codice_errore: "PDF_FETCH_ERROR", dettaglio: "PDF non raggiungibile dallo Storage" },
+        { ok: false, codice_errore: "PDF_FETCH_ERROR", dettaglio: "PDF non raggiungibile" },
         { status: 400 }
       );
     }
@@ -162,17 +172,15 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: ANTHROPIC_MODEL,
-        max_tokens: 8000,
+        max_tokens: 16000,
         system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "document", source: { type: "url", url: pdf_url } },
-              { type: "text", text: `Estrai tutti i pannelli (categoria: ${categoria}) e restituisci JSON.` },
-            ],
-          },
-        ],
+        messages: [{
+          role: "user",
+          content: [
+            { type: "document", source: { type: "url", url: pdf_url } },
+            { type: "text", text: `Estrai i pannelli (categoria: ${categoria}). Rispondi SOLO con JSON valido, niente testo prima o dopo.` },
+          ],
+        }],
       }),
     });
 
@@ -189,71 +197,100 @@ export async function POST(req: NextRequest) {
     const rawText: string =
       anthropicJson?.content?.find((b: { type: string }) => b.type === "text")?.text ?? "";
 
+    // Salva sempre raw response per debug
+    const usage = anthropicJson?.usage ?? {};
+    const inTok = Number(usage.input_tokens ?? 0);
+    const outTok = Number(usage.output_tokens ?? 0);
+    const costoReale = (inTok * 3 / 1_000_000) + (outTok * 15 / 1_000_000);
+
     let parsed: { pannelli?: Array<Record<string, unknown>>; metadata?: Record<string, unknown> } | null = null;
-    try {
-      const cleaned = rawText.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
-      parsed = JSON.parse(cleaned);
-    } catch {
-      await setImportError(supabase, import_id!, "JSON_PARSE_ERROR", `Risposta non parseabile: ${rawText.slice(0, 200)}`);
+    const jsonBlock = estraiJsonBlock(rawText);
+    if (jsonBlock) {
+      try { parsed = JSON.parse(jsonBlock); } catch { parsed = null; }
+    }
+
+    if (!parsed) {
+      // Salva raw per debug ma restituisci errore chiaro
+      await supabase.from("pannelli_imports").update({
+        pre_analisi: {
+          ...(importRow.pre_analisi || {}), categoria, file_url: pdf_url,
+          raw_response: rawText.slice(0, 4000),
+          tokens_input: inTok, tokens_output: outTok,
+        },
+      }).eq("id", import_id!);
+      await setImportError(supabase, import_id!, "JSON_PARSE_ERROR",
+        `Anthropic non ha restituito JSON valido. Inizio risposta: ${rawText.slice(0, 200)}`);
       return NextResponse.json(
-        { ok: false, codice_errore: "JSON_PARSE_ERROR", dettaglio: "JSON Anthropic non valido" },
+        { ok: false, codice_errore: "JSON_PARSE_ERROR", dettaglio: "JSON Anthropic non parseabile" },
         { status: 502 }
       );
     }
 
     const pannelli = Array.isArray(parsed?.pannelli) ? parsed!.pannelli! : [];
 
-    if (pannelli.length > 0) {
-      const rows = pannelli.map((p, idx) => ({
-        import_id: import_id!,
-        pagina: typeof p.pagina === "number" ? p.pagina : 1,
-        posizione_in_pagina: idx + 1,
-        dati: { ...p, categoria, sorgente_import: "ai_catalogo" },
-        confermato: false,
-      }));
-
-      const { error: insErr } = await supabase.from("pannelli_estratti_temp").insert(rows);
-      if (insErr) {
-        await setImportError(supabase, import_id!, "DB_INSERT_ERROR", insErr.message);
-        return NextResponse.json(
-          { ok: false, codice_errore: "DB_INSERT_ERROR", dettaglio: insErr.message },
-          { status: 500 }
-        );
-      }
-    }
-
-    const usage = anthropicJson?.usage ?? {};
-    const inTok = Number(usage.input_tokens ?? 0);
-    const outTok = Number(usage.output_tokens ?? 0);
-    const costoReale = (inTok * 3 / 1_000_000) + (outTok * 15 / 1_000_000);
-
-    await supabase
-      .from("ai_credits")
-      .update({
-        budget_corrente: Math.max(0, budget - costoReale),
-        totale_speso_mese: (Number(credits?.budget_corrente ?? 0) > 0 ? undefined : undefined),
-      })
-      .eq("azienda_id", AZIENDA_ID);
-
-    await supabase.rpc("increment_speso_mese", { p_azienda_id: AZIENDA_ID, p_amount: costoReale }).then(() => null, () => null);
-
-    await supabase
-      .from("pannelli_imports")
-      .update({
+    if (pannelli.length === 0) {
+      // PDF analizzato ma 0 pannelli: NON è un errore tecnico, ma lo segnaliamo chiaramente
+      await supabase.from("pannelli_imports").update({
         stato: "review",
-        pannelli_estratti: pannelli.length,
+        pannelli_estratti: 0,
         costo_reale: costoReale,
         errore_msg: null,
         pre_analisi: {
-          ...(importRow.pre_analisi || {}),
-          categoria,
-          file_url: pdf_url,
+          ...(importRow.pre_analisi || {}), categoria, file_url: pdf_url,
           metadata: parsed?.metadata ?? null,
-          tokens_input: inTok,
-          tokens_output: outTok,
+          tokens_input: inTok, tokens_output: outTok,
+          raw_response: rawText.slice(0, 2000),
         },
-      })
-      .eq("id", import_id!);
+      }).eq("id", import_id!);
+
+      await supabase.from("ai_credits").update({
+        budget_corrente: Math.max(0, budget - costoReale),
+        totale_speso_mese: Number(credits?.totale_speso_mese ?? 0) + costoReale,
+      }).eq("azienda_id", AZIENDA_ID);
+
+      return NextResponse.json({
+        ok: true,
+        import_id: import_id!,
+        numero_pannelli: 0,
+        stato: "review",
+        costo_reale: costoReale,
+        warning: "PDF analizzato ma nessun pannello estratto. Probabilmente è un catalogo con immagini scannerizzate o senza dati strutturati. Prova con inserimento manuale.",
+      });
+    }
+
+    const rows = pannelli.map((p, idx) => ({
+      import_id: import_id!,
+      pagina: typeof p.pagina === "number" ? p.pagina : 1,
+      posizione_in_pagina: idx + 1,
+      dati: { ...p, categoria, sorgente_import: "ai_catalogo" },
+      confermato: false,
+    }));
+
+    const { error: insErr } = await supabase.from("pannelli_estratti_temp").insert(rows);
+    if (insErr) {
+      await setImportError(supabase, import_id!, "DB_INSERT_ERROR", insErr.message);
+      return NextResponse.json(
+        { ok: false, codice_errore: "DB_INSERT_ERROR", dettaglio: insErr.message },
+        { status: 500 }
+      );
+    }
+
+    await supabase.from("ai_credits").update({
+      budget_corrente: Math.max(0, budget - costoReale),
+      totale_speso_mese: Number(credits?.totale_speso_mese ?? 0) + costoReale,
+    }).eq("azienda_id", AZIENDA_ID);
+
+    await supabase.from("pannelli_imports").update({
+      stato: "review",
+      pannelli_estratti: pannelli.length,
+      costo_reale: costoReale,
+      errore_msg: null,
+      pre_analisi: {
+        ...(importRow.pre_analisi || {}), categoria, file_url: pdf_url,
+        metadata: parsed?.metadata ?? null,
+        tokens_input: inTok, tokens_output: outTok,
+      },
+    }).eq("id", import_id!);
 
     return NextResponse.json({
       ok: true,
@@ -264,9 +301,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (import_id) {
-      await setImportError(supabase, import_id, "INTERNAL_ERROR", msg);
-    }
+    if (import_id) await setImportError(supabase, import_id, "INTERNAL_ERROR", msg);
     return NextResponse.json(
       { ok: false, codice_errore: "INTERNAL_ERROR", dettaglio: msg },
       { status: 500 }
