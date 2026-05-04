@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MASTRO — Configuratore Cancello</title>
+<style>
+  :root{
+    --acc:#28A0A0; --acc2:#0F6E56; --acc3:#156060;
+    --bg:#0D1F1F; --bg2:#0A1818; --card:#152828;
+    --txt:#E8F5F5; --txt2:#88928F;
+    --bdr:#1F3838;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:13px}
+
+  .app{max-width:480px;margin:0 auto;padding:14px;padding-bottom:80px}
+
+  /* Tabs nav */
+  .tabs{display:flex;gap:4px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{
+    background:var(--card);color:var(--txt2);border:0.5px solid var(--bdr);padding:8px 14px;
+    border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;
+    font-family:inherit;letter-spacing:0.3px;
+  }
+  .tabs button.active{background:var(--acc);color:#fff;border-color:var(--acc)}
+
+  .view{display:none}
+  .view.active{display:block}
+
+  .card-block{
+    background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;
+    border:0.5px solid var(--bdr);
+  }
+  .card-title{
+    font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;
+    letter-spacing:1px;margin-bottom:10px;
+  }
+  .sublabel{font-size:10px;color:var(--txt2);font-weight:500}
+
+  /* Grid scelta tipologia */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+
+  .opt-btn{
+    background:var(--bg2);color:var(--txt);border:0.5px solid var(--bdr);
+    padding:10px 8px;border-radius:8px;font-size:11px;font-weight:600;
+    cursor:pointer;font-family:inherit;text-align:center;
+  }
+  .opt-btn.small{padding:8px 6px;font-size:10px}
+  .opt-btn.sel{background:var(--acc);color:#fff;border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+
+  /* Slider */
+  input[type=range]{width:100%;accent-color:var(--acc)}
+
+  /* Number input */
+  input[type=number],input[type=text]{
+    width:100%;background:var(--bg2);color:var(--txt);border:0.5px solid var(--bdr);
+    padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;
+    font-family:inherit;
+  }
+
+  /* Toggle inline */
+  .toggle-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 0;border-bottom:0.5px solid var(--bdr);
+  }
+  .toggle-row:last-child{border-bottom:none}
+  .toggle-row .lbl{font-size:12px;font-weight:600;color:var(--txt)}
+  .toggle-row .desc{font-size:9px;color:var(--txt2);margin-top:2px}
+  .toggle-sw{
+    width:42px;height:24px;background:var(--bdr);border-radius:14px;position:relative;
+    cursor:pointer;transition:background 0.2s;flex-shrink:0;
+  }
+  .toggle-sw::after{
+    content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;
+    background:#fff;border-radius:50%;transition:transform 0.2s;
+  }
+  .toggle-sw.on{background:var(--acc)}
+  .toggle-sw.on::after{transform:translateX(18px)}
+
+  /* 3D canvas */
+  #canvas3d-wrap{
+    position:relative;border:0.5px solid var(--bdr);border-radius:10px;
+    overflow:hidden;aspect-ratio:1;background:#0A1414;
+  }
+  #canvas3d{position:absolute;top:0;left:0;width:100%;height:100%}
+  #canvas3d-overlay{
+    position:absolute;top:8px;left:10px;font-size:9px;color:rgba(255,255,255,0.4);
+    font-weight:500;letter-spacing:0.5px;z-index:10;pointer-events:none;
+  }
+
+  /* Distinta */
+  .dist-row{
+    display:flex;justify-content:space-between;padding:6px 0;
+    border-bottom:0.5px solid var(--bdr);font-size:11px;
+  }
+  .dist-row:last-child{border-bottom:none;font-weight:700;color:var(--acc);padding-top:10px}
+
+  /* Apertura simboli legenda */
+  .legend{
+    background:rgba(40,160,160,0.06);border-radius:8px;padding:10px;font-size:10px;
+    color:var(--acc);line-height:1.5;border:0.5px solid rgba(40,160,160,0.2);
+  }
+
+  /* Auto card box */
+  .auto-card{
+    background:rgba(40,160,160,0.05);border-radius:10px;padding:12px;
+    border:0.5px solid rgba(40,160,160,0.2);margin-top:8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- Tabs nav -->
+<div class="tabs">
+  <button id="tab-tipologia" class="active">Tipologia</button>
+  <button id="tab-misure">Misure</button>
+  <button id="tab-riempimento">Riempimento</button>
+  <button id="tab-automazione">Automaz.</button>
+  <button id="tab-3d">3D</button>
+  <button id="tab-distinta">Distinta</button>
+</div>
+
+<!-- ==================== TAB TIPOLOGIA ==================== -->
+<div id="view-tipologia" class="view active">
+
+  <div class="card-block">
+    <div class="card-title">Tipo di cancello</div>
+    <div class="grid-2">
+      <button class="tipo-btn opt-btn sel" data-v="batt1">Battente 1 anta</button>
+      <button class="tipo-btn opt-btn" data-v="batt2">Battente 2 ante</button>
+      <button class="tipo-btn opt-btn" data-v="scorr">Scorrevole</button>
+      <button class="tipo-btn opt-btn" data-v="scorr_auto">Scorrevole autoport.</button>
+      <button class="tipo-btn opt-btn" data-v="libro">A libro</button>
+      <button class="tipo-btn opt-btn" data-v="ped">Pedonale</button>
+    </div>
+  </div>
+
+  <div class="card-block">
+    <div class="card-title">Materiale</div>
+    <div class="grid-3">
+      <button class="mat-btn opt-btn small sel" data-v="ferro">Ferro</button>
+      <button class="mat-btn opt-btn small" data-v="alluminio">Alluminio</button>
+      <button class="mat-btn opt-btn small" data-v="inox">Acciaio Inox</button>
+    </div>
+  </div>
+
+  <div class="card-block">
+    <div class="card-title">Verso apertura</div>
+    <div class="grid-2">
+      <button class="verso-btn opt-btn small sel" data-v="interno">Apertura interna</button>
+      <button class="verso-btn opt-btn small" data-v="esterno">Apertura esterna</button>
+    </div>
+    <div class="legend" style="margin-top:8px;">
+      <b>Convenzione disegno tecnico:</b><br>
+      V (verso interno) = apertura verso il cortile<br>
+      &Lambda; (verso esterno) = apertura verso strada
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== TAB MISURE ==================== -->
+<div id="view-misure" class="view">
+
+  <div class="card-block">
+    <div class="card-title">Dimensioni</div>
+
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:5px;">
+        <span>Larghezza luce passaggio</span>
+        <span id="w-out" style="color:var(--acc);font-weight:700;">300 cm</span>
+      </div>
+      <input type="range" id="w-slider" min="80" max="800" step="10" value="300">
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:5px;">
+        <span>Altezza cancello</span>
+        <span id="h-out" style="color:var(--acc);font-weight:700;">180 cm</span>
+      </div>
+      <input type="range" id="h-slider" min="80" max="300" step="5" value="180">
+    </div>
+
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:5px;">
+        <span>Altezza pilastri muratura</span>
+        <span id="hp-out" style="color:var(--acc);font-weight:700;">200 cm</span>
+      </div>
+      <input type="range" id="hp-slider" min="80" max="350" step="5" value="200">
+    </div>
+
+  </div>
+
+  <div class="card-block">
+    <div class="card-title">Sezione profili (alimentazione automatica)</div>
+    <div class="auto-card" id="profili-auto">
+      <div style="font-size:10px;color:var(--txt2);margin-bottom:6px;">Calcolato in base a tipo + dimensioni:</div>
+      <div id="profili-out" style="font-size:11px;line-height:1.7;color:var(--txt);">
+        <div>Telaio perimetrale: <b>tubolare 60×40×3 mm</b></div>
+        <div>Montanti interni: <b>tubolare 40×40×3 mm</b></div>
+        <div>Cardini: <b>cerniere a saldare D14 mm</b></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== TAB RIEMPIMENTO ==================== -->
+<div id="view-riempimento" class="view">
+
+  <div class="card-block">
+    <div class="card-title">Tipo riempimento</div>
+    <div class="grid-2">
+      <button class="riemp-btn opt-btn sel" data-v="doghe_v">Doghe verticali</button>
+      <button class="riemp-btn opt-btn" data-v="doghe_o">Doghe orizzontali</button>
+      <button class="riemp-btn opt-btn" data-v="pannello">Pannello pieno</button>
+      <button class="riemp-btn opt-btn" data-v="inferriata">Inferriata classica</button>
+      <button class="riemp-btn opt-btn" data-v="misto">Misto (sotto pieno + sopra grata)</button>
+      <button class="riemp-btn opt-btn" data-v="ornament">Ornamentale (volute)</button>
+    </div>
+  </div>
+
+  <div class="card-block">
+    <div class="card-title">Densità doghe / barre</div>
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:5px;">
+        <span>Passo elementi</span>
+        <span id="passo-out" style="color:var(--acc);font-weight:700;">8 cm</span>
+      </div>
+      <input type="range" id="passo-slider" min="3" max="20" step="1" value="8">
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:5px;">
+        <span>Larghezza singolo elemento</span>
+        <span id="sez-out" style="color:var(--acc);font-weight:700;">3 cm</span>
+      </div>
+      <input type="range" id="sez-slider" min="1" max="10" step="0.5" value="3">
+    </div>
+  </div>
+
+  <div class="card-block">
+    <div class="card-title">Finitura</div>
+    <div class="grid-2">
+      <button class="fin-btn opt-btn small sel" data-v="zincato">Zincatura</button>
+      <button class="fin-btn opt-btn small" data-v="verniciato">Verniciatura RAL</button>
+    </div>
+    <div id="ral-row" style="display:none;margin-top:10px;">
+      <div class="sublabel" style="margin-bottom:5px;">Colore RAL</div>
+      <input type="text" id="ral-input" placeholder="es. RAL 9005 nero">
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== TAB AUTOMAZIONE ==================== -->
+<div id="view-automazione" class="view">
+
+  <div class="card-block">
+    <div class="card-title">Tipo movimentazione</div>
+    <div class="grid-2">
+      <button class="mov-btn opt-btn sel" data-v="manuale">Manuale</button>
+      <button class="mov-btn opt-btn" data-v="motorizzato">Motorizzato</button>
+    </div>
+  </div>
+
+  <div id="auto-options" style="display:none;">
+
+    <div class="card-block">
+      <div class="card-title">Tipo motore</div>
+      <div class="grid-2">
+        <button class="mot-btn opt-btn small sel" data-v="braccio">A braccio articolato</button>
+        <button class="mot-btn opt-btn small" data-v="interrato">Interrato</button>
+        <button class="mot-btn opt-btn small" data-v="lineare">Pistone lineare</button>
+        <button class="mot-btn opt-btn small" data-v="scorr">Per scorrevole (cremagliera)</button>
+      </div>
+    </div>
+
+    <div class="card-block">
+      <div class="card-title">Accessori automazione</div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Fotocellule perimetrali</div>
+          <div class="desc">Sicurezza ostacoli (consigliato)</div>
+        </div>
+        <div class="toggle-sw on" id="t-foto"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Lampeggiante</div>
+          <div class="desc">Segnalazione movimento (obbligatorio)</div>
+        </div>
+        <div class="toggle-sw on" id="t-lamp"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Selettore a chiave</div>
+          <div class="desc">Apertura manuale d'emergenza</div>
+        </div>
+        <div class="toggle-sw" id="t-chiave"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Telecomandi (n.2)</div>
+          <div class="desc">Radiocomandi standard</div>
+        </div>
+        <div class="toggle-sw on" id="t-tele"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Centralina + ricevente</div>
+          <div class="desc">Quadro comando</div>
+        </div>
+        <div class="toggle-sw on" id="t-centr"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Predisposizione citofono</div>
+          <div class="desc">Cavi videocitofono interrati</div>
+        </div>
+        <div class="toggle-sw" id="t-cito"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Predisposizione cancello pedonale</div>
+          <div class="desc">Apertura indipendente</div>
+        </div>
+        <div class="toggle-sw" id="t-ped"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="manual-options">
+    <div class="card-block">
+      <div class="card-title">Accessori chiusura manuale</div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Maniglione doppia mappa</div>
+          <div class="desc">Serratura + maniglione esterno</div>
+        </div>
+        <div class="toggle-sw on" id="t-maniglione"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Catenaccio inferiore (a terra)</div>
+          <div class="desc">Per cancelli a 2 ante</div>
+        </div>
+        <div class="toggle-sw" id="t-catenaccio"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Pomolo interno</div>
+          <div class="desc">Apertura dall'interno</div>
+        </div>
+        <div class="toggle-sw on" id="t-pomolo"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== TAB 3D ==================== -->
+<div id="view-3d" class="view">
+  <div id="canvas3d-wrap">
+    <canvas id="canvas3d"></canvas>
+    <div id="canvas3d-overlay">PRESS &amp; DRAG per ruotare &middot; PINCH per zoom</div>
+  </div>
+
+  <div class="card-block" style="margin-top:10px;">
+    <div class="toggle-row">
+      <div>
+        <div class="lbl">Mostra apertura animata</div>
+        <div class="desc">Anima il cancello aperto/chiuso ciclicamente</div>
+      </div>
+      <div class="toggle-sw on" id="t-anim"></div>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="lbl">Mostra simboli apertura (in pianta)</div>
+        <div class="desc">Frecce convenzionali su disegno tecnico 2D</div>
+      </div>
+      <div class="toggle-sw" id="t-simb"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB DISTINTA ==================== -->
+<div id="view-distinta" class="view">
+
+  <div class="card-block">
+    <div class="card-title">Distinta materiali (indicativa)</div>
+    <div id="distinta-list" style="font-size:11px;line-height:1.6;"></div>
+  </div>
+
+  <div class="card-block" style="background:rgba(220,140,40,0.10);border-color:rgba(220,140,40,0.3);">
+    <div style="font-size:10px;color:#FFC080;line-height:1.5;">
+      <b style="color:#FFB060;">Stima orientativa.</b><br>
+      Prezzi e quantità calcolati su valori medi 2026 zona Sud Italia.
+      Per preventivo definitivo verificare con fornitore (acciaio fluttuante)
+      e includere posa, trasporti, IVA.
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<!-- Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+// ============================================================
+// STATO
+// ============================================================
+const state = {
+  tipo: 'batt1',
+  materiale: 'ferro',
+  verso: 'interno',
+  w: 300, h: 180, hp: 200,
+  riempimento: 'doghe_v',
+  passo: 8, sez: 3,
+  finitura: 'zincato', ral: '',
+  movimentazione: 'manuale',
+  motore: 'braccio',
+  acc: {
+    foto: true, lamp: true, chiave: false, tele: true, centr: true,
+    cito: false, ped: false,
+    maniglione: true, catenaccio: false, pomolo: true
+  },
+  anim: true, simb: false
+};
+
+// ============================================================
+// TABS
+// ============================================================
+const TABS = ['tipologia','misure','riempimento','automazione','3d','distinta'];
+TABS.forEach(t => {
+  document.getElementById('tab-'+t).addEventListener('click', ()=>{
+    TABS.forEach(x => {
+      document.getElementById('tab-'+x).classList.toggle('active', x===t);
+      document.getElementById('view-'+x).classList.toggle('active', x===t);
+    });
+    if (t === '3d') setTimeout(setup3D, 80);
+    if (t === 'distinta') renderDistinta();
+    if (t === 'misure') renderProfili();
+  });
+});
+
+// ============================================================
+// HELPERS bottoni
+// ============================================================
+function bindGroup(selector, key) {
+  document.querySelectorAll(selector).forEach(b => {
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll(selector).forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      state[key] = b.dataset.v;
+      onChange();
+    });
+  });
+}
+bindGroup('.tipo-btn', 'tipo');
+bindGroup('.mat-btn', 'materiale');
+bindGroup('.verso-btn', 'verso');
+bindGroup('.riemp-btn', 'riempimento');
+bindGroup('.fin-btn', 'finitura');
+bindGroup('.mov-btn', 'movimentazione');
+bindGroup('.mot-btn', 'motore');
+
+// Sliders
+function bindSlider(id, key, unit) {
+  const el = document.getElementById(id);
+  el.addEventListener('input', e => {
+    state[key] = +e.target.value;
+    document.getElementById(id.replace('-slider','-out')).textContent = e.target.value + (unit||'');
+    onChange();
+  });
+}
+bindSlider('w-slider','w',' cm');
+bindSlider('h-slider','h',' cm');
+bindSlider('hp-slider','hp',' cm');
+bindSlider('passo-slider','passo',' cm');
+bindSlider('sez-slider','sez',' cm');
+
+// Toggle switches
+['t-foto','t-lamp','t-chiave','t-tele','t-centr','t-cito','t-ped',
+ 't-maniglione','t-catenaccio','t-pomolo','t-anim','t-simb'].forEach(id => {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click', ()=>{
+    el.classList.toggle('on');
+    const k = id.substring(2);
+    if (id === 't-anim') state.anim = el.classList.contains('on');
+    else if (id === 't-simb') state.simb = el.classList.contains('on');
+    else state.acc[k] = el.classList.contains('on');
+    onChange();
+  });
+});
+
+// Movimentazione → mostra/nasconde sezioni
+document.querySelectorAll('.mov-btn').forEach(b => {
+  b.addEventListener('click', ()=>{
+    const isAuto = state.movimentazione === 'motorizzato';
+    document.getElementById('auto-options').style.display = isAuto?'block':'none';
+    document.getElementById('manual-options').style.display = isAuto?'none':'block';
+  });
+});
+
+// Finitura RAL
+document.querySelectorAll('.fin-btn').forEach(b => {
+  b.addEventListener('click', ()=>{
+    document.getElementById('ral-row').style.display = state.finitura==='verniciato'?'block':'none';
+  });
+});
+document.getElementById('ral-input').addEventListener('input', e => {
+  state.ral = e.target.value;
+  onChange();
+});
+
+// ============================================================
+// PROFILI AUTO (in base a tipo + W + H)
+// ============================================================
+function selezionaProfili() {
+  const W = state.w, H = state.h;
+  const isLarge = W > 400 || H > 220;
+  const tela = isLarge ? '80×40×4 mm' : '60×40×3 mm';
+  const mont = isLarge ? '50×50×3 mm' : '40×40×3 mm';
+  const cardiniDiam = isLarge ? 18 : 14;
+  const tipoMov = state.tipo;
+  let nodo = 'cerniere a saldare D'+cardiniDiam+' mm';
+  if (tipoMov === 'scorr' || tipoMov === 'scorr_auto') {
+    nodo = 'guida + ruote scorrevoli, fissaggio a terra';
+  }
+  return { tela, mont, nodo };
+}
+function renderProfili() {
+  const p = selezionaProfili();
+  document.getElementById('profili-out').innerHTML =
+    '<div>Telaio perimetrale: <b>tubolare ' + p.tela + '</b></div>' +
+    '<div>Montanti interni: <b>tubolare ' + p.mont + '</b></div>' +
+    '<div>Nodo: <b>' + p.nodo + '</b></div>';
+}
+
+// ============================================================
+// DISTINTA
+// ============================================================
+const PREZZI = {
+  ferro_kg: 2.20,
+  alluminio_kg: 7.50,
+  inox_kg: 9.50,
+  motore_braccio: 480,
+  motore_interrato: 720,
+  motore_lineare: 380,
+  motore_scorr: 540,
+  fotocellule: 90,
+  lampeggiante: 45,
+  chiave: 60,
+  telecomandi: 80,
+  centralina: 220,
+  cito_predisp: 180,
+  ped_predisp: 120,
+  maniglione: 95,
+  catenaccio: 35,
+  pomolo: 18,
+  zincatura_mq: 28,
+  vernice_mq: 35
+};
+const DENS = { ferro: 7850, alluminio: 2700, inox: 7900 }; // kg/m³
+
+function renderDistinta() {
+  const W = state.w/100, H = state.h/100;
+  const p = selezionaProfili();
+  // Stima peso telaio + montanti
+  const sezTela = parseSezione(p.tela);
+  const sezMont = parseSezione(p.mont);
+  const lungTela = 2*W + 2*H;
+  const nMont = state.tipo==='batt2' ? 4 : 2;
+  const lungMont = nMont * H;
+  const volTela = lungTela * sezTela;
+  const volMont = lungMont * sezMont;
+  // Riempimento
+  let lungRiemp = 0;
+  if (state.riempimento.startsWith('doghe')) {
+    const isVert = state.riempimento === 'doghe_v';
+    const span = isVert ? W : H;
+    const lungEach = isVert ? H : W;
+    const n = Math.floor(span*100 / state.passo);
+    lungRiemp = n * lungEach;
+  } else if (state.riempimento === 'inferriata') {
+    const n = Math.floor(W*100 / state.passo);
+    lungRiemp = n * H;
+  } else if (state.riempimento === 'pannello') {
+    lungRiemp = 0; // pannello pieno calcolato in superficie
+  }
+  const volRiemp = lungRiemp * (state.sez/100) * (state.sez/100);
+  const volPannello = state.riempimento==='pannello' ? W*H*0.003 : 0;
+  const volTot = volTela + volMont + volRiemp + volPannello;
+  const peso = volTot * (DENS[state.materiale] || 7850);
+  const prezzoMat = peso * (PREZZI[state.materiale+'_kg'] || PREZZI.ferro_kg);
+  // Finitura
+  const supTotale = 2 * W * H * 0.6; // 60% pieno
+  const prezzoFin = supTotale * (state.finitura==='verniciato' ? PREZZI.vernice_mq : PREZZI.zincatura_mq);
+  // Automazione
+  let righe = [];
+  righe.push({ lbl: 'Telaio + struttura ('+state.materiale+')', det: peso.toFixed(1)+' kg', val: prezzoMat });
+  righe.push({ lbl: 'Finitura '+(state.finitura==='verniciato'?'verniciatura':'zincatura'), det: supTotale.toFixed(2)+' m²', val: prezzoFin });
+  if (state.movimentazione === 'motorizzato') {
+    const motK = 'motore_' + state.motore;
+    righe.push({ lbl: 'Motore '+state.motore, det: '×' + (state.tipo==='batt2'?2:1), val: PREZZI[motK] * (state.tipo==='batt2'?2:1) });
+    if (state.acc.foto) righe.push({ lbl: 'Fotocellule', det: 'kit 2pz', val: PREZZI.fotocellule });
+    if (state.acc.lamp) righe.push({ lbl: 'Lampeggiante', det: '12V LED', val: PREZZI.lampeggiante });
+    if (state.acc.chiave) righe.push({ lbl: 'Selettore a chiave', det: 'esterno', val: PREZZI.chiave });
+    if (state.acc.tele) righe.push({ lbl: 'Telecomandi', det: '×2', val: PREZZI.telecomandi });
+    if (state.acc.centr) righe.push({ lbl: 'Centralina + ricevente', det: '433MHz', val: PREZZI.centralina });
+    if (state.acc.cito) righe.push({ lbl: 'Predisp. citofono', det: 'cavi interrati', val: PREZZI.cito_predisp });
+    if (state.acc.ped) righe.push({ lbl: 'Predisp. cancello pedonale', det: 'comando indip.', val: PREZZI.ped_predisp });
+  } else {
+    if (state.acc.maniglione) righe.push({ lbl: 'Maniglione doppia mappa', det: '', val: PREZZI.maniglione });
+    if (state.acc.catenaccio) righe.push({ lbl: 'Catenaccio inferiore', det: '', val: PREZZI.catenaccio });
+    if (state.acc.pomolo) righe.push({ lbl: 'Pomolo interno', det: '', val: PREZZI.pomolo });
+  }
+  let html = '';
+  let tot = 0;
+  righe.forEach(r => {
+    html += '<div class="dist-row"><span>'+r.lbl+(r.det?' <span style="color:var(--txt2);font-size:10px;">('+r.det+')</span>':'')+'</span><span>€ '+r.val.toFixed(0)+'</span></div>';
+    tot += r.val;
+  });
+  html += '<div class="dist-row"><span>TOTALE materiali</span><span>€ '+tot.toFixed(0)+'</span></div>';
+  document.getElementById('distinta-list').innerHTML = html;
+}
+function parseSezione(s) {
+  // "60×40×3 mm" -> volume per metro lineare (m³/m)
+  const m = s.match(/(\d+)[×x](\d+)[×x](\d+)/);
+  if (!m) return 0.001;
+  const w = +m[1]/1000, h = +m[2]/1000, t = +m[3]/1000;
+  // Approssimo come tubolare a parete spessa: A_sez = 2*(w+h)*t
+  const A = 2*(w+h)*t;
+  return A;
+}
+
+// ============================================================
+// 3D RENDERING
+// ============================================================
+let scene3d, camera3d, renderer3d, animTime = 0;
+function setup3D() {
+  const wrap = document.getElementById('canvas3d-wrap');
+  const canvas = document.getElementById('canvas3d');
+  if (!renderer3d) {
+    const r = wrap.getBoundingClientRect();
+    scene3d = new THREE.Scene();
+    scene3d.background = new THREE.Color(0x0A1414);
+    camera3d = new THREE.PerspectiveCamera(45, r.width/r.height, 0.1, 100);
+    renderer3d = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer3d.setSize(r.width, r.height);
+    renderer3d.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    scene3d.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const dl = new THREE.DirectionalLight(0xffffff, 0.6);
+    dl.position.set(5,10,5);
+    scene3d.add(dl);
+    // Ground
+    const ground = new THREE.GridHelper(20, 20, 0x224040, 0x152020);
+    scene3d.add(ground);
+    // Camera control
+    let drag=false, lx=0, ly=0, rotY=Math.PI/4, rotX=Math.PI/8, dist=8;
+    function applyCam() {
+      const cx=Math.cos(rotX), sx=Math.sin(rotX);
+      const cy=Math.cos(rotY), sy=Math.sin(rotY);
+      camera3d.position.set(dist*cx*sy, dist*sx + state.h/100*0.5, dist*cx*cy);
+      camera3d.lookAt(0, state.h/100*0.5, 0);
+    }
+    applyCam();
+    canvas.addEventListener('pointerdown', e => { drag=true; lx=e.clientX; ly=e.clientY; });
+    canvas.addEventListener('pointermove', e => {
+      if (!drag) return;
+      rotY -= (e.clientX-lx)*0.01;
+      rotX = Math.max(-Math.PI/2+0.1, Math.min(Math.PI/2-0.1, rotX + (e.clientY-ly)*0.01));
+      lx=e.clientX; ly=e.clientY;
+      applyCam();
+    });
+    canvas.addEventListener('pointerup', ()=> drag=false);
+    canvas.addEventListener('pointerleave', ()=> drag=false);
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      dist = Math.max(2, Math.min(30, dist * (e.deltaY>0?1.1:0.9)));
+      applyCam();
+    }, { passive: false });
+    // Animation loop
+    function animate() {
+      animTime += 0.016;
+      requestAnimationFrame(animate);
+      renderer3d.render(scene3d, camera3d);
+    }
+    animate();
+  }
+  rebuildCancello();
+}
+
+function rebuildCancello() {
+  if (!scene3d) return;
+  // Pulisci mesh precedenti
+  const toRemove = [];
+  scene3d.traverse(o => { if (o.userData && o.userData.gateEl) toRemove.push(o); });
+  toRemove.forEach(o => scene3d.remove(o));
+  const W = state.w/100, H = state.h/100, Hp = state.hp/100;
+  const matCol = state.materiale==='alluminio' ? 0xC8C8C8 : (state.materiale==='inox' ? 0xD0D0D0 : 0x3A3A3A);
+  const finCol = state.finitura==='verniciato' ? 0x202020 : matCol;
+  const mat = new THREE.MeshStandardMaterial({ color: finCol, metalness: 0.7, roughness: 0.4 });
+  const matPil = new THREE.MeshStandardMaterial({ color: 0xA89580, roughness: 0.9 });
+  // Pilastri muratura
+  const pilGeom = new THREE.BoxGeometry(0.30, Hp, 0.30);
+  const pilL = new THREE.Mesh(pilGeom, matPil);
+  pilL.position.set(-W/2 - 0.15, Hp/2, 0);
+  pilL.userData.gateEl = true;
+  scene3d.add(pilL);
+  const pilR = new THREE.Mesh(pilGeom, matPil);
+  pilR.position.set(+W/2 + 0.15, Hp/2, 0);
+  pilR.userData.gateEl = true;
+  scene3d.add(pilR);
+  // Costruisci ante
+  const isBatt2 = state.tipo === 'batt2';
+  const isScorr = state.tipo === 'scorr' || state.tipo === 'scorr_auto';
+  const apertura = state.anim ? Math.sin(animTime*0.5)*0.5 + 0.5 : 0; // 0..1
+  function buildAnta(centerX, antaW, hingeX, hingeSign) {
+    const grp = new THREE.Group();
+    grp.userData.gateEl = true;
+    // Telaio perimetrale (4 lati)
+    const sez = state.w > 400 ? 0.06 : 0.05;
+    function bar(w, h, d, x, y, z) {
+      const g = new THREE.BoxGeometry(w, h, d);
+      const m = new THREE.Mesh(g, mat);
+      m.position.set(x, y, z);
+      grp.add(m);
+    }
+    bar(antaW, sez, sez, 0, 0, 0); // bottom
+    bar(antaW, sez, sez, 0, H, 0); // top
+    bar(sez, H, sez, -antaW/2 + sez/2, H/2, 0); // left
+    bar(sez, H, sez, +antaW/2 - sez/2, H/2, 0); // right
+    // Riempimento
+    if (state.riempimento === 'doghe_v') {
+      const passo = state.passo/100;
+      const sezD = state.sez/100;
+      const nDoghe = Math.floor((antaW - 2*sez) / passo);
+      const offsetX = -antaW/2 + sez + passo/2;
+      for (let i=0; i<nDoghe; i++) {
+        bar(sezD, H - 2*sez, 0.015, offsetX + i*passo, H/2, 0);
+      }
+    } else if (state.riempimento === 'doghe_o') {
+      const passo = state.passo/100;
+      const sezD = state.sez/100;
+      const nDoghe = Math.floor((H - 2*sez) / passo);
+      const offsetY = sez + passo/2;
+      for (let i=0; i<nDoghe; i++) {
+        bar(antaW - 2*sez, sezD, 0.015, 0, offsetY + i*passo, 0);
+      }
+    } else if (state.riempimento === 'inferriata') {
+      const passo = state.passo/100;
+      const nBarre = Math.floor((antaW - 2*sez) / passo);
+      const offsetX = -antaW/2 + sez + passo/2;
+      for (let i=0; i<nBarre; i++) {
+        bar(0.015, H - 2*sez, 0.015, offsetX + i*passo, H/2, 0);
+      }
+    } else if (state.riempimento === 'pannello') {
+      bar(antaW - 2*sez, H - 2*sez, 0.015, 0, H/2, 0);
+    } else if (state.riempimento === 'misto') {
+      // metà inferiore pannello, superiore inferriata
+      bar(antaW - 2*sez, H/2 - sez, 0.015, 0, H/4 + sez/2, 0);
+      const passo = state.passo/100;
+      const nBarre = Math.floor((antaW - 2*sez) / passo);
+      const offsetX = -antaW/2 + sez + passo/2;
+      for (let i=0; i<nBarre; i++) {
+        bar(0.015, H/2 - sez, 0.015, offsetX + i*passo, 3*H/4 + sez/2, 0);
+      }
+    }
+    // Posizionamento + rotazione (battente)
+    if (!isScorr) {
+      grp.position.set(hingeX, 0, 0);
+      const sign = state.verso === 'esterno' ? -1 : 1;
+      grp.rotation.y = hingeSign * sign * apertura * Math.PI/2 * 0.9;
+      // Trasla per allineare cardine al pilastro
+      const inner = new THREE.Group();
+      inner.userData.gateEl = true;
+      inner.add(grp);
+      grp.position.x += hingeSign * antaW/2;
+      return inner;
+    } else {
+      // Scorrevole: trasla lateralmente
+      grp.position.set(centerX - apertura * (antaW + 0.1), 0, 0);
+      return grp;
+    }
+  }
+  if (isBatt2) {
+    const antaW = W/2;
+    scene3d.add(buildAnta(-antaW/2, antaW, -W/2, +1));
+    scene3d.add(buildAnta(+antaW/2, antaW, +W/2, -1));
+  } else if (isScorr) {
+    scene3d.add(buildAnta(0, W, -W/2, +1));
+  } else { // batt1
+    scene3d.add(buildAnta(0, W, -W/2, +1));
+  }
+}
+
+// Loop di rebuild durante animazione
+let lastRebuildAnim = 0;
+function rebuildLoop() {
+  requestAnimationFrame(rebuildLoop);
+  if (state.anim && Math.abs(animTime - lastRebuildAnim) > 0.05) {
+    lastRebuildAnim = animTime;
+    if (scene3d) rebuildCancello();
+  }
+}
+rebuildLoop();
+
+// ============================================================
+// onChange globale
+// ============================================================
+function onChange() {
+  renderProfili();
+  if (scene3d) rebuildCancello();
+}
+renderProfili();
+renderDistinta();
+
+// ============================================================
+// MASTRO Widget Bridge
+// ============================================================
+window.MASTRO_WIDGET_ID = 'cancello';
+
+window.mastroEmit = function(type, payload){
+  try { window.parent.postMessage(Object.assign({type:type, widgetId:'cancello'}, payload!==undefined?{patch:payload}:{}), '*'); } catch(e){}
+};
+window.mastroChange = function(patch){ window.mastroEmit('widget:change', patch); };
+window.mastroReady = function(){ try { window.parent.postMessage({type:'widget:ready', widgetId:'cancello'}, '*'); } catch(e){} };
+window.mastroExport = function(data){ try { window.parent.postMessage({type:'widget:export', widgetId:'cancello', data:data}, '*'); } catch(e){} };
+window.mastroResize = function(h){ try { window.parent.postMessage({type:'widget:resize', widgetId:'cancello', height:h}, '*'); } catch(e){} };
+window.mastroError = function(err){ try { window.parent.postMessage({type:'widget:error', widgetId:'cancello', error:String(err)}, '*'); } catch(e){} };
+
+window.mastroSerializeState = function(){
+  return {
+    cancello_tipo: state.tipo,
+    cancello_materiale: state.materiale,
+    cancello_verso: state.verso,
+    cancello_w: state.w,
+    cancello_h: state.h,
+    cancello_hp: state.hp,
+    cancello_riempimento: state.riempimento,
+    cancello_passo: state.passo,
+    cancello_sez: state.sez,
+    cancello_finitura: state.finitura,
+    cancello_ral: state.ral,
+    cancello_movimentazione: state.movimentazione,
+    cancello_motore: state.motore,
+    cancello_accessori: state.acc
+  };
+};
+
+window.mastroOnInit = function(payload){
+  if (!payload) return;
+  try {
+    if (payload.cancello_tipo) state.tipo = payload.cancello_tipo;
+    if (payload.cancello_materiale) state.materiale = payload.cancello_materiale;
+    if (payload.cancello_verso) state.verso = payload.cancello_verso;
+    if (payload.cancello_w !== undefined) state.w = payload.cancello_w;
+    if (payload.cancello_h !== undefined) state.h = payload.cancello_h;
+    if (payload.cancello_hp !== undefined) state.hp = payload.cancello_hp;
+    if (payload.cancello_riempimento) state.riempimento = payload.cancello_riempimento;
+    if (payload.cancello_passo !== undefined) state.passo = payload.cancello_passo;
+    if (payload.cancello_sez !== undefined) state.sez = payload.cancello_sez;
+    if (payload.cancello_finitura) state.finitura = payload.cancello_finitura;
+    if (payload.cancello_ral) state.ral = payload.cancello_ral;
+    if (payload.cancello_movimentazione) state.movimentazione = payload.cancello_movimentazione;
+    if (payload.cancello_motore) state.motore = payload.cancello_motore;
+    if (payload.cancello_accessori) state.acc = payload.cancello_accessori;
+    syncAllUI();
+    renderProfili();
+    renderDistinta();
+    if (scene3d) rebuildCancello();
+  } catch(e) { window.mastroError(e); }
+};
+
+function syncAllUI() {
+  // Aggiorna selezioni bottoni
+  function syncGroup(sel, val) {
+    document.querySelectorAll(sel).forEach(b => b.classList.toggle('sel', b.dataset.v === val));
+  }
+  syncGroup('.tipo-btn', state.tipo);
+  syncGroup('.mat-btn', state.materiale);
+  syncGroup('.verso-btn', state.verso);
+  syncGroup('.riemp-btn', state.riempimento);
+  syncGroup('.fin-btn', state.finitura);
+  syncGroup('.mov-btn', state.movimentazione);
+  syncGroup('.mot-btn', state.motore);
+  // Sliders
+  document.getElementById('w-slider').value = state.w;
+  document.getElementById('w-out').textContent = state.w + ' cm';
+  document.getElementById('h-slider').value = state.h;
+  document.getElementById('h-out').textContent = state.h + ' cm';
+  document.getElementById('hp-slider').value = state.hp;
+  document.getElementById('hp-out').textContent = state.hp + ' cm';
+  document.getElementById('passo-slider').value = state.passo;
+  document.getElementById('passo-out').textContent = state.passo + ' cm';
+  document.getElementById('sez-slider').value = state.sez;
+  document.getElementById('sez-out').textContent = state.sez + ' cm';
+  // RAL
+  document.getElementById('ral-input').value = state.ral || '';
+  document.getElementById('ral-row').style.display = state.finitura==='verniciato'?'block':'none';
+  // Toggle switches
+  function syncT(id, v) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('on', !!v);
+  }
+  syncT('t-foto', state.acc.foto);
+  syncT('t-lamp', state.acc.lamp);
+  syncT('t-chiave', state.acc.chiave);
+  syncT('t-tele', state.acc.tele);
+  syncT('t-centr', state.acc.centr);
+  syncT('t-cito', state.acc.cito);
+  syncT('t-ped', state.acc.ped);
+  syncT('t-maniglione', state.acc.maniglione);
+  syncT('t-catenaccio', state.acc.catenaccio);
+  syncT('t-pomolo', state.acc.pomolo);
+  syncT('t-anim', state.anim);
+  syncT('t-simb', state.simb);
+  // Mostra/nascondi automaz vs manuale
+  const isAuto = state.movimentazione === 'motorizzato';
+  document.getElementById('auto-options').style.display = isAuto?'block':'none';
+  document.getElementById('manual-options').style.display = isAuto?'none':'block';
+}
+
+// Listener messages dal parent
+window.addEventListener('message', function(e) {
+  if (!e.data || typeof e.data !== 'object') return;
+  if (e.data.type === 'host:init' && typeof window.mastroOnInit === 'function') {
+    try { window.mastroOnInit(e.data.payload || {}); }
+    catch(err) { window.mastroError(err); }
+  }
+});
+
+// Auto-save ogni 1.5s
+let lastSer = null;
+setInterval(()=>{
+  try {
+    const cur = JSON.stringify(window.mastroSerializeState());
+    if (cur !== lastSer) {
+      lastSer = cur;
+      window.mastroChange(JSON.parse(cur));
+    }
+  } catch(e){}
+}, 1500);
+
+// Annuncia ready
+setTimeout(()=> window.mastroReady(), 200);
+
+</script>
+</body>
+</html>
