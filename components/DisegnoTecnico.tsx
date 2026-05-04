@@ -2451,9 +2451,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         }
                                       }
                                     }
-                                    // Multi-click ANTA su contorno totale telaio (centra le ante, ignora montanti interni)
+                                    // Multi-click ANTA: leggo SEMPRE state corrente da dw.elements (no closure)
+                                    const _live: any[] = (dw && dw.elements) || els;
+                                    console.log("[ANTA] dw.elements vs els:", _live.length, "vs", els.length, "polyAnta in dw:", _live.filter((e: any) => e.type === "polyAnta").length);
                                     let outerPoly: number[][] = cellPoly;
-                                    const flAll = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                    const flAll = _live.filter((e: any) => e.type === "freeLine" && !e.subType);
                                     if (flAll.length >= 3) {
                                       const segs = flAll.map((l: any) => ({ a: [l.x1, l.y1], b: [l.x2, l.y2] }));
                                       const ring: number[][] = [];
@@ -2475,11 +2477,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       }
                                       if (ring.length >= 3) outerPoly = ring;
                                     }
-                                    const prevPolyAnta = els.filter((e: any) => e.type === "polyAnta");
+                                    const prevPolyAnta = _live.filter((e: any) => e.type === "polyAnta");
                                     const prevCount = prevPolyAnta.length;
                                     const newCount = prevCount + 1;
                                     // Cancello tutte polyAnta + montanti/traversi interni
-                                    const newEls = els.filter((e: any) =>
+                                    const newEls = _live.filter((e: any) =>
                                       e.type !== "polyAnta" &&
                                       e.type !== "montante" &&
                                       e.type !== "traverso"
