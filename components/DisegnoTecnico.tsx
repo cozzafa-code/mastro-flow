@@ -931,7 +931,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
   const [telaioBatch, setTelaioBatch] = React.useState<{open: boolean, L: string, H: string, N: string} | null>(null);
-  const [shapePicker, setShapePicker] = React.useState<{open: boolean, shape: string | null, L: string, H: string, H2: string, H3: string, N: string} | null>(null);
+  const [shapePicker, setShapePicker] = React.useState<{open: boolean, shape: string | null, L: string, H: string, H2: string, H3: string, H4: string, N: string} | null>(null);
   const telaioTapRef = React.useRef<number>(0);
   const [savingTipologia, setSavingTipologia] = React.useState<{open: boolean, nome: string, categoria: string, n_ante: string, note: string} | null>(null);
   const [savingTipoStatus, setSavingTipoStatus] = React.useState<string>("");
@@ -3334,7 +3334,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     ];
                                     setDW([...els, ...refs]);
                                   }} style={bs()} title="Crea 4 punti di riferimento a distanza N mm dal centro telaio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><circle cx="12" cy="12" r="2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/><line x1="3" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="21" y2="12"/></svg>Rif.</div>
-                                  <div onClick={() => setShapePicker({ open: true, shape: null, L: "1500", H: "1400", H2: "800", H3: "400", N: "16" })} style={bs()} title="Forme preset: casetta, arco, trapezio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,10 21,21 3,21 3,10"/></svg>Forme</div>
+                                  <div onClick={() => setShapePicker({ open: true, shape: null, L: "1500", H: "1400", H2: "800", H3: "400", H4: "1200", N: "16" })} style={bs()} title="Forme preset: casetta, arco, trapezio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,10 21,21 3,21 3,10"/></svg>Forme</div>
                                   <div onClick={() => setProfileMode("telaio", { drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)} title="Casetta Live: tap punti notevoli per tracciare la forma a mano libera"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21 V11 L12 3 L21 11 V21 Z"/><circle cx="12" cy="14" r="2" fill="currentColor"/></svg>Casetta</div>
                                 </div>
                                 </>}
@@ -5970,6 +5970,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <div style={{ fontSize: 8, color: "#666" }}>5 archi</div>
                                           </div>
                                         </div>
+                                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginTop: 14, marginBottom: 6, textTransform: "uppercase" }}>Archi speciali</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_asimmetrico" })}
+                                            style={{ border: "2px solid #DC2626", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#FEF2F2" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#DC2626" strokeWidth="3">
+                                              <path d="M10,80 L10,55 Q10,15 50,15 Q90,15 90,40 L90,80 Z" fill="#DC262620"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#DC2626" }}>ASIMMETR.</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>spalle diverse</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_spezzato" })}
+                                            style={{ border: "2px solid #DC2626", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#FEF2F2" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#DC2626" strokeWidth="3">
+                                              <path d="M10,80 L10,40 L50,15 L90,40 L90,80 Z" fill="#DC262620"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#DC2626" }}>SPEZZATO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>2 segmenti</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_ribassato_piedritti" })}
+                                            style={{ border: "2px solid #DC2626", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#FEF2F2" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#DC2626" strokeWidth="3">
+                                              <path d="M10,80 L10,30 Q50,18 90,30 L90,80 Z" fill="#DC262620"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#DC2626" }}>RIB.+PIED.</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>piedritti alti</div>
+                                          </div>
+                                        </div>
                                       </div>
                                     )}
                                     {/* Step 2: misure */}
@@ -6043,6 +6070,32 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               <text x="100" y="42" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">freccia</text>
                                             </svg>
                                           )}
+                                          {shapePicker.shape === "arco_asimmetrico" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#DC2626" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q20,30 100,30 Q180,30 180,75 L180,160 Z" fill="#DC262615"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">L = base</text>
+                                              <text x="10" y="135" textAnchor="start" fontSize="11" fill="#DC2626" fontWeight="700">Hsx</text>
+                                              <text x="195" y="120" textAnchor="end" fontSize="11" fill="#DC2626" fontWeight="700">Hdx</text>
+                                              <text x="100" y="55" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">freccia</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_spezzato" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#DC2626" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 L100,30 L180,100 L180,160 Z" fill="#DC262615"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#DC2626" fontWeight="700">H</text>
+                                              <text x="100" y="55" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">altezza punta</text>
+                                              <text x="105" y="80" textAnchor="start" fontSize="9" fill="#DC2626" fontWeight="600">posiz.</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_ribassato_piedritti" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#DC2626" strokeWidth="2.5">
+                                              <path d="M20,160 L20,55 Q100,25 180,55 L180,160 Z" fill="#DC262615"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">L = base</text>
+                                              <text x="195" y="120" textAnchor="end" fontSize="11" fill="#DC2626" fontWeight="700">H (alti)</text>
+                                              <text x="100" y="42" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">freccia</text>
+                                            </svg>
+                                          )}
                                           {shapePicker.shape === "trapezio" && (
                                             <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#D08008" strokeWidth="2.5">
                                               <polygon points="20,160 20,80 180,30 180,160" fill="#D0800815"/>
@@ -6075,6 +6128,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                 {shapePicker.shape === "arco_3_centri" && "FRECCIA totale (mm) = altezza dal piedritto al colmo"}
                                                 {shapePicker.shape === "arco_ellittico" && "SEMI-ASSE VERTICALE (mm)"}
                                                 {shapePicker.shape === "arco_policentrico" && "FRECCIA (mm)"}
+                                                {shapePicker.shape === "arco_asimmetrico" && "FRECCIA (mm) — colmo dal punto piu alto"}
+                                                {shapePicker.shape === "arco_spezzato" && "ALTEZZA PUNTA (mm) — dal punto piu alto dei lati"}
+                                                {shapePicker.shape === "arco_ribassato_piedritti" && `FRECCIA (mm) — deve essere < ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
                                                 {shapePicker.shape === "trapezio" && "ALT. DX H2 (mm)"}
                                               </div>
                                               <input type="number" value={shapePicker.H2} onChange={(e) => setShapePicker({ ...shapePicker, H2: e.target.value })}
@@ -6113,6 +6169,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               ℹ Curva super-ellittica armonica con 5 archi tangenti
                                             </div>
                                           )}
+                                          {shapePicker.shape === "arco_asimmetrico" && (
+                                            <div style={{ gridColumn: "1 / span 2" }}>
+                                              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
+                                                ALTEZZA SPALLA DX (mm) — la H del campo sopra e' la sx
+                                              </div>
+                                              <input type="number" value={shapePicker.H4} onChange={(e) => setShapePicker({ ...shapePicker, H4: e.target.value })}
+                                                style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                              <div style={{ fontSize: 10, color: "#DC2626", marginTop: 4, fontWeight: 600 }}>ℹ Se Hsx = Hdx, l'arco e' simmetrico</div>
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_spezzato" && (
+                                            <div style={{ gridColumn: "1 / span 2" }}>
+                                              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
+                                                POSIZIONE PUNTA da SX (mm) — di solito = L/2 (centro)
+                                              </div>
+                                              <input type="number" value={shapePicker.H4} onChange={(e) => setShapePicker({ ...shapePicker, H4: e.target.value })}
+                                                style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                              <div style={{ fontSize: 10, color: "#DC2626", marginTop: 4, fontWeight: 600 }}>ℹ Centro = {Math.round(parseFloat(shapePicker.L || "1500") / 2)} mm. Sposta a sx/dx per asimmetria.</div>
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_ribassato_piedritti" && (
+                                            <div style={{ gridColumn: "1 / span 2", padding: "10px 12px", background: "#FEF2F2", borderRadius: 8, fontSize: 11, color: "#DC2626", fontWeight: 700 }}>
+                                              ℹ Stesso arco ribassato ma usa piedritti H grandi (es. 1800-2500 mm tipici per ingressi)
+                                            </div>
+                                          )}
                                         </div>
                                         {/* Bottoni */}
                                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -6141,6 +6222,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             }
                                             if (shapePicker.shape === "arco_3_centri" || shapePicker.shape === "arco_ellittico" || shapePicker.shape === "arco_policentrico") {
                                               if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_asimmetrico") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                              const H4mm = parseFloat(shapePicker.H4);
+                                              if (!H4mm || H4mm <= 0) { alert("Inserisci altezza spalla DX"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_spezzato") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci altezza punta"); return; }
+                                              const H4mm = parseFloat(shapePicker.H4);
+                                              if (!H4mm || H4mm <= 0) { alert("Inserisci posizione punta"); return; }
+                                              if (H4mm >= Lmm) { alert("Posizione punta deve essere < L"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_ribassato_piedritti") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                              if (H2mm >= Lmm / 2) { alert("Freccia deve essere < L/2 = " + (Lmm/2) + " mm"); return; }
                                             }
                                             // Per casetta H2 puo essere anche 0 per fare un rettangolo, ma normalmente >0
                                             const pxPerMm = fW / (realW || 1200);
@@ -6263,6 +6359,72 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                   const y2a = ySpalla - supY(ang2);
                                                   newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
                                                 }
+                                              } else if (shapePicker.shape === "arco_asimmetrico") {
+                                                // ARCO ASIMMETRICO: H = spalla SX, H4 = spalla DX, freccia da punto piu alto
+                                                const Hsx_px = Hpx; // gia calcolato
+                                                const Hdx_px = (parseFloat(shapePicker.H4) || 1200) * pxPerMm;
+                                                const xL = x0, xR = x0 + Lpx;
+                                                // Spalla piu alta determina il colmo
+                                                const ySpallaSX = y0 + frec + (Math.max(Hsx_px, Hdx_px) - Hsx_px);
+                                                const ySpallaDX = y0 + frec + (Math.max(Hsx_px, Hdx_px) - Hdx_px);
+                                                const yBaseSX = ySpallaSX + Hsx_px;
+                                                const yBaseDX = ySpallaDX + Hdx_px;
+                                                const yColmo = y0;
+                                                const xColmo = x0 + Lpx / 2;
+                                                // Curva ellittica asimmetrica: 2 archi quadratici verso il colmo
+                                                const SEGS_A = 16;
+                                                // Lato SX
+                                                for (let i = 0; i < SEGS_A; i++) {
+                                                  const t1 = i / SEGS_A, t2 = (i + 1) / SEGS_A;
+                                                  const interp = (t: number) => ({
+                                                    x: (1-t)*(1-t)*xL + 2*(1-t)*t*xL + t*t*xColmo,
+                                                    y: (1-t)*(1-t)*ySpallaSX + 2*(1-t)*t*yColmo + t*t*yColmo
+                                                  });
+                                                  const p1 = interp(t1), p2 = interp(t2);
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                                                }
+                                                // Lato DX
+                                                for (let i = 0; i < SEGS_A; i++) {
+                                                  const t1 = i / SEGS_A, t2 = (i + 1) / SEGS_A;
+                                                  const interp = (t: number) => ({
+                                                    x: (1-t)*(1-t)*xColmo + 2*(1-t)*t*xR + t*t*xR,
+                                                    y: (1-t)*(1-t)*yColmo + 2*(1-t)*t*yColmo + t*t*ySpallaDX
+                                                  });
+                                                  const p1 = interp(t1), p2 = interp(t2);
+                                                  newEls.push({ id: t0 + 50 + i, type: "freeLine", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                                                }
+                                                // Override piedritti e base perche asimmetrici
+                                                newEls.push({ id: t0 + 200, type: "freeLine", x1: xL, y1: ySpallaSX, x2: xL, y2: yBaseSX });
+                                                newEls.push({ id: t0 + 201, type: "freeLine", x1: xR, y1: ySpallaDX, x2: xR, y2: yBaseDX });
+                                                newEls.push({ id: t0 + 202, type: "freeLine", x1: xL, y1: yBaseSX, x2: xR, y2: yBaseDX });
+                                                // Skip piedritto/base default che venivano dopo - usiamo return implicito
+                                                setDW([...elsKept, ...newEls]);
+                                                setShapePicker(null);
+                                                return;
+                                              } else if (shapePicker.shape === "arco_spezzato") {
+                                                // SPEZZATO: 2 segmenti retti che formano la punta
+                                                const xL = x0, xR = x0 + Lpx;
+                                                const xPunta = x0 + (parseFloat(shapePicker.H4) || Lpx/pxPerMm/2) * pxPerMm;
+                                                const ySpalla = y0 + frec;
+                                                const yBase = ySpalla + Hpx;
+                                                const yPunta = y0;
+                                                // Lato spezzato SX (1 segmento)
+                                                newEls.push({ id: t0 + 1, type: "freeLine", x1: xL, y1: ySpalla, x2: xPunta, y2: yPunta });
+                                                // Lato spezzato DX (1 segmento)
+                                                newEls.push({ id: t0 + 2, type: "freeLine", x1: xPunta, y1: yPunta, x2: xR, y2: ySpalla });
+                                                // Piedritti DX e base
+                                                newEls.push({ id: t0 + 200, type: "freeLine", x1: xR, y1: ySpalla, x2: xR, y2: yBase });
+                                                newEls.push({ id: t0 + 201, type: "freeLine", x1: xR, y1: yBase, x2: xL, y2: yBase });
+                                                // Piedritto SX
+                                                newEls.unshift({ id: t0, type: "freeLine", x1: xL, y1: yBase, x2: xL, y2: ySpalla });
+                                                setDW([...elsKept, ...newEls]);
+                                                setShapePicker(null);
+                                                return;
+                                              } else if (shapePicker.shape === "arco_ribassato_piedritti") {
+                                                // RIBASSATO + PIEDRITTI ALTI: stesso algoritmo del ribassato standard, ma H grande
+                                                // Cade nella branch generica di sotto perche frec < L/2 e arco circolare
+                                                // Forzo trattamento come ribassato standard
+                                                shapePicker.shape = "arco_ribassato"; // hack: tratta come ribassato
                                               } else if (shapePicker.shape === "arco_acuto") {
                                                 // 2 archi che si incontrano in punta. Centri ai piedritti opposti, raggio = L
                                                 const yPunta = y0;
