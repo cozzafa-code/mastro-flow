@@ -2345,6 +2345,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     [cellPoly[3][0], cpBot]
                                   ];
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
+                                    console.log("[ANTA-A] handler poly entrato");
                                     // FIX: clippa cellPoly contro il poligono delle freeLine telaio
                                     // (Sutherland-Hodgman) cosi' l'anta segue la forma del telaio (arco, casetta...)
                                     const _telLines = els.filter((e: any) => e.type === "freeLine" && !e.subType);
@@ -2554,6 +2555,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 // Regular cell handling
                                 if (drawMode === "place-anta") {
+                                  console.log("[ANTA-B] handler innerRect entrato, ante esistenti:", els.filter(e => e.type === "innerRect" && !e.subType && inCell(e)).length);
                                   // Conta ante esistenti nella cella; ogni click ne aggiunge una.
                                   const existingAnte = els.filter(e => e.type === "innerRect" && !e.subType && inCell(e));
                                   const existingRiporti = els.filter(e => e.type === "profiloRiporto" && e.cellId === cell.id);
