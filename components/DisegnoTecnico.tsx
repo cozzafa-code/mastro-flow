@@ -944,6 +944,7 @@ function _diagLogEls(els: any[]) {
 }
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, vanoSistema, vanoColore, vanoProfilo, vanoTipologiaId, vanoTipologiaNome }) {
+  const [showGradi, setShowGradi] = React.useState(true);
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
   const [telaioBatch, setTelaioBatch] = React.useState<{open: boolean, L: string, H: string, N: string} | null>(null);
@@ -5326,7 +5327,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const labelStr = String(el.label);
                                       // Inverse zoom: tutti gli elementi UI delle quote restano leggibili
                                       const iz = 1 / zoom;
-                                      const fs = 16 * iz;
+                                      const fs = 18 * iz;
                                       const tw = (labelStr.length * 9 + 16) * iz;
                                       const th = 22 * iz;
                                       const DIM_C = "#1A1A1C";
@@ -7150,7 +7151,49 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       <rect x="6" y="6" width="28" height={sw} fill={active ? "#fff" : BG} opacity="0.4"/>
                                       <rect x="6" y="6" width={sw} height="28" fill={active ? "#fff" : BG} opacity="0.4"/>
                                       <text x="20" y="28" textAnchor="middle" fontSize="14" fontWeight="900" fill={active ? "#fff" : BG}>?</text>
-                                    </svg>
+                                                                      {showGradi && (() => {
+                                    const fls = (els || []).filter((e) => e.type === "freeLine" && !e.subType);
+                                    if (fls.length < 2) return null;
+                                    const verts = [];
+                                    fls.forEach((l) => {
+                                      verts.push({ x: l.x1, y: l.y1, id: l.id, side: 's' });
+                                      verts.push({ x: l.x2, y: l.y2, id: l.id, side: 'e' });
+                                    });
+                                    const groups = [];
+                                    const used = new Set();
+                                    verts.forEach((v, i) => {
+                                      if (used.has(i)) return;
+                                      const grp = [v];
+                                      used.add(i);
+                                      verts.forEach((v2, j) => {
+                                        if (i === j || used.has(j)) return;
+                                        if (Math.hypot(v.x - v2.x, v.y - v2.y) < 5) {
+                                          grp.push(v2);
+                                          used.add(j);
+                                        }
+                                      });
+                                      if (grp.length >= 2) groups.push(grp);
+                                    });
+                                    const iz4 = 1 / zoom;
+                                    return groups.map((g, gi) => {
+                                      const v0 = g[0], v1 = g[1];
+                                      const l0 = fls.find((x) => x.id === v0.id);
+                                      const l1 = fls.find((x) => x.id === v1.id);
+                                      if (!l0 || !l1) return null;
+                                      const a0 = v0.side === 's' ? Math.atan2(l0.y2 - l0.y1, l0.x2 - l0.x1) : Math.atan2(l0.y1 - l0.y2, l0.x1 - l0.x2);
+                                      const a1 = v1.side === 's' ? Math.atan2(l1.y2 - l1.y1, l1.x2 - l1.x1) : Math.atan2(l1.y1 - l1.y2, l1.x1 - l1.x2);
+                                      let diff = Math.abs(a1 - a0) * 180 / Math.PI;
+                                      if (diff > 180) diff = 360 - diff;
+                                      const deg = Math.round(diff);
+                                      return (
+                                        <g key={"deg-" + gi} pointerEvents="none">
+                                          <rect x={v0.x - 18 * iz4} y={v0.y - 36 * iz4} width={36 * iz4} height={18 * iz4} fill="#1A9E73" rx={4 * iz4} />
+                                          <text x={v0.x} y={v0.y - 23 * iz4} textAnchor="middle" fontSize={12 * iz4} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono', monospace">{deg + "\u00B0"}</text>
+                                        </g>
+                                      );
+                                    });
+                                  })()}
+                                </svg>
                                   );
                                 };
                                 const Btn = ({ m, hint, color }: any) => (
