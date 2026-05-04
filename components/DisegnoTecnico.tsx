@@ -5833,30 +5833,58 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <div style={{ fontSize: 11, color: "#888", marginBottom: 14 }}>Scegli forma e inserisci le misure in mm</div>
                                     {/* Step 1: scelta forma */}
                                     {!shapePicker.shape && (
-                                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                                        <div onClick={() => setShapePicker({ ...shapePicker, shape: "casetta" })}
-                                          style={{ border: "2px solid #1A9E73", borderRadius: 10, padding: 10, cursor: "pointer", textAlign: "center", background: "#F0FDF4" }}>
-                                          <svg width="80" height="70" viewBox="0 0 100 90" fill="none" stroke="#1A9E73" strokeWidth="3">
-                                            <polygon points="10,40 50,10 90,40 90,80 10,80" fill="#1A9E7320"/>
-                                          </svg>
-                                          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 4, color: "#1A9E73" }}>CASETTA</div>
-                                          <div style={{ fontSize: 9, color: "#666" }}>2 falde</div>
+                                      <div>
+                                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginBottom: 6, textTransform: "uppercase" }}>Tetti / Forme miste</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "casetta" })}
+                                            style={{ border: "2px solid #1A9E73", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#F0FDF4" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#1A9E73" strokeWidth="3">
+                                              <polygon points="10,40 50,10 90,40 90,80 10,80" fill="#1A9E7320"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#1A9E73" }}>CASETTA</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "trapezio" })}
+                                            style={{ border: "2px solid #D08008", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#FFFBEB" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#D08008" strokeWidth="3">
+                                              <polygon points="10,80 10,30 90,10 90,80" fill="#D0800820"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#D08008" }}>TRAPEZIO</div>
+                                          </div>
                                         </div>
-                                        <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco" })}
-                                          style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 10, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
-                                          <svg width="80" height="70" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
-                                            <path d="M10,80 L10,40 Q10,10 50,10 Q90,10 90,40 L90,80 Z" fill="#2563EB20"/>
-                                          </svg>
-                                          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 4, color: "#2563EB" }}>ARCO</div>
-                                          <div style={{ fontSize: 9, color: "#666" }}>semicerchio</div>
-                                        </div>
-                                        <div onClick={() => setShapePicker({ ...shapePicker, shape: "trapezio" })}
-                                          style={{ border: "2px solid #D08008", borderRadius: 10, padding: 10, cursor: "pointer", textAlign: "center", background: "#FFFBEB" }}>
-                                          <svg width="80" height="70" viewBox="0 0 100 90" fill="none" stroke="#D08008" strokeWidth="3">
-                                            <polygon points="10,80 10,30 90,10 90,80" fill="#D0800820"/>
-                                          </svg>
-                                          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 4, color: "#D08008" }}>TRAPEZIO</div>
-                                          <div style={{ fontSize: 9, color: "#666" }}>1 falda</div>
+                                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginBottom: 6, textTransform: "uppercase" }}>Archi base</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_tutto_sesto" })}
+                                            style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
+                                              <path d="M10,80 L10,50 Q10,10 50,10 Q90,10 90,50 L90,80 Z" fill="#2563EB20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#2563EB" }}>TUTTO SESTO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>semicerchio</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_ribassato" })}
+                                            style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
+                                              <path d="M10,80 L10,50 Q50,15 90,50 L90,80 Z" fill="#2563EB20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#2563EB" }}>RIBASSATO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>schiacciato</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_acuto" })}
+                                            style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
+                                              <path d="M10,80 L10,50 Q10,5 50,5 Q90,5 90,50 L90,80 Z M10,50 Q30,15 50,5 M50,5 Q70,15 90,50" fill="#2563EB20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#2563EB" }}>SESTO ACUTO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>gotico</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_rialzato" })}
+                                            style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
+                                              <path d="M10,80 L10,50 Q10,5 50,5 Q90,5 90,50 L90,80 Z" fill="#2563EB20" transform="scale(1,1.05) translate(0,-3)"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#2563EB" }}>RIALZATO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>oltre semicerchio</div>
+                                          </div>
                                         </div>
                                       </div>
                                     )}
@@ -5875,12 +5903,36 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               <text x="100" y="50" textAnchor="middle" fontSize="11" fill="#1A9E73" fontWeight="700">H2</text>
                                             </svg>
                                           )}
-                                          {shapePicker.shape === "arco" && (
+                                          {shapePicker.shape === "arco_tutto_sesto" && (
                                             <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#2563EB" strokeWidth="2.5">
-                                              <path d="M20,160 L20,80 Q20,20 100,20 Q180,20 180,80 L180,160 Z" fill="#2563EB15"/>
+                                              <path d="M20,160 L20,100 Q20,20 100,20 Q180,20 180,100 L180,160 Z" fill="#2563EB15"/>
                                               <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">L = base</text>
-                                              <text x="195" y="120" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
-                                              <text x="100" y="55" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
+                                              <text x="100" y="50" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia = L/2</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_ribassato" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#2563EB" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q100,40 180,100 L180,160 Z" fill="#2563EB15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
+                                              <text x="100" y="65" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia (&lt; L/2)</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_acuto" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#2563EB" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q40,30 100,15 Q160,30 180,100 L180,160 Z" fill="#2563EB15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
+                                              <text x="100" y="45" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia (a punta)</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_rialzato" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#2563EB" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q20,5 100,5 Q180,5 180,100 L180,160 Z" fill="#2563EB15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
+                                              <text x="100" y="35" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia (&gt; L/2)</text>
                                             </svg>
                                           )}
                                           {shapePicker.shape === "trapezio" && (
@@ -5907,7 +5959,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           <div style={{ gridColumn: "1 / span 2" }}>
                                             <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
                                               {shapePicker.shape === "casetta" && "ALT. COLMO H2 (mm dal punto piu alto dei lati)"}
-                                              {shapePicker.shape === "arco" && "FRECCIA arco (mm)"}
+                                              {shapePicker.shape === "arco_tutto_sesto" && "FRECCIA = L/2 (auto, semicerchio)"}
+                                              {shapePicker.shape === "arco_ribassato" && "FRECCIA (mm, < L/2 per essere ribassato)"}
+                                              {shapePicker.shape === "arco_acuto" && "FRECCIA = altezza punta (mm)"}
+                                              {shapePicker.shape === "arco_rialzato" && "FRECCIA (mm, > L/2 per essere rialzato)"}
                                               {shapePicker.shape === "trapezio" && "ALT. DX H2 (mm)"}
                                             </div>
                                             <input type="number" value={shapePicker.H2} onChange={(e) => setShapePicker({ ...shapePicker, H2: e.target.value })}
@@ -5948,26 +6003,98 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               for (let i = 0; i < pts.length - 1; i++) {
                                                 newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y });
                                               }
-                                            } else if (shapePicker.shape === "arco") {
+                                            } else if (shapePicker.shape && shapePicker.shape.startsWith("arco_")) {
+                                              // ARCHI BASE: piedritto SX -> curva top -> piedritto DX -> base
                                               const xL = x0, xR = x0 + Lpx;
-                                              const yBase = y0 + H2px + Hpx;
-                                              const ySpalla = y0 + H2px;
-                                              const cx = x0 + Lpx / 2;
+                                              const cxA = x0 + Lpx / 2;
+                                              const SEGS = 24;
+                                              // Calcolo freccia in base al tipo
+                                              let frec = H2px;
+                                              if (shapePicker.shape === "arco_tutto_sesto") frec = Lpx / 2;
+                                              const yBase = y0 + frec + Hpx;
+                                              const ySpalla = y0 + frec;
+                                              // Piedritto SX
                                               newEls.push({ id: t0, type: "freeLine", x1: xL, y1: yBase, x2: xL, y2: ySpalla });
-                                              const SEGS = 16;
-                                              const rx = Lpx / 2;
-                                              const ry = H2px;
-                                              for (let i = 0; i < SEGS; i++) {
-                                                const a1 = Math.PI - (Math.PI * i) / SEGS;
-                                                const a2 = Math.PI - (Math.PI * (i + 1)) / SEGS;
-                                                const x1a = cx + rx * Math.cos(a1);
-                                                const y1a = ySpalla - ry * Math.sin(a1);
-                                                const x2a = cx + rx * Math.cos(a2);
-                                                const y2a = ySpalla - ry * Math.sin(a2);
-                                                newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
+                                              if (shapePicker.shape === "arco_acuto") {
+                                                // 2 archi che si incontrano in punta. Centri ai piedritti opposti, raggio = L
+                                                const yPunta = y0;
+                                                // Arco SX: centro DX, raggio L
+                                                for (let i = 0; i < SEGS / 2; i++) {
+                                                  // Interpolo lineare tra (xL, ySpalla) e (cxA, yPunta) con curvatura
+                                                  const t1 = i / (SEGS / 2);
+                                                  const t2 = (i + 1) / (SEGS / 2);
+                                                  const interp = (t: number) => {
+                                                    // Quadratic Bezier verso il control point (xL, yPunta)
+                                                    const px = (1-t)*(1-t)*xL + 2*(1-t)*t*xL + t*t*cxA;
+                                                    const py = (1-t)*(1-t)*ySpalla + 2*(1-t)*t*yPunta + t*t*yPunta;
+                                                    return { x: px, y: py };
+                                                  };
+                                                  const p1 = interp(t1), p2 = interp(t2);
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                                                }
+                                                // Arco DX
+                                                for (let i = 0; i < SEGS / 2; i++) {
+                                                  const t1 = i / (SEGS / 2);
+                                                  const t2 = (i + 1) / (SEGS / 2);
+                                                  const interp = (t: number) => {
+                                                    const px = (1-t)*(1-t)*cxA + 2*(1-t)*t*xR + t*t*xR;
+                                                    const py = (1-t)*(1-t)*yPunta + 2*(1-t)*t*yPunta + t*t*ySpalla;
+                                                    return { x: px, y: py };
+                                                  };
+                                                  const p1 = interp(t1), p2 = interp(t2);
+                                                  newEls.push({ id: t0 + 50 + i, type: "freeLine", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                                                }
+                                              } else {
+                                                // arco_tutto_sesto / ribassato / rialzato: arco circolare con freccia variabile
+                                                const yColmo = ySpalla - frec;
+                                                // Calcolo centro e raggio del cerchio passante per (xL, ySpalla), (cxA, yColmo), (xR, ySpalla)
+                                                // Per simmetria: centro = (cxA, ySpalla + yc), dove yc si trova dalla equazione
+                                                // (Lpx/2)^2 + (yc)^2 = (frec + yc)^2 -> yc = (Lpx^2/4 - frec^2) / (2*frec)
+                                                const halfL = Lpx / 2;
+                                                if (frec <= 0) frec = 1; // safeguard
+                                                const yc = (halfL * halfL - frec * frec) / (2 * frec);
+                                                const cxC = cxA;
+                                                const cyC = ySpalla + yc;
+                                                const R = Math.sqrt(halfL * halfL + yc * yc);
+                                                // Angoli da xL (a sinistra del centro) a xR (a destra)
+                                                const angL = Math.atan2(ySpalla - cyC, xL - cxC);
+                                                const angR = Math.atan2(ySpalla - cyC, xR - cxC);
+                                                // Per archi rialzati (yc < 0) il centro e' SOTTO la spalla -> arco passa SOPRA
+                                                // per ribassati (yc > 0) il centro e' SOPRA la spalla -> arco corto
+                                                // L'arco DEVE passare per il colmo (cxA, yColmo)
+                                                // Per andare dalla spalla SX al colmo al spalla DX, l'angolo va da angL (Pi-something) attraverso Pi/2 verso angR
+                                                // Calcolo l'angolo del colmo
+                                                const angTop = Math.atan2(yColmo - cyC, cxC - cxC); // sempre verticale, ma cos(0)=1
+                                                // Genera punti in modo che attraversino il colmo
+                                                for (let i = 0; i < SEGS; i++) {
+                                                  const t1 = i / SEGS;
+                                                  const t2 = (i + 1) / SEGS;
+                                                  // Interpolo l'angolo: parto da angL e vado verso angR passando per angolo del colmo
+                                                  // Per un cerchio: angolo del colmo è -PI/2 (verso l'alto) se cyC > yColmo
+                                                  const aTop = -Math.PI / 2;
+                                                  // angL > aTop > angR di solito; vado in linea retta da angL a angR
+                                                  // Ma se l'arco va sopra il centro, devo fare percorso passante per aTop
+                                                  // Soluzione semplice: genero pt usando atan2 diretto
+                                                  const a1 = angL + (angR - angL) * t1;
+                                                  const a2 = angL + (angR - angL) * t2;
+                                                  // FIX: invece di interp lineare angoli, interpolo come il cerchio "naturale"
+                                                  // Uso il fatto che y deve raggiungere yColmo a t=0.5
+                                                  // Approccio diretto: param x da xL a xR, y dal cerchio
+                                                  const x1param = xL + (xR - xL) * t1;
+                                                  const x2param = xL + (xR - xL) * t2;
+                                                  const dx1 = x1param - cxC;
+                                                  const dy1sq = R * R - dx1 * dx1;
+                                                  const y1param = cyC - Math.sqrt(Math.max(0, dy1sq));
+                                                  const dx2 = x2param - cxC;
+                                                  const dy2sq = R * R - dx2 * dx2;
+                                                  const y2param = cyC - Math.sqrt(Math.max(0, dy2sq));
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1param, y1: y1param, x2: x2param, y2: y2param });
+                                                }
                                               }
-                                              newEls.push({ id: t0 + 100, type: "freeLine", x1: xR, y1: ySpalla, x2: xR, y2: yBase });
-                                              newEls.push({ id: t0 + 101, type: "freeLine", x1: xR, y1: yBase, x2: xL, y2: yBase });
+                                              // Piedritto DX
+                                              newEls.push({ id: t0 + 200, type: "freeLine", x1: xR, y1: ySpalla, x2: xR, y2: yBase });
+                                              // Base
+                                              newEls.push({ id: t0 + 201, type: "freeLine", x1: xR, y1: yBase, x2: xL, y2: yBase });
                                             } else if (shapePicker.shape === "trapezio") {
                                               const xL = x0, xR = x0 + Lpx;
                                               const yBase = y0 + Math.max(Hpx, H2px);
