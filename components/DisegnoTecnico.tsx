@@ -5132,7 +5132,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           e3.stopPropagation();
                                           if (!drawMode) setMode({ selectedId: el.id });
                                         }}>
-                                          <path d={`${_outerD} ${_innerD}`} fillRule="evenodd" fill={_fillPoly} stroke={_clrPoly} strokeWidth={sel ? 2 : 1.2} strokeLinejoin="round" strokeMiterlimit={2} />
+                                          <polygon points={pts.map((p: number[]) => p.join(",")).join(" ")} fill={"#ffffff"} stroke="none" />
+                                          <polygon points={pts.map((p: number[]) => p.join(",")).join(" ")} fill="none" stroke={_clrPoly} strokeWidth={_TK_POLY * 2} strokeLinejoin="miter" strokeMiterlimit={20} />
+                                          <polygon points={_innerShrink.map((p: number[]) => p.join(",")).join(" ")} fill={_fillPoly} stroke="none" />
                                           {(el.antaCount && el.antaIdx !== undefined && el.antaIdx < el.antaCount - 1) && (() => {
                                             const _xs = pts.map((p: number[]) => p[0]);
                                             const _maxX = Math.max(..._xs);
