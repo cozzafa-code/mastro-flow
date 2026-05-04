@@ -2451,22 +2451,49 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         }
                                       }
                                     }
-                                    // Multi-click incrementale: conta polyAnta esistenti nella zona X, poi genera N+1
-                                    const subMinX = Math.min(...cellPoly.map((p: number[]) => p[0]));
-                                    const subMaxX = Math.max(...cellPoly.map((p: number[]) => p[0]));
-                                    const overlapping = els.filter(e => {
-                                      if (e.type !== "polyAnta") return false;
-                                      const eMinX = Math.min(...e.poly.map((p: number[]) => p[0]));
-                                      const eMaxX = Math.max(...e.poly.map((p: number[]) => p[0]));
-                                      return eMinX < subMaxX - 5 && eMaxX > subMinX + 5;
-                                    });
-                                    const prevCount = overlapping.length;
+                                    // === Multi-click ANTA su forma libera (casetta) ===
+                                    // 1Â° click = anta intera su tutto il contorno (cancella montanti/traversi interni)
+                                    // 2Â° click = 2 ante uguali divise verticalmente
+                                    // N click = N ante uguali
+                                    // Calcolo il contorno totale dal telaio freeLine (se esiste), sennoÃ¬ uso cellPoly
+                                    let outerPoly: number[][] = cellPoly;
+                                    const flAll = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                    if (flAll.length >= 3) {
+                                      // Costruisco il contorno chiuso seguendo i freeLine
+                                      const segs = flAll.map((l: any) => ({ a: [l.x1, l.y1], b: [l.x2, l.y2] }));
+                                      const ring: number[][] = [];
+                                      const used = new Set<number>();
+                                      let cur = segs[0].a; ring.push(cur);
+                                      let next = segs[0].b; ring.push(next); used.add(0);
+                                      let safety = 0;
+                                      while (used.size < segs.length && safety++ < 50) {
+                                        let found = -1;
+                                        for (let i = 0; i < segs.length; i++) {
+                                          if (used.has(i)) continue;
+                                          if (Math.hypot(segs[i].a[0] - next[0], segs[i].a[1] - next[1]) < 5) { found = i; next = segs[i].b; break; }
+                                          if (Math.hypot(segs[i].b[0] - next[0], segs[i].b[1] - next[1]) < 5) { found = i; next = segs[i].a; break; }
+                                        }
+                                        if (found < 0) break;
+                                        used.add(found);
+                                        if (Math.hypot(next[0] - ring[0][0], next[1] - ring[0][1]) < 5) break;
+                                        ring.push(next);
+                                      }
+                                      if (ring.length >= 3) outerPoly = ring;
+                                    }
+
+                                    const prevPolyAnta = els.filter((e: any) => e.type === "polyAnta");
+                                    const prevCount = prevPolyAnta.length;
                                     const newCount = prevCount + 1;
-                                    const newEls = els.filter(e => !(e.type === "polyAnta" && overlapping.includes(e)));
+                                    // Cancello tutte le polyAnta esistenti + montanti/traversi interni che dividono la cella
+                                    const newEls = els.filter((e: any) =>
+                                      e.type !== "polyAnta" &&
+                                      e.type !== "montante" &&
+                                      e.type !== "traverso"
+                                    );
                                     if (newCount === 1) {
-                                      newEls.push({ id: Date.now(), type: "polyAnta", poly: cellPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
+                                      newEls.push({ id: Date.now(), type: "polyAnta", poly: outerPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
                                     } else {
-                                      const cellVerts = cellPoly.map((p: number[]) => ({ x: p[0], y: p[1] }));
+                                      const cellVerts = outerPoly.map((p: number[]) => ({ x: p[0], y: p[1] }));
                                       const slices = splitCellIntoAnte(cellVerts, "cell" + Date.now(), newCount);
                                       slices.forEach((s, idx) => {
                                         newEls.push({
