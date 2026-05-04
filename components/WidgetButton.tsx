@@ -36,6 +36,14 @@ export default function WidgetButton({
   const widget = getWidget(widgetId);
   const [open, setOpen] = useState<boolean>(defaultOpen);
 
+  // Difensivo: se widget non esiste nel registry, non renderizzare (evita crash)
+  if (!widget) {
+    if (typeof console !== 'undefined') {
+      console.warn('[WidgetButton] widgetId sconosciuto:', widgetId);
+    }
+    return null;
+  }
+
   return (
     <div
       style={{
