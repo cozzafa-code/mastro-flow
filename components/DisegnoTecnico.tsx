@@ -6712,7 +6712,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               const _midXq = (seg.x1 + seg.x2) / 2, _midYq = (seg.y1 + seg.y2) / 2;
                                               const _outX = _midXq - _bCx, _outY = _midYq - _bCy;
                                               const _outD = Math.hypot(_outX, _outY) || 1;
-                                              const _offDist = 22; // px fuori dal telaio
+                                              const _offDist = 45; // px fuori dal telaio (allargato per separare visivamente da profilo)
                                               const _offX = (_outX / _outD) * _offDist;
                                               const _offY = (_outY / _outD) * _offDist;
                                               _autoQuotes.push({
