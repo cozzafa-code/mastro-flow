@@ -1,5 +1,6 @@
 // Last update: 2026-05-02 force redeploy
 "use client";
+import { splitCellIntoAnte } from "@/lib/cad/anta-poly";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
@@ -925,6 +926,21 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       </div>
     </div>
   );
+}
+
+// DIAG: log elementi ad ogni render
+function _diagLogEls(els: any[]) {
+  if (typeof window === "undefined") return;
+  const counts: Record<string, number> = {};
+  els.forEach(e => { counts[e.type] = (counts[e.type] || 0) + 1; });
+  console.log("[DIAG-RENDER] count by type:", counts);
+  console.log("[DIAG-RENDER] freeLine list:", els.filter(e => e.type === "freeLine").map(e => ({
+    id: e.id, subType: e.subType || "TELAIO",
+    x1: Math.round(e.x1), y1: Math.round(e.y1), x2: Math.round(e.x2), y2: Math.round(e.y2)
+  })));
+  console.log("[DIAG-RENDER] altri tipi non-freeLine:", els.filter(e => e.type !== "freeLine").map(e => ({
+    type: e.type, id: e.id
+  })));
 }
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, vanoSistema, vanoColore, vanoProfilo, vanoTipologiaId, vanoTipologiaNome }) {
@@ -2433,17 +2449,36 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         }
                                       }
                                     }
-                                    // Rimuovi solo le polyAnta nella stessa zona X
+                                    // Multi-click incrementale: conta polyAnta esistenti nella zona X, poi genera N+1
                                     const subMinX = Math.min(...cellPoly.map((p: number[]) => p[0]));
                                     const subMaxX = Math.max(...cellPoly.map((p: number[]) => p[0]));
-                                    const newEls = els.filter(e => {
-                                      if (e.type !== "polyAnta") return true;
+                                    const overlapping = els.filter(e => {
+                                      if (e.type !== "polyAnta") return false;
                                       const eMinX = Math.min(...e.poly.map((p: number[]) => p[0]));
                                       const eMaxX = Math.max(...e.poly.map((p: number[]) => p[0]));
-                                      // Rimuovi se si sovrappone alla zona cliccata
-                                      return !(eMinX < subMaxX - 5 && eMaxX > subMinX + 5);
+                                      return eMinX < subMaxX - 5 && eMaxX > subMinX + 5;
                                     });
-                                    newEls.push({ id: Date.now(), type: "polyAnta", poly: cellPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
+                                    const prevCount = overlapping.length;
+                                    const newCount = prevCount + 1;
+                                    const newEls = els.filter(e => !(e.type === "polyAnta" && overlapping.includes(e)));
+                                    if (newCount === 1) {
+                                      newEls.push({ id: Date.now(), type: "polyAnta", poly: cellPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
+                                    } else {
+                                      const cellVerts = cellPoly.map((p: number[]) => ({ x: p[0], y: p[1] }));
+                                      const slices = splitCellIntoAnte(cellVerts, "cell" + Date.now(), newCount);
+                                      slices.forEach((s, idx) => {
+                                        newEls.push({
+                                          id: Date.now() + idx,
+                                          type: "polyAnta",
+                                          poly: s.verts.map(v => [v.x, v.y]),
+                                          subType: drawMode === "place-porta" ? "porta" : undefined,
+                                          antaIdx: s.antaIdx,
+                                          antaCount: s.antaCount,
+                                          dir: s.dir,
+                                          riporto: s.riporto,
+                                        });
+                                      });
+                                    }
                                     setDW(newEls);
                                   } else if (drawMode === "place-vetro") {
                                     const newEls = els.filter(e => e.type !== "polyGlass");
@@ -4308,6 +4343,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                   {/* ══ ELEMENTS ══ */}
                                   {/* Render in z-order: montanti/traversi prima, freeLine in mezzo, zoccoloLibero ULTIMO (sopra a tutto) */}
+                                  {(() => { _diagLogEls(els); return null; })()}
                                   {[
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
                                     ...els.filter(e => e.type !== "montante" && e.type !== "traverso" && e.type !== "zoccoloLibero" && e.type !== "maniglione"),
@@ -6676,7 +6712,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               const _midXq = (seg.x1 + seg.x2) / 2, _midYq = (seg.y1 + seg.y2) / 2;
                                               const _outX = _midXq - _bCx, _outY = _midYq - _bCy;
                                               const _outD = Math.hypot(_outX, _outY) || 1;
-                                              const _offDist = 22; // px fuori dal telaio
+                                              const _offDist = 45; // px fuori dal telaio (allargato per separare visivamente da profilo)
                                               const _offX = (_outX / _outD) * _offDist;
                                               const _offY = (_outY / _outD) * _offDist;
                                               _autoQuotes.push({

@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MASTRO Box Doccia</title>
+<style>
+:root {
+  --bg: #0D1F1F;
+  --bg2: #152828;
+  --bg3: #0A1818;
+  --bdr: #1F3838;
+  --acc: #28A0A0;
+  --txt: #E8F5F5;
+  --muted: #88928F;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: transparent; font-family: 'Inter', -apple-system, system-ui, sans-serif; color: var(--txt); }
+body { padding: 0; }
+.app { max-width: 380px; margin: 0 auto; background: var(--bg); border-radius: 0; padding: 12px; min-height: 100vh; }
+@media (min-width: 420px) { .app { border-radius: 16px; min-height: auto; margin-top: 8px; margin-bottom: 8px; } }
+
+.header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 0.5px solid var(--bdr); }
+.logo-box { width: 28px; height: 28px; border-radius: 7px; background: var(--acc); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--bg); font-size: 16px; flex-shrink: 0; }
+.h-title-wrap { flex: 1; min-width: 0; }
+.h-brand { font-size: 8.5px; font-weight: 600; letter-spacing: 1.4px; color: var(--acc); text-transform: uppercase; }
+.h-name { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; color: #fff; }
+.h-prog { font-size: 10px; color: var(--acc); font-weight: 700; }
+
+.prog-bar { height: 3px; background: var(--bdr); border-radius: 2px; margin-bottom: 12px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--acc); transition: width 0.3s; width: 0%; }
+
+.vt-tabs { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+.vt { flex: 1; min-width: 70px; background: var(--bg2); color: var(--muted); border: 0.5px solid var(--bdr); padding: 8px 4px; border-radius: 8px; font-size: 10.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.vt.sel { background: var(--acc); color: #fff; border-color: var(--acc); }
+
+.view { display: none; }
+.view.active { display: block; }
+.canvas-wrap { background: var(--bg3); border-radius: 12px; border: 1px solid var(--acc); overflow: hidden; position: relative; margin-bottom: 8px; }
+.canvas-wrap svg { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
+.canvas-info { position: absolute; bottom: 6px; left: 6px; right: 6px; display: flex; justify-content: space-between; pointer-events: none; }
+.canvas-info > div { font-size: 9px; color: rgba(40,160,160,0.7); padding: 2px 6px; background: rgba(13,31,31,0.85); border-radius: 4px; }
+.canvas-instr { position: absolute; top: 6px; left: 6px; right: 6px; padding: 4px 8px; background: rgba(40,160,160,0.95); color: #fff; font-size: 10px; font-weight: 700; border-radius: 4px; text-align: center; pointer-events: none; }
+
+.btn-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.ico-btn { background: var(--bg2); color: var(--acc); border: 0.5px solid var(--bdr); padding: 9px 4px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.ico-btn:hover { background: #1A2C2C; border-color: var(--acc); }
+
+.upload-empty { background: var(--bg3); border: 1px dashed var(--acc); border-radius: 12px; padding: 24px 16px; text-align: center; }
+.upload-empty .ic { width: 40px; height: 40px; margin: 0 auto 10px; display: block; }
+.upload-empty .ti { font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 4px; }
+.upload-empty .ds { font-size: 10.5px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+.upload-btn { display: inline-block; padding: 11px 22px; background: var(--acc); color: #fff; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; }
+
+.draw-panel { background: var(--bg2); border-radius: 8px; padding: 10px; margin-bottom: 8px; border: 0.5px solid var(--bdr); }
+.draw-hint { margin-top: 8px; padding: 8px; background: rgba(40,160,160,0.06); border-radius: 8px; border: 0.5px solid rgba(40,160,160,0.2); font-size: 10px; color: var(--muted); line-height: 1.5; }
+.draw-hint b { color: var(--acc); }
+
+.lbl { font-size: 9.5px; font-weight: 700; color: var(--acc); margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1.2px; }
+
+.steps-wrap { margin-top: 14px; }
+.step { background: var(--bg2); border: 0.5px solid var(--bdr); border-radius: 12px; margin-bottom: 8px; overflow: hidden; transition: all 0.2s; }
+.step.open { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
+.step.flash { animation: flashStep 0.5s ease-out; }
+@keyframes flashStep {
+  0%, 100% { box-shadow: 0 0 0 1px var(--acc); }
+  50% { box-shadow: 0 0 0 3px var(--acc); background: #1A3838; }
+}
+.step-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; user-select: none; }
+.step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--bdr); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.step.open .step-num { background: var(--acc); color: #fff; }
+.step.done .step-num { background: rgba(40,160,160,0.2); color: var(--acc); }
+.step-label { flex: 1; min-width: 0; }
+.step-title { font-size: 12px; font-weight: 700; color: var(--txt); text-transform: uppercase; letter-spacing: 0.5px; }
+.step-value { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.step.done .step-value { color: var(--acc); font-weight: 600; }
+.step-chev { width: 12px; height: 12px; flex-shrink: 0; color: var(--muted); transition: transform 0.2s; }
+.step.open .step-chev { transform: rotate(180deg); color: var(--acc); }
+.step-body { display: none; padding: 0 14px 14px; }
+.step.open .step-body { display: block; }
+
+button.opt, button.opt-ap, button.opt-v, button.opt-sp, button.opt-pia, button.opt-hp, button.opt-sc, button.opt-pa, button.opt-dm, button.opt-mk {
+  background: var(--bg3); border: 0.5px solid var(--bdr); border-radius: 8px;
+  padding: 12px 4px; font-size: 12px; font-weight: 600;
+  color: var(--txt); cursor: pointer; font-family: inherit;
+}
+button.opt-dm { padding: 8px 4px; font-size: 11px; }
+button.opt-mk { padding: 9px 6px; font-size: 11px; text-align: left; }
+button.opt-mk .mk-brand { font-weight: 700; font-size: 11px; }
+button.opt-mk .mk-model { font-size: 9.5px; color: var(--muted); margin-top: 1px; }
+button.opt-mk.sel .mk-model { color: rgba(255,255,255,0.85); }
+button.opt.big { padding: 14px 8px; }
+button.opt.big .bn { font-size: 13px; font-weight: 700; margin-bottom: 3px; pointer-events: none; }
+button.opt.big .bs { font-size: 9.5px; color: var(--muted); font-weight: 500; pointer-events: none; }
+button.sel { background: var(--acc) !important; color: #fff !important; border-color: var(--acc) !important; }
+button.opt.big.sel .bs { color: rgba(255,255,255,0.85); }
+button.flash-anim { animation: btnFlash 0.4s ease-out; }
+@keyframes btnFlash {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); box-shadow: 0 0 0 4px rgba(40,160,160,0.4); }
+  100% { transform: scale(1); }
+}
+button.sw-big { background: var(--bg3); border: 0.5px solid var(--bdr); border-radius: 10px; padding: 8px 4px 6px; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+button.sw-big.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 1.5px var(--acc); background: #1A2C2C; }
+button.sw-big .sw-ic { width: 100%; aspect-ratio: 1.6; border-radius: 6px; border: 0.5px solid rgba(255,255,255,0.15); pointer-events: none; }
+button.sw-big .sw-l { font-size: 11px; color: var(--txt); font-weight: 600; pointer-events: none; }
+button.sw-pia { width: 100%; aspect-ratio: 1; border-radius: 10px; border: 1.5px solid var(--bdr); cursor: pointer; padding: 0; }
+button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px var(--acc); }
+
+.num-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.num-row label { font-size: 11px; color: var(--muted); width: 75px; flex-shrink: 0; font-weight: 600; }
+.num-row .stepper { display: flex; align-items: center; flex: 1; gap: 6px; }
+.num-row .step-btn { width: 32px; height: 32px; border-radius: 8px; background: var(--bg3); border: 0.5px solid var(--bdr); color: var(--acc); font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.num-row .step-btn:active { background: var(--acc); color: #fff; }
+.num-row input[type="number"] { flex: 1; min-width: 0; background: var(--bg3); border: 0.5px solid var(--bdr); color: var(--acc); font-size: 14px; font-weight: 800; padding: 7px; border-radius: 8px; text-align: center; font-family: inherit; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.num-row input[type="number"]::-webkit-outer-spin-button, .num-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.num-row .unit { font-size: 10px; color: var(--muted); font-weight: 600; flex-shrink: 0; }
+
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+.toggle-sw { width: 44px; height: 26px; background: var(--bdr); border-radius: 14px; position: relative; cursor: pointer; flex-shrink: 0; }
+.toggle-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+.toggle-sw.on { background: var(--acc); }
+.toggle-sw.on::after { transform: translateX(18px); }
+
+.next-btn { width: 100%; padding: 12px; background: var(--acc); color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; font-family: inherit; margin-top: 12px; }
+.next-btn:disabled { background: var(--bdr); color: var(--muted); }
+
+.cat-list { max-height: 280px; overflow-y: auto; padding-right: 4px; }
+.cat-list::-webkit-scrollbar { width: 4px; }
+.cat-list::-webkit-scrollbar-thumb { background: var(--acc); border-radius: 2px; }
+
+.result { display: none; margin-top: 12px; }
+.result.on { display: block; }
+.distinta-card { background: var(--bg2); border-radius: 12px; padding: 12px; border: 0.5px solid var(--bdr); }
+.dist-row { display: flex; justify-content: space-between; padding: 4px 0; color: var(--txt); border-bottom: 0.5px solid var(--bdr); }
+.dist-row span:first-child { font-size: 11px; }
+.dist-row .det { color: var(--muted); font-size: 9.5px; }
+.dist-row .val { font-variant-numeric: tabular-nums; color: var(--acc); font-weight: 600; font-size: 11.5px; }
+.totale-row { border-top: 1px solid var(--acc); margin-top: 10px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+.totale-lbl { color: var(--txt); font-weight: 700; font-size: 13px; }
+.totale-val { color: var(--acc); font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+.restart-btn { width: 100%; margin-top: 10px; padding: 12px; background: var(--bdr); color: var(--acc); border: 0.5px solid var(--acc); border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+<div class="app" id="root">
+
+<div class="header">
+  <div class="logo-box">M</div>
+  <div class="h-title-wrap">
+    <div class="h-brand">MASTRO</div>
+    <div class="h-name">Box Doccia</div>
+  </div>
+  <div class="h-prog" id="progress">0/7</div>
+</div>
+
+<div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+
+<div class="vt-tabs">
+  <button class="vt sel" data-vt="3d">3D</button>
+  <button class="vt" data-vt="pianta">Pianta auto</button>
+  <button class="vt" data-vt="disegno">Disegna</button>
+  <button class="vt" data-vt="foto">Foto</button>
+</div>
+
+<div id="view-3d" class="view active">
+  <div class="canvas-wrap">
+    <svg id="iso-svg" viewBox="0 0 320 240"></svg>
+    <div class="canvas-info"><div>DRAG ruota</div><div id="rot-info">45°</div></div>
+  </div>
+  <div class="btn-row">
+    <button data-act="reset-cam" class="ico-btn">Reset</button>
+    <button data-act="zoom-in" class="ico-btn">+ Zoom</button>
+    <button data-act="zoom-out" class="ico-btn">- Zoom</button>
+  </div>
+</div>
+
+<div id="view-pianta" class="view">
+  <div class="canvas-wrap">
+    <svg id="plan-svg" viewBox="0 0 320 240"></svg>
+  </div>
+  <div class="btn-row">
+    <button data-act="plan-reset" class="ico-btn">Reset</button>
+    <button data-act="plan-zin" class="ico-btn">+ Zoom</button>
+    <button data-act="plan-zout" class="ico-btn">- Zoom</button>
+  </div>
+</div>
+
+<div id="view-disegno" class="view">
+  <div class="canvas-wrap">
+    <svg id="draw-svg" viewBox="0 0 320 320" style="cursor:crosshair;"></svg>
+    <div class="canvas-instr" id="draw-instr">Tap per posizionare i punti del muro</div>
+  </div>
+  <div class="draw-panel">
+    <p class="lbl">Modalita disegno</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px;">
+      <button data-draw-mode="wall" class="opt-dm sel">Muro</button>
+      <button data-draw-mode="box" class="opt-dm">Box doccia</button>
+      <button data-draw-mode="erase" class="opt-dm">Cancella</button>
+    </div>
+    <div class="num-row" style="margin-bottom:0;">
+      <label>Spess. muro</label>
+      <div class="stepper">
+        <button class="step-btn" data-num-step="wallTh" data-delta="-1">-</button>
+        <input type="number" data-num="wallTh" value="10" min="5" max="40" step="1">
+        <button class="step-btn" data-num-step="wallTh" data-delta="1">+</button>
+      </div>
+      <span class="unit">cm</span>
+    </div>
+    <div class="num-row" style="margin-bottom:0;margin-top:8px;">
+      <label>Scala 1cm</label>
+      <div class="stepper">
+        <button class="step-btn" data-num-step="drawScale" data-delta="-0.2">-</button>
+        <input type="number" data-num="drawScale" value="2" min="0.5" max="6" step="0.1">
+        <button class="step-btn" data-num-step="drawScale" data-delta="0.2">+</button>
+      </div>
+      <span class="unit">px/cm</span>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button data-act="draw-undo" class="ico-btn">Indietro</button>
+    <button data-act="draw-clear" class="ico-btn">Pulisci</button>
+    <button data-act="draw-grid" class="ico-btn">Griglia</button>
+  </div>
+  <div class="draw-hint"><b>Come usare:</b> 1) Modalita Muro: tap due punti per disegnare un segmento. 2) Modalita Box: tap dove va il piatto. 3) Cancella: tap su un muro per rimuoverlo. Snap automatico a 5cm.</div>
+</div>
+
+<div id="view-foto" class="view">
+  <div id="foto-empty" class="upload-empty">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    <div class="ti">Foto del bagno cliente</div>
+    <div class="ds">Carica foto, indica 2 punti di riferimento con misura nota</div>
+    <label class="upload-btn">
+      <input type="file" accept="image/*" capture="environment" data-foto-input style="display:none;">
+      Scatta o carica foto
+    </label>
+  </div>
+  <div id="foto-canvas" style="display:none;">
+    <div class="canvas-wrap">
+      <svg id="foto-svg" viewBox="0 0 320 240"></svg>
+      <div class="canvas-instr" id="foto-instr">1) Tap sul primo riferimento</div>
+    </div>
+    <div id="foto-controls" style="display:none;margin-bottom:8px;">
+      <div class="num-row"><label>Misura A-B</label>
+        <div class="stepper">
+          <button class="step-btn" data-num-step="refDist" data-delta="-10">-</button>
+          <input type="number" data-num="refDist" value="100" min="20" max="500" step="1">
+          <button class="step-btn" data-num-step="refDist" data-delta="10">+</button>
+        </div>
+        <span class="unit">cm</span>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button data-act="foto-reset-pts" class="ico-btn">Rifai punti</button>
+      <button data-act="foto-toggle-box" class="ico-btn">Box on/off</button>
+      <button data-act="foto-clear" class="ico-btn">Cambia foto</button>
+    </div>
+  </div>
+</div>
+
+<div id="steps" class="steps-wrap"></div>
+
+<div id="result" class="result">
+  <div class="distinta-card">
+    <p class="lbl">Distinta materiali</p>
+    <div id="dist"></div>
+    <div class="totale-row">
+      <span class="totale-lbl">TOTALE</span>
+      <span class="totale-val" id="totale">0 EUR</span>
+    </div>
+  </div>
+  <button data-act="restart" class="restart-btn">Ricomincia configurazione</button>
+</div>
+
+</div>
+<script>
+
+(function(){
+
+var state = {
+  current: 0,
+  done: [false,false,false,false,false,false,false],
+  view: '3d',
+  tipo: 'nicchia', apertura: 'battente',
+  pareti: 'auto',
+  w: 90, d: 90, h: 200,
+  vetroTipo: 'trasp', vetroSp: 8, anti: true,
+  profilo: 'cromo',
+  piattoMarca: 'mastro_std', piatto: 'effpietra', coloraPiatto: 'bianco',
+  altPiatto: 'basso', scarico: 'centrale',
+  cam: { rotY: Math.PI/4, rotX: Math.PI/9, dist: 1.0 },
+  plan: { panX: 0, panY: 0, zoom: 1.0 },
+  foto: { dataUrl: null, w: 0, h: 0, p1: null, p2: null, refDist: 100, showBox: true, boxX: 0.5, boxY: 0.7 },
+  draw: { mode: 'wall', wallTh: 10, scale: 2, walls: [], box: null, showGrid: true, pendingPoint: null }
+};
+
+var PROF_COL = { cromo:'#C8C8C8', nero:'#1A1A1A', bianco:'#F0F0F0', oro:'#C0982E', inox:'#A8A8A8', ottone:'#8A6928' };
+var PROF_NOMI = { cromo:'Cromo', nero:'Nero opaco', bianco:'Bianco', oro:'Oro spazz.', inox:'Inox', ottone:'Ottone' };
+var VETRO_COL = { trasp:{fill:'#B8DEE8',op:0.20}, satin:{fill:'#E0E8E8',op:0.55}, serig:{fill:'#D8E0E0',op:0.50}, fume:{fill:'#5A5A60',op:0.55}, bronzo:{fill:'#705028',op:0.55}, specchio:{fill:'#C0D8D8',op:0.85} };
+var VETRO_NOMI = { trasp:'Trasparente', satin:'Satinato', serig:'Serigrafato', fume:'Fume', bronzo:'Bronzo', specchio:'Specchio' };
+var PIATTO_COL = { bianco:'#F8F8F8', grigio:'#9A9A9A', antracite:'#383838', sabbia:'#CFC09A', nero:'#0A0A0A', tortora:'#A89888', creta:'#9C8B7A' };
+var PIATTO_COL_NOMI = { bianco:'Bianco', grigio:'Grigio', antracite:'Antracite', sabbia:'Sabbia', nero:'Nero', tortora:'Tortora', creta:'Creta' };
+var PIATTO_MAT_NOMI = { effpietra:'Eff. pietra', ceramica:'Ceramica', marmoresina:'Marmo-resina', acrilico:'Acrilico', resina:'Resina', stoneulti:'Stone Ultra', mineralm:'Mineral Marmo' };
+var TIPO_NOMI = { nicchia:'Nicchia', angolo:'Angolo', '3lati':'3 lati', walkin:'Walk-in', semicirc:'Semicircolare', sopravasca:'Sopra-vasca' };
+var AP_NOMI = { battente:'Battente', scorrevole:'Scorrevole', libro:'A libro', pivot:'Pivot', saloon:'Saloon', fissa:'Fissa walk-in' };
+var HP_NOMI = { filo:'Filo pavim.', basso:'Basso 5cm', medio:'Medio 11cm' };
+var SC_NOMI = { centrale:'Centrale', lineare:'Lineare', laterale:'Laterale' };
+var PA_NOMI = { auto:'Da tipologia', '3':'3 pareti', '2':'2 pareti (angolo)', '1':'1 parete', '0':'Nessuna parete' };
+
+// Catalogo piatti commerciali base. Sara' sovrascritto da Impostazioni se l'azienda ha caricato il proprio.
+var CATALOGO_PIATTI = [
+  { id:'mastro_std', brand:'MASTRO', model:'Standard effetto pietra', mat:'effpietra', col:'bianco' },
+  { id:'novell_max', brand:'Novellini', model:'Olympic Plus - acrilico', mat:'acrilico', col:'bianco' },
+  { id:'novell_pri', brand:'Novellini', model:'Custom Touch - resina', mat:'resina', col:'antracite' },
+  { id:'iddis_str', brand:'Ideal Standard', model:'Ultraflat S - stone', mat:'stoneulti', col:'grigio' },
+  { id:'iddis_ult', brand:'Ideal Standard', model:'Ultraflat New - acrilico', mat:'acrilico', col:'bianco' },
+  { id:'roca_terr', brand:'Roca', model:'Terran - mineral marmo', mat:'mineralm', col:'antracite' },
+  { id:'roca_aqu', brand:'Roca', model:'Aquos - acrilico', mat:'acrilico', col:'bianco' },
+  { id:'kald_sup', brand:'Kaldewei', model:'SuperPlan Plus - acciaio smaltato', mat:'ceramica', col:'bianco' },
+  { id:'kald_xet', brand:'Kaldewei', model:'Xetis - acciaio smaltato', mat:'ceramica', col:'bianco' },
+  { id:'duka_lit', brand:'Duka', model:'Litho - effetto pietra', mat:'effpietra', col:'sabbia' },
+  { id:'pozzi_kub', brand:'Pozzi-Ginori', model:'Kuba - ceramica', mat:'ceramica', col:'bianco' },
+  { id:'flam_qua', brand:'Flaminia', model:'Quaranta - ceramica', mat:'ceramica', col:'bianco' },
+  { id:'glob_str', brand:'Globo', model:'Strato - ceramica', mat:'ceramica', col:'tortora' },
+  { id:'cesa_son', brand:'Cesana', model:'Sonia 3 - acrilico', mat:'acrilico', col:'bianco' },
+  { id:'tend_dec', brand:'Teuco', model:'DecoStone - mineralmarmo', mat:'mineralm', col:'creta' },
+  { id:'samo_ele', brand:'Samo', model:'Elegance - resina', mat:'resina', col:'antracite' },
+  { id:'megi_eff', brand:'Megius', model:'Effetto Pietra - resina', mat:'resina', col:'sabbia' },
+  { id:'cazz_min', brand:'Cazzaniga', model:'Minimal - marmoresina', mat:'marmoresina', col:'antracite' },
+  { id:'huppe_pi', brand:'Hueppe', model:'EasyStep - acrilico', mat:'acrilico', col:'bianco' },
+  { id:'profilt_ms', brand:'Profiltek', model:'Marmo Stone - mineralmarmo', mat:'mineralm', col:'grigio' }
+];
+
+var PREZZI = {
+  vetro_mq: { 6:75, 8:110, 10:150 }, anticalc_mq: 28,
+  profili_ml: { cromo:18, nero:24, bianco:18, oro:36, inox:32, ottone:38 },
+  cerniere: { battente:95, scorrevole:60, libro:140, pivot:180, saloon:130, fissa:0 },
+  binario: { scorrevole:85, libro:95, fissa:0, battente:0, pivot:0, saloon:0 },
+  maniglia: 35,
+  piatto_mq: { effpietra:280, ceramica:180, marmoresina:320, acrilico:145, resina:260, stoneulti:340, mineralm:380 },
+  scarico_t: { centrale:45, lineare:130, laterale:60 }
+};
+
+function catalogoFind(id) { for (var i = 0; i < CATALOGO_PIATTI.length; i++) if (CATALOGO_PIATTI[i].id === id) return CATALOGO_PIATTI[i]; return null; }
+function selCls(c){ return c ? 'sel' : ''; }
+
+var STEPS = [
+  { id:'modello', title:'Modello',
+    getValue: function(){ return TIPO_NOMI[state.tipo] + ' . ' + AP_NOMI[state.apertura]; },
+    isReady: function(){ return !!state.tipo && !!state.apertura; } },
+  { id:'pareti', title:'Pareti reali',
+    getValue: function(){ return PA_NOMI[state.pareti]; },
+    isReady: function(){ return !!state.pareti; } },
+  { id:'misure', title:'Misure',
+    getValue: function(){ return state.w + ' x ' + state.d + ' x ' + state.h + ' cm'; },
+    isReady: function(){ return true; } },
+  { id:'vetro', title:'Vetro',
+    getValue: function(){ return VETRO_NOMI[state.vetroTipo] + ' . ' + state.vetroSp + 'mm'; },
+    isReady: function(){ return !!state.vetroTipo; } },
+  { id:'profili', title:'Profili',
+    getValue: function(){ return PROF_NOMI[state.profilo]; },
+    isReady: function(){ return !!state.profilo; } },
+  { id:'piatto', title:'Piatto doccia',
+    getValue: function(){ var p = catalogoFind(state.piattoMarca); return p ? p.brand + ' . ' + PIATTO_COL_NOMI[state.coloraPiatto] : '- scegli'; },
+    isReady: function(){ return !!state.piattoMarca && !!state.coloraPiatto; } },
+  { id:'scarico', title:'Scarico e altezza',
+    getValue: function(){ return HP_NOMI[state.altPiatto] + ' . ' + SC_NOMI[state.scarico]; },
+    isReady: function(){ return !!state.altPiatto && !!state.scarico; } }
+];
+
+function bodyHtml(i) {
+  var s = state;
+  if (i === 0) return '<p class="lbl" style="margin-top:6px;">1. Tipologia</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">' +
+      '<button data-pick="tipo" data-v="nicchia" class="opt big '+selCls(s.tipo==='nicchia')+'"><div class="bn">Nicchia</div><div class="bs">1 lato</div></button>' +
+      '<button data-pick="tipo" data-v="angolo" class="opt big '+selCls(s.tipo==='angolo')+'"><div class="bn">Angolo</div><div class="bs">2 lati a L</div></button>' +
+      '<button data-pick="tipo" data-v="3lati" class="opt big '+selCls(s.tipo==='3lati')+'"><div class="bn">3 lati</div><div class="bs">porta + 2 fissi</div></button>' +
+      '<button data-pick="tipo" data-v="walkin" class="opt big '+selCls(s.tipo==='walkin')+'"><div class="bn">Walk-in</div><div class="bs">no porta</div></button>' +
+      '<button data-pick="tipo" data-v="semicirc" class="opt big '+selCls(s.tipo==='semicirc')+'"><div class="bn">Semicirc.</div><div class="bs">curvo</div></button>' +
+      '<button data-pick="tipo" data-v="sopravasca" class="opt big '+selCls(s.tipo==='sopravasca')+'"><div class="bn">Sopra-vasca</div><div class="bs">parete vasca</div></button>' +
+    '</div>' +
+    '<p class="lbl">2. Apertura</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;">' +
+      '<button data-pick="apertura" data-v="battente" class="opt-ap '+selCls(s.apertura==='battente')+'">Battente</button>' +
+      '<button data-pick="apertura" data-v="scorrevole" class="opt-ap '+selCls(s.apertura==='scorrevole')+'">Scorr.</button>' +
+      '<button data-pick="apertura" data-v="libro" class="opt-ap '+selCls(s.apertura==='libro')+'">A libro</button>' +
+      '<button data-pick="apertura" data-v="pivot" class="opt-ap '+selCls(s.apertura==='pivot')+'">Pivot</button>' +
+      '<button data-pick="apertura" data-v="saloon" class="opt-ap '+selCls(s.apertura==='saloon')+'">Saloon</button>' +
+      '<button data-pick="apertura" data-v="fissa" class="opt-ap '+selCls(s.apertura==='fissa')+'">Fissa</button>' +
+    '</div>';
+
+  if (i === 1) return '<p class="lbl" style="margin-top:6px;">Quante pareti nel bagno cliente?</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+      '<button data-pick="pareti" data-v="auto" class="opt-pa '+selCls(s.pareti==='auto')+'">Auto da tipo</button>' +
+      '<button data-pick="pareti" data-v="3" class="opt-pa '+selCls(s.pareti==='3')+'">3 pareti</button>' +
+      '<button data-pick="pareti" data-v="2" class="opt-pa '+selCls(s.pareti==='2')+'">2 (angolo)</button>' +
+      '<button data-pick="pareti" data-v="1" class="opt-pa '+selCls(s.pareti==='1')+'">1 parete</button>' +
+      '<button data-pick="pareti" data-v="0" class="opt-pa '+selCls(s.pareti==='0')+'" style="grid-column:1/-1;">Nessuna parete</button>' +
+    '</div>';
+
+  if (i === 2) return '<p class="lbl" style="margin-top:6px;">Scrivi le misure (cm)</p>' +
+    '<div class="num-row"><label>Largh.</label><div class="stepper"><button class="step-btn" data-num-step="w" data-delta="-5">-</button><input type="number" data-num="w" value="'+s.w+'" min="60" max="300" step="1"><button class="step-btn" data-num-step="w" data-delta="5">+</button></div><span class="unit">cm</span></div>' +
+    '<div class="num-row"><label>Profon.</label><div class="stepper"><button class="step-btn" data-num-step="d" data-delta="-5">-</button><input type="number" data-num="d" value="'+s.d+'" min="60" max="300" step="1"><button class="step-btn" data-num-step="d" data-delta="5">+</button></div><span class="unit">cm</span></div>' +
+    '<div class="num-row"><label>Altezza</label><div class="stepper"><button class="step-btn" data-num-step="h" data-delta="-5">-</button><input type="number" data-num="h" value="'+s.h+'" min="160" max="240" step="1"><button class="step-btn" data-num-step="h" data-delta="5">+</button></div><span class="unit">cm</span></div>' +
+    '<div style="background:rgba(40,160,160,0.06);border-radius:8px;padding:10px;margin-top:10px;border:0.5px solid rgba(40,160,160,0.2);"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Misura ordine (con tolleranza posa -2cm):</div><div data-out="ord" style="font-size:13px;color:var(--acc);font-weight:700;">'+(s.w-2)+' x '+(s.d-2)+' x '+s.h+' cm</div></div>' +
+    '<button data-act="next" class="next-btn">Conferma misure</button>';
+
+  if (i === 3) return '<p class="lbl" style="margin-top:6px;">1. Tipo vetro</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:14px;">' +
+      '<button data-pick="vetroTipo" data-v="trasp" class="opt-v '+selCls(s.vetroTipo==='trasp')+'">Trasp.</button>' +
+      '<button data-pick="vetroTipo" data-v="satin" class="opt-v '+selCls(s.vetroTipo==='satin')+'">Satinato</button>' +
+      '<button data-pick="vetroTipo" data-v="serig" class="opt-v '+selCls(s.vetroTipo==='serig')+'">Serig.</button>' +
+      '<button data-pick="vetroTipo" data-v="fume" class="opt-v '+selCls(s.vetroTipo==='fume')+'">Fume</button>' +
+      '<button data-pick="vetroTipo" data-v="bronzo" class="opt-v '+selCls(s.vetroTipo==='bronzo')+'">Bronzo</button>' +
+      '<button data-pick="vetroTipo" data-v="specchio" class="opt-v '+selCls(s.vetroTipo==='specchio')+'">Specchio</button>' +
+    '</div>' +
+    '<p class="lbl">2. Spessore</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:10px;">' +
+      '<button data-pick="vetroSp" data-v="6" class="opt-sp '+selCls(s.vetroSp==6)+'">6 mm</button>' +
+      '<button data-pick="vetroSp" data-v="8" class="opt-sp '+selCls(s.vetroSp==8)+'">8 mm</button>' +
+      '<button data-pick="vetroSp" data-v="10" class="opt-sp '+selCls(s.vetroSp==10)+'">10 mm</button>' +
+    '</div>' +
+    '<div class="toggle-row"><div><div style="font-size:12px;font-weight:600;">Anti-calcare nano</div><div style="font-size:10px;color:var(--muted);">Vetro idrorepellente</div></div><div class="toggle-sw '+(s.anti?'on':'')+'" data-toggle="anti"></div></div>';
+
+  if (i === 4) return '<p class="lbl" style="margin-top:6px;">Finitura profili</p>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
+      '<button data-pick="profilo" data-v="cromo" class="sw-big '+selCls(s.profilo==='cromo')+'"><div class="sw-ic" style="background:linear-gradient(135deg,#E8E8E8,#B8B8B8);"></div><div class="sw-l">Cromo</div></button>' +
+      '<button data-pick="profilo" data-v="nero" class="sw-big '+selCls(s.profilo==='nero')+'"><div class="sw-ic" style="background:#0A0A0A;"></div><div class="sw-l">Nero</div></button>' +
+      '<button data-pick="profilo" data-v="bianco" class="sw-big '+selCls(s.profilo==='bianco')+'"><div class="sw-ic" style="background:#F8F8F8;"></div><div class="sw-l">Bianco</div></button>' +
+      '<button data-pick="profilo" data-v="oro" class="sw-big '+selCls(s.profilo==='oro')+'"><div class="sw-ic" style="background:linear-gradient(135deg,#D4AF37,#A88828);"></div><div class="sw-l">Oro</div></button>' +
+      '<button data-pick="profilo" data-v="inox" class="sw-big '+selCls(s.profilo==='inox')+'"><div class="sw-ic" style="background:linear-gradient(135deg,#C8C8C8,#909090);"></div><div class="sw-l">Inox</div></button>' +
+      '<button data-pick="profilo" data-v="ottone" class="sw-big '+selCls(s.profilo==='ottone')+'"><div class="sw-ic" style="background:linear-gradient(135deg,#B58F45,#8A6928);"></div><div class="sw-l">Ottone</div></button>' +
+    '</div>';
+
+  if (i === 5) {
+    var rows = '';
+    for (var k = 0; k < CATALOGO_PIATTI.length; k++) {
+      var p = CATALOGO_PIATTI[k];
+      rows += '<button data-pick="piattoMarca" data-v="'+p.id+'" class="opt-mk '+selCls(s.piattoMarca===p.id)+'" style="margin-bottom:5px;width:100%;"><div class="mk-brand">'+p.brand+'</div><div class="mk-model">'+p.model+'</div></button>';
+    }
+    return '<p class="lbl" style="margin-top:6px;">1. Marca e modello</p>' +
+      '<div class="cat-list" style="margin-bottom:14px;">'+rows+'</div>' +
+      '<p class="lbl">2. Colore piatto</p>' +
+      '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">' +
+        '<button data-pick="coloraPiatto" data-v="bianco" class="sw-pia '+selCls(s.coloraPiatto==='bianco')+'" style="background:#F8F8F8;"></button>' +
+        '<button data-pick="coloraPiatto" data-v="grigio" class="sw-pia '+selCls(s.coloraPiatto==='grigio')+'" style="background:#A0A0A0;"></button>' +
+        '<button data-pick="coloraPiatto" data-v="antracite" class="sw-pia '+selCls(s.coloraPiatto==='antracite')+'" style="background:#3A3A3A;"></button>' +
+        '<button data-pick="coloraPiatto" data-v="sabbia" class="sw-pia '+selCls(s.coloraPiatto==='sabbia')+'" style="background:#D8C8A8;"></button>' +
+        '<button data-pick="coloraPiatto" data-v="tortora" class="sw-pia '+selCls(s.coloraPiatto==='tortora')+'" style="background:#A89888;"></button>' +
+        '<button data-pick="coloraPiatto" data-v="creta" class="sw-pia '+selCls(s.coloraPiatto==='creta')+'" style="background:#9C8B7A;"></button>' +
+        '<button data-pick="coloraPiatto" data-v="nero" class="sw-pia '+selCls(s.coloraPiatto==='nero')+'" style="background:#0A0A0A;"></button>' +
+      '</div>';
+  }
+
+  if (i === 6) return '<p class="lbl" style="margin-top:6px;">1. Altezza piatto</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:14px;">' +
+      '<button data-pick="altPiatto" data-v="filo" class="opt-hp '+selCls(s.altPiatto==='filo')+'">Filo pavim.</button>' +
+      '<button data-pick="altPiatto" data-v="basso" class="opt-hp '+selCls(s.altPiatto==='basso')+'">Basso 5cm</button>' +
+      '<button data-pick="altPiatto" data-v="medio" class="opt-hp '+selCls(s.altPiatto==='medio')+'">Medio 11cm</button>' +
+    '</div>' +
+    '<p class="lbl">2. Tipo scarico</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;">' +
+      '<button data-pick="scarico" data-v="centrale" class="opt-sc '+selCls(s.scarico==='centrale')+'">Centrale</button>' +
+      '<button data-pick="scarico" data-v="lineare" class="opt-sc '+selCls(s.scarico==='lineare')+'">Lineare</button>' +
+      '<button data-pick="scarico" data-v="laterale" class="opt-sc '+selCls(s.scarico==='laterale')+'">Laterale</button>' +
+    '</div>';
+
+  return '';
+}
+
+function renderSteps(flashIdx) {
+  var root = document.getElementById('steps');
+  var out = '';
+  for (var i = 0; i < STEPS.length; i++) {
+    var s = STEPS[i];
+    var isOpen = state.current === i;
+    var isDone = state.done[i];
+    var isFlash = flashIdx === i;
+    var cls = 'step';
+    if (isOpen) cls += ' open';
+    if (isDone) cls += ' done';
+    if (isFlash) cls += ' flash';
+    out += '<div class="'+cls+'">' +
+      '<div class="step-header" data-toggle-step="'+i+'">' +
+        '<div class="step-num">'+(isDone?'\u2713':(i+1))+'</div>' +
+        '<div class="step-label">' +
+          '<div class="step-title">'+s.title+'</div>' +
+          '<div class="step-value">'+s.getValue()+'</div>' +
+        '</div>' +
+        '<svg class="step-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+      '</div>' +
+      '<div class="step-body">'+(isOpen ? bodyHtml(i) : '')+'</div>' +
+    '</div>';
+  }
+  root.innerHTML = out;
+  var completed = 0;
+  for (var j = 0; j < state.done.length; j++) if (state.done[j]) completed++;
+  document.getElementById('progress').textContent = completed + '/7';
+  document.getElementById('prog-fill').style.width = (completed/7*100) + '%';
+}
+
+function maybeAdvance() {
+  var cur = state.current;
+  if (cur < 0) return;
+  var step = STEPS[cur];
+  renderSteps();
+  if (!step.isReady()) return;
+  state.done[cur] = true;
+  setTimeout(function(){
+    if (cur < STEPS.length - 1) {
+      state.current = cur + 1; renderSteps(state.current);
+      setTimeout(function(){ var els = document.querySelectorAll('.step'); if (els[state.current]) els[state.current].scrollIntoView({behavior:'smooth',block:'center'}); }, 100);
+    } else { finish(); }
+  }, 350);
+}
+
+function setView(v) {
+  state.view = v;
+  var tabs = document.querySelectorAll('.vt');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('sel', tabs[i].getAttribute('data-vt') === v);
+  }
+  var views = document.querySelectorAll('.view');
+  for (var j = 0; j < views.length; j++) views[j].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');
+  if (v === '3d') renderIso();
+  else if (v === 'pianta') renderPlan();
+  else if (v === 'foto') renderFoto();
+  else if (v === 'disegno') renderDraw();
+}
+
+document.getElementById('root').addEventListener('click', function(e){
+  var t = e.target.closest('button, [data-toggle-step], [data-toggle], [data-act], [data-vt], [data-pick], [data-draw-mode]');
+  if (!t) return;
+  if (t.hasAttribute('data-vt')) { setView(t.getAttribute('data-vt')); return; }
+  if (t.hasAttribute('data-draw-mode')) {
+    state.draw.mode = t.getAttribute('data-draw-mode');
+    state.draw.pendingPoint = null;
+    var btns = document.querySelectorAll('[data-draw-mode]');
+    for (var bi = 0; bi < btns.length; bi++) btns[bi].classList.remove('sel');
+    t.classList.add('sel');
+    var inst = document.getElementById('draw-instr');
+    if (state.draw.mode === 'wall') inst.textContent = 'Tap 2 punti per disegnare un muro';
+    else if (state.draw.mode === 'box') inst.textContent = 'Tap dove va il box doccia';
+    else inst.textContent = 'Tap su un muro per cancellarlo';
+    renderDraw();
+    return;
+  }
+  if (t.hasAttribute('data-num-step')) {
+    var key = t.getAttribute('data-num-step');
+    var delta = +t.getAttribute('data-delta');
+    if (key === 'refDist') {
+      state.foto.refDist = Math.max(20, Math.min(500, state.foto.refDist + delta));
+      var i1 = document.querySelector('[data-num="refDist"]'); if (i1) i1.value = state.foto.refDist;
+      renderFoto();
+    } else if (key === 'wallTh') {
+      state.draw.wallTh = Math.max(5, Math.min(40, state.draw.wallTh + delta));
+      var i2 = document.querySelector('[data-num="wallTh"]'); if (i2) i2.value = state.draw.wallTh;
+      renderDraw();
+    } else if (key === 'drawScale') {
+      state.draw.scale = Math.max(0.5, Math.min(6, +(state.draw.scale + delta).toFixed(2)));
+      var i3 = document.querySelector('[data-num="drawScale"]'); if (i3) i3.value = state.draw.scale;
+      renderDraw();
+    } else {
+      var lo = key === 'h' ? 160 : 60;
+      state[key] = Math.max(lo, Math.min(300, state[key] + delta));
+      var i4 = document.querySelector('[data-num="'+key+'"]'); if (i4) i4.value = state[key];
+      var ord = document.querySelector('[data-out="ord"]'); if (ord) ord.textContent = (state.w-2)+' x '+(state.d-2)+' x '+state.h+' cm';
+      renderIso(); renderPlan(); renderDraw();
+    }
+    return;
+  }
+  if (t.hasAttribute('data-toggle-step')) {
+    var i = +t.getAttribute('data-toggle-step');
+    state.current = state.current === i ? -1 : i;
+    renderSteps();
+    return;
+  }
+  if (t.hasAttribute('data-toggle')) {
+    var k = t.getAttribute('data-toggle');
+    state[k] = !state[k];
+    t.classList.toggle('on');
+    return;
+  }
+  if (t.hasAttribute('data-pick')) {
+    var pk = t.getAttribute('data-pick');
+    var pv = t.getAttribute('data-v');
+    if (pk === 'vetroSp') state[pk] = +pv;
+    else state[pk] = pv;
+    if (pk === 'piattoMarca') {
+      var p = catalogoFind(pv);
+      if (p) { state.piatto = p.mat; if (!state.coloraPiatto) state.coloraPiatto = p.col; }
+    }
+    t.classList.add('flash-anim');
+    renderIso(); renderPlan(); renderFoto(); renderDraw();
+    maybeAdvance();
+    return;
+  }
+  if (t.hasAttribute('data-act')) {
+    var a = t.getAttribute('data-act');
+    if (a === 'next') {
+      state.done[state.current] = true;
+      if (state.current < STEPS.length - 1) {
+        state.current++; renderSteps(state.current);
+        setTimeout(function(){ var els = document.querySelectorAll('.step'); if (els[state.current]) els[state.current].scrollIntoView({behavior:'smooth',block:'center'}); }, 100);
+      } else { finish(); }
+    } else if (a === 'reset-cam') { state.cam = { rotY: Math.PI/4, rotX: Math.PI/9, dist: 1.0 }; document.getElementById('rot-info').textContent = '45\u00B0'; renderIso(); }
+    else if (a === 'zoom-in') { state.cam.dist = Math.max(0.4, state.cam.dist * 0.85); renderIso(); }
+    else if (a === 'zoom-out') { state.cam.dist = Math.min(2.5, state.cam.dist * 1.18); renderIso(); }
+    else if (a === 'plan-reset') { state.plan = { panX: 0, panY: 0, zoom: 1.0 }; renderPlan(); }
+    else if (a === 'plan-zin') { state.plan.zoom = Math.min(4, state.plan.zoom * 1.18); renderPlan(); }
+    else if (a === 'plan-zout') { state.plan.zoom = Math.max(0.5, state.plan.zoom * 0.85); renderPlan(); }
+    else if (a === 'draw-undo') { if (state.draw.walls.length > 0) state.draw.walls.pop(); renderDraw(); }
+    else if (a === 'draw-clear') { state.draw.walls = []; state.draw.box = null; state.draw.pendingPoint = null; renderDraw(); }
+    else if (a === 'draw-grid') { state.draw.showGrid = !state.draw.showGrid; renderDraw(); }
+    else if (a === 'foto-reset-pts') { state.foto.p1 = null; state.foto.p2 = null; document.getElementById('foto-controls').style.display = 'none'; renderFoto(); }
+    else if (a === 'foto-toggle-box') { state.foto.showBox = !state.foto.showBox; renderFoto(); }
+    else if (a === 'foto-clear') {
+      state.foto = { dataUrl: null, w: 0, h: 0, p1: null, p2: null, refDist: 100, showBox: true, boxX: 0.5, boxY: 0.7 };
+      document.getElementById('foto-empty').style.display = 'block';
+      document.getElementById('foto-canvas').style.display = 'none';
+    } else if (a === 'restart') {
+      state.current = 0; state.done = [false,false,false,false,false,false,false];
+      document.getElementById('result').classList.remove('on'); renderSteps();
+    }
+  }
+});
+
+document.getElementById('root').addEventListener('input', function(e){
+  var t = e.target;
+  if (t.hasAttribute && t.hasAttribute('data-num')) {
+    var k = t.getAttribute('data-num');
+    var v = parseFloat(t.value);
+    if (!isNaN(v)) {
+      if (k === 'refDist') { state.foto.refDist = Math.max(20, Math.min(500, v)); renderFoto(); }
+      else if (k === 'wallTh') { state.draw.wallTh = Math.max(5, Math.min(40, v)); renderDraw(); }
+      else if (k === 'drawScale') { state.draw.scale = Math.max(0.5, Math.min(6, v)); renderDraw(); }
+      else {
+        var lo = k === 'h' ? 160 : 60;
+        state[k] = Math.max(lo, Math.min(300, v));
+        var ord = document.querySelector('[data-out="ord"]'); if (ord) ord.textContent = (state.w-2)+' x '+(state.d-2)+' x '+state.h+' cm';
+        renderIso(); renderPlan(); renderDraw();
+      }
+    }
+  }
+});
+
+document.getElementById('root').addEventListener('change', function(e){
+  var t = e.target;
+  if (t.hasAttribute && t.hasAttribute('data-foto-input')) {
+    var file = t.files && t.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var img = new Image();
+      img.onload = function(){
+        state.foto.dataUrl = ev.target.result;
+        state.foto.w = img.width; state.foto.h = img.height;
+        state.foto.p1 = null; state.foto.p2 = null;
+        document.getElementById('foto-empty').style.display = 'none';
+        document.getElementById('foto-canvas').style.display = 'block';
+        document.getElementById('foto-controls').style.display = 'none';
+        renderFoto();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+function finish() {
+  state.current = -1;
+  renderSteps();
+  document.getElementById('result').classList.add('on');
+  renderDist();
+  setTimeout(function(){ document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
+}
+
+// 3D camera handlers
+var isoSvg = document.getElementById('iso-svg');
+var drag = null, touchPrev = null;
+function getTouchDist(t1, t2) { return Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY); }
+isoSvg.addEventListener('pointerdown', function(e) { isoSvg.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY, rotY: state.cam.rotY, rotX: state.cam.rotX }; });
+isoSvg.addEventListener('pointermove', function(e) {
+  if (!drag) return;
+  var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  state.cam.rotY = drag.rotY - dx * 0.012;
+  state.cam.rotX = Math.max(-Math.PI/2 + 0.15, Math.min(Math.PI/2 - 0.15, drag.rotX + dy * 0.01));
+  document.getElementById('rot-info').textContent = Math.round(state.cam.rotY * 180 / Math.PI) + '\u00B0';
+  renderIso();
+});
+isoSvg.addEventListener('pointerup', function(){ drag = null; });
+isoSvg.addEventListener('pointercancel', function(){ drag = null; });
+isoSvg.addEventListener('wheel', function(e) { e.preventDefault(); state.cam.dist = Math.max(0.4, Math.min(2.5, state.cam.dist * (e.deltaY > 0 ? 1.1 : 0.9))); renderIso(); }, { passive: false });
+isoSvg.addEventListener('touchstart', function(e) { if (e.touches.length === 2) { touchPrev = getTouchDist(e.touches[0], e.touches[1]); drag = null; } }, { passive: true });
+isoSvg.addEventListener('touchmove', function(e) {
+  if (e.touches.length === 2 && touchPrev) {
+    var nd = getTouchDist(e.touches[0], e.touches[1]);
+    state.cam.dist = Math.max(0.4, Math.min(2.5, state.cam.dist * (touchPrev / nd)));
+    touchPrev = nd; renderIso();
+  }
+}, { passive: true });
+isoSvg.addEventListener('touchend', function(){ touchPrev = null; });
+
+var planSvg = document.getElementById('plan-svg');
+var planDrag = null;
+planSvg.addEventListener('pointerdown', function(e) { planSvg.setPointerCapture(e.pointerId); planDrag = { x: e.clientX, y: e.clientY, panX: state.plan.panX, panY: state.plan.panY }; });
+planSvg.addEventListener('pointermove', function(e) {
+  if (!planDrag) return;
+  state.plan.panX = planDrag.panX + (e.clientX - planDrag.x);
+  state.plan.panY = planDrag.panY + (e.clientY - planDrag.y);
+  renderPlan();
+});
+planSvg.addEventListener('pointerup', function(){ planDrag = null; });
+
+var drawSvg = document.getElementById('draw-svg');
+drawSvg.addEventListener('click', function(e){
+  var rect = drawSvg.getBoundingClientRect();
+  var x = (e.clientX - rect.left) / rect.width * 320;
+  var y = (e.clientY - rect.top) / rect.height * 320;
+  if (state.draw.showGrid) {
+    var gridPx = 5 * state.draw.scale;
+    x = Math.round(x / gridPx) * gridPx;
+    y = Math.round(y / gridPx) * gridPx;
+  }
+  if (state.draw.mode === 'wall') {
+    if (!state.draw.pendingPoint) {
+      state.draw.pendingPoint = { x: x, y: y };
+      document.getElementById('draw-instr').textContent = 'Ora tap il secondo punto del muro';
+    } else {
+      state.draw.walls.push({ x1: state.draw.pendingPoint.x, y1: state.draw.pendingPoint.y, x2: x, y2: y, th: state.draw.wallTh });
+      state.draw.pendingPoint = null;
+      document.getElementById('draw-instr').textContent = 'Continua: tap per il prossimo segmento';
+    }
+  } else if (state.draw.mode === 'box') {
+    state.draw.box = { x: x, y: y };
+    document.getElementById('draw-instr').textContent = 'Box posizionato. Tap altrove per spostarlo';
+  } else if (state.draw.mode === 'erase') {
+    var minDist = 9999, idx = -1;
+    for (var i = 0; i < state.draw.walls.length; i++) {
+      var w = state.draw.walls[i];
+      var d = distToSeg(x, y, w.x1, w.y1, w.x2, w.y2);
+      if (d < minDist) { minDist = d; idx = i; }
+    }
+    if (idx >= 0 && minDist < 15) state.draw.walls.splice(idx, 1);
+  }
+  renderDraw();
+});
+function distToSeg(px, py, x1, y1, x2, y2) {
+  var A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+  var dot = A*C + B*D, lenSq = C*C + D*D;
+  var p = lenSq !== 0 ? dot / lenSq : -1;
+  var xx, yy;
+  if (p < 0) { xx = x1; yy = y1; }
+  else if (p > 1) { xx = x2; yy = y2; }
+  else { xx = x1 + p*C; yy = y1 + p*D; }
+  return Math.hypot(px-xx, py-yy);
+}
+
+var fotoSvg = document.getElementById('foto-svg');
+var fotoDragBox = false;
+fotoSvg.addEventListener('click', function(e){
+  if (!state.foto.dataUrl) return;
+  var rect = fotoSvg.getBoundingClientRect();
+  var x = (e.clientX - rect.left) / rect.width;
+  var y = (e.clientY - rect.top) / rect.height;
+  if (!state.foto.p1) { state.foto.p1 = { x: x, y: y }; document.getElementById('foto-instr').textContent = '2) Tap sul secondo riferimento'; renderFoto(); }
+  else if (!state.foto.p2) {
+    state.foto.p2 = { x: x, y: y };
+    document.getElementById('foto-instr').textContent = 'Indica misura reale, poi trascina box';
+    document.getElementById('foto-controls').style.display = 'block';
+    renderFoto();
+  }
+});
+fotoSvg.addEventListener('pointerdown', function(e){
+  if (!state.foto.dataUrl || !state.foto.p1 || !state.foto.p2) return;
+  var rect = fotoSvg.getBoundingClientRect();
+  var x = (e.clientX - rect.left) / rect.width;
+  var y = (e.clientY - rect.top) / rect.height;
+  if (Math.hypot(x-state.foto.boxX, y-state.foto.boxY) < 0.15) { fotoDragBox = true; fotoSvg.setPointerCapture(e.pointerId); }
+});
+fotoSvg.addEventListener('pointermove', function(e){
+  if (!fotoDragBox) return;
+  var rect = fotoSvg.getBoundingClientRect();
+  state.foto.boxX = Math.max(0.05, Math.min(0.95, (e.clientX - rect.left) / rect.width));
+  state.foto.boxY = Math.max(0.05, Math.min(0.95, (e.clientY - rect.top) / rect.height));
+  renderFoto();
+});
+fotoSvg.addEventListener('pointerup', function(){ fotoDragBox = false; });
+
+function project(x, y, z, cx, cy) {
+  var cosY = Math.cos(state.cam.rotY), sinY = Math.sin(state.cam.rotY);
+  var cosX = Math.cos(state.cam.rotX), sinX = Math.sin(state.cam.rotX);
+  var xr = x*cosY - z*sinY, zr = x*sinY + z*cosY;
+  var yr = y*cosX - zr*sinX, zd = y*sinX + zr*cosX;
+  var f = 600 * state.cam.dist, persp = f / (f + zd);
+  return [cx + xr*persp, cy - yr*persp, zd];
+}
+
+function showWalls() {
+  if (state.pareti === 'auto') return {
+    sx: ['nicchia','3lati','sopravasca','angolo','semicirc'].indexOf(state.tipo) >= 0,
+    back: ['nicchia','3lati','sopravasca','angolo','semicirc'].indexOf(state.tipo) >= 0,
+    dx: ['nicchia','3lati','semicirc'].indexOf(state.tipo) >= 0
+  };
+  if (state.pareti === '3') return { sx: true, back: true, dx: true };
+  if (state.pareti === '2') return { sx: true, back: true, dx: false };
+  if (state.pareti === '1') return { sx: false, back: true, dx: false };
+  return { sx: false, back: false, dx: false };
+}
+
+function renderIso() {
+  var W = state.w, D = state.d, H = state.h;
+  var cx = 160, cy = 160;
+  var sc = 0.42 / state.cam.dist;
+  function pt(x, y, z) { var p = project((x-W/2)*sc, y*sc, (z-D/2)*sc, cx, cy); return [p[0], p[1], p[2]]; }
+  var profCol = PROF_COL[state.profilo], vetroCol = VETRO_COL[state.vetroTipo], piaCol = PIATTO_COL[state.coloraPiatto];
+  var walls = showWalls(), items = [];
+  function add(z, h) { items.push({ z: z, h: h }); }
+  var svg = '<rect x="0" y="0" width="320" height="240" fill="#0A1818"/>';
+  for (var gi = 0; gi < 9; gi++) {
+    svg += '<line x1="0" y1="'+(gi*30)+'" x2="320" y2="'+(gi*30)+'" stroke="#152828" stroke-width="0.5"/>';
+    svg += '<line x1="'+(gi*40)+'" y1="0" x2="'+(gi*40)+'" y2="240" stroke="#152828" stroke-width="0.5"/>';
+  }
+  var wallH = H + 30;
+  function wall(x1, z1, x2, z2) {
+    var a = pt(x1, 0, z1), b = pt(x2, 0, z2), c = pt(x2, wallH, z2), d = pt(x1, wallH, z1);
+    var cz = (a[2]+b[2]+c[2]+d[2])/4;
+    add(cz - 0.01, '<polygon points="'+a[0]+','+a[1]+' '+b[0]+','+b[1]+' '+c[0]+','+c[1]+' '+d[0]+','+d[1]+'" fill="#1F3838" stroke="#28A0A0" stroke-width="0.6" fill-opacity="0.55"/>');
+  }
+  if (walls.sx) wall(0,-10,0,D+10);
+  if (walls.back) wall(0,-10,W+10,-10);
+  if (walls.dx) wall(W,-10,W,D+10);
+  var altP = 8;
+  var pT = [pt(0,altP,0), pt(W,altP,0), pt(W,altP,D), pt(0,altP,D)];
+  var ptz = (pT[0][2]+pT[1][2]+pT[2][2]+pT[3][2])/4;
+  add(ptz, '<polygon points="'+pT[0][0]+','+pT[0][1]+' '+pT[1][0]+','+pT[1][1]+' '+pT[2][0]+','+pT[2][1]+' '+pT[3][0]+','+pT[3][1]+'" fill="'+piaCol+'" stroke="#1F3838" stroke-width="0.5"/>');
+  var fP = [pt(0,0,D), pt(W,0,D), pt(W,altP,D), pt(0,altP,D)];
+  var fpz = (fP[0][2]+fP[1][2]+fP[2][2]+fP[3][2])/4;
+  add(fpz - 0.5, '<polygon points="'+fP[0][0]+','+fP[0][1]+' '+fP[1][0]+','+fP[1][1]+' '+fP[2][0]+','+fP[2][1]+' '+fP[3][0]+','+fP[3][1]+'" fill="'+piaCol+'" fill-opacity="0.55" stroke="#1F3838" stroke-width="0.4"/>');
+  var sx_ = pt(W/2, altP+0.5, D/2);
+  add(sx_[2]-1, '<circle cx="'+sx_[0]+'" cy="'+sx_[1]+'" r="3" fill="#28A0A0"/><circle cx="'+sx_[0]+'" cy="'+sx_[1]+'" r="1.5" fill="#0A1818"/>');
+  function panel(x1, z1, x2, z2, hStart, hEnd, opening) {
+    opening = opening || 0;
+    var t = 1.2, baseY = hStart + altP, topY = hEnd + altP;
+    var p1 = pt(x1,baseY,z1), p2 = pt(x2,baseY,z2), p3 = pt(x2,topY,z2), p4 = pt(x1,topY,z1);
+    if (opening !== 0) {
+      var len = Math.hypot(x2-x1, z2-z1), ang = Math.atan2(z2-z1, x2-x1), newAng = ang + opening*Math.PI/2;
+      var nx2 = x1 + Math.cos(newAng)*len, nz2 = z1 + Math.sin(newAng)*len;
+      p2 = pt(nx2,baseY,nz2); p3 = pt(nx2,topY,nz2);
+    }
+    var cz = (p1[2]+p2[2]+p3[2]+p4[2])/4;
+    add(cz, '<polygon points="'+p1[0]+','+p1[1]+' '+p2[0]+','+p2[1]+' '+p3[0]+','+p3[1]+' '+p4[0]+','+p4[1]+'" fill="'+vetroCol.fill+'" fill-opacity="'+(1-vetroCol.op)+'" stroke="'+profCol+'" stroke-width="'+t+'"/>');
+  }
+  if (state.tipo === 'nicchia') {
+    if (state.apertura === 'fissa') panel(0,D,W,D,0,H);
+    else { var sX = W*0.55; panel(0,D,sX,D,0,H); panel(sX,D,W,D,0,H, state.apertura==='scorrevole'?-0.3:0.35); }
+  } else if (state.tipo === 'angolo') { panel(0,D,W,D,0,H); panel(W,0,W,D,0,H,0.35); }
+  else if (state.tipo === '3lati') { panel(0,0,0,D,0,H); var sX2 = W*0.5; panel(0,D,sX2,D,0,H); panel(sX2,D,W,D,0,H,0.35); panel(W,0,W,D,0,H); }
+  else if (state.tipo === 'walkin') panel(0,D,W*0.7,D,0,H);
+  else if (state.tipo === 'sopravasca') { var Hv = H*0.7; panel(0,D,W*0.5,D,0,Hv); panel(W*0.5,D,W,D,0,Hv,0.3); }
+  else if (state.tipo === 'semicirc') {
+    var seg = 6, r = Math.min(W,D)/2;
+    for (var si = 0; si < seg; si++) {
+      var a1 = (si/seg)*Math.PI*0.5, a2 = ((si+1)/seg)*Math.PI*0.5;
+      panel(r*Math.sin(a1), D - r*Math.cos(a1), r*Math.sin(a2), D - r*Math.cos(a2), 0, H);
+    }
+  }
+  if (state.apertura !== 'fissa' && state.apertura !== 'pivot' && state.apertura !== 'libro' && state.tipo !== 'walkin') {
+    var hX = W*0.55, hZ = D;
+    if (state.tipo === 'angolo') { hX = W; hZ = 0; }
+    else if (state.tipo === '3lati' || state.tipo === 'sopravasca') { hX = W*0.5; hZ = D; }
+    var handleAng = state.apertura === 'scorrevole' ? -0.3 : 0.35;
+    var hLen = state.tipo === 'angolo' ? D : W*0.45;
+    var baseAng = state.tipo === 'angolo' ? Math.PI/2 : 0, realAng = baseAng + handleAng*Math.PI/2;
+    var handX = hX + Math.cos(realAng)*(hLen*0.85), handZ = hZ + Math.sin(realAng)*(hLen*0.85);
+    var h1 = pt(handX, H*0.5+altP, handZ);
+    add(h1[2]-2, '<rect x="'+(h1[0]-1.4)+'" y="'+(h1[1]-10)+'" width="2.8" height="20" rx="1.2" fill="'+profCol+'" stroke="#0A1818" stroke-width="0.4"/>');
+  }
+  items.sort(function(a,b){ return b.z-a.z; });
+  for (var ii = 0; ii < items.length; ii++) svg += items[ii].h;
+  svg += '<text x="160" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#28A0A0" letter-spacing="1">'+TIPO_NOMI[state.tipo].toUpperCase()+'</text>';
+  svg += '<text x="160" y="34" text-anchor="middle" font-size="9" font-weight="500" fill="#88928F" font-family="monospace">'+W+' x '+D+' x '+H+' cm</text>';
+  isoSvg.innerHTML = svg;
+}
+
+function renderPlan() {
+  var W = state.w, D = state.d;
+  var cx = 160 + state.plan.panX, cy = 120 + state.plan.panY;
+  var sc = 0.55 * state.plan.zoom;
+  var w2 = W * sc / 2, d2 = D * sc / 2;
+  var profCol = PROF_COL[state.profilo], vetroCol = VETRO_COL[state.vetroTipo], piaCol = PIATTO_COL[state.coloraPiatto];
+  var walls = showWalls();
+  var svg = '<rect x="0" y="0" width="320" height="240" fill="#0A1818"/>';
+  var gz = 20 * state.plan.zoom;
+  for (var i = 0; i < 20; i++) {
+    var gx = (state.plan.panX % gz) + i*gz;
+    var gy = (state.plan.panY % gz) + i*gz;
+    svg += '<line x1="'+gx+'" y1="0" x2="'+gx+'" y2="240" stroke="#152828" stroke-width="0.5"/>';
+    svg += '<line x1="0" y1="'+gy+'" x2="320" y2="'+gy+'" stroke="#152828" stroke-width="0.5"/>';
+  }
+  var wW = 5 * state.plan.zoom;
+  if (walls.sx) svg += '<rect x="'+(cx-w2-wW)+'" y="'+(cy-d2-wW)+'" width="'+wW+'" height="'+(D*sc+wW*2)+'" fill="#1F3838" stroke="#28A0A0" stroke-width="0.4"/>';
+  if (walls.dx) svg += '<rect x="'+(cx+w2)+'" y="'+(cy-d2-wW)+'" width="'+wW+'" height="'+(D*sc+wW*2)+'" fill="#1F3838" stroke="#28A0A0" stroke-width="0.4"/>';
+  if (walls.back) svg += '<rect x="'+(cx-w2-wW)+'" y="'+(cy-d2-wW)+'" width="'+(W*sc+wW*2)+'" height="'+wW+'" fill="#1F3838" stroke="#28A0A0" stroke-width="0.4"/>';
+  svg += '<rect x="'+(cx-w2)+'" y="'+(cy-d2)+'" width="'+(W*sc)+'" height="'+(D*sc)+'" fill="'+piaCol+'" fill-opacity="0.55" stroke="#88928F" stroke-width="0.5"/>';
+  svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(4*state.plan.zoom)+'" fill="none" stroke="#28A0A0" stroke-width="0.7"/>';
+  svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(1.8*state.plan.zoom)+'" fill="#28A0A0"/>';
+  function vline(x1,y1,x2,y2, openArc) {
+    var sw = 3.5 * Math.sqrt(state.plan.zoom);
+    var s = '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+vetroCol.fill+'" stroke-width="'+sw+'" opacity="'+(1-vetroCol.op+0.4)+'"/>';
+    s += '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+profCol+'" stroke-width="'+(1*Math.sqrt(state.plan.zoom))+'"/>';
+    if (openArc) {
+      var len = Math.hypot(x2-x1,y2-y1), aS = Math.atan2(y2-y1,x2-x1), aE = aS + openArc;
+      var xe = x1 + Math.cos(aE)*len, ye = y1 + Math.sin(aE)*len;
+      s += '<line x1="'+x1+'" y1="'+y1+'" x2="'+xe+'" y2="'+ye+'" stroke="'+vetroCol.fill+'" stroke-width="'+sw+'" opacity="'+(1-vetroCol.op+0.4)+'"/>';
+      s += '<line x1="'+x1+'" y1="'+y1+'" x2="'+xe+'" y2="'+ye+'" stroke="'+profCol+'" stroke-width="'+(1*Math.sqrt(state.plan.zoom))+'"/>';
+      s += '<path d="M '+(x1+Math.cos(aS)*len)+' '+(y1+Math.sin(aS)*len)+' A '+len+' '+len+' 0 0 '+(openArc>0?0:1)+' '+xe+' '+ye+'" fill="none" stroke="#28A0A0" stroke-width="0.5" stroke-dasharray="2 2" opacity="0.6"/>';
+    }
+    return s;
+  }
+  var ay = cy + d2, t = state.tipo;
+  if (t === 'nicchia') {
+    if (state.apertura === 'fissa') svg += vline(cx-w2, ay, cx+w2, ay);
+    else { var split = cx - w2 + W*sc*0.55; svg += vline(cx-w2, ay, split, ay); svg += vline(split, ay, cx+w2, ay, state.apertura === 'scorrevole' ? 0 : -Math.PI/2 * 0.7); }
+  } else if (t === 'angolo') { svg += vline(cx-w2, ay, cx+w2, ay); svg += vline(cx-w2, cy-d2, cx-w2, cy+d2, -Math.PI/2 * 0.7); }
+  else if (t === '3lati') { var sp2 = cx - w2 + W*sc*0.5; svg += vline(cx-w2, ay, sp2, ay); svg += vline(sp2, ay, cx+w2, ay, -Math.PI/2 * 0.7); svg += vline(cx-w2, cy-d2, cx-w2, cy+d2); svg += vline(cx+w2, cy-d2, cx+w2, cy+d2); }
+  else if (t === 'walkin') svg += vline(cx-w2, ay, cx-w2 + W*sc*0.7, ay);
+  else if (t === 'sopravasca') { var sp3 = cx - w2 + W*sc*0.5; svg += vline(cx-w2, ay, sp3, ay); svg += vline(sp3, ay, cx+w2, ay, -Math.PI/2 * 0.6); }
+  svg += '<line x1="'+(cx-w2)+'" y1="'+(cy-d2-15)+'" x2="'+(cx+w2)+'" y2="'+(cy-d2-15)+'" stroke="#88928F" stroke-width="0.5"/>';
+  svg += '<text x="'+cx+'" y="'+(cy-d2-19)+'" text-anchor="middle" font-size="11" fill="#28A0A0" font-family="monospace" font-weight="700">'+W+' cm</text>';
+  svg += '<text x="'+(cx+w2+18)+'" y="'+(cy+4)+'" font-size="11" fill="#28A0A0" font-family="monospace" font-weight="700">'+D+' cm</text>';
+  planSvg.innerHTML = svg;
+}
+
+function renderDraw() {
+  var d = state.draw, sc = d.scale;
+  var svg = '<rect x="0" y="0" width="320" height="320" fill="#0A1818"/>';
+  if (d.showGrid) {
+    var gridPx = 5 * sc;
+    for (var i = 0; i < 320/gridPx; i++) {
+      svg += '<line x1="'+(i*gridPx)+'" y1="0" x2="'+(i*gridPx)+'" y2="320" stroke="#152828" stroke-width="0.5"/>';
+      svg += '<line x1="0" y1="'+(i*gridPx)+'" x2="320" y2="'+(i*gridPx)+'" stroke="#152828" stroke-width="0.5"/>';
+    }
+    var bigGrid = 50 * sc;
+    for (var bi = 0; bi < 320/bigGrid; bi++) {
+      svg += '<line x1="'+(bi*bigGrid)+'" y1="0" x2="'+(bi*bigGrid)+'" y2="320" stroke="#1F3838" stroke-width="1"/>';
+      svg += '<line x1="0" y1="'+(bi*bigGrid)+'" x2="320" y2="'+(bi*bigGrid)+'" stroke="#1F3838" stroke-width="1"/>';
+    }
+    svg += '<text x="3" y="11" font-size="8" fill="#28A0A0" font-family="monospace">griglia 5cm . 1cm = '+sc.toFixed(1)+'px</text>';
+  }
+  for (var w = 0; w < d.walls.length; w++) {
+    var wl = d.walls[w], th = wl.th * sc;
+    var dx = wl.x2 - wl.x1, dy = wl.y2 - wl.y1, len = Math.hypot(dx, dy);
+    if (len < 1) continue;
+    var nx = -dy/len * th/2, ny = dx/len * th/2;
+    var pts = (wl.x1+nx)+','+(wl.y1+ny)+' '+(wl.x2+nx)+','+(wl.y2+ny)+' '+(wl.x2-nx)+','+(wl.y2-ny)+' '+(wl.x1-nx)+','+(wl.y1-ny);
+    svg += '<polygon points="'+pts+'" fill="#1F3838" stroke="#28A0A0" stroke-width="0.6"/>';
+    var midX = (wl.x1+wl.x2)/2 + nx*1.5, midY = (wl.y1+wl.y2)/2 + ny*1.5;
+    var lenCm = Math.round(len/sc);
+    svg += '<text x="'+midX+'" y="'+midY+'" text-anchor="middle" font-size="9" font-weight="700" fill="#28A0A0">'+lenCm+'cm</text>';
+  }
+  if (d.pendingPoint) {
+    svg += '<circle cx="'+d.pendingPoint.x+'" cy="'+d.pendingPoint.y+'" r="6" fill="#28A0A0" stroke="#fff" stroke-width="2"/>';
+    svg += '<text x="'+(d.pendingPoint.x+10)+'" y="'+(d.pendingPoint.y-8)+'" font-size="10" font-weight="700" fill="#28A0A0">P1</text>';
+  }
+  if (d.box) {
+    var bw = state.w * sc, bh = state.d * sc;
+    var bx = d.box.x - bw/2, by = d.box.y - bh/2;
+    var profC = PROF_COL[state.profilo], vetC = VETRO_COL[state.vetroTipo], piaC = PIATTO_COL[state.coloraPiatto];
+    svg += '<rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="'+bh+'" fill="'+piaC+'" fill-opacity="0.55" stroke="#88928F" stroke-width="0.6"/>';
+    svg += '<line x1="'+bx+'" y1="'+(by+bh)+'" x2="'+(bx+bw)+'" y2="'+(by+bh)+'" stroke="'+vetC.fill+'" stroke-width="3.5" opacity="0.7"/>';
+    svg += '<line x1="'+bx+'" y1="'+(by+bh)+'" x2="'+(bx+bw)+'" y2="'+(by+bh)+'" stroke="'+profC+'" stroke-width="1"/>';
+    svg += '<text x="'+(bx+bw/2)+'" y="'+(by-4)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#28A0A0">'+state.w+'cm</text>';
+    svg += '<text x="'+(bx+bw+5)+'" y="'+(by+bh/2+3)+'" font-size="10" font-weight="800" fill="#28A0A0">'+state.d+'cm</text>';
+    svg += '<circle cx="'+(d.box.x)+'" cy="'+(d.box.y)+'" r="3" fill="#28A0A0"/>';
+  }
+  svg += '<rect x="6" y="296" width="160" height="18" rx="3" fill="#0D1F1F" fill-opacity="0.85" stroke="#28A0A0" stroke-width="0.4"/>';
+  svg += '<text x="12" y="308" font-size="9" fill="#28A0A0" font-family="monospace">Muri: '+d.walls.length+' . Sp: '+d.wallTh+'cm</text>';
+  drawSvg.innerHTML = svg;
+}
+
+function renderFoto() {
+  var f = state.foto;
+  if (!f.dataUrl) return;
+  var ar = f.w / f.h, vbW = 320, vbH = 240, iw, ih, ix, iy;
+  if (ar > vbW/vbH) { iw = vbW; ih = vbW/ar; ix = 0; iy = (vbH-ih)/2; }
+  else { ih = vbH; iw = vbH*ar; ix = (vbW-iw)/2; iy = 0; }
+  var svg = '<image x="'+ix+'" y="'+iy+'" width="'+iw+'" height="'+ih+'" href="'+f.dataUrl+'" preserveAspectRatio="xMidYMid meet"/>';
+  svg += '<rect x="0" y="0" width="320" height="240" fill="#0D1F1F" fill-opacity="0.15"/>';
+  if (f.p1) { var p1x = f.p1.x*320, p1y = f.p1.y*240; svg += '<circle cx="'+p1x+'" cy="'+p1y+'" r="10" fill="none" stroke="#28A0A0" stroke-width="2"/><circle cx="'+p1x+'" cy="'+p1y+'" r="3" fill="#28A0A0"/><text x="'+(p1x+14)+'" y="'+(p1y+4)+'" font-size="11" font-weight="700" fill="#28A0A0">A</text>'; }
+  if (f.p2) {
+    var p2x = f.p2.x*320, p2y = f.p2.y*240;
+    svg += '<circle cx="'+p2x+'" cy="'+p2y+'" r="10" fill="none" stroke="#28A0A0" stroke-width="2"/><circle cx="'+p2x+'" cy="'+p2y+'" r="3" fill="#28A0A0"/><text x="'+(p2x+14)+'" y="'+(p2y+4)+'" font-size="11" font-weight="700" fill="#28A0A0">B</text>';
+    var p1x2 = f.p1.x*320, p1y2 = f.p1.y*240;
+    svg += '<line x1="'+p1x2+'" y1="'+p1y2+'" x2="'+p2x+'" y2="'+p2y+'" stroke="#28A0A0" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    var midX = (p1x2+p2x)/2, midY = (p1y2+p2y)/2;
+    svg += '<rect x="'+(midX-22)+'" y="'+(midY-10)+'" width="44" height="18" rx="3" fill="#0D1F1F" stroke="#28A0A0" stroke-width="0.6"/>';
+    svg += '<text x="'+midX+'" y="'+(midY+3)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#28A0A0">'+f.refDist+' cm</text>';
+    if (f.showBox) {
+      var pixDist = Math.hypot(p2x-p1x2, p2y-p1y2), pxPerCm = pixDist / f.refDist;
+      var bw = state.w * pxPerCm, bh = state.h * pxPerCm;
+      var bx = f.boxX * 320, by = f.boxY * 240, bx0 = bx - bw/2, by0 = by - bh;
+      var profC = PROF_COL[state.profilo], vetC = VETRO_COL[state.vetroTipo];
+      svg += '<rect x="'+bx0+'" y="'+by0+'" width="'+bw+'" height="'+bh+'" fill="'+vetC.fill+'" fill-opacity="'+(1-vetC.op-0.1)+'" stroke="'+profC+'" stroke-width="2"/>';
+      var splitX = bx0 + bw*0.55;
+      svg += '<line x1="'+splitX+'" y1="'+by0+'" x2="'+splitX+'" y2="'+(by0+bh)+'" stroke="'+profC+'" stroke-width="1.2"/>';
+      svg += '<rect x="'+(splitX + bw*0.32)+'" y="'+(by0+bh*0.45)+'" width="2.5" height="18" rx="1" fill="'+profC+'"/>';
+      svg += '<rect x="'+bx0+'" y="'+(by0+bh-3)+'" width="'+bw+'" height="3" fill="'+PIATTO_COL[state.coloraPiatto]+'" stroke="#1F3838" stroke-width="0.4"/>';
+      svg += '<text x="'+(bx0+bw/2)+'" y="'+(by0+bh+18)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#28A0A0">'+state.w+' cm</text>';
+      svg += '<text x="'+(bx0-12)+'" y="'+(by0+bh/2)+'" text-anchor="end" font-size="10" font-weight="700" fill="#28A0A0">'+state.h+' cm</text>';
+      svg += '<circle cx="'+bx+'" cy="'+by+'" r="5" fill="#28A0A0" stroke="#fff" stroke-width="1.5"/>';
+    }
+  }
+  fotoSvg.innerHTML = svg;
+}
+
+function renderDist() {
+  var W = state.w/100, D = state.d/100, H = state.h/100;
+  var mq = 0, ml = 0;
+  if (state.tipo === 'nicchia') { mq = W*H; ml = 2*H+W; }
+  else if (state.tipo === 'angolo') { mq = (W+D)*H; ml = 3*H+W+D; }
+  else if (state.tipo === '3lati') { mq = (W+2*D)*H; ml = 4*H+W+2*D; }
+  else if (state.tipo === 'walkin') { mq = W*H*0.7; ml = 2*H+W*0.7; }
+  else if (state.tipo === 'semicirc') { mq = Math.PI*Math.min(W,D)/2*H; ml = 2*H+Math.PI*Math.min(W,D)/2; }
+  else if (state.tipo === 'sopravasca') { mq = W*H*0.7; ml = 2*H*0.7+W; }
+  var pVetro = mq * PREZZI.vetro_mq[state.vetroSp];
+  var pAnti = state.anti ? mq * PREZZI.anticalc_mq : 0;
+  var pProf = ml * PREZZI.profili_ml[state.profilo];
+  var pCer = PREZZI.cerniere[state.apertura];
+  var pBin = PREZZI.binario[state.apertura];
+  var pMan = state.apertura === 'fissa' ? 0 : PREZZI.maniglia;
+  var pPiatto = W*D * (PREZZI.piatto_mq[state.piatto] || 200);
+  var pScar = PREZZI.scarico_t[state.scarico];
+  var tot = pVetro+pAnti+pProf+pCer+pBin+pMan+pPiatto+pScar;
+  var h = '';
+  function row(lbl, det, val) {
+    return '<div class="dist-row"><span>'+lbl+(det?' <span class="det">'+det+'</span>':'')+'</span><span class="val">'+Math.round(val).toLocaleString('it-IT')+' EUR</span></div>';
+  }
+  h += row('Vetro '+state.vetroSp+'mm '+VETRO_NOMI[state.vetroTipo], mq.toFixed(2)+' m2', pVetro);
+  if (pAnti > 0) h += row('Anti-calcare nano', mq.toFixed(2)+' m2', pAnti);
+  h += row('Profili '+PROF_NOMI[state.profilo], ml.toFixed(1)+' ml', pProf);
+  if (pCer > 0) h += row('Cerniere ' + AP_NOMI[state.apertura], '', pCer);
+  if (pBin > 0) h += row('Binario scorrevole', state.w+' cm', pBin);
+  if (pMan > 0) h += row('Maniglia', '', pMan);
+  var pp = catalogoFind(state.piattoMarca);
+  h += row('Piatto '+(pp?pp.brand+' '+pp.model.split(' - ')[0]:PIATTO_MAT_NOMI[state.piatto])+' '+PIATTO_COL_NOMI[state.coloraPiatto], (W*D).toFixed(2)+' m2', pPiatto);
+  h += row('Scarico ' + state.scarico, '', pScar);
+  document.getElementById('dist').innerHTML = h;
+  document.getElementById('totale').textContent = Math.round(tot).toLocaleString('it-IT') + ' EUR';
+}
+
+renderSteps();
+renderIso();
+renderPlan();
+renderDraw();
+
+// =============================================================
+// MASTRO Widget Bridge
+// =============================================================
+window.MASTRO_WIDGET_ID = 'boxdoccia';
+window.mastroEmit = function(type, payload){
+  try { window.parent.postMessage(Object.assign({type:type, widgetId:'boxdoccia'}, payload!==undefined?{patch:payload}:{}), '*'); } catch(e){}
+};
+window.mastroChange = function(patch){ window.mastroEmit('widget:change', patch); };
+window.mastroReady = function(){ try { window.parent.postMessage({type:'widget:ready', widgetId:'boxdoccia'}, '*'); } catch(e){} };
+window.mastroError = function(err){ try { window.parent.postMessage({type:'widget:error', widgetId:'boxdoccia', error:String(err)}, '*'); } catch(e){} };
+
+window.mastroSerializeState = function(){
+  return {
+    boxdoccia_tipo: state.tipo,
+    boxdoccia_apertura: state.apertura,
+    boxdoccia_pareti: state.pareti,
+    boxdoccia_w: state.w,
+    boxdoccia_d: state.d,
+    boxdoccia_h: state.h,
+    boxdoccia_vetro_tipo: state.vetroTipo,
+    boxdoccia_vetro_sp: state.vetroSp,
+    boxdoccia_anti: state.anti,
+    boxdoccia_profilo: state.profilo,
+    boxdoccia_piatto_marca: state.piattoMarca,
+    boxdoccia_piatto: state.piatto,
+    boxdoccia_colora_piatto: state.coloraPiatto,
+    boxdoccia_alt_piatto: state.altPiatto,
+    boxdoccia_scarico: state.scarico,
+    boxdoccia_walls: state.draw.walls,
+    boxdoccia_box_pos: state.draw.box,
+    boxdoccia_wall_th: state.draw.wallTh,
+    boxdoccia_foto_dataurl: state.foto.dataUrl,
+    boxdoccia_foto_p1: state.foto.p1,
+    boxdoccia_foto_p2: state.foto.p2,
+    boxdoccia_foto_ref: state.foto.refDist
+  };
+};
+
+window.mastroOnInit = function(payload){
+  if (!payload) return;
+  try {
+    if (payload.boxdoccia_tipo) state.tipo = payload.boxdoccia_tipo;
+    if (payload.boxdoccia_apertura) state.apertura = payload.boxdoccia_apertura;
+    if (payload.boxdoccia_pareti) state.pareti = payload.boxdoccia_pareti;
+    if (payload.boxdoccia_w !== undefined) state.w = payload.boxdoccia_w;
+    if (payload.boxdoccia_d !== undefined) state.d = payload.boxdoccia_d;
+    if (payload.boxdoccia_h !== undefined) state.h = payload.boxdoccia_h;
+    if (payload.boxdoccia_vetro_tipo) state.vetroTipo = payload.boxdoccia_vetro_tipo;
+    if (payload.boxdoccia_vetro_sp !== undefined) state.vetroSp = payload.boxdoccia_vetro_sp;
+    if (payload.boxdoccia_anti !== undefined) state.anti = !!payload.boxdoccia_anti;
+    if (payload.boxdoccia_profilo) state.profilo = payload.boxdoccia_profilo;
+    if (payload.boxdoccia_piatto_marca) state.piattoMarca = payload.boxdoccia_piatto_marca;
+    if (payload.boxdoccia_piatto) state.piatto = payload.boxdoccia_piatto;
+    if (payload.boxdoccia_colora_piatto) state.coloraPiatto = payload.boxdoccia_colora_piatto;
+    if (payload.boxdoccia_alt_piatto) state.altPiatto = payload.boxdoccia_alt_piatto;
+    if (payload.boxdoccia_scarico) state.scarico = payload.boxdoccia_scarico;
+    if (payload.boxdoccia_walls) state.draw.walls = payload.boxdoccia_walls;
+    if (payload.boxdoccia_box_pos) state.draw.box = payload.boxdoccia_box_pos;
+    if (payload.boxdoccia_wall_th !== undefined) state.draw.wallTh = payload.boxdoccia_wall_th;
+    if (payload.boxdoccia_foto_dataurl) {
+      state.foto.dataUrl = payload.boxdoccia_foto_dataurl;
+      state.foto.p1 = payload.boxdoccia_foto_p1 || null;
+      state.foto.p2 = payload.boxdoccia_foto_p2 || null;
+      if (payload.boxdoccia_foto_ref) state.foto.refDist = payload.boxdoccia_foto_ref;
+      var img = new Image();
+      img.onload = function(){ state.foto.w = img.width; state.foto.h = img.height; if (state.foto.p1 && state.foto.p2) document.getElementById('foto-controls').style.display = 'block'; document.getElementById('foto-empty').style.display = 'none'; document.getElementById('foto-canvas').style.display = 'block'; renderFoto(); };
+      img.src = state.foto.dataUrl;
+    }
+    if (payload.mastro_catalogo_piatti && Array.isArray(payload.mastro_catalogo_piatti) && payload.mastro_catalogo_piatti.length > 0) {
+      CATALOGO_PIATTI = payload.mastro_catalogo_piatti;
+    }
+    renderSteps(); renderIso(); renderPlan(); renderDraw();
+  } catch(e) { window.mastroError(e); }
+};
+
+window.addEventListener('message', function(e) {
+  if (!e.data || typeof e.data !== 'object') return;
+  if (e.data.type === 'host:init' && typeof window.mastroOnInit === 'function') {
+    try { window.mastroOnInit(e.data.payload || {}); } catch(err) { window.mastroError(err); }
+  }
+});
+
+var lastSer = null;
+setInterval(function(){
+  try {
+    var cur = JSON.stringify(window.mastroSerializeState());
+    if (cur !== lastSer) {
+      lastSer = cur;
+      window.mastroChange(JSON.parse(cur));
+    }
+  } catch(e){}
+}, 1500);
+
+setTimeout(function(){ window.mastroReady(); }, 200);
+
+})();
+
+</script>
+</body>
+</html>
