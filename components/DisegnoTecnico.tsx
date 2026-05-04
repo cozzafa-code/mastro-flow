@@ -5956,18 +5956,32 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <input type="number" value={shapePicker.H} onChange={(e) => setShapePicker({ ...shapePicker, H: e.target.value })}
                                               style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
                                           </div>
-                                          <div style={{ gridColumn: "1 / span 2" }}>
-                                            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
-                                              {shapePicker.shape === "casetta" && "ALT. COLMO H2 (mm dal punto piu alto dei lati)"}
-                                              {shapePicker.shape === "arco_tutto_sesto" && "FRECCIA = L/2 (auto, semicerchio)"}
-                                              {shapePicker.shape === "arco_ribassato" && "FRECCIA (mm, < L/2 per essere ribassato)"}
-                                              {shapePicker.shape === "arco_acuto" && "FRECCIA = altezza punta (mm)"}
-                                              {shapePicker.shape === "arco_rialzato" && "FRECCIA (mm, > L/2 per essere rialzato)"}
-                                              {shapePicker.shape === "trapezio" && "ALT. DX H2 (mm)"}
+                                          {/* Casella H2 dinamica: tutto sesto la nasconde */}
+                                          {shapePicker.shape !== "arco_tutto_sesto" && (
+                                            <div style={{ gridColumn: "1 / span 2" }}>
+                                              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
+                                                {shapePicker.shape === "casetta" && "ALT. COLMO H2 (mm dal punto piu alto dei lati)"}
+                                                {shapePicker.shape === "arco_ribassato" && `FRECCIA (mm) — deve essere < ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
+                                                {shapePicker.shape === "arco_acuto" && "ALTEZZA PUNTA (mm)"}
+                                                {shapePicker.shape === "arco_rialzato" && `FRECCIA (mm) — deve essere > ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
+                                                {shapePicker.shape === "trapezio" && "ALT. DX H2 (mm)"}
+                                              </div>
+                                              <input type="number" value={shapePicker.H2} onChange={(e) => setShapePicker({ ...shapePicker, H2: e.target.value })}
+                                                style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                              {/* Hint visivo per archi con vincoli */}
+                                              {shapePicker.shape === "arco_ribassato" && parseFloat(shapePicker.H2) >= parseFloat(shapePicker.L)/2 && (
+                                                <div style={{ fontSize: 10, color: "#DC4444", marginTop: 4, fontWeight: 700 }}>⚠ Per essere ribassato, freccia &lt; {Math.round(parseFloat(shapePicker.L)/2)} mm</div>
+                                              )}
+                                              {shapePicker.shape === "arco_rialzato" && parseFloat(shapePicker.H2) <= parseFloat(shapePicker.L)/2 && (
+                                                <div style={{ fontSize: 10, color: "#DC4444", marginTop: 4, fontWeight: 700 }}>⚠ Per essere rialzato, freccia &gt; {Math.round(parseFloat(shapePicker.L)/2)} mm</div>
+                                              )}
                                             </div>
-                                            <input type="number" value={shapePicker.H2} onChange={(e) => setShapePicker({ ...shapePicker, H2: e.target.value })}
-                                              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
-                                          </div>
+                                          )}
+                                          {shapePicker.shape === "arco_tutto_sesto" && (
+                                            <div style={{ gridColumn: "1 / span 2", padding: "10px 12px", background: "#EFF6FF", borderRadius: 8, fontSize: 11, color: "#2563EB", fontWeight: 700 }}>
+                                              ℹ Freccia automatica = {Math.round(parseFloat(shapePicker.L)/2) || "L/2"} mm (semicerchio perfetto)
+                                            </div>
+                                          )}
                                         </div>
                                         {/* Bottoni */}
                                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -5976,8 +5990,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           <div onClick={() => {
                                             const Lmm = parseFloat(shapePicker.L);
                                             const Hmm = parseFloat(shapePicker.H);
-                                            const H2mm = parseFloat(shapePicker.H2);
-                                            if (!Lmm || !Hmm || (shapePicker.shape !== "casetta" && !H2mm)) { alert("Inserisci tutte le misure"); return; }
+                                            let H2mm = parseFloat(shapePicker.H2);
+                                            if (!Lmm || !Hmm) { alert("Inserisci base e altezza"); return; }
+                                            // Tutto sesto: freccia automatica = L/2 (sovrascrive H2 se mancante)
+                                            if (shapePicker.shape === "arco_tutto_sesto") H2mm = Lmm / 2;
+                                            // Validazioni specifiche
+                                            if (shapePicker.shape === "casetta" && (!H2mm || H2mm <= 0)) { alert("Inserisci altezza colmo"); return; }
+                                            if (shapePicker.shape === "trapezio" && (!H2mm || H2mm <= 0)) { alert("Inserisci altezza DX"); return; }
+                                            if (shapePicker.shape === "arco_ribassato") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                              if (H2mm >= Lmm / 2) { alert("Per arco ribassato la freccia deve essere < L/2 = " + (Lmm/2) + " mm"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_rialzato") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                              if (H2mm <= Lmm / 2) { alert("Per arco rialzato la freccia deve essere > L/2 = " + (Lmm/2) + " mm"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_acuto") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci altezza punta"); return; }
+                                            }
                                             // Per casetta H2 puo essere anche 0 per fare un rettangolo, ma normalmente >0
                                             const pxPerMm = fW / (realW || 1200);
                                             const Lpx = Math.round(Lmm * pxPerMm);
