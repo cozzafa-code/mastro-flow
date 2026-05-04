@@ -1,3 +1,4 @@
+import { splitCellIntoAnte } from "@/lib/cad/anta-poly";
 // Last update: 2026-05-02 force redeploy
 "use client";
 // @ts-nocheck
@@ -2433,17 +2434,36 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         }
                                       }
                                     }
-                                    // Rimuovi solo le polyAnta nella stessa zona X
+                                    // Multi-click incrementale: conta polyAnta esistenti nella zona X, poi genera N+1
                                     const subMinX = Math.min(...cellPoly.map((p: number[]) => p[0]));
                                     const subMaxX = Math.max(...cellPoly.map((p: number[]) => p[0]));
-                                    const newEls = els.filter(e => {
-                                      if (e.type !== "polyAnta") return true;
+                                    const overlapping = els.filter(e => {
+                                      if (e.type !== "polyAnta") return false;
                                       const eMinX = Math.min(...e.poly.map((p: number[]) => p[0]));
                                       const eMaxX = Math.max(...e.poly.map((p: number[]) => p[0]));
-                                      // Rimuovi se si sovrappone alla zona cliccata
-                                      return !(eMinX < subMaxX - 5 && eMaxX > subMinX + 5);
+                                      return eMinX < subMaxX - 5 && eMaxX > subMinX + 5;
                                     });
-                                    newEls.push({ id: Date.now(), type: "polyAnta", poly: cellPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
+                                    const prevCount = overlapping.length;
+                                    const newCount = prevCount + 1;
+                                    const newEls = els.filter(e => !(e.type === "polyAnta" && overlapping.includes(e)));
+                                    if (newCount === 1) {
+                                      newEls.push({ id: Date.now(), type: "polyAnta", poly: cellPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
+                                    } else {
+                                      const cellVerts = cellPoly.map((p: number[]) => ({ x: p[0], y: p[1] }));
+                                      const slices = splitCellIntoAnte(cellVerts, "cell" + Date.now(), newCount);
+                                      slices.forEach((s, idx) => {
+                                        newEls.push({
+                                          id: Date.now() + idx,
+                                          type: "polyAnta",
+                                          poly: s.verts.map(v => [v.x, v.y]),
+                                          subType: drawMode === "place-porta" ? "porta" : undefined,
+                                          antaIdx: s.antaIdx,
+                                          antaCount: s.antaCount,
+                                          dir: s.dir,
+                                          riporto: s.riporto,
+                                        });
+                                      });
+                                    }
                                     setDW(newEls);
                                   } else if (drawMode === "place-vetro") {
                                     const newEls = els.filter(e => e.type !== "polyGlass");
