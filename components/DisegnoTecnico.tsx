@@ -931,6 +931,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
   const [telaioBatch, setTelaioBatch] = React.useState<{open: boolean, L: string, H: string, N: string} | null>(null);
+  const [shapePicker, setShapePicker] = React.useState<{open: boolean, shape: string | null, L: string, H: string, H2: string, N: string} | null>(null);
   const telaioTapRef = React.useRef<number>(0);
   const [savingTipologia, setSavingTipologia] = React.useState<{open: boolean, nome: string, categoria: string, n_ante: string, note: string} | null>(null);
   const [savingTipoStatus, setSavingTipoStatus] = React.useState<string>("");
@@ -3276,6 +3277,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     ];
                                     setDW([...els, ...refs]);
                                   }} style={bs()} title="Crea 4 punti di riferimento a distanza N mm dal centro telaio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><circle cx="12" cy="12" r="2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/><line x1="3" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="21" y2="12"/></svg>Rif.</div>
+                                  <div onClick={() => setShapePicker({ open: true, shape: null, L: "1500", H: "1400", H2: "800", N: "16" })} style={bs()} title="Forme preset: casetta, arco, trapezio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,10 21,21 3,21 3,10"/></svg>Forme</div>
                                 </div>
                                 </>}
 
@@ -5816,6 +5818,179 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         setTelaioBatch(null);
                                       }} style={{ padding: "10px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>Crea {telaioBatch.N} telaio{parseInt(telaioBatch.N)>1?"i":""}</div>
                                     </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Modal FORME PRESET (Casetta / Arco / Trapezio) */}
+                              {shapePicker && shapePicker.open && (
+                                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}
+                                  onClick={() => setShapePicker(null)}>
+                                  <div style={{ background: "#fff", borderRadius: 12, padding: 18, maxWidth: 460, width: "100%", maxHeight: "90vh", overflowY: "auto" }}
+                                    onClick={(e) => e.stopPropagation()}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4, color: "#1A9E73" }}>FORME PRESET</div>
+                                    <div style={{ fontSize: 11, color: "#888", marginBottom: 14 }}>Scegli forma e inserisci le misure in mm</div>
+                                    {/* Step 1: scelta forma */}
+                                    {!shapePicker.shape && (
+                                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                                        <div onClick={() => setShapePicker({ ...shapePicker, shape: "casetta" })}
+                                          style={{ border: "2px solid #1A9E73", borderRadius: 10, padding: 10, cursor: "pointer", textAlign: "center", background: "#F0FDF4" }}>
+                                          <svg width="80" height="70" viewBox="0 0 100 90" fill="none" stroke="#1A9E73" strokeWidth="3">
+                                            <polygon points="10,40 50,10 90,40 90,80 10,80" fill="#1A9E7320"/>
+                                          </svg>
+                                          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 4, color: "#1A9E73" }}>CASETTA</div>
+                                          <div style={{ fontSize: 9, color: "#666" }}>2 falde</div>
+                                        </div>
+                                        <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco" })}
+                                          style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 10, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
+                                          <svg width="80" height="70" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
+                                            <path d="M10,80 L10,40 Q10,10 50,10 Q90,10 90,40 L90,80 Z" fill="#2563EB20"/>
+                                          </svg>
+                                          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 4, color: "#2563EB" }}>ARCO</div>
+                                          <div style={{ fontSize: 9, color: "#666" }}>semicerchio</div>
+                                        </div>
+                                        <div onClick={() => setShapePicker({ ...shapePicker, shape: "trapezio" })}
+                                          style={{ border: "2px solid #D08008", borderRadius: 10, padding: 10, cursor: "pointer", textAlign: "center", background: "#FFFBEB" }}>
+                                          <svg width="80" height="70" viewBox="0 0 100 90" fill="none" stroke="#D08008" strokeWidth="3">
+                                            <polygon points="10,80 10,30 90,10 90,80" fill="#D0800820"/>
+                                          </svg>
+                                          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 4, color: "#D08008" }}>TRAPEZIO</div>
+                                          <div style={{ fontSize: 9, color: "#666" }}>1 falda</div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {/* Step 2: misure */}
+                                    {shapePicker.shape && (
+                                      <div>
+                                        <div onClick={() => setShapePicker({ ...shapePicker, shape: null })}
+                                          style={{ fontSize: 11, color: "#1A9E73", cursor: "pointer", marginBottom: 10, fontWeight: 700 }}>← Cambia forma</div>
+                                        {/* Anteprima grande */}
+                                        <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                                          {shapePicker.shape === "casetta" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#1A9E73" strokeWidth="2.5">
+                                              <polygon points="20,80 100,20 180,80 180,160 20,160" fill="#1A9E7315"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#1A9E73" fontWeight="700">L = base</text>
+                                              <text x="195" y="120" textAnchor="end" fontSize="11" fill="#1A9E73" fontWeight="700">H</text>
+                                              <text x="100" y="50" textAnchor="middle" fontSize="11" fill="#1A9E73" fontWeight="700">H2</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#2563EB" strokeWidth="2.5">
+                                              <path d="M20,160 L20,80 Q20,20 100,20 Q180,20 180,80 L180,160 Z" fill="#2563EB15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">L = base</text>
+                                              <text x="195" y="120" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
+                                              <text x="100" y="55" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "trapezio" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#D08008" strokeWidth="2.5">
+                                              <polygon points="20,160 20,80 180,30 180,160" fill="#D0800815"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#D08008" fontWeight="700">L = base</text>
+                                              <text x="10" y="120" textAnchor="start" fontSize="11" fill="#D08008" fontWeight="700">H</text>
+                                              <text x="195" y="100" textAnchor="end" fontSize="11" fill="#D08008" fontWeight="700">H2</text>
+                                            </svg>
+                                          )}
+                                        </div>
+                                        {/* Caselle misure */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                                          <div>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>BASE L (mm)</div>
+                                            <input type="number" value={shapePicker.L} onChange={(e) => setShapePicker({ ...shapePicker, L: e.target.value })}
+                                              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                          </div>
+                                          <div>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>{shapePicker.shape === "trapezio" ? "ALT. SX H (mm)" : "ALTEZZA H (mm)"}</div>
+                                            <input type="number" value={shapePicker.H} onChange={(e) => setShapePicker({ ...shapePicker, H: e.target.value })}
+                                              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                          </div>
+                                          <div style={{ gridColumn: "1 / span 2" }}>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
+                                              {shapePicker.shape === "casetta" && "ALT. COLMO H2 (mm dal punto piu alto dei lati)"}
+                                              {shapePicker.shape === "arco" && "FRECCIA arco (mm)"}
+                                              {shapePicker.shape === "trapezio" && "ALT. DX H2 (mm)"}
+                                            </div>
+                                            <input type="number" value={shapePicker.H2} onChange={(e) => setShapePicker({ ...shapePicker, H2: e.target.value })}
+                                              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                          </div>
+                                        </div>
+                                        {/* Bottoni */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                                          <div onClick={() => setShapePicker(null)}
+                                            style={{ padding: "12px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#888" }}>Annulla</div>
+                                          <div onClick={() => {
+                                            const Lmm = parseFloat(shapePicker.L);
+                                            const Hmm = parseFloat(shapePicker.H);
+                                            const H2mm = parseFloat(shapePicker.H2);
+                                            if (!Lmm || !Hmm || (shapePicker.shape !== "casetta" && !H2mm)) { alert("Inserisci tutte le misure"); return; }
+                                            // Per casetta H2 puo essere anche 0 per fare un rettangolo, ma normalmente >0
+                                            const pxPerMm = fW / (realW || 1200);
+                                            const Lpx = Math.round(Lmm * pxPerMm);
+                                            const Hpx = Math.round(Hmm * pxPerMm);
+                                            const H2px = Math.round((H2mm || 0) * pxPerMm);
+                                            const x0 = fX, y0 = fY;
+                                            // Rimuovo rect/freeLine shape preesistenti
+                                            const elsKept = els.filter((e: any) => e.type !== "rect" && !e._isFromShape);
+                                            const newEls: any[] = [];
+                                            const t0 = Date.now();
+                                            if (shapePicker.shape === "casetta") {
+                                              // Pentagono: SX-base, SX-spalla, COLMO, DX-spalla, DX-base
+                                              const xL = x0, xR = x0 + Lpx;
+                                              const yBase = y0 + H2px + Hpx;
+                                              const ySpalla = y0 + H2px;
+                                              const xColmo = x0 + Lpx / 2;
+                                              const yColmo = y0;
+                                              // 5 freeLine che chiudono la forma
+                                              const pts = [
+                                                { x: xL, y: yBase }, { x: xL, y: ySpalla }, { x: xColmo, y: yColmo },
+                                                { x: xR, y: ySpalla }, { x: xR, y: yBase }, { x: xL, y: yBase }
+                                              ];
+                                              for (let i = 0; i < pts.length - 1; i++) {
+                                                newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y, _isFromShape: true });
+                                              }
+                                            } else if (shapePicker.shape === "arco") {
+                                              // Rettangolo + arco approssimato con poligono a 12 segmenti
+                                              const xL = x0, xR = x0 + Lpx;
+                                              const yBase = y0 + H2px + Hpx;
+                                              const ySpalla = y0 + H2px;
+                                              const cx = x0 + Lpx / 2;
+                                              // Lato SX verticale
+                                              newEls.push({ id: t0, type: "freeLine", x1: xL, y1: yBase, x2: xL, y2: ySpalla, _isFromShape: true });
+                                              // Arco semicerchio (12 segmenti)
+                                              const SEGS = 16;
+                                              const rx = Lpx / 2;
+                                              const ry = H2px;
+                                              for (let i = 0; i < SEGS; i++) {
+                                                const a1 = Math.PI - (Math.PI * i) / SEGS;
+                                                const a2 = Math.PI - (Math.PI * (i + 1)) / SEGS;
+                                                const x1a = cx + rx * Math.cos(a1);
+                                                const y1a = ySpalla - ry * Math.sin(a1);
+                                                const x2a = cx + rx * Math.cos(a2);
+                                                const y2a = ySpalla - ry * Math.sin(a2);
+                                                newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a, _isFromShape: true });
+                                              }
+                                              // Lato DX verticale
+                                              newEls.push({ id: t0 + 100, type: "freeLine", x1: xR, y1: ySpalla, x2: xR, y2: yBase, _isFromShape: true });
+                                              // Base
+                                              newEls.push({ id: t0 + 101, type: "freeLine", x1: xR, y1: yBase, x2: xL, y2: yBase, _isFromShape: true });
+                                            } else if (shapePicker.shape === "trapezio") {
+                                              // Trapezio: 1 falda inclinata. H = altezza SX, H2 = altezza DX
+                                              const xL = x0, xR = x0 + Lpx;
+                                              const yBase = y0 + Math.max(Hpx, H2px);
+                                              const ySX = yBase - Hpx;
+                                              const yDX = yBase - H2px;
+                                              const pts = [
+                                                { x: xL, y: yBase }, { x: xL, y: ySX }, { x: xR, y: yDX }, { x: xR, y: yBase }, { x: xL, y: yBase }
+                                              ];
+                                              for (let i = 0; i < pts.length - 1; i++) {
+                                                newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y, _isFromShape: true });
+                                              }
+                                            }
+                                            setDW([...elsKept, ...newEls]);
+                                            setShapePicker(null);
+                                          }} style={{ padding: "12px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 800, color: "#fff" }}>Crea forma</div>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               )}
