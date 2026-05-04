@@ -15,6 +15,8 @@ import OrdineControtelaiPanel from "./OrdineControtelaiPanel";
 import FerroPanel from "./FerroPanel";
 import CassonettoEditor from "./CassonettoEditor";
 import BoxEditor from "./BoxEditor";
+import WidgetButton from "./WidgetButton";
+import StrumentiVanoPanel from "./StrumentiVanoPanel";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-constants";
@@ -165,6 +167,8 @@ export default function VanoDetailPanel() {
     showTendaggi, setShowTendaggi,
     spCanvasRef, canvasRef, fotoVanoRef, videoVanoRef, openCamera,
   } = useMastro();
+  // Stato pannello strumenti vano (catalogo widget configuratori)
+  const [showStrumenti, setShowStrumenti] = useState(false);
   // Catalogo tendaggi aziendale (per RilievoTende)
   const { catalogo: catalogoTendaggiRaw } = useCatalogoTendaggi();
   const catalogoTendePerRilievo = React.useMemo(() => (catalogoTendaggiRaw || []).map((c) => ({
@@ -572,6 +576,32 @@ export default function VanoDetailPanel() {
                     boxShadow: "inset 0 1px 2px rgba(0,0,0,0.1)",
                   }}>
                     <span style={{ fontSize: 10, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", letterSpacing: "0.3px" }}>{sm.label}</span>
+                  </div>
+                );
+              })()}
+              {/* TASTO S - apre catalogo strumenti widget */}
+              {(() => {
+                const layout = Array.isArray(v?.strumenti_layout) ? v.strumenti_layout : [];
+                const nAttivi = layout.filter((x: any) => x?.attivo).length;
+                return (
+                  <div onClick={() => setShowStrumenti(true)} style={{
+                    width: 36, height: 36, borderRadius: 11,
+                    background: "#fff", color: "#28A0A0",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", flexShrink: 0, position: "relative",
+                    fontSize: 15, fontWeight: 900,
+                    boxShadow: "0 3px 0 0 rgba(0,0,0,0.15)",
+                    fontFamily: "inherit",
+                    marginLeft: 4,
+                  }} title="Strumenti del vano">
+                    S
+                    {nAttivi > 0 && (
+                      <div style={{
+                        position: "absolute", top: 4, right: 4,
+                        width: 9, height: 9, borderRadius: "50%",
+                        background: "#FFB060", border: "2px solid #fff",
+                      }} />
+                    )}
                   </div>
                 );
               })()}
@@ -1676,7 +1706,26 @@ export default function VanoDetailPanel() {
               )}
 
               {/* Flash accordion sections */}
-              {sections.map(sec=>{
+              {(() => {
+                // Helper layout strumenti (gestito dal tasto S)
+                const layout = Array.isArray(v?.strumenti_layout) ? v.strumenti_layout : [];
+                const isVis = (id: string) => {
+                  if (layout.length === 0) return true; // default: tutto visibile
+                  const it = layout.find((x: any) => x?.id === id);
+                  if (!it) return true; // se non in layout → mostra (compat. forward)
+                  return !!it.attivo;
+                };
+                const ordOf = (id: string) => {
+                  if (layout.length === 0) return 0;
+                  const i = layout.findIndex((x: any) => x?.id === id);
+                  return i >= 0 ? i : 999;
+                };
+                // Filtro sections per visibilità + ordina
+                const visibleSections = sections
+                  .filter((s: any) => isVis(s.id))
+                  .map((s: any, idx: number) => ({ ...s, _ord: ordOf(s.id), _idx: idx }))
+                  .sort((a: any, b: any) => a._ord - b._ord);
+                return visibleSections.map((sec: any) => {
                 const isOpen = vanoInfoOpen===sec.id;
                 const isDone = completedSecs.has(sec.id);
                 const isFlashing = flashSec===sec.id;
@@ -1707,9 +1756,16 @@ export default function VanoDetailPanel() {
                     </div>}
                   </div>
                 );
-              })}
+              });
+              })()}
 
             {/* ══════ STRUTTURE ══════ */}
+            {(() => {
+              const layout = Array.isArray(v?.strumenti_layout) ? v.strumenti_layout : [];
+              const it = layout.find((x: any) => x?.id === "strutture");
+              const visible = layout.length === 0 || !it || it.attivo !== false;
+              if (!visible) return null;
+              return (
             <div style={{marginTop:8,borderRadius:10,border:`1px solid ${T.acc}30`,overflow:"hidden"}}>
               <div onClick={()=>setVanoInfoOpen(vanoInfoOpen==="strutture"?null:"strutture")}
                 style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:T.accLt,cursor:"pointer"}}>
@@ -1731,8 +1787,16 @@ export default function VanoDetailPanel() {
                 </div>
               )}
             </div>
+              );
+            })()}
 
             {/* TENDAGGI: rilievo grafico + sezione modello (se vano-tenda) */}
+            {(() => {
+              const layout = Array.isArray(v?.strumenti_layout) ? v.strumenti_layout : [];
+              const it = layout.find((x: any) => x?.id === "tendaggi");
+              const visible = layout.length === 0 || !it || it.attivo !== false;
+              if (!visible) return null;
+              return (
             <div style={{marginTop:8,borderRadius:10,border:`1px solid ${T.acc}30`,overflow:"hidden"}}>
               <div onClick={()=>setVanoInfoOpen(vanoInfoOpen==="tendaggi"?null:"tendaggi")}
                 style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:T.accLt,cursor:"pointer"}}>
@@ -1752,6 +1816,27 @@ export default function VanoDetailPanel() {
                 </div>
               )}
             </div>
+              );
+            })()}
+
+            {/* WIDGET CONFIGURATORI — letti da v.strumenti_layout (gestito dal tasto S) */}
+            {(() => {
+              const layout = Array.isArray(v?.strumenti_layout) ? v.strumenti_layout : [];
+              const attivi = layout.filter((x: any) => x?.attivo && x?.id);
+              if (attivi.length === 0) return null;
+              return (
+                <div style={{marginTop:8, display:"flex", flexDirection:"column", gap:0}}>
+                  {attivi.map((it: any) => (
+                    <WidgetButton
+                      key={it.id}
+                      widgetId={it.id}
+                      vano={{ id: v.id, dati: v }}
+                      onChange={(patch)=>{ Object.entries(patch).forEach(([k,val])=>updateV(k,val)); }}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
 
             {showTendaggi && (
               <RilievoTende
@@ -4249,6 +4334,18 @@ export default function VanoDetailPanel() {
             })}
           </div>
         </div>
+      )}
+
+      {/* ═══ PANNELLO STRUMENTI VANO (catalogo widget configuratori) ═══ */}
+      {showStrumenti && selectedVano && (
+        <StrumentiVanoPanel
+          vano={selectedVano}
+          onClose={() => setShowStrumenti(false)}
+          onSave={(layout) => {
+            updateVanoField(selectedVano.id, "strumenti_layout", layout);
+            setSelectedVano(prev => prev ? ({ ...prev, strumenti_layout: layout }) : prev);
+          }}
+        />
       )}
 
       {/* ═══ MODAL DISEGNO TECNICO LAMIERA ═══ */}
