@@ -931,7 +931,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
   const [telaioBatch, setTelaioBatch] = React.useState<{open: boolean, L: string, H: string, N: string} | null>(null);
-  const [shapePicker, setShapePicker] = React.useState<{open: boolean, shape: string | null, L: string, H: string, H2: string, N: string} | null>(null);
+  const [shapePicker, setShapePicker] = React.useState<{open: boolean, shape: string | null, L: string, H: string, H2: string, H3: string, N: string} | null>(null);
   const telaioTapRef = React.useRef<number>(0);
   const [savingTipologia, setSavingTipologia] = React.useState<{open: boolean, nome: string, categoria: string, n_ante: string, note: string} | null>(null);
   const [savingTipoStatus, setSavingTipoStatus] = React.useState<string>("");
@@ -3306,7 +3306,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     ];
                                     setDW([...els, ...refs]);
                                   }} style={bs()} title="Crea 4 punti di riferimento a distanza N mm dal centro telaio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><circle cx="12" cy="12" r="2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/><line x1="3" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="21" y2="12"/></svg>Rif.</div>
-                                  <div onClick={() => setShapePicker({ open: true, shape: null, L: "1500", H: "1400", H2: "800", N: "16" })} style={bs()} title="Forme preset: casetta, arco, trapezio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,10 21,21 3,21 3,10"/></svg>Forme</div>
+                                  <div onClick={() => setShapePicker({ open: true, shape: null, L: "1500", H: "1400", H2: "800", H3: "400", N: "16" })} style={bs()} title="Forme preset: casetta, arco, trapezio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,10 21,21 3,21 3,10"/></svg>Forme</div>
                                   <div onClick={() => setProfileMode("telaio", { drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)} title="Casetta Live: tap punti notevoli per tracciare la forma a mano libera"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21 V11 L12 3 L21 11 V21 Z"/><circle cx="12" cy="14" r="2" fill="currentColor"/></svg>Casetta</div>
                                 </div>
                                 </>}
@@ -6044,8 +6044,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                 {shapePicker.shape === "arco_ribassato" && `FRECCIA (mm) — deve essere < ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
                                                 {shapePicker.shape === "arco_acuto" && "ALTEZZA PUNTA (mm)"}
                                                 {shapePicker.shape === "arco_rialzato" && `FRECCIA (mm) — deve essere > ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
-                                                {shapePicker.shape === "arco_3_centri" && "FRECCIA (mm)"}
-                                                {shapePicker.shape === "arco_ellittico" && "FRECCIA (mm) = semi-asse verticale"}
+                                                {shapePicker.shape === "arco_3_centri" && "FRECCIA totale (mm) = altezza dal piedritto al colmo"}
+                                                {shapePicker.shape === "arco_ellittico" && "SEMI-ASSE VERTICALE (mm)"}
                                                 {shapePicker.shape === "arco_policentrico" && "FRECCIA (mm)"}
                                                 {shapePicker.shape === "trapezio" && "ALT. DX H2 (mm)"}
                                               </div>
@@ -6063,6 +6063,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {shapePicker.shape === "arco_tutto_sesto" && (
                                             <div style={{ gridColumn: "1 / span 2", padding: "10px 12px", background: "#EFF6FF", borderRadius: 8, fontSize: 11, color: "#2563EB", fontWeight: 700 }}>
                                               ℹ Freccia automatica = {Math.round(parseFloat(shapePicker.L)/2) || "L/2"} mm (semicerchio perfetto)
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_3_centri" && (
+                                            <div style={{ gridColumn: "1 / span 2" }}>
+                                              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
+                                                RAGGIO ARCHI LATERALI Rl (mm) — quanto curvano i lati
+                                              </div>
+                                              <input type="number" value={shapePicker.H3} onChange={(e) => setShapePicker({ ...shapePicker, H3: e.target.value })}
+                                                style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                              <div style={{ fontSize: 10, color: "#7C3AED", marginTop: 4, fontWeight: 600 }}>ℹ Suggerito: ~{Math.round(parseFloat(shapePicker.H2 || "800") * 0.6)} mm (60% della freccia)</div>
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_ellittico" && (
+                                            <div style={{ gridColumn: "1 / span 2", padding: "10px 12px", background: "#F5F3FF", borderRadius: 8, fontSize: 11, color: "#7C3AED", fontWeight: 700 }}>
+                                              ℹ Ellisse: semi-asse orizz = L/2 = {Math.round(parseFloat(shapePicker.L)/2) || "L/2"} mm, semi-asse vert = freccia
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_policentrico" && (
+                                            <div style={{ gridColumn: "1 / span 2", padding: "10px 12px", background: "#F5F3FF", borderRadius: 8, fontSize: 11, color: "#7C3AED", fontWeight: 700 }}>
+                                              ℹ Curva super-ellittica armonica con 5 archi tangenti
                                             </div>
                                           )}
                                         </div>
@@ -6133,8 +6153,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               newEls.push({ id: t0, type: "freeLine", x1: xL, y1: yBase, x2: xL, y2: ySpalla });
                                               if (shapePicker.shape === "arco_3_centri") {
                                                 // ARCO A 3 CENTRI: 2 archi piccoli ai lati + 1 arco centrale grande
-                                                // Geometria semplificata: raggio laterale rl = freccia, raggio centrale rc = freccia*1.8
-                                                const rl = frec * 0.6;
+                                                // Raggio laterale: utente lo specifica via H3, default 60% freccia
+                                                const rlMm = parseFloat(shapePicker.H3) || frec * 0.6 / pxPerMm;
+                                                const rl = rlMm * pxPerMm;
                                                 const rc = frec * 1.5;
                                                 const yColmo = ySpalla - frec;
                                                 // Centri laterali: a quota ySpalla, a distanza rl da xL e xR
