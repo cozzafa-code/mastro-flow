@@ -5119,8 +5119,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const _bx = _n1x + _n2x, _by = _n1y + _n2y;
                                         const _bl = Math.hypot(_bx, _by) || 1;
                                         const _cosHalf = (_n1x * _n2x + _n1y * _n2y);
-                                        const _sinHalf = Math.sqrt(Math.max(0.25, (1 + _cosHalf) / 2));
-                                        const _scale = Math.min(_TK_POLY / _sinHalf, _TK_POLY * 2);
+                                        const _sinHalf = Math.sqrt(Math.max(0.05, (1 + _cosHalf) / 2));
+                                        const _scale = Math.min(_TK_POLY / _sinHalf, _TK_POLY * 4);
                                         _innerShrink.push([_curr[0] + (_bx / _bl) * _scale, _curr[1] + (_by / _bl) * _scale]);
                                       }
                                       const innerStr = _innerShrink.map(p => p.join(",")).join(" ");
@@ -5137,17 +5137,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             const _xs = pts.map((p: number[]) => p[0]);
                                             const _maxX = Math.max(..._xs);
                                             // Prendi solo Y dei punti SUL bordo destro (x ≈ _maxX)
-                                            const _edgeYs = pts.filter((p: number[]) => Math.abs(p[0] - _maxX) < 0.5).map((p: number[]) => p[1]);
+                                            const _edgeYs = pts.filter((p: number[]) => Math.abs(p[0] - _maxX) < 1.5).map((p: number[]) => p[1]);
+                                            console.log("[RIPORTO]", el.id, "maxX=", _maxX, "edgeYs=", _edgeYs, "antaIdx=", el.antaIdx, "/", el.antaCount);
                                             if (_edgeYs.length < 2) return null;
                                             const _minY = Math.min(..._edgeYs);
                                             const _maxY = Math.max(..._edgeYs);
-                                            const _h = _maxY - _minY - TK_ANTA * 2;
+                                            const _h = _maxY - _minY - _TK_POLY * 2;
                                             if (_h <= 0) return null;
                                             return (
                                               <rect
-                                                x={_maxX - TK_MONT} y={_minY + TK_ANTA}
+                                                x={_maxX - TK_MONT - 1} y={_minY + _TK_POLY}
                                                 width={TK_MONT} height={_h}
-                                                fill={"#e8e8e4"} stroke={"#1A1A1C"} strokeWidth={1}
+                                                fill={sel ? "#1A9E7333" : "#e8e8e4"} stroke={"#1A1A1C"} strokeWidth={1.2}
                                               />
                                             );
                                           })()}
