@@ -5108,6 +5108,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         }}>
                                           <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.55} stroke={"#3A3A3C"} strokeWidth={tk} strokeLinejoin="round" />
                                           <polygon points={innerStr} fill="none" stroke={"#3A3A3C"} strokeWidth={tk * 0.75} strokeLinejoin="round" />
+                                          {(el.antaCount && el.antaIdx !== undefined && el.antaIdx < el.antaCount - 1) && (() => {
+                                            const _xs = pts.map((p: number[]) => p[0]);
+                                            const _ys = pts.map((p: number[]) => p[1]);
+                                            const _maxX = Math.max(..._xs);
+                                            const _minY = Math.min(..._ys);
+                                            const _maxY = Math.max(..._ys);
+                                            return (
+                                              <line
+                                                x1={_maxX - tk * 0.4} y1={_minY + tk * 1.2}
+                                                x2={_maxX - tk * 0.4} y2={_maxY - tk * 1.2}
+                                                stroke="#3A3A3C" strokeWidth={tk * 1.4} strokeLinecap="round"
+                                              />
+                                            );
+                                          })()}
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
