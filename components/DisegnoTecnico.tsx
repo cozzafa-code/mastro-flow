@@ -2453,7 +2453,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       }
                                     }
                                     // Multi-click ANTA: leggo SEMPRE state corrente da dw.elements (no closure)
-                                    const _live: any[] = (dw && dw.elements) || els;
+                                    const _live: any[] = (dwRef.current && dwRef.current.elements) || els;
                                     console.log("[ANTA] dw.elements vs els:", _live.length, "vs", els.length, "polyAnta in dw:", _live.filter((e: any) => e.type === "polyAnta").length);
                                     let outerPoly: number[][] = cellPoly;
                                     const flAll = _live.filter((e: any) => e.type === "freeLine" && !e.subType);
@@ -2481,6 +2481,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const prevPolyAnta = _live.filter((e: any) => e.type === "polyAnta");
                                     const prevCount = prevPolyAnta.length;
                                     const newCount = prevCount + 1;
+                                    console.log("[ANTA-POLY] polyAnta esistenti:", prevCount, "split in", newCount);
                                     // Cancello tutte polyAnta + montanti/traversi interni
                                     const newEls = _live.filter((e: any) =>
                                       e.type !== "polyAnta" &&
@@ -5100,7 +5101,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       });
                                       const innerStr = _innerShrink.map(p => p.join(",")).join(" ");
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <g key={el.id} onClick={(e3) => {
+                                          if (drawMode === "place-anta" || drawMode === "place-porta") return;
+                                          e3.stopPropagation();
+                                          if (!drawMode) setMode({ selectedId: el.id });
+                                        }}>
                                           <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
                                           <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
@@ -5120,7 +5125,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         return [(p[0] + dx2 / dist * shrink), (p[1] + dy2 / dist * shrink)];
                                       });
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <g key={el.id} onClick={(e3) => {
+                                          if (drawMode === "place-anta" || drawMode === "place-porta") return;
+                                          e3.stopPropagation();
+                                          if (!drawMode) setMode({ selectedId: el.id });
+                                        }}>
                                           <polygon points={glassPts.map(p => p.join(",")).join(" ")} fill="#d8ecf8" fillOpacity={0.25} stroke={hc || "#8bb8e8"} strokeWidth={0.5} />
                                           <line x1={glassPts[0][0]} y1={glassPts[0][1]} x2={cx2} y2={cy2} stroke="#b0d4f0" strokeWidth={0.4} />
                                         </g>
@@ -5139,7 +5148,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const slats = [];
                                       for (let sy = minY2 + 10; sy < maxY2 - 4; sy += 8) slats.push(sy);
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <g key={el.id} onClick={(e3) => {
+                                          if (drawMode === "place-anta" || drawMode === "place-porta") return;
+                                          e3.stopPropagation();
+                                          if (!drawMode) setMode({ selectedId: el.id });
+                                        }}>
                                           <defs><clipPath id={clipId}><polygon points={outerPts} /></clipPath></defs>
                                           <polygon points={outerPts} fill="#f5f0e8" stroke={hc || "#8a7a60"} strokeWidth={1} />
                                           <g clipPath={`url(#${clipId})`}>
@@ -5366,7 +5379,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "apLabel") {
                                       const tw = String(el.label).length * 7 + 14;
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <g key={el.id} onClick={(e3) => {
+                                          if (drawMode === "place-anta" || drawMode === "place-porta") return;
+                                          e3.stopPropagation();
+                                          if (!drawMode) setMode({ selectedId: el.id });
+                                        }}>
                                           <rect x={el.x - tw / 2} y={el.y - 8} width={tw} height={16} fill={hc || T.blue} rx={3} fillOpacity={0.85} />
                                           <text x={el.x} y={el.y + 4} textAnchor="middle" fontSize={9} fontWeight={800} fill="#fff">{el.label}</text>
                                         </g>
