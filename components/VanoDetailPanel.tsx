@@ -13,7 +13,6 @@ import SezioneModelloTenda from "./SezioneModelloTenda";
 import SkizzoTecnico from "./SkizzoTecnico";
 import OrdineControtelaiPanel from "./OrdineControtelaiPanel";
 import FerroPanel from "./FerroPanel";
-import BoxDocciaSummaryCard from "@/components/boxdoccia/BoxDocciaSummaryCard";
 import CassonettoEditor from "./CassonettoEditor";
 import BoxEditor from "./BoxEditor";
 import WidgetButton from "./WidgetButton";
@@ -209,7 +208,7 @@ export default function VanoDetailPanel() {
   const [flashSec, setFlashSec] = useState<string|null>(null);
   const [completedSecs, setCompletedSecs] = useState<Set<string>>(new Set());
   const sectionRefs = useRef<Record<string,HTMLDivElement|null>>({});
-  const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","coprifilo","lamiera","controtelaio","ferro","box_doccia"];
+  const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","coprifilo","lamiera","controtelaio","ferro"];
   const flashAndAdvance = (secId: string) => {
     console.log("FLASH:", secId);
     setCompletedSecs(prev => new Set([...prev, secId]));
@@ -1665,11 +1664,7 @@ export default function VanoDetailPanel() {
     id: "ferro",
     label: "Ferro",
     icon: null,
-    render: () => <FerroPanel vano={v} onChange={(p) => updateVano && updateVano(p)} />
-
-    {currentSection === "box_doccia" && aziendaId && (
-      <BoxDocciaSummaryCard vanoId={vano.id} aziendaId={aziendaId} />
-    )},
+    render: () => <FerroPanel vano={v} onChange={(p) => updateVano && updateVano(p)} />,
   },
   ];
 
