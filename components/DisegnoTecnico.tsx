@@ -5114,14 +5114,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           <path d={`${_outerD} ${_innerD}`} fillRule="evenodd" fill={_fillPoly} stroke={_clrPoly} strokeWidth={sel ? 2 : 1} strokeLinejoin="miter" />
                                           {(el.antaCount && el.antaIdx !== undefined && el.antaIdx < el.antaCount - 1) && (() => {
                                             const _xs = pts.map((p: number[]) => p[0]);
-                                            const _ys = pts.map((p: number[]) => p[1]);
                                             const _maxX = Math.max(..._xs);
-                                            const _minY = Math.min(..._ys);
-                                            const _maxY = Math.max(..._ys);
+                                            // Prendi solo Y dei punti SUL bordo destro (x ≈ _maxX)
+                                            const _edgeYs = pts.filter((p: number[]) => Math.abs(p[0] - _maxX) < 0.5).map((p: number[]) => p[1]);
+                                            if (_edgeYs.length < 2) return null;
+                                            const _minY = Math.min(..._edgeYs);
+                                            const _maxY = Math.max(..._edgeYs);
+                                            const _h = _maxY - _minY - TK_ANTA * 2;
+                                            if (_h <= 0) return null;
                                             return (
                                               <rect
                                                 x={_maxX - TK_MONT} y={_minY + TK_ANTA}
-                                                width={TK_MONT} height={_maxY - _minY - TK_ANTA * 2}
+                                                width={TK_MONT} height={_h}
                                                 fill={"#e8e8e4"} stroke={"#1A1A1C"} strokeWidth={1}
                                               />
                                             );
