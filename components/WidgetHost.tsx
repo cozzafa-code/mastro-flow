@@ -30,17 +30,27 @@ export default function WidgetHost({
   );
   const [errorMsg, setErrorMsg] = useState<string>('');
 
-  // Invia init al widget quando è pronto
+  // Refs stabili per evitare di ri-creare il listener ad ogni render
+  // FIX: senza questo, onChange (ricreato ad ogni render del parent) causava
+  // remount del listener perdendo il messaggio widget:ready
+  const onChangeRef = useRef(onChange);
+  const onExportRef = useRef(onExport);
+  const vanoRef = useRef(vano);
+  useEffect(() => { onChangeRef.current = onChange; });
+  useEffect(() => { onExportRef.current = onExport; });
+  useEffect(() => { vanoRef.current = vano; });
+
+  // Invia init al widget
   const sendInit = useCallback(() => {
-    const data = extractWidgetData(vano?.dati || {}, widget);
+    const data = extractWidgetData(vanoRef.current?.dati || {}, widget);
     sendToWidget(iframeRef.current, {
       type: 'host:init',
       widgetId,
       payload: data,
-    });
-  }, [vano, widget, widgetId]);
+    } as any);
+  }, [widget, widgetId]);
 
-  // Listener messaggi dal widget
+  // Listener messaggi: registrato UNA SOLA VOLTA per widgetId, mai rimontato
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (!isWidgetMessage(e.data)) return;
@@ -51,13 +61,12 @@ export default function WidgetHost({
           setReady(true);
           break;
         case 'widget:change':
-          // Patch dei campi vano (i campi devono essere già prefissati con namespace)
-          if (e.data.patch && typeof onChange === 'function') {
-            onChange(e.data.patch);
+          if (e.data.patch && typeof onChangeRef.current === 'function') {
+            onChangeRef.current(e.data.patch);
           }
           break;
         case 'widget:export':
-          if (onExport && e.data.data) onExport(e.data.data);
+          if (onExportRef.current && e.data.data) onExportRef.current(e.data.data);
           break;
         case 'widget:resize':
           if (e.data.height && e.data.height > 200 && e.data.height < 4000) {
@@ -71,7 +80,7 @@ export default function WidgetHost({
     }
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [widgetId, onChange, onExport]);
+  }, [widgetId]); // SOLO widgetId. onChange/onExport via ref.
 
   // Quando ready === true, manda init
   useEffect(() => {
@@ -83,7 +92,23 @@ export default function WidgetHost({
     if (!ready) return;
     sendInit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vano?.id]); // solo su cambio vano
+  }, [vano?.id]);
+
+  // FIX FALLBACK: se l'iframe carica e per qualche motivo non riceviamo widget:ready
+  // entro 3 secondi, forziamo lo stato ready (l'iframe e' caricato comunque)
+  const onIframeLoad = useCallback(() => {
+    setTimeout(() => {
+      setReady((prev) => {
+        if (!prev) {
+          if (typeof console !== 'undefined') {
+            console.warn('[WidgetHost] forzato ready dopo iframe load (timeout 3s)');
+          }
+          return true;
+        }
+        return prev;
+      });
+    }, 3000);
+  }, []);
 
   return (
     <div
@@ -112,6 +137,7 @@ export default function WidgetHost({
             fontSize: 13,
             zIndex: 10,
             background: '#0D1F1F',
+            pointerEvents: 'none',
           }}
         >
           Caricamento configuratore…
@@ -134,6 +160,7 @@ export default function WidgetHost({
         ref={iframeRef}
         src={widget.htmlPath}
         title={widget.label}
+        onLoad={onIframeLoad}
         style={{
           width: '100%',
           height: iframeHeight,
@@ -141,8 +168,6 @@ export default function WidgetHost({
           display: 'block',
           background: '#0D1F1F',
         }}
-        // sandbox lasciato libero per Three.js / postMessage / file
-        // se vuoi più stretto: sandbox="allow-scripts allow-same-origin allow-popups"
       />
     </div>
   );
