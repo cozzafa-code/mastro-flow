@@ -5097,11 +5097,32 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const _TK_POLY = el.subType === "porta" ? TK_PORTA : TK_ANTA;
                                       const _clrPoly = sel ? "#1A9E73" : "#1A1A1C";
                                       const _fillPoly = sel ? "#1A9E7333" : "#e8e8e4";
-                                      const _innerShrink = pts.map(p => {
-                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
-                                        const dist = Math.hypot(dx2, dy2) || 1;
-                                        return [(p[0] + dx2 / dist * _TK_POLY), (p[1] + dy2 / dist * _TK_POLY)];
-                                      });
+                                      // Polygon inset: per ogni vertice, sposta lungo bisettrice degli edge adiacenti
+                                      const _N = pts.length;
+                                      const _innerShrink: number[][] = [];
+                                      for (let _i = 0; _i < _N; _i++) {
+                                        const _prev = pts[(_i - 1 + _N) % _N];
+                                        const _curr = pts[_i];
+                                        const _next = pts[(_i + 1) % _N];
+                                        // Edge in (prev->curr) e edge out (curr->next), normali interne
+                                        const _e1x = _curr[0] - _prev[0], _e1y = _curr[1] - _prev[1];
+                                        const _e2x = _next[0] - _curr[0], _e2y = _next[1] - _curr[1];
+                                        const _l1 = Math.hypot(_e1x, _e1y) || 1;
+                                        const _l2 = Math.hypot(_e2x, _e2y) || 1;
+                                        // Normali interne (ruota -90° rispetto al verso CCW; se poly è CW si inverte segno)
+                                        let _n1x = -_e1y / _l1, _n1y = _e1x / _l1;
+                                        let _n2x = -_e2y / _l2, _n2y = _e2x / _l2;
+                                        // Test orientazione: usa il centroide come riferimento interno
+                                        const _midX = (_prev[0] + _curr[0]) / 2, _midY = (_prev[1] + _curr[1]) / 2;
+                                        if ((cx2 - _midX) * _n1x + (cy2 - _midY) * _n1y < 0) { _n1x = -_n1x; _n1y = -_n1y; _n2x = -_n2x; _n2y = -_n2y; }
+                                        // Bisettrice = somma normali, scala per 1/sin(angolo/2)
+                                        const _bx = _n1x + _n2x, _by = _n1y + _n2y;
+                                        const _bl = Math.hypot(_bx, _by) || 1;
+                                        const _cosHalf = (_n1x * _n2x + _n1y * _n2y);
+                                        const _sinHalf = Math.sqrt(Math.max(0.001, (1 + _cosHalf) / 2));
+                                        const _scale = _TK_POLY / _sinHalf;
+                                        _innerShrink.push([_curr[0] + (_bx / _bl) * _scale, _curr[1] + (_by / _bl) * _scale]);
+                                      }
                                       const innerStr = _innerShrink.map(p => p.join(",")).join(" ");
                                       const _outerD = pts.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
                                       const _innerD = _innerShrink.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
@@ -5111,7 +5132,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           e3.stopPropagation();
                                           if (!drawMode) setMode({ selectedId: el.id });
                                         }}>
-                                          <path d={`${_outerD} ${_innerD}`} fillRule="evenodd" fill={_fillPoly} stroke={_clrPoly} strokeWidth={sel ? 2 : 1} strokeLinejoin="miter" />
+                                          <path d={`${_outerD} ${_innerD}`} fillRule="evenodd" fill={_fillPoly} stroke={_clrPoly} strokeWidth={sel ? 2 : 1.2} strokeLinejoin="round" strokeMiterlimit={2} />
                                           {(el.antaCount && el.antaIdx !== undefined && el.antaIdx < el.antaCount - 1) && (() => {
                                             const _xs = pts.map((p: number[]) => p[0]);
                                             const _maxX = Math.max(..._xs);
