@@ -5094,21 +5094,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
                                       // FIX OMBRA: inner polygon segue il poly outer scalato verso centro (no bbox rect)
+                                      const _TK_POLY = el.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                      const _clrPoly = sel ? "#1A9E73" : "#1A1A1C";
+                                      const _fillPoly = sel ? "#1A9E7333" : "#e8e8e4";
                                       const _innerShrink = pts.map(p => {
                                         const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
                                         const dist = Math.hypot(dx2, dy2) || 1;
-                                        const shrinkAmt = 14;
-                                        return [(p[0] + dx2 / dist * shrinkAmt), (p[1] + dy2 / dist * shrinkAmt)];
+                                        return [(p[0] + dx2 / dist * _TK_POLY), (p[1] + dy2 / dist * _TK_POLY)];
                                       });
                                       const innerStr = _innerShrink.map(p => p.join(",")).join(" ");
+                                      const _outerD = pts.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
+                                      const _innerD = _innerShrink.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
                                       return (
                                         <g key={el.id} onClick={(e3) => {
                                           if (drawMode === "place-anta" || drawMode === "place-porta") return;
                                           e3.stopPropagation();
                                           if (!drawMode) setMode({ selectedId: el.id });
                                         }}>
-                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.6} stroke={"#1A1A1C"} strokeWidth={9} strokeLinejoin="round" />
-                                          <polygon points={innerStr} fill="none" stroke={"#1A1A1C"} strokeWidth={5} strokeLinejoin="round" />
+                                          <path d={`${_outerD} ${_innerD}`} fillRule="evenodd" fill={_fillPoly} stroke={_clrPoly} strokeWidth={sel ? 2 : 1} strokeLinejoin="miter" />
                                           {(el.antaCount && el.antaIdx !== undefined && el.antaIdx < el.antaCount - 1) && (() => {
                                             const _xs = pts.map((p: number[]) => p[0]);
                                             const _ys = pts.map((p: number[]) => p[1]);
@@ -5116,10 +5119,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             const _minY = Math.min(..._ys);
                                             const _maxY = Math.max(..._ys);
                                             return (
-                                              <line
-                                                x1={_maxX - 1} y1={_minY + 4}
-                                                x2={_maxX - 1} y2={_maxY - 4}
-                                                stroke="#1A1A1C" strokeWidth={7} strokeLinecap="round"
+                                              <rect
+                                                x={_maxX - TK_MONT} y={_minY + TK_ANTA}
+                                                width={TK_MONT} height={_maxY - _minY - TK_ANTA * 2}
+                                                fill={"#e8e8e4"} stroke={"#1A1A1C"} strokeWidth={1}
                                               />
                                             );
                                           })()}
