@@ -5256,9 +5256,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const labelStr = String(el.label);
                                       // Inverse zoom: tutti gli elementi UI delle quote restano leggibili
                                       const iz = 1 / zoom;
-                                      const fs = 8 * iz;
-                                      const tw = (labelStr.length * 5.5 + 10) * iz;
-                                      const th = 13 * iz;
+                                      const fs = 13 * iz;
+                                      const tw = (labelStr.length * 7.5 + 14) * iz;
+                                      const th = 18 * iz;
                                       const DIM_C = "#1A1A1C";
                                       const tickL = 4 * iz;
                                       const sw = 0.5 * iz, sw2 = 0.7 * iz;
@@ -6613,7 +6613,47 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                 newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y });
                                               }
                                             }
-                                            setDW([...elsKept, ...newEls]);
+                                            // AUTO-QUOTE: calcola e aggiunge quote per ogni segmento freeLine generato
+                                            const _autoQuotes: any[] = [];
+                                            const _qT0 = Date.now() + 9000;
+                                            // Bounding box per calcolare offset esterno
+                                            const _allXq = newEls.flatMap((e: any) => [e.x1, e.x2]).filter((v: any) => Number.isFinite(v));
+                                            const _allYq = newEls.flatMap((e: any) => [e.y1, e.y2]).filter((v: any) => Number.isFinite(v));
+                                            const _bMinXq = Math.min(..._allXq), _bMaxXq = Math.max(..._allXq);
+                                            const _bMinYq = Math.min(..._allYq), _bMaxYq = Math.max(..._allYq);
+                                            const _bCx = (_bMinXq + _bMaxXq) / 2, _bCy = (_bMinYq + _bMaxYq) / 2;
+                                            // Solo per segmenti significativi (lunghezza > 30px) e non per archi (troppi piccoli segmenti)
+                                            const _isArc = shapePicker.shape && shapePicker.shape.startsWith("arco_");
+                                            newEls.forEach((seg: any, idx: number) => {
+                                              if (seg.type !== "freeLine") return;
+                                              const _dxQ = seg.x2 - seg.x1, _dyQ = seg.y2 - seg.y1;
+                                              const _segPxQ = Math.hypot(_dxQ, _dyQ);
+                                              if (_segPxQ < 30) return; // skip segmenti corti (interpolazioni archi)
+                                              // Per archi: skip i segmenti centrali della curva, solo lati estremi (verticali/orizzontali)
+                                              const _isVert = Math.abs(_dxQ) < 5;
+                                              const _isHorz = Math.abs(_dyQ) < 5;
+                                              if (_isArc && !_isVert && !_isHorz) return; // skip segmenti curva
+                                              const _segMM = Math.round(_segPxQ / pxPerMm);
+                                              if (_segMM < 50) return; // skip < 50mm
+                                              // Offset esterno: dal centro del segmento perpendicolare verso fuori del bounding box
+                                              const _midXq = (seg.x1 + seg.x2) / 2, _midYq = (seg.y1 + seg.y2) / 2;
+                                              const _outX = _midXq - _bCx, _outY = _midYq - _bCy;
+                                              const _outD = Math.hypot(_outX, _outY) || 1;
+                                              const _offDist = 22; // px fuori dal telaio
+                                              const _offX = (_outX / _outD) * _offDist;
+                                              const _offY = (_outY / _outD) * _offDist;
+                                              _autoQuotes.push({
+                                                id: _qT0 + idx,
+                                                type: "dim",
+                                                x1: seg.x1 + _offX, y1: seg.y1 + _offY,
+                                                x2: seg.x2 + _offX, y2: seg.y2 + _offY,
+                                                label: String(_segMM),
+                                                _autoFromShape: true,
+                                              });
+                                            });
+                                            // Rimuovi quote auto precedenti
+                                            const _elsKeptNoOldQuotes = elsKept.filter((e: any) => !(e.type === "dim" && e._autoFromShape));
+                                            setDW([..._elsKeptNoOldQuotes, ...newEls, ..._autoQuotes]);
                                             setShapePicker(null);
                                           }} style={{ padding: "12px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 800, color: "#fff" }}>Crea forma</div>
                                         </div>
