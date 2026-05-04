@@ -5326,9 +5326,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const labelStr = String(el.label);
                                       // Inverse zoom: tutti gli elementi UI delle quote restano leggibili
                                       const iz = 1 / zoom;
-                                      const fs = 13 * iz;
-                                      const tw = (labelStr.length * 7.5 + 14) * iz;
-                                      const th = 18 * iz;
+                                      const fs = 16 * iz;
+                                      const tw = (labelStr.length * 9 + 16) * iz;
+                                      const th = 22 * iz;
                                       const DIM_C = "#1A1A1C";
                                       const tickL = 4 * iz;
                                       const sw = 0.5 * iz, sw2 = 0.7 * iz;
@@ -5346,7 +5346,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <line x1={el.x1-tickL} y1={el.y1-tickL} x2={el.x1+tickL} y2={el.y1+tickL} stroke={DIM_C} strokeWidth={sw2}/>
                                             <line x1={el.x2-tickL} y1={el.y2-tickL} x2={el.x2+tickL} y2={el.y2+tickL} stroke={DIM_C} strokeWidth={sw2}/>
                                           </>}
-                                          <rect x={mx2-tw/2} y={my2-th/2} width={tw} height={th} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={2*iz} stroke={dimEdit?.id === el.id ? "#1A9E73" : DIM_C} strokeWidth={0.4*iz} opacity={0.95}/>
+                                          <rect x={mx2-tw/2} y={my2-th/2} width={tw} height={th} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={2*iz} stroke={dimEdit?.id === el.id ? "#1A9E73" : DIM_C} strokeWidth={1*iz} opacity={0.95}/>
                                           <text x={mx2} y={my2+fs/3} textAnchor="middle" fontSize={fs} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : DIM_C} fontFamily="'SF Mono', 'Menlo', monospace" letterSpacing="0.3">{labelStr}</text>
                                         </g>
                                       );
@@ -5512,6 +5512,55 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     });
                                   })()}
 
+                                  {/* GRADI ANGOLO sui vertici telaio libero */}
+                                  {(() => {
+                                    const fls = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                    if (fls.length < 2) return null;
+                                    // Trova vertici condivisi tra 2+ freeLine
+                                    const verts: any[] = [];
+                                    fls.forEach((l: any) => {
+                                      verts.push({ x: l.x1, y: l.y1, lineId: l.id, end: 'start' });
+                                      verts.push({ x: l.x2, y: l.y2, lineId: l.id, end: 'end' });
+                                    });
+                                    const groups: any[] = [];
+                                    const used = new Set();
+                                    verts.forEach((v, i) => {
+                                      if (used.has(i)) return;
+                                      const grp = [v];
+                                      used.add(i);
+                                      verts.forEach((v2, j) => {
+                                        if (i === j || used.has(j)) return;
+                                        if (Math.hypot(v.x-v2.x, v.y-v2.y) < 5) {
+                                          grp.push(v2);
+                                          used.add(j);
+                                        }
+                                      });
+                                      if (grp.length >= 2) groups.push(grp);
+                                    });
+                                    return groups.map((g: any, gi: number) => {
+                                      // Calcola angolo tra le 2 prime linee del gruppo
+                                      const v0 = g[0], v1 = g[1];
+                                      const l0 = fls.find((l: any) => l.id === v0.lineId);
+                                      const l1 = fls.find((l: any) => l.id === v1.lineId);
+                                      if (!l0 || !l1) return null;
+                                      const a0 = v0.end === 'start'
+                                        ? Math.atan2(l0.y2-l0.y1, l0.x2-l0.x1)
+                                        : Math.atan2(l0.y1-l0.y2, l0.x1-l0.x2);
+                                      const a1 = v1.end === 'start'
+                                        ? Math.atan2(l1.y2-l1.y1, l1.x2-l1.x1)
+                                        : Math.atan2(l1.y1-l1.y2, l1.x1-l1.x2);
+                                      let diff = Math.abs(a1 - a0) * 180 / Math.PI;
+                                      if (diff > 180) diff = 360 - diff;
+                                      const deg = Math.round(diff);
+                                      const iz3 = 1 / zoom;
+                                      return (
+                                        <g key={"deg-"+gi}>
+                                          <rect x={v0.x - 14*iz3} y={v0.y - 26*iz3} width={28*iz3} height={14*iz3} fill="#1A9E73" rx={3*iz3} />
+                                          <text x={v0.x} y={v0.y - 16*iz3} textAnchor="middle" fontSize={10*iz3} fontWeight={800} fill="#fff">{deg}°</text>
+                                        </g>
+                                      );
+                                    });
+                                  })()}
                                   {/* Pallini d'angolo: vertici condivisi da 2+ freeLine telaio */}
                                   {(() => {
                                     if (drawMode) return null;
@@ -6715,14 +6764,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               const _offDist = 45; // px fuori dal telaio (allargato per separare visivamente da profilo)
                                               const _offX = (_outX / _outD) * _offDist;
                                               const _offY = (_outY / _outD) * _offDist;
-                                              _autoQuotes.push({
-                                                id: _qT0 + idx,
-                                                type: "dim",
-                                                x1: seg.x1 + _offX, y1: seg.y1 + _offY,
-                                                x2: seg.x2 + _offX, y2: seg.y2 + _offY,
-                                                label: String(_segMM),
-                                                _autoFromShape: true,
-                                              });
+                                              // FIX: skip auto-quote (utente le aggiunge se vuole)
+                                              // _autoQuotes.push omitted
                                             });
                                             // Rimuovi quote auto precedenti
                                             const _elsKeptNoOldQuotes = elsKept.filter((e: any) => !(e.type === "dim" && e._autoFromShape));
