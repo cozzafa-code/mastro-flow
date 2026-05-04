@@ -3278,6 +3278,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     setDW([...els, ...refs]);
                                   }} style={bs()} title="Crea 4 punti di riferimento a distanza N mm dal centro telaio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><circle cx="12" cy="12" r="2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/><line x1="3" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="21" y2="12"/></svg>Rif.</div>
                                   <div onClick={() => setShapePicker({ open: true, shape: null, L: "1500", H: "1400", H2: "800", N: "16" })} style={bs()} title="Forme preset: casetta, arco, trapezio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,10 21,21 3,21 3,10"/></svg>Forme</div>
+                                  <div onClick={() => setProfileMode("telaio", { drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)} title="Casetta Live: tap punti notevoli per tracciare la forma a mano libera"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21 V11 L12 3 L21 11 V21 Z"/><circle cx="12" cy="14" r="2" fill="currentColor"/></svg>Casetta</div>
                                 </div>
                                 </>}
 
@@ -5493,7 +5494,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             // Colore + simbolo per ogni tipo OSNAP (standard CAD)
                                             const osnapType = (snapped as any)._osnap || 'END';
                                             const osnapColors: any = { END:"#1A9E73", MID:"#D08008", INT:"#DC4444", PERP:"#3B7FE0", NEAR:"#999", EXT:"#9333EA", QUAD:"#0EA5E9" };
-                                            const osnapLabels: any = { END:"END", MID:"MID", INT:"INT", PERP:"PERP", NEAR:"NEAR", EXT:"EXT", QUAD:"QUAD" };
+                                            const osnapLabels: any = { END:"ANGOLO", MID:"CENTRO", INT:"INCROCIO", PERP:"PERP.", NEAR:"VICINO", EXT:"ESTENS.", QUAD:"QUAD." };
                                             const oc = osnapColors[osnapType] || "#1A9E73";
                                             const lbl = osnapLabels[osnapType] || "";
                                             const shape = osnapType;
@@ -5509,8 +5510,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               {/* Punto centrale */}
                                               <circle cx={gx} cy={gy} r={3*iz} fill={oc} />
                                               {/* Etichetta tipo OSNAP */}
-                                              <rect x={gx + 12*iz} y={gy - 8*iz} width={26*iz} height={11*iz} fill={oc} rx={2*iz} />
-                                              <text x={gx + 25*iz} y={gy + 0.5*iz} textAnchor="middle" fontSize={7*iz} fontWeight={800} fill="#fff" fontFamily="'SF Mono',monospace" letterSpacing="0.5">{lbl}</text>
+                                              <rect x={gx + 12*iz} y={gy - 9*iz} width={Math.max(32, lbl.length * 6.5)*iz} height={13*iz} fill={oc} rx={2.5*iz} />
+                                              <text x={gx + 12*iz + (Math.max(32, lbl.length * 6.5)*iz)/2} y={gy + 0.5*iz} textAnchor="middle" fontSize={7.5*iz} fontWeight={800} fill="#fff" fontFamily="'SF Mono',monospace" letterSpacing="0.3">{lbl}</text>
                                             </>;
                                           }
                                           if (drawMode === "place-mont-free" || drawMode === "place-trav-free") return null;
