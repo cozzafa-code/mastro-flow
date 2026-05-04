@@ -928,6 +928,21 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   );
 }
 
+// DIAG: log elementi ad ogni render
+function _diagLogEls(els: any[]) {
+  if (typeof window === "undefined") return;
+  const counts: Record<string, number> = {};
+  els.forEach(e => { counts[e.type] = (counts[e.type] || 0) + 1; });
+  console.log("[DIAG-RENDER] count by type:", counts);
+  console.log("[DIAG-RENDER] freeLine list:", els.filter(e => e.type === "freeLine").map(e => ({
+    id: e.id, subType: e.subType || "TELAIO",
+    x1: Math.round(e.x1), y1: Math.round(e.y1), x2: Math.round(e.x2), y2: Math.round(e.y2)
+  })));
+  console.log("[DIAG-RENDER] altri tipi non-freeLine:", els.filter(e => e.type !== "freeLine").map(e => ({
+    type: e.type, id: e.id
+  })));
+}
+
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, vanoSistema, vanoColore, vanoProfilo, vanoTipologiaId, vanoTipologiaNome }) {
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
@@ -4328,6 +4343,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                   {/* ══ ELEMENTS ══ */}
                                   {/* Render in z-order: montanti/traversi prima, freeLine in mezzo, zoccoloLibero ULTIMO (sopra a tutto) */}
+                                  {(() => { _diagLogEls(els); return null; })()}
                                   {[
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
                                     ...els.filter(e => e.type !== "montante" && e.type !== "traverso" && e.type !== "zoccoloLibero" && e.type !== "maniglione"),
