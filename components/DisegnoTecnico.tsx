@@ -5915,6 +5915,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <div style={{ fontSize: 8, color: "#666" }}>oltre semicerchio</div>
                                           </div>
                                         </div>
+                                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginTop: 14, marginBottom: 6, textTransform: "uppercase" }}>Archi tecnici</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_3_centri" })}
+                                            style={{ border: "2px solid #7C3AED", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#F5F3FF" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#7C3AED" strokeWidth="3">
+                                              <path d="M10,80 L10,55 Q10,40 25,40 Q50,20 75,40 Q90,40 90,55 L90,80 Z" fill="#7C3AED20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#7C3AED" }}>3 CENTRI</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>cesto</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_ellittico" })}
+                                            style={{ border: "2px solid #7C3AED", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#F5F3FF" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#7C3AED" strokeWidth="3">
+                                              <path d="M10,80 L10,55 A 40,30 0 0 1 90,55 L90,80 Z" fill="#7C3AED20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#7C3AED" }}>ELLITTICO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>elegante</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_policentrico" })}
+                                            style={{ border: "2px solid #7C3AED", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#F5F3FF" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#7C3AED" strokeWidth="3">
+                                              <path d="M10,80 L10,55 Q10,42 22,38 Q35,28 50,25 Q65,28 78,38 Q90,42 90,55 L90,80 Z" fill="#7C3AED20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#7C3AED" }}>POLICENTR.</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>5 archi</div>
+                                          </div>
+                                        </div>
                                       </div>
                                     )}
                                     {/* Step 2: misure */}
@@ -5964,6 +5991,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               <text x="100" y="35" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia (&gt; L/2)</text>
                                             </svg>
                                           )}
+                                          {shapePicker.shape === "arco_3_centri" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#7C3AED" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q20,75 50,72 Q100,40 150,72 Q180,75 180,100 L180,160 Z" fill="#7C3AED15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#7C3AED" fontWeight="700">H</text>
+                                              <text x="100" y="55" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">freccia</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_ellittico" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#7C3AED" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 A 80,55 0 0 1 180,100 L180,160 Z" fill="#7C3AED15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#7C3AED" fontWeight="700">H</text>
+                                              <text x="100" y="60" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">freccia (semi-asse)</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_policentrico" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#7C3AED" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q20,80 45,72 Q75,52 100,48 Q125,52 155,72 Q180,80 180,100 L180,160 Z" fill="#7C3AED15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#7C3AED" fontWeight="700">H</text>
+                                              <text x="100" y="42" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">freccia</text>
+                                            </svg>
+                                          )}
                                           {shapePicker.shape === "trapezio" && (
                                             <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#D08008" strokeWidth="2.5">
                                               <polygon points="20,160 20,80 180,30 180,160" fill="#D0800815"/>
@@ -5993,6 +6044,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                 {shapePicker.shape === "arco_ribassato" && `FRECCIA (mm) — deve essere < ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
                                                 {shapePicker.shape === "arco_acuto" && "ALTEZZA PUNTA (mm)"}
                                                 {shapePicker.shape === "arco_rialzato" && `FRECCIA (mm) — deve essere > ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
+                                                {shapePicker.shape === "arco_3_centri" && "FRECCIA (mm)"}
+                                                {shapePicker.shape === "arco_ellittico" && "FRECCIA (mm) = semi-asse verticale"}
+                                                {shapePicker.shape === "arco_policentrico" && "FRECCIA (mm)"}
                                                 {shapePicker.shape === "trapezio" && "ALT. DX H2 (mm)"}
                                               </div>
                                               <input type="number" value={shapePicker.H2} onChange={(e) => setShapePicker({ ...shapePicker, H2: e.target.value })}
@@ -6037,6 +6091,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             if (shapePicker.shape === "arco_acuto") {
                                               if (!H2mm || H2mm <= 0) { alert("Inserisci altezza punta"); return; }
                                             }
+                                            if (shapePicker.shape === "arco_3_centri" || shapePicker.shape === "arco_ellittico" || shapePicker.shape === "arco_policentrico") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                            }
                                             // Per casetta H2 puo essere anche 0 per fare un rettangolo, ma normalmente >0
                                             const pxPerMm = fW / (realW || 1200);
                                             const Lpx = Math.round(Lmm * pxPerMm);
@@ -6074,7 +6131,90 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               const ySpalla = y0 + frec;
                                               // Piedritto SX
                                               newEls.push({ id: t0, type: "freeLine", x1: xL, y1: yBase, x2: xL, y2: ySpalla });
-                                              if (shapePicker.shape === "arco_acuto") {
+                                              if (shapePicker.shape === "arco_3_centri") {
+                                                // ARCO A 3 CENTRI: 2 archi piccoli ai lati + 1 arco centrale grande
+                                                // Geometria semplificata: raggio laterale rl = freccia, raggio centrale rc = freccia*1.8
+                                                const rl = frec * 0.6;
+                                                const rc = frec * 1.5;
+                                                const yColmo = ySpalla - frec;
+                                                // Centri laterali: a quota ySpalla, a distanza rl da xL e xR
+                                                const cxLat1 = xL + rl;
+                                                const cxLat2 = xR - rl;
+                                                // Arco SX (90° -> tangente alla verticale)
+                                                const SEGS_LAT = 8;
+                                                for (let i = 0; i < SEGS_LAT; i++) {
+                                                  const t1 = i / SEGS_LAT, t2 = (i + 1) / SEGS_LAT;
+                                                  const a1 = Math.PI - (Math.PI / 4) * t1;
+                                                  const a2 = Math.PI - (Math.PI / 4) * t2;
+                                                  const x1a = cxLat1 + rl * Math.cos(a1);
+                                                  const y1a = ySpalla + rl * Math.sin(a1) - rl;
+                                                  const x2a = cxLat1 + rl * Math.cos(a2);
+                                                  const y2a = ySpalla + rl * Math.sin(a2) - rl;
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
+                                                }
+                                                // Arco centrale (riempie il gap tra i due archi laterali)
+                                                const xMidL = cxLat1 + rl * Math.cos(Math.PI - Math.PI/4);
+                                                const yMidL = ySpalla + rl * Math.sin(Math.PI - Math.PI/4) - rl;
+                                                const xMidR = cxLat2 + rl * Math.cos(Math.PI/4);
+                                                const yMidR = ySpalla + rl * Math.sin(Math.PI/4) - rl;
+                                                const SEGS_CTR = 12;
+                                                for (let i = 0; i < SEGS_CTR; i++) {
+                                                  const t1 = i / SEGS_CTR, t2 = (i + 1) / SEGS_CTR;
+                                                  const x1a = xMidL + (xMidR - xMidL) * t1;
+                                                  const x2a = xMidL + (xMidR - xMidL) * t2;
+                                                  // Curvatura quadratica passante per (cxA, yColmo)
+                                                  const tt1 = (x1a - xMidL) / (xMidR - xMidL);
+                                                  const tt2 = (x2a - xMidL) / (xMidR - xMidL);
+                                                  const interpY = (tt: number) => {
+                                                    const ya = (1-tt)*(1-tt)*yMidL + 2*(1-tt)*tt*yColmo + tt*tt*yMidR;
+                                                    return ya;
+                                                  };
+                                                  newEls.push({ id: t0 + 50 + i, type: "freeLine", x1: x1a, y1: interpY(tt1), x2: x2a, y2: interpY(tt2) });
+                                                }
+                                                // Arco DX
+                                                for (let i = 0; i < SEGS_LAT; i++) {
+                                                  const t1 = i / SEGS_LAT, t2 = (i + 1) / SEGS_LAT;
+                                                  const a1 = (Math.PI / 4) - (Math.PI / 4) * t1;
+                                                  const a2 = (Math.PI / 4) - (Math.PI / 4) * t2;
+                                                  const x1a = cxLat2 + rl * Math.cos(a1);
+                                                  const y1a = ySpalla + rl * Math.sin(a1) - rl;
+                                                  const x2a = cxLat2 + rl * Math.cos(a2);
+                                                  const y2a = ySpalla + rl * Math.sin(a2) - rl;
+                                                  newEls.push({ id: t0 + 100 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
+                                                }
+                                              } else if (shapePicker.shape === "arco_ellittico") {
+                                                // ELLISSE: semi-asse orizz = L/2, semi-asse vert = freccia
+                                                const a = Lpx / 2;
+                                                const b = frec;
+                                                const SEGS_E = 32;
+                                                for (let i = 0; i < SEGS_E; i++) {
+                                                  const ang1 = Math.PI - (Math.PI * i) / SEGS_E;
+                                                  const ang2 = Math.PI - (Math.PI * (i + 1)) / SEGS_E;
+                                                  const x1a = cxA + a * Math.cos(ang1);
+                                                  const y1a = ySpalla - b * Math.sin(ang1);
+                                                  const x2a = cxA + a * Math.cos(ang2);
+                                                  const y2a = ySpalla - b * Math.sin(ang2);
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
+                                                }
+                                              } else if (shapePicker.shape === "arco_policentrico") {
+                                                // POLICENTRICO 5 archi: come ellittico ma più armonico
+                                                // Uso una curva super-ellittica con n=2.5 (più "panciuta" di un'ellisse)
+                                                const a = Lpx / 2;
+                                                const b = frec;
+                                                const SEGS_P = 36;
+                                                for (let i = 0; i < SEGS_P; i++) {
+                                                  const ang1 = Math.PI - (Math.PI * i) / SEGS_P;
+                                                  const ang2 = Math.PI - (Math.PI * (i + 1)) / SEGS_P;
+                                                  const sgn = (v: number) => v >= 0 ? 1 : -1;
+                                                  const supX = (ang: number) => sgn(Math.cos(ang)) * Math.pow(Math.abs(Math.cos(ang)), 2/2.5) * a;
+                                                  const supY = (ang: number) => Math.pow(Math.abs(Math.sin(ang)), 2/2.5) * b;
+                                                  const x1a = cxA + supX(ang1);
+                                                  const y1a = ySpalla - supY(ang1);
+                                                  const x2a = cxA + supX(ang2);
+                                                  const y2a = ySpalla - supY(ang2);
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
+                                                }
+                                              } else if (shapePicker.shape === "arco_acuto") {
                                                 // 2 archi che si incontrano in punta. Centri ai piedritti opposti, raggio = L
                                                 const yPunta = y0;
                                                 // Arco SX: centro DX, raggio L
