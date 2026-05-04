@@ -17,8 +17,15 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; background: transparent; font-family: 'Inter', -apple-system, system-ui, sans-serif; color: var(--txt); }
 body { padding: 0; }
-.app { max-width: 380px; margin: 0 auto; background: var(--bg); border-radius: 0; padding: 12px; min-height: 100vh; }
-@media (min-width: 420px) { .app { border-radius: 16px; min-height: auto; margin-top: 8px; margin-bottom: 8px; } }
+.app { width: 100%; max-width: 100%; margin: 0; background: var(--bg); border-radius: 0; padding: 12px; min-height: 100vh; }
+@media (min-width: 600px) { .app { padding: 16px; } }
+@media (min-width: 900px) {
+  .app { display: grid; grid-template-columns: 1fr 380px; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: start; }
+  .left-col { grid-column: 1; position: sticky; top: 12px; }
+  .right-col { grid-column: 2; max-height: 95vh; overflow-y: auto; padding-right: 4px; }
+  .right-col::-webkit-scrollbar { width: 4px; }
+  .right-col::-webkit-scrollbar-thumb { background: var(--acc); border-radius: 2px; }
+}
 
 .header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 0.5px solid var(--bdr); }
 .logo-box { width: 28px; height: 28px; border-radius: 7px; background: var(--acc); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--bg); font-size: 16px; flex-shrink: 0; }
@@ -37,7 +44,9 @@ body { padding: 0; }
 .view { display: none; }
 .view.active { display: block; }
 .canvas-wrap { background: var(--bg3); border-radius: 12px; border: 1px solid var(--acc); overflow: hidden; position: relative; margin-bottom: 8px; }
-.canvas-wrap svg { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
+.canvas-wrap svg { width: 100%; height: auto; display: block; touch-action: none; user-select: none; min-height: 320px; max-height: 70vh; }
+@media (min-width: 600px) { .canvas-wrap svg { min-height: 400px; } }
+@media (min-width: 900px) { .canvas-wrap svg { min-height: 500px; } }
 .canvas-info { position: absolute; bottom: 6px; left: 6px; right: 6px; display: flex; justify-content: space-between; pointer-events: none; }
 .canvas-info > div { font-size: 9px; color: rgba(40,160,160,0.7); padding: 2px 6px; background: rgba(13,31,31,0.85); border-radius: 4px; }
 .canvas-instr { position: absolute; top: 6px; left: 6px; right: 6px; padding: 4px 8px; background: rgba(40,160,160,0.95); color: #fff; font-size: 10px; font-weight: 700; border-radius: 4px; text-align: center; pointer-events: none; }
@@ -145,6 +154,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
 <body>
 <div class="app" id="root">
 
+<div class="left-col">
 <div class="header">
   <div class="logo-box">M</div>
   <div class="h-title-wrap">
@@ -257,7 +267,9 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
     </div>
   </div>
 </div>
+</div>
 
+<div class="right-col">
 <div id="steps" class="steps-wrap"></div>
 
 <div id="result" class="result">
@@ -270,6 +282,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
     </div>
   </div>
   <button data-act="restart" class="restart-btn">Ricomincia configurazione</button>
+</div>
 </div>
 
 </div>
