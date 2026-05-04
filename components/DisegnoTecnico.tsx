@@ -4371,8 +4371,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {/* Render in z-order: montanti/traversi prima, freeLine in mezzo, zoccoloLibero ULTIMO (sopra a tutto) */}
                                   {(() => { _diagLogEls(els); return null; })()}
                                   {[
+                                    ...els.filter(e => e.type === "freeLine"),
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
-                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso" && e.type !== "zoccoloLibero" && e.type !== "maniglione"),
+                                    ...els.filter(e => e.type !== "freeLine" && e.type !== "montante" && e.type !== "traverso" && e.type !== "zoccoloLibero" && e.type !== "maniglione"),
                                     ...els.filter(e => e.type === "zoccoloLibero"),
                                     ...els.filter(e => e.type === "maniglione"),
                                   ].map(el => {
