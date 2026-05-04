@@ -2075,12 +2075,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   bx = anta.x + TK_ANTA; by = anta.y + TK_ANTA;
                                   bw = anta.w - TK_ANTA * 2; bh = anta.h - TK_ANTA * 2;
                                 } else if (polyAnta) {
-                                  const xs = polyAnta.poly.map((p: number[]) => p[0]);
-                                  const ys = polyAnta.poly.map((p: number[]) => p[1]);
-                                  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-                                  const yMin = Math.min(...ys), yMax = Math.max(...ys);
-                                  bx = xMin + TK_ANTA; by = yMin + TK_ANTA;
-                                  bw = (xMax - xMin) - TK_ANTA * 2; bh = (yMax - yMin) - TK_ANTA * 2;
+                                  // FIX: per polyAnta crea fermavetroPoly che segue la forma dell'anta
+                                  // Inseta il poligono dell'anta di TK_ANTA verso il centro
+                                  const _fxs = polyAnta.poly.map((p: number[]) => p[0]);
+                                  const _fys = polyAnta.poly.map((p: number[]) => p[1]);
+                                  const _fcx = _fxs.reduce((s: number, v: number) => s + v, 0) / _fxs.length;
+                                  const _fcy = _fys.reduce((s: number, v: number) => s + v, 0) / _fys.length;
+                                  const _innerPoly = polyAnta.poly.map((p: number[]) => {
+                                    const _dx = p[0] - _fcx, _dy = p[1] - _fcy;
+                                    const _d = Math.hypot(_dx, _dy) || 1;
+                                    return [p[0] - (_dx / _d) * TK_ANTA, p[1] - (_dy / _d) * TK_ANTA];
+                                  });
+                                  setDW([...els, {
+                                    id: Date.now(), type: "fermavetroPoly",
+                                    poly: polyAnta.poly,
+                                    polyInner: _innerPoly,
+                                  }], { drawMode: null });
+                                  return;
                                 } else {
                                   // 3. Cella telaio (parte fissa). Fermavetro aderente al telaio: offset minimo (1px).
                                   let cell = findCellAt(mx, my);
@@ -4584,6 +4595,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {/* Lato dx */}
                                           <rect x={el.x + el.w - T} y={el.y} width={T} height={el.h} fill={sel ? "#1A9E73" : "#a8a89c"} />
                                           {sel && [[el.x,el.y],[el.x+el.w,el.y],[el.x,el.y+el.h],[el.x+el.w,el.y+el.h]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={3} fill="#1A9E73" />)}
+                                        </g>
+                                      );
+                                    }
+                                    if (el.type === "fermavetroPoly" && el.poly && el.polyInner) {
+                                      const _outerPts = el.poly.map((p: number[]) => p.join(",")).join(" ");
+                                      const _innerPts = el.polyInner.map((p: number[]) => p.join(",")).join(" ");
+                                      const _outerD = el.poly.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
+                                      const _innerD = el.polyInner.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
+                                      const _color = sel ? "#1A9E73" : "#a8a89c";
+                                      return (
+                                        <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : undefined}>
+                                          <path d={`${_outerD} ${_innerD}`} fillRule="evenodd" fill={_color} />
+                                          {sel && el.poly.map((p: number[], pi: number) => <circle key={pi} cx={p[0]} cy={p[1]} r={3} fill="#1A9E73" />)}
                                         </g>
                                       );
                                     }
