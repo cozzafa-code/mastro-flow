@@ -1822,7 +1822,9 @@ export default function VanoDetailPanel() {
             {/* WIDGET CONFIGURATORI — letti da v.strumenti_layout (gestito dal tasto S) */}
             {(() => {
               const layout = Array.isArray(v?.strumenti_layout) ? v.strumenti_layout : [];
-              const attivi = layout.filter((x: any) => x?.attivo && x?.id);
+              // Solo gli id che NON sono strumenti standard (cioè widget veri)
+              const STD_IDS = ["accesso","tipologia","stanza","sistema","colori","telaio","coprifilo","lamiera","controtelaio","ferro","strutture","tendaggi"];
+              const attivi = layout.filter((x: any) => x?.attivo && x?.id && !STD_IDS.includes(x.id));
               if (attivi.length === 0) return null;
               return (
                 <div style={{marginTop:8, display:"flex", flexDirection:"column", gap:0}}>
