@@ -944,6 +944,7 @@ function _diagLogEls(els: any[]) {
 }
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, vanoSistema, vanoColore, vanoProfilo, vanoTipologiaId, vanoTipologiaNome }) {
+  const [showPalliniAngoli, setShowPalliniAngoli] = React.useState(false);
   const [showGradi, setShowGradi] = React.useState(true);
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
@@ -3688,7 +3689,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       return e;
                                     });
                                     setDW(upd);
-                                  }} style={{ ...bs(), color: "#3B7FE0", border: `1.5px solid #3B7FE0` }}>● Pallini Angoli</div>
+                                    setShowPalliniAngoli((s: boolean) => !s);
+                                  }} style={{ ...bs(showPalliniAngoli), color: showPalliniAngoli ? "#3B7FE0" : undefined, border: `1.5px solid #3B7FE0` }}>● Pallini Angoli</div>
                                   <div onClick={() => {
                                     // Se il vano ha già una tipologia caricata, chiedi se sovrascrivere o salvare nuova
                                     if (vanoTipologiaId) {
@@ -5625,7 +5627,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           }}
                                           onTouchStart={(e3) => { e3.stopPropagation(); }}>
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
-                                          {!isConfigured && <>
+                                          {showPalliniAngoli && !isConfigured && <>
                                             <circle cx={v.x} cy={v.y} r={14/zoom} fill="#fff" stroke="#888" strokeWidth={2/zoom} opacity={0.85} />
                                             <circle cx={v.x} cy={v.y} r={6/zoom} fill="#888" />
                                           </>}
