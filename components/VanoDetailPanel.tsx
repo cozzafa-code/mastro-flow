@@ -1,9 +1,9 @@
 "use client";
 // @ts-nocheck
-// ═══════════════════════════════════════════════════════════
-// MASTRO ERP — VanoDetailPanel
+// 
+// MASTRO ERP  VanoDetailPanel
 // Estratto S4: ~1.505 righe (Dettaglio vano + misure + disegno + accessori)
-// ═══════════════════════════════════════════════════════════
+// 
 import DisegnoTecnico from "./DisegnoTecnico";
 import { useDay } from "@/hooks/useDay";
 import { useCatalogoTendaggi } from "@/hooks/useCatalogoTendaggi";
@@ -26,16 +26,16 @@ import FotoMisure from "./FotoMisure";
 import AccessoriCatalogoVano from "./AccessoriCatalogoVano";
 import { supabase } from "@/lib/supabase";
 
-// ─── STATI MISURE ──────────────────────────────────────────
+//  STATI MISURE 
 const STATO_MISURE = [
   { id: "provvisorie", label: "Provvisorie", color: "#D08008", bg: "#D0800818", icon: "", desc: "Misure non ancora verificate" },
   { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "", desc: "Verificate sul posto, non ancora confermate" },
-  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "", desc: "Misure definitive — preventivo sbloccato" },
-  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "", desc: "Rilevate discrepanze — ricontrollare" },
+  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "", desc: "Misure definitive  preventivo sbloccato" },
+  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "", desc: "Rilevate discrepanze  ricontrollare" },
 ];
 const getStatoMisure = (v) => STATO_MISURE.find(s => s.id === (v?.statoMisure || "provvisorie")) || STATO_MISURE[0];
 
-// ── Upload foto su Supabase Storage ──
+//  Upload foto su Supabase Storage 
 async function uploadFotoVano(userId, cmId, vanoId, file, nome) {
   try {
     const ext = nome.split(".").pop() || "jpg";
@@ -106,7 +106,7 @@ function VanoBInput({ label, field, value, stepColor, textColor, subColor, bdrCo
           inputMode="numeric"
           pattern="[0-9]*"
           value={value > 0 ? value : ""}
-          placeholder="—"
+          placeholder=""
           onChange={e => onUpdate(parseInt(e.target.value) || 0)}
           style={{
             width: "100%", padding: "14px 16px", fontSize: 24, fontWeight: 900,
@@ -229,7 +229,7 @@ export default function VanoDetailPanel() {
     }, 450);
   };
 
-  // ═══ VOICE RECOGNITION — Self-contained implementation ═══
+  //  VOICE RECOGNITION  Self-contained implementation 
   const [vrActive, setVrActive] = useState(false);
   const [showFotoMisure, setShowFotoMisure] = useState(false);
   const [showSchizzo, setShowSchizzo] = useState(false);
@@ -267,13 +267,13 @@ export default function VanoDetailPanel() {
   const [lamieraLatoInfisso, setLamieraLatoInfisso] = useState<'alto'|'basso'|'sx'|'dx'|''>('');
   const [lamieraSelIdx, setLamieraSelIdx] = useState<number|null>(null);
   const [lamieraLunghezza, setLamieraLunghezza] = useState('');
-  // ── LAMIERA ZOOM/PAN refs ────────────────────────────────
+  //  LAMIERA ZOOM/PAN refs 
   const [lamieraEditIdx, setLamieraEditIdx] = React.useState<number|null>(null); // indice lamiera in modifica
   const lamieraZoom = React.useRef(1);
   const lamieraPan = React.useRef({x:0,y:0});
   const lamieraTouches = React.useRef<any[]>([]);
   const lamieraSvgRef = React.useRef<SVGSVGElement>(null);
-  // ── NUMPAD NATIVO ────────────────────────────────────────
+  //  NUMPAD NATIVO 
   const [numpadField, setNumpadField] = useState<string|null>(null);
   const [numpadVal, setNumpadVal] = useState("");
   const openNumpad = (field: string) => {
@@ -455,7 +455,7 @@ export default function VanoDetailPanel() {
     rec.onstart = () => { setVrActive(true); setVrError(""); };
     rec.onerror = (e: any) => {
       if (e.error === "not-allowed") setVrError("Microfono non autorizzato. Controlla i permessi del browser.");
-      else if (e.error === "no-speech") setVrError("Nessun audio rilevato. Parla più forte.");
+      else if (e.error === "no-speech") setVrError("Nessun audio rilevato. Parla pi forte.");
       else setVrError(`Errore: ${e.error}`);
     };
     rec.onend = () => {
@@ -519,14 +519,14 @@ export default function VanoDetailPanel() {
   // Cleanup on unmount
   useEffect(() => () => { if (recognitionRef.current) try { recognitionRef.current.stop(); } catch(e) {} }, []);
 
-  // ── RENDER BODY ──────────────────────────────────────
+  //  RENDER BODY 
   function renderBody() {
     if (!selectedVano || !selectedCM) return null;
     const v = selectedVano;
     const m = v.misure || {};
     const step = STEPS[vanoStep];
     const filled = Object.values(m).filter(x => (x as number) > 0).length;
-    const TIPO_TIPS = { Scorrevole: { t: "Scorrevole (alzante/traslante)", dim: "2000 × 2200 mm", w: ["Binario inferiore: serve spazio incasso", "Verifica portata parete"] }, Portafinestra: { t: "Portafinestra standard", dim: "800-900 × 2200 mm", w: ["Soglia a taglio termico", "Verifica altezza architrave"] }, Finestra: { t: "Finestra", dim: "1200 × 1400 mm", w: ["Verifica spazio per anta"] } };
+    const TIPO_TIPS = { Scorrevole: { t: "Scorrevole (alzante/traslante)", dim: "2000  2200 mm", w: ["Binario inferiore: serve spazio incasso", "Verifica portata parete"] }, Portafinestra: { t: "Portafinestra standard", dim: "800-900  2200 mm", w: ["Soglia a taglio termico", "Verifica altezza architrave"] }, Finestra: { t: "Finestra", dim: "1200  1400 mm", w: ["Verifica spazio per anta"] } };
     const tip = TIPO_TIPS[v.tipo] || null;
     const hasWarnings = !m.lAlto && !m.lCentro && !m.lBasso;
     const hasHWarnings = !m.hSx && !m.hCentro && !m.hDx;
@@ -560,7 +560,7 @@ export default function VanoDetailPanel() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: "1px", textTransform: "uppercase" }}>
-                  {TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.label || v.tipo || "VANO"}{v.stanza ? ` · ${v.stanza}` : ""}{v.piano ? ` · ${v.piano}` : ""}
+                  {TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.label || v.tipo || "VANO"}{v.stanza ? `  ${v.stanza}` : ""}{v.piano ? `  ${v.piano}` : ""}
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.4px", marginTop: 1, textShadow: "0 2px 4px rgba(0,0,0,0.2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {v.nome}
@@ -610,17 +610,17 @@ export default function VanoDetailPanel() {
           </div>
         </div>
 
-        {/* ═══ STORICO: BANNER SOLA LETTURA ═══ */}
+        {/*  STORICO: BANNER SOLA LETTURA  */}
         {isStorico && (
           <div style={{ margin: "0 16px 8px", padding: "10px 14px", borderRadius: 10, background: "#8B5CF610", border: "1.5px solid #8B5CF630", display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 16 }}><I d={ICO.lock} /></span>
             <div style={{ flex: 1, fontSize: 11, fontWeight: 700, color: "#8B5CF6" }}>
-              Rilievo storico — sola lettura
+              Rilievo storico  sola lettura
             </div>
           </div>
         )}
 
-        {/* ═══ VOCE AI SOPRALLUOGO — Self-contained ═══ */}
+        {/*  VOCE AI SOPRALLUOGO  Self-contained  */}
         <div style={{ margin: "8px 16px" }}>
           {/* Main button */}
           <div onClick={vrActive ? vrStop : vrStart}
@@ -645,14 +645,14 @@ export default function VanoDetailPanel() {
           {/* Error */}
           {vrError && (
             <div style={{ marginTop: 6, padding: "6px 12px", borderRadius: 8, background: "#ffebee", border: "1px solid #ef9a9a", fontSize: 10, color: "#c62828", textAlign: "center" }}>
-              <I d={ICO.alertTriangle} />️ {vrError}
+              <I d={ICO.alertTriangle} /> {vrError}
             </div>
           )}
 
           {/* Hint when active */}
           {vrActive && (
             <div style={{ marginTop: 6, padding: "6px 10px", borderRadius: 8, background: "#DC444408", border: "1px dashed #DC444440", fontSize: 9, color: "#666", textAlign: "center", lineHeight: 1.6 }}>
-              <I d={ICO.alertTriangle} /> <b>Parla ora</b> — Es: "Finestra due ante, soggiorno, piano terra, larghezza 1400, altezza 1200, tapparella motorizzata, bicolore bianco grigio"
+              <I d={ICO.alertTriangle} /> <b>Parla ora</b>  Es: "Finestra due ante, soggiorno, piano terra, larghezza 1400, altezza 1200, tapparella motorizzata, bicolore bianco grigio"
             </div>
           )}
 
@@ -686,7 +686,7 @@ export default function VanoDetailPanel() {
                     </div>
                   )}
                   {tr.parsed && Object.keys(tr.parsed).length === 0 && (
-                    <div style={{ fontSize: 8, color: T.orange, fontWeight: 600, marginTop: 1 }}><I d={ICO.alertTriangle} /> Nessun campo riconosciuto — salvata come nota</div>
+                    <div style={{ fontSize: 8, color: T.orange, fontWeight: 600, marginTop: 1 }}><I d={ICO.alertTriangle} /> Nessun campo riconosciuto  salvata come nota</div>
                   )}
                 </div>
               ))}
@@ -694,7 +694,7 @@ export default function VanoDetailPanel() {
           )}
         </div>
 
-        {/* == INFO VANO — fisarmoniche (solo step 0) == */}
+        {/* == INFO VANO  fisarmoniche (solo step 0) == */}
         {vanoStep === 0 && (() => {
           const updateV = (field, val) => {
             const updRil = selectedRilievo ? { ...selectedRilievo, vani: selectedRilievo.vani.map(vn => vn.id === v.id ? { ...vn, [field]: val } : vn) } : null;
@@ -712,7 +712,7 @@ export default function VanoDetailPanel() {
           const coloriRAL = ["RAL 9010","RAL 9016","RAL 9001","RAL 7016","RAL 7021","RAL 8014","RAL 8016","RAL 1013","Altro"];
 
           const sections = [
-            { id:"accesso", icon: "", label:"Accesso / Difficoltà",
+            { id:"accesso", icon: "", label:"Accesso / Difficolt",
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z\"/><polyline points=\"9 22 9 12 15 12 15 22\"/></svg>",
               badge: v.difficoltaSalita||null, filled: [v.difficoltaSalita, v.mezzoSalita].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -736,7 +736,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
             },
-            { id:"tipologia", icon:"□", label:"Tipologia",
+            { id:"tipologia", icon:"", label:"Tipologia",
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/></svg>",
               badge: v.tipo||null, filled: v.tipo ? 1 : 0, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -753,7 +753,7 @@ export default function VanoDetailPanel() {
                     value={v.tipo || ""}
                     onChange={e => {
                       const val = e.target.value;
-                      // Se è una tipologia DB (formato "DB:<id>"), copia il disegno nel vano
+                      // Se  una tipologia DB (formato "DB:<id>"), copia il disegno nel vano
                       if (val.startsWith("DB:")) {
                         const dbId = parseInt(val.substring(3));
                         const tipo = dbTipologie.find(t => t.id === dbId);
@@ -772,12 +772,12 @@ export default function VanoDetailPanel() {
                     style={{ width:"100%", padding:"10px 14px", borderRadius:10, border:`1.5px solid ${v.tipo?T.acc:T.bdr}`,
                       fontSize:15, fontWeight:600, background:v.tipo?T.accLt:T.card, color:v.tipo?T.acc:T.sub,
                       fontFamily:"Inter", boxSizing:"border-box", cursor:"pointer" }}>
-                    <option value="">— Seleziona tipologia —</option>
+                    <option value=""> Seleziona tipologia </option>
                     {/* Tipologie standard hardcoded */}
                     {cats.map(cat => (
                       <optgroup key={cat} label={cat}>
                         {tipologieFiltrate.filter(t=>t.cat===cat).map(t=>(
-                          <option key={t.code} value={t.code}>{t.code}{t.label ? ` — ${t.label}` : ""}</option>
+                          <option key={t.code} value={t.code}>{t.code}{t.label ? `  ${t.label}` : ""}</option>
                         ))}
                       </optgroup>
                     ))}
@@ -794,19 +794,19 @@ export default function VanoDetailPanel() {
                         : filtered;
                       return <>
                         {compatibili.length > 0 && (
-                          <optgroup label={`✓ Compatibili con ${sistemaCorrente}`}>
+                          <optgroup label={` Compatibili con ${sistemaCorrente}`}>
                             {compatibili.map(t => (
                               <option key={`db-c-${t.id}`} value={`DB:${t.id}`}>
-                                ✓ {t.nome}{t.n_ante ? ` (${t.n_ante}a)` : ""}{t.dimensioni_default ? ` ${t.dimensioni_default}mm` : ""}
+                                 {t.nome}{t.n_ante ? ` (${t.n_ante}a)` : ""}{t.dimensioni_default ? ` ${t.dimensioni_default}mm` : ""}
                               </option>
                             ))}
                           </optgroup>
                         )}
                         {altre.length > 0 && (
-                          <optgroup label={`★ Mie tipologie${tipCat ? " (" + tipCat + ")" : ""}`}>
+                          <optgroup label={` Mie tipologie${tipCat ? " (" + tipCat + ")" : ""}`}>
                             {altre.map(t => (
                               <option key={`db-${t.id}`} value={`DB:${t.id}`}>
-                                ★ {t.nome}{t.n_ante ? ` (${t.n_ante}a)` : ""}{t.dimensioni_default ? ` ${t.dimensioni_default}mm` : ""}
+                                 {t.nome}{t.n_ante ? ` (${t.n_ante}a)` : ""}{t.dimensioni_default ? ` ${t.dimensioni_default}mm` : ""}
                               </option>
                             ))}
                           </optgroup>
@@ -821,15 +821,15 @@ export default function VanoDetailPanel() {
                     if (pannelliFiltrati.length === 0) {
                       return (
                         <div style={{ padding: 14, marginTop: 8, background: "#fff8e8", borderRadius: 10, border: `1.5px solid ${T.acc}30`, fontSize: 11, color: T.sub, lineHeight: 1.5 }}>
-                          <div style={{ fontWeight: 700, color: T.acc, marginBottom: 4 }}>📭 Nessuna {tipCat.toLowerCase()} in catalogo</div>
-                          <div style={{ fontSize: 10 }}>Vai su <a href="/pannelli" style={{ color: T.acc, fontWeight: 700 }}>Catalogo Pannelli</a> per importare cataloghi (Garofoli, Dierre, ecc.) — l'AI estrae automaticamente nomi, foto, misure, colori.</div>
+                          <div style={{ fontWeight: 700, color: T.acc, marginBottom: 4 }}> Nessuna {tipCat.toLowerCase()} in catalogo</div>
+                          <div style={{ fontSize: 10 }}>Vai su <a href="/pannelli" style={{ color: T.acc, fontWeight: 700 }}>Catalogo Pannelli</a> per importare cataloghi (Garofoli, Dierre, ecc.)  l'AI estrae automaticamente nomi, foto, misure, colori.</div>
                         </div>
                       );
                     }
                     return (
                       <div style={{ marginTop: 8 }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                          📦 {pannelliFiltrati.length} modelli in catalogo
+                           {pannelliFiltrati.length} modelli in catalogo
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 6, maxHeight: 280, overflowY: "auto", padding: 4 }}>
                           {pannelliFiltrati.map(p => {
@@ -869,9 +869,9 @@ export default function VanoDetailPanel() {
                                   {p.immagine_url ? (
                                     <img src={p.immagine_url} alt={p.nome} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
                                   ) : (
-                                    <div style={{ fontSize: 26, opacity: 0.3 }}>{tipCat === "Porte Interne" ? "🚪" : "🛡"}</div>
+                                    <div style={{ fontSize: 26, opacity: 0.3 }}>{tipCat === "Porte Interne" ? "" : ""}</div>
                                   )}
-                                  {isSel && <div style={{ position: "absolute", top: 4, right: 4, width: 18, height: 18, borderRadius: "50%", background: T.acc, color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>✓</div>}
+                                  {isSel && <div style={{ position: "absolute", top: 4, right: 4, width: 18, height: 18, borderRadius: "50%", background: T.acc, color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}></div>}
                                 </div>
                                 <div style={{ padding: 6, fontSize: 10, fontWeight: 700, color: T.txt, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                   {p.nome}
@@ -903,7 +903,7 @@ export default function VanoDetailPanel() {
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:3}}>PEZZI</div>
                   <div style={{display:"flex",alignItems:"center",gap:4,maxWidth:120}}>
-                    <div onClick={()=>updateV("pezzi",Math.max(1,(v.pezzi||1)-1))} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}>−</div>
+                    <div onClick={()=>updateV("pezzi",Math.max(1,(v.pezzi||1)-1))} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}></div>
                     <div style={{flex:1,textAlign:"center",fontSize:18,fontWeight:800,color:T.acc}}>{v.pezzi||1}</div>
                     <div onClick={()=>updateV("pezzi",(v.pezzi||1)+1)} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}>+</div>
                   </div>
@@ -923,7 +923,7 @@ export default function VanoDetailPanel() {
             },
             { id:"sistema", icon: "", label:"Sistema / Vetro",
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\"/><line x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"/><line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"21\"/></svg>",
-              badge: v.sistema?v.sistema.split(" ").slice(0,2).join(" · "):null, filled: [v.sistema, v.vetro].filter(Boolean).length, total: 2,
+              badge: v.sistema?v.sistema.split(" ").slice(0,2).join("  "):null, filled: [v.sistema, v.vetro].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.5px"}}>SISTEMA PROFILI</div>
@@ -957,7 +957,7 @@ export default function VanoDetailPanel() {
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 2a10 10 0 010 20\"/></svg>",
               badge: v.coloreInt||null, filled: [v.coloreInt, v.bicolore && v.coloreEst, v.coloreAcc].filter(Boolean).length, total: v.bicolore ? 3 : 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                {!v.sistema && <div style={{padding:"14px",textAlign:"center",color:T.sub,fontSize:12,background:T.bg,borderRadius:10,border:"1px dashed "+T.bdr}}><I d={ICO.alertTriangle} />️ Scegli prima il sistema profili</div>}
+                {!v.sistema && <div style={{padding:"14px",textAlign:"center",color:T.sub,fontSize:12,background:T.bg,borderRadius:10,border:"1px dashed "+T.bdr}}><I d={ICO.alertTriangle} /> Scegli prima il sistema profili</div>}
                 {v.sistema && <>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub}}>COLORE {v.bicolore?"INTERNO":"PROFILI"}</div>
@@ -967,21 +967,21 @@ export default function VanoDetailPanel() {
                   </div>
                 </div>
                 <select style={S.select} value={v.coloreInt||""} onChange={e=>{updateV("coloreInt",e.target.value); if(e.target.value && !v.bicolore) flashAndAdvance("colori");}}>
-                  <option value="">— Scegli colore —</option>
-                  {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                  <option value=""> Scegli colore </option>
+                  {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code}  {c.nome}</option>)}
                 </select>
                 {v.bicolore && <>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginTop:4}}>COLORE ESTERNO</div>
                   <select style={S.select} value={v.coloreEst||""} onChange={e=>{updateV("coloreEst",e.target.value); if(e.target.value) flashAndAdvance("colori");}}>
-                    <option value="">— Scegli colore —</option>
-                    {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                    <option value=""> Scegli colore </option>
+                    {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code}  {c.nome}</option>)}
                   </select>
                 </>}
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:3}}>ACCESSORI</div>
                   <select style={S.select} value={v.coloreAcc||""} onChange={e=>updateV("coloreAcc",e.target.value)}>
-                    <option value="">— Come profili —</option>
-                    {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                    <option value=""> Come profili </option>
+                    {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code}  {c.nome}</option>)}
                   </select>
                 </div>
                 </>}
@@ -1011,7 +1011,7 @@ export default function VanoDetailPanel() {
                   <span style={{fontSize:12,fontWeight:600,color:T.text}}>Rifilato</span>
                 </div>
                 {v.rifilato && <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                  {[["rifilSx","↙ Sx"],["rifilDx","↘ Dx"],["rifilSopra","↑ Sopra"],["rifilSotto","↓ Sotto"]].map(([f,l])=>(
+                  {[["rifilSx"," Sx"],["rifilDx"," Dx"],["rifilSopra"," Sopra"],["rifilSotto"," Sotto"]].map(([f,l])=>(
                     <div key={f}><div style={{fontSize:9,color:T.sub,fontWeight:600,marginBottom:2}}>{l} (mm)</div>
                     <input style={S.input} type="number" inputMode="numeric" placeholder="0" value={v[f]||""} onChange={e=>updateV(f,e.target.value)}/></div>
                   ))}
@@ -1059,7 +1059,7 @@ export default function VanoDetailPanel() {
                   setLamieraLatoBuono("esterno");
                   setLamieraLatoInfisso("");
                   setLamieraLunghezza("");
-                  // Imposta editIdx = indice della nuova lamiera → salvataggio usa branch if
+                  // Imposta editIdx = indice della nuova lamiera  salvataggio usa branch if
                   setLamieraEditIdx(updated.length - 1);
                   lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
                   setShowLamieraDisegno(true);
@@ -1069,7 +1069,7 @@ export default function VanoDetailPanel() {
                     {lamList.map((lam: any, li: number) => {
                       const svilTot = (lam.pieghe||[]).reduce((a:number,s:any)=>a+s.mm,0);
                       let preNodes:{x:number,y:number}[] = [];
-                      // ViewBox fisso 300x200 — etichette sempre proporzionate alla card
+                      // ViewBox fisso 300x200  etichette sempre proporzionate alla card
                       const PVFW=300, PVFH=200;
                       let svgVW=PVFW, svgVH=PVFH;
                       if((lam.pieghe||[]).length > 0){
@@ -1117,12 +1117,12 @@ export default function VanoDetailPanel() {
                               lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
                               setShowLamieraDisegno(true);
                             }} style={{padding:"5px 10px",borderRadius:6,background:"#0F766E",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                              ✏️ Modifica
+                               Modifica
                             </div>
                             <div onClick={e=>{e.stopPropagation();
                               updateV("lamiere",lamList.filter((_:any,i:number)=>i!==li));
                             }} style={{padding:"5px 8px",borderRadius:6,background:"#DC444415",color:"#DC4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                              ✕
+                              
                             </div>
                           </div>
                           {preNodes.length > 1 ? (
@@ -1147,7 +1147,7 @@ export default function VanoDetailPanel() {
                               {/* Profilo */}
                               <polyline points={prePts} fill="none" stroke="#0F766E" strokeWidth="2"
                                 strokeLinecap="round" strokeLinejoin="round"/>
-                              {/* Quote segmenti — fontSize proporzionale */}
+                              {/* Quote segmenti  fontSize proporzionale */}
                               {(() => {
                                 const fz = 7.5; // viewBox fisso 300x200
                                 const lhalf = fz * 0.65;
@@ -1161,10 +1161,10 @@ export default function VanoDetailPanel() {
                                   const offset = fz * 1.6;
                                   const lx = isH ? mx : mx + side*offset;
                                   const ly = isH ? my + side*offset : my;
-                                  // Solo deviazioni reali, non @+0° o @+90°
+                                  // Solo deviazioni reali, non @+0 o @+90
                                   const dev = (s.angolo!=null && s.angolo!==90) ? Math.abs(s.angolo-90) : 0;
                                   const lbl = dev > 0
-                                    ? `${s.mm} ${s.angolo<90?'+':'−'}${dev}°`
+                                    ? `${s.mm} ${s.angolo<90?'+':''}${dev}`
                                     : String(s.mm);
                                   const tw = lbl.length * fz * 0.62 + 5;
                                   const th = fz + 4;
@@ -1191,7 +1191,7 @@ export default function VanoDetailPanel() {
                                     stroke="#0F766E" strokeWidth={nr*0.45}/>
                                 ));
                               })()}
-                              {/* Badge EST/INT — dimensioni proporzionali */}
+                              {/* Badge EST/INT  dimensioni proporzionali */}
                               {(() => {
                                 const bfz = 7; // viewBox fisso 300x200
                                 const bw = bfz*4.5, bh = bfz*1.8;
@@ -1232,7 +1232,7 @@ export default function VanoDetailPanel() {
                               setShowLamieraDisegno(true);
                             }} style={{padding:"14px",textAlign:"center",fontSize:11,color:"#0F766E",
                               fontWeight:600,cursor:"pointer",background:"#F0FDF9",borderRadius:"0 0 8px 8px"}}>
-                              ✏️ Tocca per disegnare le pieghe
+                               Tocca per disegnare le pieghe
                             </div>
                           )}
                         </div>
@@ -1249,38 +1249,38 @@ export default function VanoDetailPanel() {
                 );
               })(),
             },
-                        { id:"controtelaio", icon:"◻", label:"Controtelaio",
+                        { id:"controtelaio", icon:"", label:"Controtelaio",
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"3\" y1=\"9\" x2=\"21\" y2=\"9\"/><line x1=\"9\" y1=\"21\" x2=\"9\" y2=\"9\"/></svg>",
               badge: v.controtelaio?.tipo ? (v.controtelaio.tipo==="singolo"?"Singolo":v.controtelaio.tipo==="doppio"?"Doppio":"Con cassonetto") : null, filled: v.controtelaio?.tipo ? 1 : 0, total: 1,
               body: (() => {
-                // ── SISTEMI CONTROTELAIO ─────────────────────────────
+                //  SISTEMI CONTROTELAIO 
                 const CT_SISTEMI = [
                   // SINGOLI
-                  { id:"PROS", label:"PROS", gruppo:"Singolo", varLabels:["A — Sede infisso"], hasB:false, hasCass:false,
+                  { id:"PROS", label:"PROS", gruppo:"Singolo", varLabels:["A  Sede infisso"], hasB:false, hasCass:false,
                     desc:"Controtelaio singolo - ribattuta variabile" },
-                  { id:"PROI", label:"PROI", gruppo:"Singolo", varLabels:["A — Sede infisso"], hasB:false, hasCass:false,
+                  { id:"PROI", label:"PROI", gruppo:"Singolo", varLabels:["A  Sede infisso"], hasB:false, hasCass:false,
                     desc:"Controtelaio singolo - ribattuta std 50mm" },
                   // FILO MURO
-                  { id:"STH5", label:"STH5", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                  { id:"STH5", label:"STH5", gruppo:"EPS filo muro", varLabels:["A  Sede infisso","B  Sede persiana"], hasB:true, hasCass:true,
                     desc:"EPS - spalla 60mm" },
-                  { id:"STH5I", label:"STH5I", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                  { id:"STH5I", label:"STH5I", gruppo:"EPS filo muro", varLabels:["A  Sede infisso","B  Sede persiana"], hasB:true, hasCass:true,
                     desc:"EPS - spalla 64mm" },
-                  { id:"STH6", label:"STH6", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                  { id:"STH6", label:"STH6", gruppo:"EPS filo muro", varLabels:["A  Sede infisso","B  Sede persiana"], hasB:true, hasCass:true,
                     desc:"EPS 325mm intonaco finito" },
-                  { id:"STH6I", label:"STH6I", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                  { id:"STH6I", label:"STH6I", gruppo:"EPS filo muro", varLabels:["A  Sede infisso","B  Sede persiana"], hasB:true, hasCass:true,
                     desc:"EPS 325mm - sede avanzata" },
-                  { id:"STF5", label:"STF5", gruppo:"Fibrocemento filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                  { id:"STF5", label:"STF5", gruppo:"Fibrocemento filo muro", varLabels:["A  Sede infisso","B  Sede persiana"], hasB:true, hasCass:true,
                     desc:"Fibrocemento sp.44/64/84mm" },
-                  { id:"STF6", label:"STF6", gruppo:"Fibrocemento filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                  { id:"STF6", label:"STF6", gruppo:"Fibrocemento filo muro", varLabels:["A  Sede infisso","B  Sede persiana"], hasB:true, hasCass:true,
                     desc:"Fibrocemento 325mm" },
                   // CENTRO MURO
-                  { id:"STH3", label:"STH3", gruppo:"EPS centro muro", varLabels:["A — Sede infisso"], hasB:false, hasCass:true,
+                  { id:"STH3", label:"STH3", gruppo:"EPS centro muro", varLabels:["A  Sede infisso"], hasB:false, hasCass:true,
                     desc:"EPS centro muro 325mm" },
-                  { id:"STF3", label:"STF3", gruppo:"Fibrocemento centro muro", varLabels:["A — Sede infisso"], hasB:false, hasCass:true,
+                  { id:"STF3", label:"STF3", gruppo:"Fibrocemento centro muro", varLabels:["A  Sede infisso"], hasB:false, hasCass:true,
                     desc:"Fibrocemento sp.64/84mm" },
-                  { id:"PROGCP", label:"PROGCP", gruppo:"STH PRO", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                  { id:"PROGCP", label:"PROGCP", gruppo:"STH PRO", varLabels:["A  Sede infisso","B  Sede persiana"], hasB:true, hasCass:true,
                     desc:"PVC - variabile+38.5mm" },
-                  { id:"PROGC", label:"PROGC", gruppo:"STH PRO", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                  { id:"PROGC", label:"PROGC", gruppo:"STH PRO", varLabels:["A  Sede infisso","B  Sede persiana"], hasB:true, hasCass:true,
                     desc:"Alluminio - variabile+32.4mm" },
                   { id:"CUSTOM", label:"+ Personalizzato", gruppo:"Altro", varLabels:["A","B","C"], hasB:true, hasCass:false,
                     desc:"Sistema non in lista" },
@@ -1290,7 +1290,7 @@ export default function VanoDetailPanel() {
                 const sistema = CT_SISTEMI.find(s => s.id === ct.sistema) || null;
                 const gruppi = [...new Set(CT_SISTEMI.map(s => s.gruppo))];
 
-                // ── CONFIGURATORE CONTROTELAIO ──────────────────────────────────
+                //  CONFIGURATORE CONTROTELAIO 
                 const renderSagoma = (sis) => (
                   <ConfiguratoreControtelaio
                     value={v.controtelaio?.disegno}
@@ -1302,7 +1302,7 @@ export default function VanoDetailPanel() {
                 return (
                   <div style={{display:"flex",flexDirection:"column",gap:12}}>
 
-                    {/* ── SELEZIONE SISTEMA ── */}
+                    {/*  SELEZIONE SISTEMA  */}
                     <div>
                       <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,textTransform:"uppercase",letterSpacing:0.5}}>Sistema controtelaio</div>
                       {gruppi.map(gruppo => (
@@ -1324,7 +1324,7 @@ export default function VanoDetailPanel() {
                       ))}
                     </div>
 
-                    {/* ── SAGOMA + VARIABILI ── */}
+                    {/*  SAGOMA + VARIABILI  */}
                     {sistema && (
                       <div>
                         {/* Nome sistema + desc */}
@@ -1338,15 +1338,15 @@ export default function VanoDetailPanel() {
                           {renderSagoma(sistema)}
                         </div>
 
-                        {/* Input variabili — una riga per variabile */}
+                        {/* Input variabili  una riga per variabile */}
                         <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
-                          {/* A — sempre presente */}
+                          {/* A  sempre presente */}
                           <div style={{display:"flex",alignItems:"center",gap:8}}>
                             <div style={{width:28,height:28,borderRadius:6,background:"#DC4444",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                               <span style={{fontSize:13,fontWeight:800,color:"white"}}>A</span>
                             </div>
                             <div style={{flex:1}}>
-                              <div style={{fontSize:9,fontWeight:700,color:"#DC4444",marginBottom:3}}>SEDE INFISSO (mm) — variabile</div>
+                              <div style={{fontSize:9,fontWeight:700,color:"#DC4444",marginBottom:3}}>SEDE INFISSO (mm)  variabile</div>
                               <input type="number" inputMode="numeric" placeholder="inserisci mm"
                                 value={ct.varA||""}
                                 onChange={e=>updateV("controtelaio",{...ct,varA:parseInt(e.target.value)||0})}
@@ -1354,14 +1354,14 @@ export default function VanoDetailPanel() {
                             </div>
                           </div>
 
-                          {/* B — solo se sistema ha sede persiana */}
+                          {/* B  solo se sistema ha sede persiana */}
                           {sistema.hasB && (
                             <div style={{display:"flex",alignItems:"center",gap:8}}>
                               <div style={{width:28,height:28,borderRadius:6,background:"#D08008",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                                 <span style={{fontSize:13,fontWeight:800,color:"white"}}>B</span>
                               </div>
                               <div style={{flex:1}}>
-                                <div style={{fontSize:9,fontWeight:700,color:"#D08008",marginBottom:3}}>SEDE PERSIANA (mm) — variabile</div>
+                                <div style={{fontSize:9,fontWeight:700,color:"#D08008",marginBottom:3}}>SEDE PERSIANA (mm)  variabile</div>
                                 <input type="number" inputMode="numeric" placeholder="inserisci mm"
                                   value={ct.varB||""}
                                   onChange={e=>updateV("controtelaio",{...ct,varB:parseInt(e.target.value)||0})}
@@ -1370,14 +1370,14 @@ export default function VanoDetailPanel() {
                             </div>
                           )}
 
-                          {/* C — profondità cassonetto */}
+                          {/* C  profondit cassonetto */}
                           {sistema.hasCass && (
                             <div style={{display:"flex",alignItems:"center",gap:8}}>
                               <div style={{width:28,height:28,borderRadius:6,background:"#3B7FE0",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                                 <span style={{fontSize:13,fontWeight:800,color:"white"}}>C</span>
                               </div>
                               <div style={{flex:1}}>
-                                <div style={{fontSize:9,fontWeight:700,color:"#3B7FE0",marginBottom:3}}>PROFONDITÀ INTONACO (mm) — std 325</div>
+                                <div style={{fontSize:9,fontWeight:700,color:"#3B7FE0",marginBottom:3}}>PROFONDIT INTONACO (mm)  std 325</div>
                                 <input type="number" inputMode="numeric" placeholder="325"
                                   value={ct.varC||""}
                                   onChange={e=>updateV("controtelaio",{...ct,varC:parseInt(e.target.value)||0})}
@@ -1387,7 +1387,7 @@ export default function VanoDetailPanel() {
                           )}
                         </div>
 
-                        {/* ── MISURE CONTROTELAIO ── */}
+                        {/*  MISURE CONTROTELAIO  */}
                         <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10}}>
                           <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,textTransform:"uppercase",letterSpacing:0.5}}>
                             Misure controtelaio
@@ -1418,7 +1418,7 @@ export default function VanoDetailPanel() {
                                 {ct.tipoMisura==="esterno"&&"Esterno CT = dimensione esterna del controtelaio montato"}
                                 {ct.tipoMisura==="interno"&&"Interno telaio = luce interna dell'infisso"}
                                 {ct.tipoMisura==="grezzo"&&"Muro grezzo = apertura prima dell'intonaco"}
-                                {!ct.tipoMisura&&"Seleziona il tipo di misura →"}
+                                {!ct.tipoMisura&&"Seleziona il tipo di misura "}
                               </div>
                             </div>
                           </div>
@@ -1442,7 +1442,7 @@ export default function VanoDetailPanel() {
                             ))}
                           </div>
 
-                          {/* L × H */}
+                          {/* L  H */}
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                             <div>
                               <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:3}}>LARGHEZZA L (mm)</div>
@@ -1478,7 +1478,7 @@ export default function VanoDetailPanel() {
                               {sistema?.id==="PROI"&&(
                                 <div style={{flex:2,padding:"8px",borderRadius:8,background:"#1A9E7310",
                                   border:"1px dashed #1A9E7340",display:"flex",alignItems:"center"}}>
-                                  <div style={{fontSize:9,color:"#1A9E73",fontWeight:600}}>PROI — ribattuta standard 50mm</div>
+                                  <div style={{fontSize:9,color:"#1A9E73",fontWeight:600}}>PROI  ribattuta standard 50mm</div>
                                 </div>
                               )}
                             </div>
@@ -1496,16 +1496,16 @@ export default function VanoDetailPanel() {
                               style={{padding:"10px 14px",borderRadius:10,background:"#1A9E7315",
                                 border:"1.5px solid #1A9E7340",textAlign:"center",cursor:"pointer",marginBottom:4}}>
                               <div style={{fontSize:12,fontWeight:800,color:"#1A9E73"}}>
-                                Calcola misura infisso (−{ct.ribattuta||30}mm/lato)
+                                Calcola misura infisso ({ct.ribattuta||30}mm/lato)
                               </div>
                               <div style={{fontSize:10,color:"#1A9E7380",marginTop:2,fontFamily:"'JetBrains Mono',monospace"}}>
-                                {(ct.l||0)-(ct.ribattuta||30)*2} × {(ct.h||0)-(ct.ribattuta||30)*2} mm
+                                {(ct.l||0)-(ct.ribattuta||30)*2}  {(ct.h||0)-(ct.ribattuta||30)*2} mm
                               </div>
                             </div>
                           )}
                         </div>
 
-                        {/* ── CASSONETTO / AVVOLGIBILE (solo sistemi hasCass) ── */}
+                        {/*  CASSONETTO / AVVOLGIBILE (solo sistemi hasCass)  */}
                         {sistema?.hasCass && (
                           <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:4}}>
                             <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:8,
@@ -1575,7 +1575,7 @@ export default function VanoDetailPanel() {
                           </div>
                         )}
 
-                        {/* ── ACCESSORI ── */}
+                        {/*  ACCESSORI  */}
                         <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:10}}>
                           <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,
                             textTransform:"uppercase",letterSpacing:0.5}}>Accessori</div>
@@ -1583,8 +1583,8 @@ export default function VanoDetailPanel() {
                             {[
                               ["battutaPVC","Battuta PVC"],
                               ["battutaLegno","Battuta legno"],
-                              ["smusso","Smusso 45°"],
-                              ["quartoLato","4° lato PVC"],
+                              ["smusso","Smusso 45"],
+                              ["quartoLato","4 lato PVC"],
                               ["tappoZanz","Tappo zanzariera"],
                               ["sottobancale","Sottobancale EPS"],
                               ["assemblaggio","Assemblaggio CT"],
@@ -1596,13 +1596,13 @@ export default function VanoDetailPanel() {
                                   border:`1.5px solid ${ct[k]?"#D08008":T.bdr}`,
                                   background:ct[k]?"#D0800815":T.card,
                                   color:ct[k]?"#D08008":T.sub}}>
-                                {ct[k]?"✓ ":""}{lbl}
+                                {ct[k]?" ":""}{lbl}
                               </div>
                             ))}
                           </div>
                         </div>
 
-                        {/* ── RIEPILOGO ORDINE ── */}
+                        {/*  RIEPILOGO ORDINE  */}
                         {ct.l > 0 && ct.h > 0 && ct.sistema && (
                           <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:10}}>
                             <div style={{background:"#1A1A1C",borderRadius:10,padding:"12px 14px"}}>
@@ -1617,7 +1617,7 @@ export default function VanoDetailPanel() {
                                 </span>
                                 <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,
                                   color:"#fff",fontWeight:700}}>
-                                  {ct.l} × {ct.h} mm
+                                  {ct.l}  {ct.h} mm
                                 </span>
                                 {ct.ribattuta&&(
                                   <span style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>
@@ -1652,7 +1652,7 @@ export default function VanoDetailPanel() {
                     {!sistema && (
                       <div style={{textAlign:"center",padding:"8px 0",fontSize:12,color:T.sub,cursor:"pointer"}}
                         onClick={()=>updateV("controtelaio",{tipo:"nessuno"})}>
-                        Nessun controtelaio → Salta
+                        Nessun controtelaio  Salta
                       </div>
                     )}
 
@@ -1674,7 +1674,7 @@ export default function VanoDetailPanel() {
   ];
 
           // Build chip summary
-          const configChips = [v.tipo, v.stanza && v.piano ? v.stanza+" "+v.piano : "", v.sistema ? v.sistema.split(" ").slice(0,2).join(" · ") : "", v.coloreInt && v.coloreEst && v.bicolore ? v.coloreInt+"/"+v.coloreEst : v.coloreInt||"", v.vetro||""].filter(Boolean);
+          const configChips = [v.tipo, v.stanza && v.piano ? v.stanza+" "+v.piano : "", v.sistema ? v.sistema.split(" ").slice(0,2).join("  ") : "", v.coloreInt && v.coloreEst && v.bicolore ? v.coloreInt+"/"+v.coloreEst : v.coloreInt||"", v.vetro||""].filter(Boolean);
           const prevVani = selectedRilievo ? selectedRilievo.vani.filter(vn => vn.id !== v.id && vn.tipo) : [];
           const handleClone = (src) => { ["tipo","stanza","piano","sistema","vetro","coloreInt","coloreEst","bicolore","coloreAcc","telaio","telaioAlaZ","rifilato","coprifilo","lamiera","controtelaio","difficoltaSalita","mezzoSalita"].forEach(f => { if(src[f]!==undefined&&src[f]!==null&&src[f]!=="") updateV(f,src[f]); }); };
 
@@ -1694,7 +1694,7 @@ export default function VanoDetailPanel() {
               {configChips.length >= 2 && (
                 <div style={{display:"flex",alignItems:"center",gap:6,padding:"9px 12px",borderRadius:10,background:T.grn+"10",border:"1.5px solid "+T.grn+"30",marginBottom:8,flexWrap:"wrap"}}>
                   <span style={{fontSize:12}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
-                  <span style={{fontSize:11,fontWeight:700,color:T.grn,fontFamily:FF}}>{configChips.join(" · ")}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:T.grn,fontFamily:FF}}>{configChips.join("  ")}</span>
                 </div>
               )}
 
@@ -1704,7 +1704,7 @@ export default function VanoDetailPanel() {
                   <span style={{fontSize:10,fontWeight:700,color:T.sub,whiteSpace:"nowrap"}}>Clona:</span>
                   {prevVani.map(pv=>(
                     <div key={pv.id} onClick={()=>handleClone(pv)} style={{padding:"4px 10px",borderRadius:8,border:"1px dashed "+T.acc+"60",background:T.card,fontSize:10,fontWeight:600,color:T.acc,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-                      {pv.tipo||"?"} {pv.stanza?"· "+pv.stanza:""}
+                      {pv.tipo||"?"} {pv.stanza?" "+pv.stanza:""}
                     </div>
                   ))}
                 </div>
@@ -1717,7 +1717,7 @@ export default function VanoDetailPanel() {
                 const isVis = (id: string) => {
                   if (layout.length === 0) return true; // default: tutto visibile
                   const it = layout.find((x: any) => x?.id === id);
-                  if (!it) return true; // se non in layout → mostra (compat. forward)
+                  if (!it) return true; // se non in layout  mostra (compat. forward)
                   return !!it.attivo;
                 };
                 const ordOf = (id: string) => {
@@ -1725,7 +1725,7 @@ export default function VanoDetailPanel() {
                   const i = layout.findIndex((x: any) => x?.id === id);
                   return i >= 0 ? i : 999;
                 };
-                // Filtro sections per visibilità + ordina
+                // Filtro sections per visibilit + ordina
                 const visibleSections = sections
                   .filter((s: any) => isVis(s.id))
                   .map((s: any, idx: number) => ({ ...s, _ord: ordOf(s.id), _idx: idx }))
@@ -1757,14 +1757,14 @@ export default function VanoDetailPanel() {
                     </div>
                     {isOpen && <div className="m-slide" style={{padding:"10px 14px 12px",background:"#F7F7F5",borderTop:"1.5px solid #F0EFEC"}}>
                       {sec.body}
-                      {isOptional && <div onClick={()=>flashAndAdvance(sec.id)} style={{marginTop:8,padding:"8px",borderRadius:8,border:"1px dashed "+T.bdr,textAlign:"center",fontSize:11,color:T.sub,cursor:"pointer"}}>Salta →</div>}
+                      {isOptional && <div onClick={()=>flashAndAdvance(sec.id)} style={{marginTop:8,padding:"8px",borderRadius:8,border:"1px dashed "+T.bdr,textAlign:"center",fontSize:11,color:T.sub,cursor:"pointer"}}>Salta </div>}
                     </div>}
                   </div>
                 );
               });
               })()}
 
-            {/* ══════ STRUTTURE ══════ */}
+            {/*  STRUTTURE  */}
             {(() => {
               const layout = Array.isArray(v?.strumenti_layout) ? v.strumenti_layout : [];
               const it = layout.find((x: any) => x?.id === "strutture");
@@ -1774,19 +1774,19 @@ export default function VanoDetailPanel() {
             <div style={{marginTop:8,borderRadius:10,border:`1px solid ${T.acc}30`,overflow:"hidden"}}>
               <div onClick={()=>setVanoInfoOpen(vanoInfoOpen==="strutture"?null:"strutture")}
                 style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:T.accLt,cursor:"pointer"}}>
-                <span style={{fontSize:14}}><I d={ICO.building} />️</span>
+                <span style={{fontSize:14}}><I d={ICO.building} /></span>
                 <span style={{fontSize:12,fontWeight:600,color:vanoInfoOpen==="strutture"?T.acc:T.text}}>Strutture</span>
                 <span style={{fontSize:9,color:T.sub,fontStyle:"italic"}}>Pergole, Verande, Box, Tendaggi</span>
-                <span style={{marginLeft:"auto",fontSize:9,color:T.sub,transform:vanoInfoOpen==="strutture"?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▼</span>
+                <span style={{marginLeft:"auto",fontSize:9,color:T.sub,transform:vanoInfoOpen==="strutture"?"rotate(180deg)":"none",transition:"transform 0.15s"}}></span>
               </div>
               {vanoInfoOpen==="strutture" && (
                 <div style={{padding:12,background:T.bg,borderTop:"1px solid "+T.bdr}}>
                   <div style={{textAlign:"center",padding:"20px 10px"}}>
-                    <div style={{fontSize:36,marginBottom:8}}><I d={ICO.building} />️</div>
+                    <div style={{fontSize:36,marginBottom:8}}><I d={ICO.building} /></div>
                     <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:4}}>Configuratore Strutture</div>
-                    <div style={{fontSize:11,color:T.sub,marginBottom:12}}>Pianta → Profili → Lati → 3D → Disegno Tecnico</div>
+                    <div style={{fontSize:11,color:T.sub,marginBottom:12}}>Pianta  Profili  Lati  3D  Disegno Tecnico</div>
                     <div onClick={()=>setShowStrutture(true)} style={{padding:"12px 20px",borderRadius:8,background:T.acc,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
-                      Apri Configuratore →
+                      Apri Configuratore 
                     </div>
                   </div>
                 </div>
@@ -1807,15 +1807,15 @@ export default function VanoDetailPanel() {
                 style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:T.accLt,cursor:"pointer"}}>
                 <span style={{fontSize:12,fontWeight:600,color:vanoInfoOpen==="tendaggi"?T.acc:T.text}}>Tendaggi</span>
                 <span style={{fontSize:9,color:T.sub,fontStyle:"italic"}}>Tende interno, esterno, motorizzate</span>
-                <span style={{marginLeft:"auto",fontSize:9,color:T.sub,transform:vanoInfoOpen==="tendaggi"?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▼</span>
+                <span style={{marginLeft:"auto",fontSize:9,color:T.sub,transform:vanoInfoOpen==="tendaggi"?"rotate(180deg)":"none",transition:"transform 0.15s"}}></span>
               </div>
               {vanoInfoOpen==="tendaggi" && (
                 <div style={{padding:12,background:T.bg,borderTop:"1px solid "+T.bdr}}>
                   <div style={{textAlign:"center",padding:"20px 10px"}}>
                     <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:4}}>Rilievo Tendaggi</div>
-                    <div style={{fontSize:11,color:T.sub,marginBottom:12}}>Foto → Modello → 4 punti → Bracci → Aggancio</div>
+                    <div style={{fontSize:11,color:T.sub,marginBottom:12}}>Foto  Modello  4 punti  Bracci  Aggancio</div>
                     <div onClick={()=>setShowTendaggi(true)} style={{padding:"12px 20px",borderRadius:8,background:T.acc,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
-                      Apri Rilievo Tende →
+                      Apri Rilievo Tende 
                     </div>
                   </div>
                 </div>
@@ -1824,10 +1824,10 @@ export default function VanoDetailPanel() {
               );
             })()}
 
-            {/* WIDGET CONFIGURATORI — letti da v.strumenti_layout (gestito dal tasto S) */}
+            {/* WIDGET CONFIGURATORI  letti da v.strumenti_layout (gestito dal tasto S) */}
             {(() => {
               const layout = Array.isArray(v?.strumenti_layout) ? v.strumenti_layout : [];
-              // Solo gli id che NON sono strumenti standard (cioè widget veri)
+              // Solo gli id che NON sono strumenti standard (cio widget veri)
               const STD_IDS = ["accesso","tipologia","stanza","sistema","colori","telaio","coprifilo","lamiera","controtelaio","ferro","strutture","tendaggi"];
               const attivi = layout.filter((x: any) => x?.attivo && x?.id && !STD_IDS.includes(x.id));
               if (attivi.length === 0) return null;
@@ -1859,7 +1859,7 @@ export default function VanoDetailPanel() {
           );
         })()}
 
-        {/* fliwoX Progress bar — DETTAGLI · MISURE · RIEPILOGO */}
+        {/* fliwoX Progress bar  DETTAGLI  MISURE  RIEPILOGO */}
         <div style={{ padding: "10px 14px 4px" }}>
           <div style={{ display: "flex", gap: 6 }}>
             {STEPS.map((s, i) => {
@@ -1923,7 +1923,7 @@ export default function VanoDetailPanel() {
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
-          {/* GALLERY FOTO MISURE — sotto il bottone */}
+          {/* GALLERY FOTO MISURE  sotto il bottone */}
           {(() => {
             const fotoMisure = Object.entries(v.foto || {}).filter(([k]) => k.startsWith("misure_")).sort((a, b) => b[0].localeCompare(a[0]));
             if (fotoMisure.length === 0) return <div style={{ marginBottom: 12 }} />;
@@ -1956,7 +1956,7 @@ export default function VanoDetailPanel() {
           {/* === STEP 0: MISURE (larghezze + altezze + diagonali) === */}
           {vanoStep === 0 && (
             <>
-              {/* ═══ MISURE OUTDOOR: Tende / Pergole ═══ */}
+              {/*  MISURE OUTDOOR: Tende / Pergole  */}
               {(() => {
                 const outdoorCodes = ["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"];
                 if (!outdoorCodes.includes(v.tipo)) return null;
@@ -1966,28 +1966,28 @@ export default function VanoDetailPanel() {
                 return (
                   <div style={{ marginBottom:16 }}>
                     <div style={{ padding:"10px 14px", borderRadius:10, background:"#E8A02010", border:"1px solid #E8A02030", marginBottom:12 }}>
-                      <div style={{ fontSize:11, fontWeight:700, color:"#E8A020" }}><I d={ICO.sparkles} />️ Misure {isPergola ? "Pergola" : isBracci ? "Tenda a bracci" : isVela ? "Vela ombreggiante" : "Tenda/Schermatura"}</div>
-                      <div style={{ fontSize:10, color:T.sub, marginTop:2 }}>{isPergola ? "Larghezza × Profondità × Altezza colonne" : isBracci ? "Larghezza telo × Sporgenza (aggetto)" : "Larghezza × Altezza (caduta)"}</div>
+                      <div style={{ fontSize:11, fontWeight:700, color:"#E8A020" }}><I d={ICO.sparkles} /> Misure {isPergola ? "Pergola" : isBracci ? "Tenda a bracci" : isVela ? "Vela ombreggiante" : "Tenda/Schermatura"}</div>
+                      <div style={{ fontSize:10, color:T.sub, marginTop:2 }}>{isPergola ? "Larghezza  Profondit  Altezza colonne" : isBracci ? "Larghezza telo  Sporgenza (aggetto)" : "Larghezza  Altezza (caduta)"}</div>
                     </div>
 
-                    {/* LARGHEZZA — sempre presente */}
+                    {/* LARGHEZZA  sempre presente */}
                     <div style={{ fontSize:11, fontWeight:800, color:"#507aff", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}><I d={ICO.ruler} /> Larghezza</div>
                     {<VanoBInput key="lCentro" label={"Larghezza mm"} field="lCentro"
                         value={m["lCentro"] as number} stepColor={step.color}
                         textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                         onUpdate={(val: number) => updateMisura(v.id, "lCentro", val)} />}
 
-                    {/* ALTEZZA/DROP — sempre presente */}
+                    {/* ALTEZZA/DROP  sempre presente */}
                     <div style={{ fontSize:11, fontWeight:800, color:"#1A9E73", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}><I d={ICO.ruler} /> {isPergola ? "Altezza colonne" : "Altezza / Drop"}</div>
                     {<VanoBInput key="hCentro" label={isPergola ? "Altezza colonne mm" : "Altezza (caduta) mm"} field="hCentro"
                         value={m["hCentro"] as number} stepColor={step.color}
                         textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                         onUpdate={(val: number) => updateMisura(v.id, "hCentro", val)} />}
 
-                    {/* PROFONDITA/SPORGENZA — pergole e bracci */}
+                    {/* PROFONDITA/SPORGENZA  pergole e bracci */}
                     {(isPergola || isBracci) && (<>
-                      <div style={{ fontSize:11, fontWeight:800, color:"#E8A020", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>↕️ {isPergola ? "Profondità" : "Sporgenza (Aggetto)"}</div>
-                      {<VanoBInput key="sporgenza" label={isPergola ? "Profondità mm" : "Sporgenza/Aggetto mm"} field="sporgenza"
+                      <div style={{ fontSize:11, fontWeight:800, color:"#E8A020", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}> {isPergola ? "Profondit" : "Sporgenza (Aggetto)"}</div>
+                      {<VanoBInput key="sporgenza" label={isPergola ? "Profondit mm" : "Sporgenza/Aggetto mm"} field="sporgenza"
                           value={m["sporgenza"] as number} stepColor={step.color}
                           textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                           onUpdate={(val: number) => updateMisura(v.id, "sporgenza", val)} />}
@@ -2004,7 +2004,7 @@ export default function VanoDetailPanel() {
                             </div>
                             <div>
                               <div style={{ fontSize: 11, fontWeight: 800, color: "#0A2842", letterSpacing: "0.3px" }}>DUPLICATO DA {v.duplicato_da_nome}</div>
-                              <div style={{ fontSize: 9, color: "#185FA5", marginTop: 1 }}>Misure copiate · modifica solo cio che cambia</div>
+                              <div style={{ fontSize: 9, color: "#185FA5", marginTop: 1 }}>Misure copiate  modifica solo cio che cambia</div>
                             </div>
                           </div>
                           <button onClick={() => {
@@ -2032,13 +2032,13 @@ export default function VanoDetailPanel() {
                       <div style={{ fontSize:11, fontWeight:800, color:"#8B5CF6", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:16, borderTop:"1px solid "+T.bdr, paddingTop:12 }}><I d={ICO.building} /> Configurazione Pergola</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
                         <div>
-                          <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>N° MODULI</div>
+                          <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>N MODULI</div>
                           <input style={S.input} type="number" placeholder="1" value={v.nModuli||""} onChange={e => updateV("nModuli", parseInt(e.target.value)||1)}/>
                         </div>
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>TIPO LAMA</div>
                           <select style={S.select} value={v.tipoLama||""} onChange={e => updateV("tipoLama", e.target.value)}>
-                            <option value="">— Tipo —</option>
+                            <option value=""> Tipo </option>
                             <option value="orientabile">Orientabile</option>
                             <option value="retrattile">Retrattile</option>
                             <option value="impacchettabile">Impacchettabile</option>
@@ -2050,7 +2050,7 @@ export default function VanoDetailPanel() {
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>STRUTTURA</div>
                           <select style={S.select} value={v.struttura||""} onChange={e => updateV("struttura", e.target.value)}>
-                            <option value="">— Struttura —</option>
+                            <option value=""> Struttura </option>
                             <option value="alluminio">Alluminio</option>
                             <option value="acciaio">Acciaio</option>
                             <option value="legno">Legno</option>
@@ -2059,7 +2059,7 @@ export default function VanoDetailPanel() {
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>TIPO</div>
                           <select style={S.select} value={v.tipoPergola||""} onChange={e => updateV("tipoPergola", e.target.value)}>
-                            <option value="">— Tipo —</option>
+                            <option value=""> Tipo </option>
                             <option value="addossata">Addossata a muro</option>
                             <option value="freestanding">Autoportante</option>
                           </select>
@@ -2073,7 +2073,7 @@ export default function VanoDetailPanel() {
                       <div>
                         <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>MONTAGGIO</div>
                         <select style={S.select} value={v.montaggio||""} onChange={e => updateV("montaggio", e.target.value)}>
-                          <option value="">— Montaggio —</option>
+                          <option value=""> Montaggio </option>
                           <option value="parete">A parete</option>
                           <option value="soffitto">A soffitto</option>
                           <option value="nicchia">In nicchia</option>
@@ -2083,7 +2083,7 @@ export default function VanoDetailPanel() {
                       <div>
                         <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>ORIENTAMENTO</div>
                         <select style={S.select} value={v.orientamento||""} onChange={e => updateV("orientamento", e.target.value)}>
-                          <option value="">— Orientamento —</option>
+                          <option value=""> Orientamento </option>
                           <option value="nord">Nord</option>
                           <option value="sud">Sud</option>
                           <option value="est">Est</option>
@@ -2095,7 +2095,7 @@ export default function VanoDetailPanel() {
                       <div>
                         <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>MOTORIZZAZIONE</div>
                         <select style={S.select} value={v.motorizzazione||""} onChange={e => updateV("motorizzazione", e.target.value)}>
-                          <option value="">— Motorizzazione —</option>
+                          <option value=""> Motorizzazione </option>
                           <option value="manuale">Manuale</option>
                           <option value="motore">Motore tubolare</option>
                           <option value="motore_radio">Motore + radiocomando</option>
@@ -2123,10 +2123,10 @@ export default function VanoDetailPanel() {
                       <div style={{ marginTop:12, padding:12, borderRadius:10, background:T.card, border:"1px solid "+T.bdr, textAlign:"center" }}>
                         <div style={{ fontSize:10, color:T.sub, fontWeight:700, marginBottom:4 }}><I d={ICO.ruler} /> RIEPILOGO</div>
                         <div style={{ fontSize:16, fontWeight:900, color:T.text }}>
-                          {m.lCentro} × {m.hCentro} {(m.sporgenza||isPergola) ? " × " + (m.sporgenza||"—") : ""} mm
+                          {m.lCentro}  {m.hCentro} {(m.sporgenza||isPergola) ? "  " + (m.sporgenza||"") : ""} mm
                         </div>
                         <div style={{ fontSize:11, color:T.sub }}>
-                          {((m.lCentro/1000) * (isPergola ? (m.sporgenza||m.hCentro)/1000 : m.hCentro/1000)).toFixed(2)} m²
+                          {((m.lCentro/1000) * (isPergola ? (m.sporgenza||m.hCentro)/1000 : m.hCentro/1000)).toFixed(2)} m
                         </div>
                       </div>
                     )}
@@ -2134,7 +2134,7 @@ export default function VanoDetailPanel() {
                 );
               })()}
 
-              {/* ═══ MODELLO TENDA + PREZZO (vani settore tende) ═══ */}
+              {/*  MODELLO TENDA + PREZZO (vani settore tende)  */}
               {(() => {
                 const tendeCodes = ["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"];
                 if (!tendeCodes.includes(v.tipo)) return null;
@@ -2151,26 +2151,26 @@ export default function VanoDetailPanel() {
                 );
               })()}
 
-              {/* ═══ MISURE STANDARD: Serramenti (8 punti) ═══ */}
+              {/*  MISURE STANDARD: Serramenti (8 punti)  */}
               {!["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"].includes(v.tipo) && (<>
 
-              {/* ═══ DISEGNO TECNICO — Bottone apre fullscreen ═══ */}
+              {/*  DISEGNO TECNICO  Bottone apre fullscreen  */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${showDisegno ? T.purple : T.bdr}`, background: T.card, cursor: "pointer" }}
                   onClick={() => setShowDisegno(true)}>
                   <span style={{ fontSize: 16 }}><I d={ICO.edit} /></span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: showDisegno ? T.purple : T.text }}>Disegno tecnico CAD</div>
-                    <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{(m.lCentro || m.lAlto || 1200)}×{(m.hCentro || m.hSx || 1400)}mm · {(v.disegno?.elements?.length || 0)} elementi</div>
+                    <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{(m.lCentro || m.lAlto || 1200)}{(m.hCentro || m.hSx || 1400)}mm  {(v.disegno?.elements?.length || 0)} elementi</div>
                   </div>
                   {(v.disegno?.elements?.length > 0) && <span style={{ padding: "2px 8px", borderRadius: 5, background: `${T.grn}18`, fontSize: 9, fontWeight: 800, color: T.grn }}>{v.disegno.elements.length} el.</span>}
-                  <span style={{ fontSize: 11, fontWeight: 700, color: T.purple, padding: "4px 10px", borderRadius: 6, background: `${T.purple}12`, border: `1px solid ${T.purple}30` }}>Apri →</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: T.purple, padding: "4px 10px", borderRadius: 6, background: `${T.purple}12`, border: `1px solid ${T.purple}30` }}>Apri </span>
                 </div>
               </div>
 
               
 
-              {/* Modal DisegnoTecnico — forma finestra */}
+              {/* Modal DisegnoTecnico  forma finestra */}
               {showDisegno && (
                 <div style={{ position:"fixed", inset:0, zIndex:9000, background:"rgba(0,0,0,0.7)",
                   display:"flex", alignItems:"stretch", justifyContent:"center",
@@ -2180,10 +2180,10 @@ export default function VanoDetailPanel() {
                     background:"#fff", display:"flex", flexDirection:"column", overflow:"hidden" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px",
                       borderBottom:"1px solid #eee", flexShrink:0, background:"#1A9E7310" }}>
-                      <span style={{ fontWeight:700, fontSize:13, flex:1, color:"#1A9E73" }}>📐 Disegno — {v.nome}</span>
+                      <span style={{ fontWeight:700, fontSize:13, flex:1, color:"#1A9E73" }}> Disegno  {v.nome}</span>
                       <button onClick={()=>setShowDisegno(false)} style={{ background:"#DC4444", border:"none",
                         borderRadius:10, padding:"10px 18px", cursor:"pointer", fontSize:14, fontWeight:800, color:"#fff",
-                        minWidth:88, minHeight:40 }}>✕ Chiudi</button>
+                        minWidth:88, minHeight:40 }}> Chiudi</button>
                     </div>
                     <div style={{ flex:1, overflow:"hidden" }}>
                       <DisegnoTecnico
@@ -2207,7 +2207,7 @@ export default function VanoDetailPanel() {
                 </div>
               )}
 
-              {/* Schizzo tecnico — collassabile */}
+              {/* Schizzo tecnico  collassabile */}
               {showSchizzo ? (
                 <SkizzoTecnico
                   misure={m}
@@ -2232,13 +2232,13 @@ export default function VanoDetailPanel() {
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:13, fontWeight:700, color:T.text }}>Schizzo vano</div>
                     <div style={{ fontSize:10, color:T.sub }}>
-                      {(m.lCentro||m.lAlto) ? `L=${m.lCentro||m.lAlto}mm${m.hCentro?` · H=${m.hCentro}mm`:""}` : "Disegna il vano e quota le misure"}
+                      {(m.lCentro||m.lAlto) ? `L=${m.lCentro||m.lAlto}mm${m.hCentro?`  H=${m.hCentro}mm`:""}` : "Disegna il vano e quota le misure"}
                     </div>
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               )}
-              {/* TOGGLE MISURE STANDARD vs FUORI MISURA — appare se è selezionato un pannello porta interna/blindata */}
+              {/* TOGGLE MISURE STANDARD vs FUORI MISURA  appare se  selezionato un pannello porta interna/blindata */}
               {(v.tipo === "PI" || v.tipo === "PB" || v.pannello_id) && (() => {
                 const isPortaInterna = v.tipo === "PI";
                 const isBlindato = v.tipo === "PB";
@@ -2273,7 +2273,7 @@ export default function VanoDetailPanel() {
                           color: !isFuoriMisura ? "#fff" : T.sub,
                           fontSize: 12, fontWeight: 800, cursor: "pointer",
                         }}>
-                        ✓ Misura Standard
+                         Misura Standard
                       </div>
                       <div onClick={() => updateV("fuori_misura", true)}
                         style={{
@@ -2282,14 +2282,14 @@ export default function VanoDetailPanel() {
                           color: isFuoriMisura ? "#fff" : T.sub,
                           fontSize: 12, fontWeight: 800, cursor: "pointer",
                         }}>
-                        ⚙ Fuori Misura
+                         Fuori Misura
                       </div>
                     </div>
 
                     {!isFuoriMisura ? (
                       <>
                         <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                          📏 Larghezza standard {isBlindato ? "(blindato)" : "(porta interna)"}
+                           Larghezza standard {isBlindato ? "(blindato)" : "(porta interna)"}
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
                           {LARGHEZZE_STD.map(l => {
@@ -2315,7 +2315,7 @@ export default function VanoDetailPanel() {
                         </div>
 
                         <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                          📐 Altezza standard
+                           Altezza standard
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                           {ALTEZZE_STD.map(h => {
@@ -2342,14 +2342,14 @@ export default function VanoDetailPanel() {
 
                         {(lCorrente > 0 || hCorrente > 0) && (
                           <div style={{ marginTop: 12, padding: 10, background: T.card, borderRadius: 8, fontSize: 11, color: T.txt }}>
-                            <strong>Misure attuali:</strong> {lCorrente || "—"} × {hCorrente || "—"} mm
+                            <strong>Misure attuali:</strong> {lCorrente || ""}  {hCorrente || ""} mm
                           </div>
                         )}
                       </>
                     ) : (
                       <div style={{ fontSize: 11, color: "#D08008", lineHeight: 1.5 }}>
-                        <div style={{ fontWeight: 700, marginBottom: 4 }}>⚙ Modalità fuori misura</div>
-                        <div>Inserisci sotto le misure esatte rilevate in cantiere. La porta verrà ordinata su misura speciale (potrebbe avere costi e tempi maggiorati).</div>
+                        <div style={{ fontWeight: 700, marginBottom: 4 }}> Modalit fuori misura</div>
+                        <div>Inserisci sotto le misure esatte rilevate in cantiere. La porta verr ordinata su misura speciale (potrebbe avere costi e tempi maggiorati).</div>
                       </div>
                     )}
                   </div>
@@ -2395,7 +2395,7 @@ export default function VanoDetailPanel() {
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "hDx", val)} />}
 
-              {/* DIAGONALI — collassabile */}
+              {/* DIAGONALI  collassabile */}
               <div onClick={() => setDetailOpen(d => ({...d, diagonali: !d.diagonali}))}
                 style={{ marginTop: 16, borderTop: `1px solid ${T.bdr}`, paddingTop: 14,
                   paddingBottom: 10, cursor: "pointer", display: "flex", alignItems: "center",
@@ -2407,41 +2407,41 @@ export default function VanoDetailPanel() {
                     <span style={{ fontSize: 10, color: "#E8A020", fontWeight: 700,
                       background: "#E8A02015", padding: "2px 8px", borderRadius: 6 }}>
                       {[m.d1, m.d2].filter(x => x > 0).length}/2
-                      {fSq !== null && fSq > 3 && " ⚠"}
-                      {fSq !== null && fSq <= 3 && " ✓"}
+                      {fSq !== null && fSq > 3 && " "}
+                      {fSq !== null && fSq <= 3 && " "}
                     </span>
                   )}
                 </div>
                 <span style={{ fontSize: 13, color: T.sub,
                   transform: detailOpen.diagonali ? "rotate(0deg)" : "rotate(-90deg)",
-                  transition: "transform 0.2s" }}>▾</span>
+                  transition: "transform 0.2s" }}></span>
               </div>
               {detailOpen.diagonali && (
                 <div style={{ marginBottom: 8 }}>
-                  {<VanoBInput key="d1" label={"Diagonale 1 ↗"} field="d1"
+                  {<VanoBInput key="d1" label={"Diagonale 1 "} field="d1"
                       value={m["d1"] as number} stepColor={step.color}
                       textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                       onUpdate={(val: number) => updateMisura(v.id, "d1", val)} />}
-                  {<VanoBInput key="d2" label={"Diagonale 2 ↘"} field="d2"
+                  {<VanoBInput key="d2" label={"Diagonale 2 "} field="d2"
                       value={m["d2"] as number} stepColor={step.color}
                       textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                       onUpdate={(val: number) => updateMisura(v.id, "d2", val)} />}
                   {fSq !== null && fSq > 3 && (
                     <div style={{ padding: "10px 14px", borderRadius: 10, background: "#ffebee", border: "1px solid #ef9a9a", marginBottom: 12 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}><I d={ICO.alertTriangle} /> Fuori squadra: {fSq}mm</div>
-                      <div style={{ fontSize: 11, color: "#b71c1c" }}>Differenza superiore a 3mm — segnalare in ufficio</div>
+                      <div style={{ fontSize: 11, color: "#b71c1c" }}>Differenza superiore a 3mm  segnalare in ufficio</div>
                     </div>
                   )}
                   {fSq !== null && fSq <= 3 && (
                     <div style={{ padding: "10px 14px", borderRadius: 10, background: "#e8f5e9", border: "1px solid #a5d6a7" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>In squadra — differenza: {fSq}mm</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>In squadra  differenza: {fSq}mm</div>
                     </div>
                   )}
                 </div>
               )}
             </>)}
 
-              {/* ═══ SPALLETTE + DAVANZALE ═══ */}
+              {/*  SPALLETTE + DAVANZALE  */}
               <div style={{marginTop:16,borderTop:`1px solid ${T.bdr}`,paddingTop:16,marginBottom:4}}>
                 <div style={{fontSize:10,fontWeight:800,color:T.sub,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:10}}>Spallette e Davanzale</div>
               </div>
@@ -2452,31 +2452,31 @@ export default function VanoDetailPanel() {
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.spallette ? "#32ade6" : T.text }}>Spallette</span>
                   {(m.spSx||m.spDx||m.spSopra||m.imbotte) && <span style={{ fontSize: 10, color: "#32ade6", fontWeight: 700, background: "#32ade615", padding: "2px 8px", borderRadius: 6 }}>{[m.spSx,m.spDx,m.spSopra,m.imbotte].filter(x=>x>0).length}/4</span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.spallette ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.spallette ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}></span>
               </div>
               {detailOpen.spallette && (
                 <div style={{ marginBottom: 12 }}>
 
-                {/* ── SCHIZZO SPALLETTE — collassabile ── */}
+                {/*  SCHIZZO SPALLETTE  collassabile  */}
                 <div style={{borderRadius:12,border:'1px solid #32ade640',
                   background:'#32ade605',overflow:'hidden',marginBottom:12,
                   ...(spSchizzoFull?{position:'fixed',inset:0,zIndex:4000,borderRadius:0,margin:0}:{})}}>
-                  {/* Riga titolo — sempre visibile, tap per aprire/chiudere */}
+                  {/* Riga titolo  sempre visibile, tap per aprire/chiudere */}
                   <div onClick={()=>setSpSchizzoOpen(o=>!o)}
                     style={{display:'flex',alignItems:'center',gap:6,
                       padding:'8px 12px',background:'#fff',cursor:'pointer',
                       borderBottom: spSchizzoOpen ? '1px solid #32ade620' : 'none'}}>
-                    <span style={{fontSize:11,fontWeight:800,color:'#32ade6'}}>✏️ Schizzo spallette</span>
+                    <span style={{fontSize:11,fontWeight:800,color:'#32ade6'}}> Schizzo spallette</span>
                     <span style={{fontSize:9,color:'#32ade6',opacity:0.7,marginLeft:'auto'}}>
-                      {spSchizzoOpen?'▲':'▼'}
+                      {spSchizzoOpen?'':''}
                     </span>
                   </div>
-                  {/* Toolbar strumenti — solo se aperto */}
+                  {/* Toolbar strumenti  solo se aperto */}
                   {spSchizzoOpen && (
                   <div style={{display:'flex',alignItems:'center',gap:5,
                     padding:'6px 10px',borderBottom:'1px solid #32ade620',
                     background:'#FAFAFA',flexWrap:'wrap'}}>
-                    {([['pen','✒️'],['eraser','⬜']] as const).map(([t,icon])=>(
+                    {([['pen',''],['eraser','']] as const).map(([t,icon])=>(
                       <div key={t} onClick={()=>setSpTool(t)}
                         style={{padding:'3px 7px',borderRadius:7,cursor:'pointer',fontSize:11,
                           border:`1.5px solid ${spTool===t?'#32ade6':'#E2E8F0'}`,
@@ -2502,11 +2502,11 @@ export default function VanoDetailPanel() {
                     <div onClick={()=>{const cv=spCanvasRef.current;const ctx=cv?.getContext('2d');if(ctx&&cv)ctx.clearRect(0,0,cv.width,cv.height);}}
                       style={{padding:'3px 7px',borderRadius:7,background:'#FEE2E2',
                         color:'#DC4444',fontSize:10,fontWeight:700,cursor:'pointer',
-                        border:'1px solid #FCA5A5'}}>✕</div>
+                        border:'1px solid #FCA5A5'}}></div>
                     <div onClick={()=>setSpSchizzoFull(f=>!f)}
                       style={{padding:'3px 7px',borderRadius:7,fontSize:11,cursor:'pointer',
                         border:'1px solid #E2E8F0',background:'#fff',color:'#64748B',marginLeft:'auto'}}>
-                      {spSchizzoFull?'⊡':'⊞'}
+                      {spSchizzoFull?'':''}
                     </div>
                   </div>
                   )}
@@ -2551,12 +2551,12 @@ export default function VanoDetailPanel() {
                   value={m["spSopra"] as number} stepColor={step.color}
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "spSopra", val)} />}
-              {<VanoBInput key="imbotte" label={"Profondità IMBOTTE"} field="imbotte"
+              {<VanoBInput key="imbotte" label={"Profondit IMBOTTE"} field="imbotte"
                   value={m["imbotte"] as number} stepColor={step.color}
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "imbotte", val)} />}
 
-              {/* ── LAMIERE SPALLETTE ── identico al sistema lamiere principale */}
+              {/*  LAMIERE SPALLETTE  identico al sistema lamiere principale */}
               {(() => {
                 const lamSpList: any[] = (v.lamiereSpallette as any) || [];
                 const addLamieraSp = () => {
@@ -2629,12 +2629,12 @@ export default function VanoDetailPanel() {
                               (window as any).__mastroLamieraTarget = 'lamiereSpallette';
                               setShowLamieraDisegno(true);
                             }} style={{padding:"5px 10px",borderRadius:6,background:"#32ade6",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                              ✏️ Modifica
+                               Modifica
                             </div>
                             <div onClick={e=>{e.stopPropagation();
                               updateVanoField(v.id, "lamiereSpallette",lamSpList.filter((_:any,i:number)=>i!==li));
                             }} style={{padding:"5px 8px",borderRadius:6,background:"#DC444415",color:"#DC4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                              ✕
+                              
                             </div>
                           </div>
                           {preNodes.length > 1 ? (
@@ -2672,7 +2672,7 @@ export default function VanoDetailPanel() {
                                   const lx = isH ? mx : mx + side*offset;
                                   const ly = isH ? my + side*offset : my;
                                   const dev = (s.angolo!=null && s.angolo!==90) ? Math.abs(s.angolo-90) : 0;
-                                  const lbl = dev > 0 ? `${s.mm} ${s.angolo<90?'+':'−'}${dev}°` : String(s.mm);
+                                  const lbl = dev > 0 ? `${s.mm} ${s.angolo<90?'+':''}${dev}` : String(s.mm);
                                   const tw = lbl.length * fz * 0.62 + 5;
                                   const th = fz + 4;
                                   const clx = Math.max(tw/2+1, Math.min(svgVW-tw/2-1, lx));
@@ -2730,7 +2730,7 @@ export default function VanoDetailPanel() {
                               setShowLamieraDisegno(true);
                             }} style={{padding:"14px",textAlign:"center",fontSize:11,color:"#32ade6",
                               fontWeight:600,cursor:"pointer",background:"#F0F9FF",borderRadius:"0 0 8px 8px"}}>
-                              ✏️ Tocca per disegnare le pieghe
+                               Tocca per disegnare le pieghe
                             </div>
                           )}
                         </div>
@@ -2751,15 +2751,15 @@ export default function VanoDetailPanel() {
               {/* Davanzale + Cassonetto */}
               <div onClick={() => setDetailOpen(d => ({...d, davanzale: !d.davanzale}))} style={{ padding: "12px 16px", borderRadius: 12, border: `1px solid ${detailOpen.davanzale ? "#EF4444" : T.bdr}`, background: detailOpen.davanzale ? "#EF444408" : T.card, marginBottom: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>⬇</span>
+                  <span style={{ fontSize: 16 }}></span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.davanzale ? "#EF4444" : T.text }}>Davanzale + Cassonetto</span>
                   {(m.davProf||m.davSporg||m.soglia||v.cassonetto) && <span style={{ fontSize: 10, color: "#EF4444", fontWeight: 700, background: "#EF444415", padding: "2px 8px", borderRadius: 6 }}>{v.cassonetto ? "" : ""} {[m.davProf,m.davSporg,m.soglia].filter(x=>x>0).length}/3</span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.davanzale ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.davanzale ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}></span>
               </div>
               {detailOpen.davanzale && (
                 <div style={{ marginBottom: 12 }}>
-              {<VanoBInput key="davProf" label={"Davanzale PROFONDITÀ"} field="davProf"
+              {<VanoBInput key="davProf" label={"Davanzale PROFONDIT"} field="davProf"
                   value={m["davProf"] as number} stepColor={step.color}
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "davProf", val)} />}
@@ -2783,7 +2783,7 @@ export default function VanoDetailPanel() {
               </div>
               {v.cassonetto && (
                 <div style={{ marginTop: 8 }}>
-                  {/* ── DISEGNATORE CASSONETTO ── */}
+                  {/*  DISEGNATORE CASSONETTO  */}
                   {(() => {
                     // Valori correnti dai campi (mm), default se 0
                     const cL = m.casL || 300;
@@ -2793,14 +2793,14 @@ export default function VanoDetailPanel() {
                     const cPC = m.casPCiel || Math.round(cP * 0.5);
 
                     // SVG: vista sezione laterale (H x P)
-                    // Asse X = Profondità, Asse Y = Altezza
+                    // Asse X = Profondit, Asse Y = Altezza
                     const SVG_W = 280, SVG_H = 200;
                     const PAD = 32;
                     const scX = (SVG_W - PAD*2) / Math.max(cP, cPC + 20);
                     const scY = (SVG_H - PAD*2) / Math.max(cH, 50);
                     const sc = Math.min(scX, scY, 0.8);
 
-                    // Cassonetto esterno (sezione: Profondità x Altezza)
+                    // Cassonetto esterno (sezione: Profondit x Altezza)
                     const cx0 = PAD, cy0 = PAD;
                     const cw = cP * sc, ch = cH * sc;
                     // Cielino (interno, in basso a sx)
@@ -2824,21 +2824,21 @@ export default function VanoDetailPanel() {
                             <div onClick={()=>setShowCassonettoEditor(true)}
                               style={{padding:'4px 10px',borderRadius:7,background:'#1A2B4A',
                                 color:'#fff',fontSize:10,fontWeight:700,cursor:'pointer'}}>
-                              ⛶ Sezione
+                               Sezione
                             </div>
                             <div onClick={()=>setShowBoxEditor(true)}
                               style={{padding:'4px 10px',borderRadius:7,background:'#D08008',
                                 color:'#fff',fontSize:10,fontWeight:700,cursor:'pointer'}}>
-                              ⬡ 3D
+                               3D
                             </div>
                           </div>
                         </div>
 
-                        {/* SVG sezione cassonetto — vista frontale dall'interno */}
+                        {/* SVG sezione cassonetto  vista frontale dall'interno */}
                         {(() => {
                           // Coordinate nel viewBox
                           const SW=280, SH=210, PD=36;
-                          // Scala uniforme basata su Profondità (asse X) e Altezza (asse Y)
+                          // Scala uniforme basata su Profondit (asse X) e Altezza (asse Y)
                           const maxW = Math.max(cP, 100);
                           const maxH = Math.max(cH, 80);
                           const scW = (SW-PD*2) / maxW;
@@ -2891,7 +2891,7 @@ export default function VanoDetailPanel() {
                             <text x={wx-3} y={by-bh2/2} textAnchor="middle" fontSize="7"
                               fill="#64748B" transform={`rotate(-90,${wx-3},${by-bh2/2})`}>MURO</text>
 
-                            {/* Corpo cassonetto — pareti */}
+                            {/* Corpo cassonetto  pareti */}
                             {/* Parete superiore */}
                             <rect x={bx} y={by-bh2} width={bw2} height={4}
                               fill="#3B7FE040" stroke="#3B7FE0" strokeWidth="1.5"/>
@@ -2919,13 +2919,13 @@ export default function VanoDetailPanel() {
                             <text x={bx+bw2/2} y={by+ferH*0.72} textAnchor="middle"
                               fontSize="7" fill="#3B7FE0" fontWeight="700">feritoia</text>
 
-                            {/* Cielino (pannello ispezione — lato basso interno) */}
+                            {/* Cielino (pannello ispezione  lato basso interno) */}
                             <rect x={bx+4} y={by-cielH-2} width={cielW} height={cielH}
                               fill="#FEF3C7" stroke="#D08008" strokeWidth="1.2" strokeDasharray="3,2" rx="2"/>
                             {cielW > 30 && <text x={bx+4+cielW/2} y={by-2-cielH*0.3} textAnchor="middle"
                               fontSize="7" fill="#D08008" fontWeight="700">cielino</text>}
 
-                            {/* Quote Profondità (basso) */}
+                            {/* Quote Profondit (basso) */}
                             <line x1={bx} y1={by+ferH+8} x2={bx+bw2} y2={by+ferH+8}
                               stroke="#3B7FE0" strokeWidth="1"/>
                             <line x1={bx} y1={by+ferH+5} x2={bx} y2={by+ferH+11} stroke="#3B7FE0" strokeWidth="1"/>
@@ -2942,7 +2942,7 @@ export default function VanoDetailPanel() {
                               fontSize="9" fill="#3B7FE0" fontWeight="700"
                               transform={`rotate(90,${bx+bw2+22},${by-bh2/2+4})`}>{cH}mm</text>
 
-                            {/* Handle Profondità (dx centro) */}
+                            {/* Handle Profondit (dx centro) */}
                             <circle cx={bx+bw2} cy={by-bh2/2} r="7"
                               fill="#3B7FE0" stroke="#fff" strokeWidth="2"
                               style={{cursor:'ew-resize'}}
@@ -2953,7 +2953,7 @@ export default function VanoDetailPanel() {
                                 svg.setPointerCapture(e.pointerId);
                               }}/>
                             <text x={bx+bw2} y={by-bh2/2+4} textAnchor="middle"
-                              fontSize="9" fill="#fff" fontWeight="800" style={{pointerEvents:'none'}}>↔</text>
+                              fontSize="9" fill="#fff" fontWeight="800" style={{pointerEvents:'none'}}></text>
 
                             {/* Handle Altezza (top centro) */}
                             <circle cx={bx+bw2/2} cy={by-bh2} r="7"
@@ -2966,11 +2966,11 @@ export default function VanoDetailPanel() {
                                 svg.setPointerCapture(e.pointerId);
                               }}/>
                             <text x={bx+bw2/2} y={by-bh2+4} textAnchor="middle"
-                              fontSize="9" fill="#fff" fontWeight="800" style={{pointerEvents:'none'}}>↕</text>
+                              fontSize="9" fill="#fff" fontWeight="800" style={{pointerEvents:'none'}}></text>
 
                             {/* Label sezione */}
                             <text x={SW/2} y={14} textAnchor="middle"
-                              fontSize="9" fill="#94A3B8" fontWeight="600">sezione laterale · interno →</text>
+                              fontSize="9" fill="#94A3B8" fontWeight="600">sezione laterale  interno </text>
                           </svg>
                           );
                         })()}
@@ -2981,7 +2981,7 @@ export default function VanoDetailPanel() {
                           {[
                             {label:'Larghezza',field:'casL',val:m.casL},
                             {label:'Altezza',field:'casH',val:m.casH},
-                            {label:'Profondità',field:'casP',val:m.casP},
+                            {label:'Profondit',field:'casP',val:m.casP},
                             {label:'Ciel. L',field:'casLCiel',val:m.casLCiel},
                             {label:'Ciel. P',field:'casPCiel',val:m.casPCiel},
                           ].map(({label,field,val})=>(
@@ -3021,7 +3021,7 @@ export default function VanoDetailPanel() {
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.accessori ? "#af52de" : T.text }}>Accessori</span>
                   {(v.accessori?.tapparella?.attivo||v.accessori?.persiana?.attivo||v.accessori?.zanzariera?.attivo) && <span style={{ fontSize: 10, color: "#af52de", fontWeight: 700, background: "#af52de15", padding: "2px 8px", borderRadius: 6 }}>{[v.accessori?.tapparella?.attivo,v.accessori?.persiana?.attivo,v.accessori?.zanzariera?.attivo].filter(Boolean).length} attivi</span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.accessori ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.accessori ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}></span>
               </div>
               {detailOpen.accessori && (
                 <div style={{ marginBottom: 12 }}>
@@ -3036,7 +3036,7 @@ export default function VanoDetailPanel() {
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <input id={casIds[idx]} style={{ flex: 1, padding: "10px", fontSize: 14, fontFamily: FM, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card }} type="number" inputMode="numeric" enterKeyHint={idx < 4 ? "next" : "done"} placeholder="" value={m[field] || ""} onChange={e => updateMisura(v.id, field, e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNext(casIds, casIds[idx]); } }} />
                         <span style={{ fontSize: 11, color: T.sub, background: T.bg, padding: "6px 8px", borderRadius: 6 }}>mm</span>
-                        {idx < 4 && <div onClick={() => focusNext(casIds, casIds[idx])} style={{ padding: "8px 12px", borderRadius: 8, background: casColor, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>→</div>}
+                        {idx < 4 && <div onClick={() => focusNext(casIds, casIds[idx])} style={{ padding: "8px 12px", borderRadius: 8, background: casColor, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}></div>}
                       </div>
                     </div>
                   );
@@ -3050,7 +3050,7 @@ export default function VanoDetailPanel() {
                         <>
                           <div style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${T.bdr}` }}>
                             <span style={{ fontSize: 13, fontWeight: 700, color: casColor }}><I d={ICO.box} /> Cassonetto</span>
-                            <div onClick={() => { const nv = { ...v, cassonetto: false }; setSelectedVano(nv); if(selectedRilievo){const updR3={...selectedRilievo,vani:selectedRilievo.vani.map(x=>x.id===v.id?nv:x)};setCantieri(cs=>cs.map(c=>c.id===selectedCM?.id?{...c,rilievi:c.rilievi.map(r2=>r2.id===selectedRilievo.id?updR3:r2)}:c));setSelectedRilievo(updR3);} }} style={{ fontSize: 11, color: T.sub, cursor: "pointer" }}>▲ Chiudi</div>
+                            <div onClick={() => { const nv = { ...v, cassonetto: false }; setSelectedVano(nv); if(selectedRilievo){const updR3={...selectedRilievo,vani:selectedRilievo.vani.map(x=>x.id===v.id?nv:x)};setCantieri(cs=>cs.map(c=>c.id===selectedCM?.id?{...c,rilievi:c.rilievi.map(r2=>r2.id===selectedRilievo.id?updR3:r2)}:c));setSelectedRilievo(updR3);} }} style={{ fontSize: 11, color: T.sub, cursor: "pointer" }}> Chiudi</div>
                           </div>
                           <div style={{ padding: "12px 16px" }}>
                             <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Cassonetto</div>
@@ -3061,12 +3061,12 @@ export default function VanoDetailPanel() {
                             </div>
                             {casInput("Larghezza", "casL", 0)}
                             {casInput("Altezza", "casH", 1)}
-                            {casInput("Profondità", "casP", 2)}
+                            {casInput("Profondit", "casP", 2)}
                             <div style={{ marginTop: 4, marginBottom: 4, padding: "6px 0", borderTop: `1px dashed ${T.bdr}` }}>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 2 }}>Cielino</div>
                             </div>
                             {casInput("Larghezza Cielino", "casLCiel", 3)}
-                            {casInput("Profondità Cielino", "casPCiel", 4)}
+                            {casInput("Profondit Cielino", "casPCiel", 4)}
                             <div onClick={() => { const nv = { ...v, cassonetto: false }; setSelectedVano(nv); if(selectedRilievo){const updR3={...selectedRilievo,vani:selectedRilievo.vani.map(x=>x.id===v.id?nv:x)};setCantieri(cs=>cs.map(c=>c.id===selectedCM?.id?{...c,rilievi:c.rilievi.map(r2=>r2.id===selectedRilievo.id?updR3:r2)}:c));setSelectedRilievo(updR3);} }} style={{ marginTop: 10, padding: "8px", borderRadius: 8, border: `1px dashed #ef5350`, textAlign: "center", fontSize: 11, color: "#ef5350", cursor: "pointer" }}>
                               <I d={ICO.trash} /> Rimuovi cassonetto
                             </div>
@@ -3078,7 +3078,7 @@ export default function VanoDetailPanel() {
                 }
                 const a = v.accessori?.[acc] || { attivo: false };
                 const accColors = { tapparella: "#E8A020", persiana: "#0D7C6B", zanzariera: "#EF4444" };
-                const accIcons = { tapparella: "⊞", persiana: "", zanzariera: "" };
+                const accIcons = { tapparella: "", persiana: "", zanzariera: "" };
                 const focusNextAcc = (ids, cur) => { const i = ids.indexOf(cur); if (i < ids.length - 1) { const el = document.getElementById(ids[i + 1]); if (el) { el.focus(); el.scrollIntoView({ behavior: "smooth", block: "center" }); } } };
                 const accInputIds = [`${acc}-L-${v.id}`, `${acc}-H-${v.id}`];
                 return (
@@ -3091,7 +3091,7 @@ export default function VanoDetailPanel() {
                       <>
                         <div style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${T.bdr}` }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: accColors[acc] }}>{accIcons[acc]} {acc.charAt(0).toUpperCase() + acc.slice(1)}</span>
-                          <div onClick={() => toggleAccessorio(v.id, acc)} style={{ fontSize: 11, color: T.sub, cursor: "pointer" }}>▲ Chiudi</div>
+                          <div onClick={() => toggleAccessorio(v.id, acc)} style={{ fontSize: 11, color: T.sub, cursor: "pointer" }}> Chiudi</div>
                         </div>
                         <div style={{ padding: "12px 16px" }}>
                           <div style={{ marginBottom: 10 }}>
@@ -3099,7 +3099,7 @@ export default function VanoDetailPanel() {
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <input id={accInputIds[0]} style={{ flex: 1, padding: "10px", fontSize: 14, fontFamily: FM, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card }} type="number" inputMode="numeric" enterKeyHint="next" placeholder="" value={v.accessori?.[acc]?.l || ""} onChange={e => updateAccessorio(v.id, acc, "l", parseInt(e.target.value) || 0)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextAcc(accInputIds, accInputIds[0]); } }} />
                               <span style={{ fontSize: 11, color: T.sub, background: T.bg, padding: "6px 8px", borderRadius: 6 }}>mm</span>
-                              <div onClick={() => focusNextAcc(accInputIds, accInputIds[0])} style={{ padding: "8px 12px", borderRadius: 8, background: accColors[acc], color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>→</div>
+                              <div onClick={() => focusNextAcc(accInputIds, accInputIds[0])} style={{ padding: "8px 12px", borderRadius: 8, background: accColors[acc], color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}></div>
                             </div>
                           </div>
                           <div style={{ marginBottom: 10 }}>
@@ -3119,13 +3119,13 @@ export default function VanoDetailPanel() {
                               </div>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Motorizzata</div>
                               <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
-                                {["Sì", "No"].map(mot => (
+                                {["S", "No"].map(mot => (
                                   <div key={mot} onClick={() => updateAccessorio(v.id, acc, "motorizzata", mot)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${v.accessori?.[acc]?.motorizzata === mot ? "#1A9E73" : T.bdr}`, background: v.accessori?.[acc]?.motorizzata === mot ? "#1A9E7318" : T.card, fontSize: 12, cursor: "pointer", fontWeight: v.accessori?.[acc]?.motorizzata === mot ? 700 : 400, color: v.accessori?.[acc]?.motorizzata === mot ? "#1A9E73" : T.text }}>{mot}</div>
                                 ))}
                               </div>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Misura</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.tipoMisura || ""} onChange={e => updateAccessorio(v.id, acc, "tipoMisura", e.target.value)}>
-                                <option value="">— Seleziona tipo misura —</option>
+                                <option value=""> Seleziona tipo misura </option>
                                 {tipoMisuraTappDB.map(tm => <option key={tm.id} value={tm.code}>{tm.code}</option>)}
                               </select>
                             </>
@@ -3138,7 +3138,7 @@ export default function VanoDetailPanel() {
                                   <div key={tp.id} onClick={() => updateAccessorio(v.id, acc, "telaio", tp.code)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${v.accessori?.[acc]?.telaio === tp.code ? "#0D7C6B" : T.bdr}`, background: v.accessori?.[acc]?.telaio === tp.code ? "#0D7C6B18" : T.card, fontSize: 12, cursor: "pointer", fontWeight: v.accessori?.[acc]?.telaio === tp.code ? 700 : 400, color: v.accessori?.[acc]?.telaio === tp.code ? "#0D7C6B" : T.text }}>{tp.code}</div>
                                 ))}
                               </div>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>4° Lato / Posizionamento</div>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>4 Lato / Posizionamento</div>
                               <div style={{ display: "flex", gap: 4, marginBottom: 10, flexWrap: "wrap" }}>
                                 {posPersianaDB.map(pp => (
                                   <div key={pp.id} onClick={() => updateAccessorio(v.id, acc, "posizionamento", pp.code)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${v.accessori?.[acc]?.posizionamento === pp.code ? "#0D7C6B" : T.bdr}`, background: v.accessori?.[acc]?.posizionamento === pp.code ? "#0D7C6B18" : T.card, fontSize: 12, cursor: "pointer", fontWeight: v.accessori?.[acc]?.posizionamento === pp.code ? 700 : 400, color: v.accessori?.[acc]?.posizionamento === pp.code ? "#0D7C6B" : T.text }}>{pp.code}</div>
@@ -3146,7 +3146,7 @@ export default function VanoDetailPanel() {
                               </div>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Misura</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.tipoMisura || ""} onChange={e => updateAccessorio(v.id, acc, "tipoMisura", e.target.value)}>
-                                <option value="">— Seleziona tipo misura —</option>
+                                <option value=""> Seleziona tipo misura </option>
                                 {tipoMisuraDB.map(tm => <option key={tm.id} value={tm.code}>{tm.code}</option>)}
                               </select>
                             </>
@@ -3155,12 +3155,12 @@ export default function VanoDetailPanel() {
                             <>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipologia</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.categoria || ""} onChange={e => updateAccessorio(v.id, acc, "categoria", e.target.value)}>
-                                <option value="">— Seleziona tipologia —</option>
+                                <option value=""> Seleziona tipologia </option>
                                 {["Avvolgente verticale","Avvolgente laterale","Avvolgente con bottone","Plissettata verticale","Plissettata laterale","ZIP verticale","Incasso controtelaio","Pannello fisso","Battente 1 anta","Battente 2 ante","Scorrevole su binario"].map(cat => <option key={cat} value={cat}>{cat}</option>)}
                               </select>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Misura</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.tipoMisura || ""} onChange={e => updateAccessorio(v.id, acc, "tipoMisura", e.target.value)}>
-                                <option value="">— Seleziona tipo misura —</option>
+                                <option value=""> Seleziona tipo misura </option>
                                 {tipoMisuraZanzDB.map(tm => <option key={tm.id} value={tm.code}>{tm.code}</option>)}
                               </select>
                             </>
@@ -3168,10 +3168,10 @@ export default function VanoDetailPanel() {
                           <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Colore</div>
                           <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF }} value={v.accessori?.[acc]?.colore || ""} onChange={e => updateAccessorio(v.id, acc, "colore", e.target.value)}>
                             <option value="">Colore</option>
-                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}  {c.nome}</option>)}
                           </select>
                           <div onClick={() => toggleAccessorio(v.id, acc)} style={{ marginTop: 10, padding: "8px", borderRadius: 8, border: `1px dashed #ef5350`, textAlign: "center", fontSize: 11, color: "#ef5350", cursor: "pointer" }}>
-                            <I d={ICO.lock} />‘ Rimuovi {acc}
+                            <I d={ICO.lock} /> Rimuovi {acc}
                           </div>
                         </div>
                       </>
@@ -3192,7 +3192,7 @@ export default function VanoDetailPanel() {
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.vociLibere ? "#E8A020" : T.text }}>Voci libere</span>
                   {v.vociLibere?.length > 0 && <span style={{ fontSize: 10, color: "#E8A020", fontWeight: 700, background: "#E8A02015", padding: "2px 8px", borderRadius: 6 }}>{v.vociLibere.length} voc{v.vociLibere.length === 1 ? "e" : "i"}</span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.vociLibere ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.vociLibere ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}></span>
               </div>
               {detailOpen.vociLibere && (
                 <div style={{ marginBottom: 12, padding: "0 4px" }}>
@@ -3214,7 +3214,7 @@ export default function VanoDetailPanel() {
                           }} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", background: (voce.tipo||"generico")===t.id ? t.color+"18" : T.bg, color: (voce.tipo||"generico")===t.id ? t.color : T.sub, border: `1px solid ${(voce.tipo||"generico")===t.id ? t.color+"50" : T.bdr}` }}>{t.label}</div>
                         ))}
                       </div>
-                      {/* Campi vetro — da catalogo */}
+                      {/* Campi vetro  da catalogo */}
                       {(voce.tipo === "vetro") && (
                         <div style={{ marginBottom: 8 }}>
                           <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Vetro da catalogo</label>
@@ -3222,8 +3222,8 @@ export default function VanoDetailPanel() {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], vetroCode: e.target.value };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }}>
-                            <option value="">— Seleziona vetro —</option>
-                            {vetriDB.map(g => <option key={g.id} value={g.code}>{g.code}{g.ug ? ` · Ug ${g.ug}` : ""}</option>)}
+                            <option value=""> Seleziona vetro </option>
+                            {vetriDB.map(g => <option key={g.id} value={g.code}>{g.code}{g.ug ? `  Ug ${g.ug}` : ""}</option>)}
                           </select>
                           <div style={{ display: "flex", gap: 6 }}>
                             <div style={{ flex: 1 }}>
@@ -3244,7 +3244,7 @@ export default function VanoDetailPanel() {
                           </div>
                         </div>
                       )}
-                      {/* Campi coprifilo — da catalogo */}
+                      {/* Campi coprifilo  da catalogo */}
                       {(voce.tipo === "coprifilo") && (
                         <div style={{ marginBottom: 8 }}>
                           <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Coprifilo da catalogo</label>
@@ -3252,7 +3252,7 @@ export default function VanoDetailPanel() {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], coprifiloCode: e.target.value };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }}>
-                            <option value="">— Seleziona coprifilo —</option>
+                            <option value=""> Seleziona coprifilo </option>
                             {coprifiliDB.map(c => <option key={c.id} value={c.cod}>{c.cod}</option>)}
                           </select>
                           <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Lamiera da catalogo</label>
@@ -3260,7 +3260,7 @@ export default function VanoDetailPanel() {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], lamieraCode: e.target.value };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }}>
-                            <option value="">— Seleziona lamiera —</option>
+                            <option value=""> Seleziona lamiera </option>
                             {lamiereDB.map(l => <option key={l.id} value={l.cod}>{l.cod}</option>)}
                           </select>
                           <div style={{ flex: 1 }}>
@@ -3305,17 +3305,17 @@ export default function VanoDetailPanel() {
                         const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], descrizione: e.target.value };
                         updateVanoField(v.id, "vociLibere", newVoci);
                       }} />
-                      {/* Prezzo + Unità + Quantità */}
+                      {/* Prezzo + Unit + Quantit */}
                       <div style={{ display: "flex", gap: 6 }}>
                         <div style={{ flex: 1 }}>
-                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Prezzo €</label>
+                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Prezzo </label>
                           <input style={{ ...S.input, fontSize: 12, fontFamily: FM }} type="number" step="0.01" placeholder="0.00" defaultValue={voce.prezzo || ""} onBlur={e => {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], prezzo: parseFloat(e.target.value) || 0 };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }} />
                         </div>
                         <div style={{ width: 80 }}>
-                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Unità</label>
+                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Unit</label>
                           <select style={{ ...S.select, fontSize: 11 }} value={voce.unita || "pz"} onChange={e => {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], unita: e.target.value };
                             updateVanoField(v.id, "vociLibere", newVoci);
@@ -3328,14 +3328,14 @@ export default function VanoDetailPanel() {
                           </select>
                         </div>
                         <div style={{ width: 60 }}>
-                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Qtà</label>
+                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Qt</label>
                           <input style={{ ...S.input, fontSize: 12, fontFamily: FM, textAlign: "center" }} type="number" step="0.1" defaultValue={voce.qta || 1} onBlur={e => {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], qta: parseFloat(e.target.value) || 1 };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }} />
                         </div>
                       </div>
-                      {voce.prezzo > 0 && <div style={{ textAlign: "right", fontSize: 11, fontWeight: 700, color: T.grn, fontFamily: FM, marginTop: 4 }}>= €{((voce.prezzo || 0) * (voce.qta || 1)).toFixed(2)}</div>}
+                      {voce.prezzo > 0 && <div style={{ textAlign: "right", fontSize: 11, fontWeight: 700, color: T.grn, fontFamily: FM, marginTop: 4 }}>= {((voce.prezzo || 0) * (voce.qta || 1)).toFixed(2)}</div>}
                     </div>
                   ))}
                   <div style={{ display: "flex", gap: 8 }}>
@@ -3375,7 +3375,7 @@ export default function VanoDetailPanel() {
                               <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.nome}</div>
                               <div style={{ fontSize: 9, color: T.sub }}>{item.categoria}</div>
                             </div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: T.grn, fontFamily: FM, flexShrink: 0 }}>€{item.prezzo}/{item.unita || "pz"}</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: T.grn, fontFamily: FM, flexShrink: 0 }}>{item.prezzo}/{item.unita || "pz"}</div>
                           </div>
                         ))}
                       </div>
@@ -3390,11 +3390,11 @@ export default function VanoDetailPanel() {
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.disegno ? T.acc : T.text }}>Foto + Note</span>
                   {(v.note) && <span style={{ fontSize: 10, color: T.acc, fontWeight: 700, background: T.acc+"15", padding: "2px 8px", borderRadius: 6 }}><I d={ICO.fileText} /></span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.disegno ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.disegno ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}></span>
               </div>
               {detailOpen.disegno && (
                 <div style={{ marginBottom: 12 }}>
-{/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
+{/* Disegno mano libera  Enhanced: eraser, multi-page, fullscreen */}
               {(() => {
                 const W = drawFullscreen ? 760 : 380;
                 const H = drawFullscreen ? 680 : 340;
@@ -3457,7 +3457,7 @@ export default function VanoDetailPanel() {
                     <div style={{ marginLeft: "auto" }} />
                     <div onClick={() => { savePageData(); setDrawFullscreen(!drawFullscreen); }}
                       style={{ padding: "3px 8px", borderRadius: 6, background: drawFullscreen ? T.acc + "12" : T.bg, border: `1px solid ${drawFullscreen ? T.acc : T.bdr}`, fontSize: 10, fontWeight: 700, color: drawFullscreen ? T.acc : T.sub, cursor: "pointer" }}>
-                      {drawFullscreen ? "↙ Riduci" : "↗ Ingrandisci"}
+                      {drawFullscreen ? " Riduci" : " Ingrandisci"}
                     </div>
                   </div>
                 );
@@ -3465,7 +3465,7 @@ export default function VanoDetailPanel() {
                 if (drawFullscreen) return (
                   <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#fff", display: "flex", flexDirection: "column" as const }}>
                     <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: T.acc }}><I d={ICO.edit} /> Disegno — Foglio {drawPageIdx + 1}/{drawPages.length}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: T.acc }}><I d={ICO.edit} /> Disegno  Foglio {drawPageIdx + 1}/{drawPages.length}</span>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.trash} /> Pulisci foglio</button>
                         <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#DC4444", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> Salva</button>
@@ -3522,7 +3522,7 @@ export default function VanoDetailPanel() {
                       const vanoId = v.id || "vano";
                       const publicUrl = await uploadFotoVano(userId, cmId, vanoId, file, file.name);
 
-                      // === DAY · log foto_caricata ===
+                      // === DAY  log foto_caricata ===
                       try {
                         await logEvento({
                           tipo: 'foto_caricata',
@@ -3583,7 +3583,7 @@ export default function VanoDetailPanel() {
                   })}
                 </div>
                 {Object.keys(v.foto||{}).length === 0
-                  ? <div style={{ textAlign: "center", padding: "16px 0", color: T.sub, fontSize: 11 }}>Nessun allegato — tocca <I d={ICO.camera} /> Foto o <I d={ICO.clapperboard} /> Video</div>
+                  ? <div style={{ textAlign: "center", padding: "16px 0", color: T.sub, fontSize: 11 }}>Nessun allegato  tocca <I d={ICO.camera} /> Foto o <I d={ICO.clapperboard} /> Video</div>
                   : <>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                       {Object.entries(v.foto||{}).map(([k, f]) => (
@@ -3593,7 +3593,7 @@ export default function VanoDetailPanel() {
                             ? <img src={f.url || f.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={f.nome}/>
                             : f.tipo === "video" && f.dataUrl
                               ? <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
-                                  <span style={{ fontSize: 28, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}>▶</span>
+                                  <span style={{ fontSize: 28, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}></span>
                                 </div>
                               : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 2 }}>
                                   <span style={{ fontSize: 24 }}><I d={ICO.clapperboard} /></span>
@@ -3653,8 +3653,8 @@ export default function VanoDetailPanel() {
                   const costo = totOre * costoOra;
                   return totOre > 0 ? (
                     <div style={{ marginTop: 6, fontSize: 10, color: T.sub, display: "flex", justifyContent: "space-between" }}>
-                      <span>{totOre}h × €{costoOra}/ora</span>
-                      <span style={{ fontWeight: 800, color: "#D08008" }}>€ {costo.toFixed(2)}</span>
+                      <span>{totOre}h  {costoOra}/ora</span>
+                      <span style={{ fontWeight: 800, color: "#D08008" }}> {costo.toFixed(2)}</span>
                     </div>
                   ) : null;
                 })()}
@@ -3677,7 +3677,7 @@ export default function VanoDetailPanel() {
               <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 16, marginBottom: 12 }}>
                 <div style={{ textAlign: "center", marginBottom: 14 }}>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>{v.nome}</div>
-                  <div style={{ fontSize: 12, color: T.sub }}>{v.tipo} • {v.stanza} • {v.piano} • {v.pezzi||1}pz</div>
+                  <div style={{ fontSize: 12, color: T.sub }}>{v.tipo}  {v.stanza}  {v.piano}  {v.pezzi||1}pz</div>
                 </div>
 
                 {/* Helper row renderer */}
@@ -3693,7 +3693,7 @@ export default function VanoDetailPanel() {
                         {rows.map(([l, val, highlight], ri) => (
                           <div key={ri} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>
                             <span style={{ color: T.text }}>{l}</span>
-                            <span style={{ fontFamily: FM, fontWeight: 600, color: highlight ? highlight : val ? T.text : T.sub2, maxWidth: "60%", textAlign: "right" }}>{val || "—"}</span>
+                            <span style={{ fontFamily: FM, fontWeight: 600, color: highlight ? highlight : val ? T.text : T.sub2, maxWidth: "60%", textAlign: "right" }}>{val || ""}</span>
                           </div>
                         ))}
                       </div>
@@ -3719,16 +3719,16 @@ export default function VanoDetailPanel() {
                     <Sec title="COLORI PROFILI" color="#af52de" icon="" rows={[
                       ["Colore Int.", v.coloreInt],
                       ...(v.bicolore ? [["Colore Est.", v.coloreEst]] : []),
-                      ...(v.bicolore ? [["Bicolore", "Sì", T.acc]] : []),
+                      ...(v.bicolore ? [["Bicolore", "S", T.acc]] : []),
                       ["Colore Accessori", v.coloreAcc || "Come profili"],
                     ]} />
 
                     {/* Telaio */}
                     <Sec title="TELAIO / RIFILATO" color="#8e8e93" icon="" rows={[
-                      ["Telaio", v.telaio === "Z" ? "Telaio a Z" : v.telaio === "L" ? "Telaio a L" : "—"],
+                      ["Telaio", v.telaio === "Z" ? "Telaio a Z" : v.telaio === "L" ? "Telaio a L" : ""],
                       ...(v.telaio === "Z" && v.telaioAlaZ ? [["Ala Z", `${v.telaioAlaZ}mm`]] : []),
-                      ["Rifilato", v.rifilato ? "Sì" : "No"],
-                      ...(v.rifilato ? [["Rifilo Sx", v.rifilSx || "—"], ["Rifilo Dx", v.rifilDx || "—"], ["Rifilo Sopra", v.rifilSopra || "—"], ["Rifilo Sotto", v.rifilSotto || "—"]] : []),
+                      ["Rifilato", v.rifilato ? "S" : "No"],
+                      ...(v.rifilato ? [["Rifilo Sx", v.rifilSx || ""], ["Rifilo Dx", v.rifilDx || ""], ["Rifilo Sopra", v.rifilSopra || ""], ["Rifilo Sotto", v.rifilSotto || ""]] : []),
                     ]} />
 
                     {/* Coprifilo / Lamiera */}
@@ -3741,36 +3741,36 @@ export default function VanoDetailPanel() {
                     {ct.tipo && <Sec title={`CONTROTELAIO ${ct.tipo === "singolo" ? "SINGOLO" : ct.tipo === "doppio" ? "DOPPIO" : "CON CASSONETTO"}`} color="#2563eb" icon="" rows={[
                       ["Larghezza", ct.l ? `${ct.l}mm` : ""],
                       ["Altezza", ct.h ? `${ct.h}mm` : ""],
-                      ...(ct.tipo === "singolo" && ct.prof ? [["Profondità", `${ct.prof}mm`]] : []),
+                      ...(ct.tipo === "singolo" && ct.prof ? [["Profondit", `${ct.prof}mm`]] : []),
                       ...(ct.tipo === "doppio" ? [["Sez. Interna", ct.sezInt], ["Sez. Esterna", ct.sezEst], ["Distanziale", ct.distanziale]] : []),
                       ...(ct.tipo === "cassonetto" ? [["H Cassonetto", ct.hCass], ["P Cassonetto", ct.pCass], ["Sezione", ct.sezione], ["Spalla", ct.spalla], ["Cielino", ct.cielino]] : []),
                     ]} />}
 
                     {/* Spallette */}
-                    <Sec title="SPALLETTE" color="#32ade6" icon="▤" rows={[["Sinistra", m.spSx], ["Destra", m.spDx], ["Sopra", m.spSopra], ["Imbotte", m.imbotte]]} />
+                    <Sec title="SPALLETTE" color="#32ade6" icon="" rows={[["Sinistra", m.spSx], ["Destra", m.spDx], ["Sopra", m.spSopra], ["Imbotte", m.imbotte]]} />
 
                     {/* Davanzale */}
-                    <Sec title="DAVANZALE" color="#EF4444" icon="⬇" rows={[["Profondità", m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]]} />
+                    <Sec title="DAVANZALE" color="#EF4444" icon="" rows={[["Profondit", m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]]} />
 
-                    {/* Accessori — dettagliato */}
+                    {/* Accessori  dettagliato */}
                     {(acc.tapparella?.attivo || acc.persiana?.attivo || acc.zanzariera?.attivo) && (
                       <Sec title="ACCESSORI" color="#af52de" icon="+" rows={[
                         ...(acc.tapparella?.attivo ? [
-                          ["⊞ Tapparella", "Sì", T.grn],
+                          [" Tapparella", "S", T.grn],
                           ...(acc.tapparella.tipo ? [["  Tipo", acc.tapparella.tipo]] : []),
                           ...(acc.tapparella.l ? [["  Larghezza", `${acc.tapparella.l}mm`]] : []),
                           ...(acc.tapparella.h ? [["  Altezza", `${acc.tapparella.h}mm`]] : []),
-                          ...(acc.tapparella.motorizzata !== undefined ? [["  Motorizzata", acc.tapparella.motorizzata ? "Sì" : "No"]] : []),
+                          ...(acc.tapparella.motorizzata !== undefined ? [["  Motorizzata", acc.tapparella.motorizzata ? "S" : "No"]] : []),
                           ...(acc.tapparella.colore ? [["  Colore", acc.tapparella.colore]] : []),
                         ] : []),
                         ...(acc.persiana?.attivo ? [
-                          ["Persiana", "Sì", T.grn],
+                          ["Persiana", "S", T.grn],
                           ...(acc.persiana.tipo ? [["  Tipo", acc.persiana.tipo]] : []),
-                          ...(acc.persiana.ante ? [["  N° ante", String(acc.persiana.ante)]] : []),
+                          ...(acc.persiana.ante ? [["  N ante", String(acc.persiana.ante)]] : []),
                           ...(acc.persiana.colore ? [["  Colore", acc.persiana.colore]] : []),
                         ] : []),
                         ...(acc.zanzariera?.attivo ? [
-                          ["Zanzariera", "Sì", T.grn],
+                          ["Zanzariera", "S", T.grn],
                           ...(acc.zanzariera.categoria ? [["  Tipologia", acc.zanzariera.categoria]] : []),
                           ...(acc.zanzariera.tipoMisura ? [["  Tipo misura", acc.zanzariera.tipoMisura]] : []),
                           ...(acc.zanzariera.colore ? [["  Colore", acc.zanzariera.colore]] : []),
@@ -3780,13 +3780,13 @@ export default function VanoDetailPanel() {
 
                     {/* Accessori da catalogo */}
                     {v.accessoriCatalogo && v.accessoriCatalogo.length > 0 && (
-                      <Sec title="ACCESSORI CATALOGO" color="#8B5CF6" icon="" rows={v.accessoriCatalogo.map(a => [`${a.nome}`, `×${a.quantita} · €${((a.prezzoUnitario||0)*(a.quantita||1)).toFixed(0)}`])} />
+                      <Sec title="ACCESSORI CATALOGO" color="#8B5CF6" icon="" rows={v.accessoriCatalogo.map(a => [`${a.nome}`, `${a.quantita}  ${((a.prezzoUnitario||0)*(a.quantita||1)).toFixed(0)}`])} />
                     )}
                     {/* Voci libere */}
                     {v.vociLibere && v.vociLibere.length > 0 && (
                       <Sec title="VOCI LIBERE" color="#E8A020" icon="" rows={v.vociLibere.map(vl => {
                         const label = vl.tipo === "vetro" ? `${vl.descrizione || "Vetro"}` : vl.tipo === "coprifilo" ? `${vl.descrizione || "Coprifilo"}` : `${vl.descrizione || "Voce"}`;
-                        const val = vl.tipo === "vetro" && vl.larghezza && vl.altezza ? `${vl.larghezza}×${vl.altezza}mm · €${((vl.prezzo||0)*(vl.qta||1)).toFixed(0)}` : vl.tipo === "coprifilo" && vl.lunghezza ? `${(vl.lunghezza/1000).toFixed(2)}ml · €${((vl.prezzo||0)*(vl.qta||1)).toFixed(0)}` : `€${((vl.prezzo||0)*(vl.qta||1)).toFixed(0)}`;
+                        const val = vl.tipo === "vetro" && vl.larghezza && vl.altezza ? `${vl.larghezza}${vl.altezza}mm  ${((vl.prezzo||0)*(vl.qta||1)).toFixed(0)}` : vl.tipo === "coprifilo" && vl.lunghezza ? `${(vl.lunghezza/1000).toFixed(2)}ml  ${((vl.prezzo||0)*(vl.qta||1)).toFixed(0)}` : `${((vl.prezzo||0)*(vl.qta||1)).toFixed(0)}`;
                         return [label, val];
                       })} />
                     )}
@@ -3802,7 +3802,7 @@ export default function VanoDetailPanel() {
                     {/* Accesso */}
                     {(v.difficoltaSalita || v.mezzoSalita) && (
                       <Sec title="ACCESSO" color={v.difficoltaSalita === "facile" ? T.grn : v.difficoltaSalita === "difficile" ? "#DC4444" : "#E8A020"} icon="" rows={[
-                        ["Difficoltà", v.difficoltaSalita],
+                        ["Difficolt", v.difficoltaSalita],
                         ["Mezzo salita", v.mezzoSalita],
                       ]} />
                     )}
@@ -3840,25 +3840,25 @@ export default function VanoDetailPanel() {
             </>
           )}
 
-          {/* ═══ PDF TECNICO + TAVOLA TECNICA — solo nel riepilogo ═══ */}
+          {/*  PDF TECNICO + TAVOLA TECNICA  solo nel riepilogo  */}
           {vanoStep === 2 && (
             <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
               {/* PDF Tecnico Fornitore */}
               {v.pdfFornitore ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "#3B7FE010", border: "1px solid #3B7FE030" }}>
-                  <span style={{ fontSize: 16 }}>📄</span>
+                  <span style={{ fontSize: 16 }}></span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{v.pdfFornitoreNome || "disegno_tecnico.pdf"}</div>
                     <div style={{ fontSize: 9, color: T.sub }}>{v.pdfFornitoreData || ""}</div>
                   </div>
                   <div onClick={() => { const a = document.createElement("a"); a.href = v.pdfFornitore; a.download = v.pdfFornitoreNome || "disegno.pdf"; a.click(); }}
-                    style={{ padding: "5px 12px", borderRadius: 7, background: "#3B7FE015", border: "1px solid #3B7FE040", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#3B7FE0" }}>⬇ Apri</div>
+                    style={{ padding: "5px 12px", borderRadius: 7, background: "#3B7FE015", border: "1px solid #3B7FE040", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#3B7FE0" }}> Apri</div>
                   <div onClick={() => { updateVanoField(v.id, "pdfFornitore", null); updateVanoField(v.id, "pdfFornitoreNome", null); updateVanoField(v.id, "pdfFornitoreData", null); }}
-                    style={{ padding: "5px 8px", borderRadius: 7, background: "#DC444415", color: "#DC4444", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>✕</div>
+                    style={{ padding: "5px 8px", borderRadius: 7, background: "#DC444415", color: "#DC4444", cursor: "pointer", fontSize: 11, fontWeight: 700 }}></div>
                 </div>
               ) : (
                 <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 10, background: T.card, border: `1.5px dashed #3B7FE040`, cursor: "pointer" }}>
-                  <span style={{ fontSize: 16 }}>📎</span>
+                  <span style={{ fontSize: 16 }}></span>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0" }}>Allega PDF tecnico fornitore</div>
                     <div style={{ fontSize: 9, color: T.sub }}>Sezioni nodi, dettagli profilo</div>
@@ -3891,9 +3891,9 @@ export default function VanoDetailPanel() {
                 boxShadow: "0 2px 8px #2D7A6B30" }}>
                 <div style={{ textAlign: "left" as const }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Genera Tavola Tecnica</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)" }}>Vista frontale · Nodi · Specifiche · Trasmittanza Uw</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)" }}>Vista frontale  Nodi  Specifiche  Trasmittanza Uw</div>
                 </div>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginLeft: "auto" }}>PDF ↓</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginLeft: "auto" }}>PDF </span>
               </div>
               {/* Ordine Controtelai */}
               {selectedRilievo?.vani?.some(vn => vn.controtelaio?.sistema && vn.controtelaio.sistema !== "nessuno") && (
@@ -3905,7 +3905,7 @@ export default function VanoDetailPanel() {
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Ordine Controtelai</div>
                     <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)" }}>PDF pronto per fornitore</div>
                   </div>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginLeft: "auto" }}>PDF ↓</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginLeft: "auto" }}>PDF </span>
                 </div>
               )}
             </div>
@@ -3915,12 +3915,12 @@ export default function VanoDetailPanel() {
           <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
             {vanoStep > 0 && (
               <button onClick={() => setVanoStep(s => s - 1)} style={{ flex: 1, padding: "15px", borderRadius: 14, border: "2px solid #F0EFEC", background: "white", fontSize: 14, fontWeight: 900, cursor: "pointer", fontFamily: FF, color: "#0D1F1F", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                ← Indietro
+                 Indietro
               </button>
             )}
             {vanoStep < 2 && (
               <button onClick={() => setVanoStep(s => s + 1)} style={{ flex: 2, padding: "15px", borderRadius: 14, border: "none", background: "#28A0A0", color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 2px 8px rgba(40,160,160,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                {vanoStep === 0 ? "MISURE →" : "RIEPILOGO →"}
+                {vanoStep === 0 ? "MISURE " : "RIEPILOGO "}
               </button>
             )}
             {vanoStep === 2 && (
@@ -3986,11 +3986,11 @@ export default function VanoDetailPanel() {
               {[
                 ["L", m.lCentro || m.lAlto || m.lBasso, null],
                 ["H", m.hCentro || m.hSx || m.hDx, null],
-                ["Δ", fSq !== null ? `${fSq}mm` : null, fSq > 3 ? "#DC4444" : "#1A9E73"],
+                ["", fSq !== null ? `${fSq}mm` : null, fSq > 3 ? "#DC4444" : "#1A9E73"],
               ].map(([l, val, c]) => (
                 <div key={l as string} style={{ padding: "8px 10px", borderRadius: 10, background: c === "#DC4444" ? "rgba(220,68,68,0.08)" : val ? "rgba(40,160,160,0.08)" : "#F5F5F5", border: `1.5px solid ${c === "#DC4444" ? "rgba(220,68,68,0.3)" : val ? "rgba(40,160,160,0.2)" : "#E8E8E8"}`, textAlign: "center" as const, boxShadow: val ? "0 3px 0 0 rgba(40,160,160,0.2)" : "0 2px 0 0 #E0E0E0" }}>
                   <div style={{ fontSize: 9, fontWeight: 800, color: "#8A8A82", marginBottom: 2, textTransform: "uppercase" as const }}>{l}</div>
-                  <div style={{ fontSize: 16, fontWeight: 900, fontFamily: FM, color: c || (val ? "#0D1F1F" : "#8BBCBC") }}>{val || "—"}{val && l !== "Δ" ? <span style={{ fontSize: 10, color: "#8A8A82" }}>mm</span> : null}</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, fontFamily: FM, color: c || (val ? "#0D1F1F" : "#8BBCBC") }}>{val || ""}{val && l !== "" ? <span style={{ fontSize: 10, color: "#8A8A82" }}>mm</span> : null}</div>
                 </div>
               ))}
             </div>
@@ -4015,7 +4015,7 @@ export default function VanoDetailPanel() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div>
                   <span style={{ fontSize: 14, fontWeight: 900, color: T.text }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Accesso rapido</span>
-                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"} · {v.stanza || "?"} · {v.sistema ? "Sist." : "—"} · {v.coloreInt ? "Col." : "—"} · {(m.lCentro && m.hCentro) ? m.lCentro+"×"+m.hCentro : "— Mis."}</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"}  {v.stanza || "?"}  {v.sistema ? "Sist." : ""}  {v.coloreInt ? "Col." : ""}  {(m.lCentro && m.hCentro) ? m.lCentro+""+m.hCentro : " Mis."}</div>
                 </div>
                 <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ padding: "5px 12px", borderRadius: 8, background: T.bg, border: "1px solid " + T.bdr, fontSize: 11, color: T.sub, cursor: "pointer", fontWeight: 700 }}></div>
               </div>
@@ -4023,7 +4023,7 @@ export default function VanoDetailPanel() {
               {/* STEP INDICATORS */}
               {(() => {
                 const steps = [
-                  { id: "tipo", label: "Tipo", done: !!v.tipo, icon: "⊞" },
+                  { id: "tipo", label: "Tipo", done: !!v.tipo, icon: "" },
                   { id: "sistema", label: "Sistema", done: !!v.sistema, icon: "" },
                   { id: "vetro", label: "Vetro", done: !!v.vetro, icon: "" },
                   { id: "colore", label: "Colore", done: !!v.coloreInt, icon: "" },
@@ -4049,7 +4049,7 @@ export default function VanoDetailPanel() {
                     {/* ACTIVE SECTION - show current + all done ones collapsed */}
                     {/* TIPOLOGIA */}
                     <div style={{ marginBottom: 8, padding: "6px 0", borderBottom: v.tipo ? "1px solid " + T.bdr : "none" }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 0 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 4 }}>⊞ TIPOLOGIA {v.tipo && <span style={{ color: "#1A9E73", marginLeft: 6 }}>{v.tipo}</span>}</div>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 0 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 4 }}> TIPOLOGIA {v.tipo && <span style={{ color: "#1A9E73", marginLeft: 6 }}>{v.tipo}</span>}</div>
                       <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
                         {tipologieFiltrate.map(tp => (
                           <div key={tp.code} onClick={() => updateVanoField(v.id, "tipo", tp.code)} style={{
@@ -4071,14 +4071,14 @@ export default function VanoDetailPanel() {
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 1 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 3 }}>Sistema {v.sistema && <span style={{ color: "#1A9E73" }}></span>}</div>
                             <select style={{ ...S.select, fontSize: 12, padding: "8px", borderColor: !v.sistema && activeStep === 1 ? T.acc + "60" : undefined }} value={v.sistema || ""} onChange={e => updateVanoField(v.id, "sistema", e.target.value)}>
-                              <option value="">— Sistema —</option>
+                              <option value=""> Sistema </option>
                               {sistemiDB.map(s => <option key={s.id} value={s.marca + " " + s.sistema}>{s.marca} {s.sistema}</option>)}
                             </select>
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 2 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 3 }}>Vetro {v.vetro && <span style={{ color: "#1A9E73" }}></span>}</div>
                             <select style={{ ...S.select, fontSize: 12, padding: "8px", borderColor: !v.vetro && activeStep === 2 ? T.acc + "60" : undefined }} value={v.vetro || ""} onChange={e => updateVanoField(v.id, "vetro", e.target.value)}>
-                              <option value="">— Vetro —</option>
+                              <option value=""> Vetro </option>
                               {vetriDB.map(g => <option key={g.id} value={g.code}>{g.code}</option>)}
                             </select>
                           </div>
@@ -4097,22 +4097,22 @@ export default function VanoDetailPanel() {
                         </div>
                         {!v.bicolore ? (
                           <select style={{ ...S.select, fontSize: 12, padding: "8px", borderColor: !v.coloreInt && activeStep === 3 ? T.acc + "60" : undefined }} value={v.coloreInt || ""} onChange={e => updateVanoField(v.id, "coloreInt", e.target.value)}>
-                            <option value="">— Colore —</option>
-                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                            <option value=""> Colore </option>
+                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}  {c.nome}</option>)}
                           </select>
                         ) : (
                           <div style={{ display: "flex", gap: 6 }}>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 8, color: T.sub, marginBottom: 2 }}>INT</div>
                               <select style={{ ...S.select, fontSize: 11, padding: "7px" }} value={v.coloreInt || ""} onChange={e => updateVanoField(v.id, "coloreInt", e.target.value)}>
-                                <option value="">—</option>
+                                <option value=""></option>
                                 {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
                               </select>
                             </div>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 8, color: T.sub, marginBottom: 2 }}>EST</div>
                               <select style={{ ...S.select, fontSize: 11, padding: "7px" }} value={v.coloreEst || ""} onChange={e => updateVanoField(v.id, "coloreEst", e.target.value)}>
-                                <option value="">—</option>
+                                <option value=""></option>
                                 {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
                               </select>
                             </div>
@@ -4122,8 +4122,8 @@ export default function VanoDetailPanel() {
                         <div style={{ marginTop: 6 }}>
                           <div style={{ fontSize: 8, fontWeight: 600, color: T.sub, marginBottom: 2 }}>Accessori</div>
                           <select style={{ ...S.select, fontSize: 11, padding: "7px" }} value={v.coloreAcc || ""} onChange={e => updateVanoField(v.id, "coloreAcc", e.target.value)}>
-                            <option value="">— Come profili —</option>
-                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                            <option value=""> Come profili </option>
+                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}  {c.nome}</option>)}
                           </select>
                         </div>
                       </div>
@@ -4132,13 +4132,13 @@ export default function VanoDetailPanel() {
                     {/* MISURE - show when colore is set */}
                     {v.coloreInt && (
                       <div style={{ marginBottom: 8, padding: "6px 0", animation: "qpFadeIn 0.3s ease" }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 4 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 4 }}>Misure (mm) {(m.lCentro > 0 && m.hCentro > 0) && <span style={{ color: "#1A9E73" }}>{m.lCentro}×{m.hCentro}</span>}</div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 4 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 4 }}>Misure (mm) {(m.lCentro > 0 && m.hCentro > 0) && <span style={{ color: "#1A9E73" }}>{m.lCentro}{m.hCentro}</span>}</div>
                         <div style={{ display: "flex", gap: 6, alignItems: "flex-end" }}>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 8, color: "#507aff", marginBottom: 2, fontWeight: 700 }}>LARGHEZZA</div>
                             <input type="number" inputMode="numeric" style={{ ...S.input, fontSize: 16, fontFamily: FM, fontWeight: 700, textAlign: "center", padding: "10px", borderColor: "#507aff50" }} value={m.lCentro || ""} placeholder="L" onChange={e => { const val = parseInt(e.target.value) || 0; updateMisureBatch(v.id, { lAlto: val, lCentro: val, lBasso: val }); }} />
                           </div>
-                          <div style={{ fontSize: 18, color: T.sub, fontWeight: 300, paddingBottom: 10 }}>×</div>
+                          <div style={{ fontSize: 18, color: T.sub, fontWeight: 300, paddingBottom: 10 }}></div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 8, color: "#507aff", marginBottom: 2, fontWeight: 700 }}>ALTEZZA</div>
                             <input type="number" inputMode="numeric" style={{ ...S.input, fontSize: 16, fontFamily: FM, fontWeight: 700, textAlign: "center", padding: "10px", borderColor: "#507aff50" }} value={m.hCentro || ""} placeholder="H" onChange={e => { const val = parseInt(e.target.value) || 0; updateMisureBatch(v.id, { hSx: val, hCentro: val, hDx: val }); }} />
@@ -4183,7 +4183,7 @@ export default function VanoDetailPanel() {
                         marginTop: 8, padding: "12px", borderRadius: 10, textAlign: "center", cursor: "pointer",
                         background: "linear-gradient(135deg, #1A9E73, #28a745)", color: "#fff",
                         fontSize: 13, fontWeight: 800, boxShadow: "0 3px 12px rgba(26,158,115,0.3)",
-                      }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Vano configurato — Chiudi</div>
+                      }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Vano configurato  Chiudi</div>
                     )}
 
                     <style>{"@keyframes qpFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }"}</style>
@@ -4193,7 +4193,7 @@ export default function VanoDetailPanel() {
             </div>
           )}
 
-          {/* TAB laterale lamiera — draggabile su/giù, cambia lato */}
+          {/* TAB laterale lamiera  draggabile su/gi, cambia lato */}
           {showLamieraDisegno && (
           <div style={{
             position:"fixed",
@@ -4220,27 +4220,27 @@ export default function VanoDetailPanel() {
                   [lamieraTabLato==='right'?'borderRight':'borderLeft']:"none"}}>
                   {[
                     {
-                      icon: lamieraSchizzoOpen?'✕':'🖊️',
+                      icon: lamieraSchizzoOpen?'':'',
                       label: lamieraSchizzoOpen?'Chiudi':'Schizzo',
                       action: ()=>{setLamieraSchizzoOpen(o=>!o);setLamieraFabMenu(false);}
                     },
                     ...(lamieraSchizzoOpen ? [{
-                      icon: (lamieraSchizzoFull||lamieraFullscreen)?'↙':'⤢',
+                      icon: (lamieraSchizzoFull||lamieraFullscreen)?'':'',
                       label: (lamieraSchizzoFull||lamieraFullscreen)?'Riduci':'Full schizzo',
                       action: ()=>{setLamieraSchizzoFull((f:any)=>!f);setLamieraFabMenu(false);}
                     }] : []),
                     {
-                      icon: lamieraFullscreen?'↙':'↗',
+                      icon: lamieraFullscreen?'':'',
                       label: lamieraFullscreen?'Riduci':'Full lamiera',
                       action: ()=>{setLamieraFullscreen(f=>!f);setLamieraFabMenu(false);}
                     },
                     {
-                      icon: '◐',
+                      icon: '',
                       label: lamieraLatoBuono==='esterno'?'Est.':'Int.',
                       action: ()=>{setLamieraLatoBuono((l:any)=>l==='esterno'?'interno':'esterno');setLamieraFabMenu(false);}
                     },
                     {
-                      icon: lamieraTabLato==='right'?'◁':'▷',
+                      icon: lamieraTabLato==='right'?'':'',
                       label: lamieraTabLato==='right'?'Sposta sx':'Sposta dx',
                       action: ()=>{setLamieraTabLato(l=>l==='right'?'left':'right');setLamieraFabMenu(false);}
                     },
@@ -4257,7 +4257,7 @@ export default function VanoDetailPanel() {
                 </div>
               </>
             )}
-            {/* Tab — lingua draggabile */}
+            {/* Tab  lingua draggabile */}
             <div
               onPointerDown={e=>{
                 // Se tocco breve = click menu, se trascino = drag
@@ -4290,8 +4290,8 @@ export default function VanoDetailPanel() {
               }}>
               <span style={{fontSize:14,color:"#fff",lineHeight:1}}>
                 {lamieraFabMenu
-                  ? (lamieraTabLato==='right'?'›':'‹')
-                  : (lamieraTabLato==='right'?'‹':'›')}
+                  ? (lamieraTabLato==='right'?'':'')
+                  : (lamieraTabLato==='right'?'':'')}
               </span>
             </div>
           </div>
@@ -4315,12 +4315,12 @@ export default function VanoDetailPanel() {
         />
       )}
 
-      {/* ═══ PANEL SELEZIONE STATO MISURE ═══ */}
+      {/*  PANEL SELEZIONE STATO MISURE  */}
       {showStatoMisurePanel && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "flex-end" }} onClick={() => setShowStatoMisurePanel(false)}>
           <div style={{ width: "100%", background: T.card, borderRadius: "20px 20px 0 0", padding: "20px 16px 32px", maxWidth: 480, margin: "0 auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 40, height: 4, borderRadius: 2, background: T.bdr, margin: "0 auto 16px" }} />
-            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 4 }}>Stato misure — {v.nome}</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 4 }}>Stato misure  {v.nome}</div>
             <div style={{ fontSize: 11, color: T.sub, marginBottom: 16 }}>Imposta lo stato di validazione delle misure di questo vano</div>
             {STATO_MISURE.map(sm => {
               const isActive = (v.statoMisure || "provvisorie") === sm.id;
@@ -4335,7 +4335,7 @@ export default function VanoDetailPanel() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? sm.color : T.text }}>{sm.label}</div>
                     <div style={{ fontSize: 10, color: T.sub }}>{sm.desc}</div>
                   </div>
-                  {isActive && <span style={{ fontSize: 16, color: sm.color }}>●</span>}
+                  {isActive && <span style={{ fontSize: 16, color: sm.color }}></span>}
                 </div>
               );
             })}
@@ -4343,7 +4343,7 @@ export default function VanoDetailPanel() {
         </div>
       )}
 
-      {/* ═══ PANNELLO STRUMENTI VANO (catalogo widget configuratori) ═══ */}
+      {/*  PANNELLO STRUMENTI VANO (catalogo widget configuratori)  */}
       {showStrumenti && selectedVano && (
         <StrumentiVanoPanel
           vano={selectedVano}
@@ -4355,9 +4355,9 @@ export default function VanoDetailPanel() {
         />
       )}
 
-      {/* ═══ MODAL DISEGNO TECNICO LAMIERA ═══ */}
-      {/* ═══ FULLSCREEN DISEGNO LAMIERA ═══ */}
-      {/* ── MODAL ORDINE CONTROTELAI ── */}
+      {/*  MODAL DISEGNO TECNICO LAMIERA  */}
+      {/*  FULLSCREEN DISEGNO LAMIERA  */}
+      {/*  MODAL ORDINE CONTROTELAI  */}
       {showOrdinePanel && (
         <OrdineControtelaiPanel
           vani={selectedRilievo?.vani || []}
@@ -4369,7 +4369,7 @@ export default function VanoDetailPanel() {
       )}
 
       {showLamieraDisegno && (() => {
-        // updateV locale — salva campo nel vano selezionato
+        // updateV locale  salva campo nel vano selezionato
         const updateV = (field: string, val: any) => {
           const updRil = selectedRilievo ? { ...selectedRilievo, vani: selectedRilievo.vani.map(vn => vn.id === selectedVano?.id ? { ...vn, [field]: val } : vn) } : null;
           if (updRil) {
@@ -4416,14 +4416,14 @@ export default function VanoDetailPanel() {
         const nodes = buildNodes();
         const pts = nodes.map(n=>`${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ');
         const sviluppata = allSegs.reduce((a,s)=>a+s.mm, 0);
-        // Lunghezza = prima dimensione principale (il tratto più lungo)
+        // Lunghezza = prima dimensione principale (il tratto pi lungo)
         const lunghezzaPrincipale = allSegs.length > 0 ? Math.max(...allSegs.map(s=>s.mm)) : 0;
 
         const DIRS = [
-          {d:'dx',label:'→',name:'Destra'},
-          {d:'sx',label:'←',name:'Sinistra'},
-          {d:'giu',label:'↓',name:'Giù'},
-          {d:'su',label:'↑',name:'Su'},
+          {d:'dx',label:'',name:'Destra'},
+          {d:'sx',label:'',name:'Sinistra'},
+          {d:'giu',label:'',name:'Gi'},
+          {d:'su',label:'',name:'Su'},
         ] as const;
 
         return (
@@ -4434,7 +4434,7 @@ export default function VanoDetailPanel() {
               <div style={{flex:1,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',minWidth:0}}>
                 <span style={{color:'#fff',fontSize:14,fontWeight:800,whiteSpace:'nowrap'}}>Lamiera</span>
                 {/* Badge sviluppata */}
-                {sviluppata>0 && <span style={{background:'rgba(255,255,255,0.15)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:700,whiteSpace:'nowrap'}}>📏 {sviluppata}mm</span>}
+                {sviluppata>0 && <span style={{background:'rgba(255,255,255,0.15)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:700,whiteSpace:'nowrap'}}> {sviluppata}mm</span>}
                 {/* Badge lato infisso */}
                 {lamieraLatoInfisso && <span style={{background:'rgba(255,255,255,0.2)',borderRadius:6,padding:'2px 7px',fontSize:11,color:'#fff',fontWeight:800,whiteSpace:'nowrap'}}>{lamieraLatoInfisso==='alto'?'^ ALTO':lamieraLatoInfisso==='basso'?'v BASSO':lamieraLatoInfisso==='sx'?'< SX':'> DX'}</span>}
               </div>
@@ -4442,10 +4442,10 @@ export default function VanoDetailPanel() {
               <div onClick={()=>setLamieraLatoBuono(lamieraLatoBuono==='esterno'?'interno':'esterno')}
                 style={{padding:'5px 10px',borderRadius:8,background:'rgba(255,255,255,0.12)',
                   color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',border:'1px solid rgba(255,255,255,0.25)',whiteSpace:'nowrap'}}>
-                ◐ {lamieraLatoBuono==='esterno'?'Est.':'Int.'}
+                 {lamieraLatoBuono==='esterno'?'Est.':'Int.'}
               </div>
               <div onClick={()=>setShowLamieraDisegno(false)}
-                style={{color:'rgba(255,255,255,0.6)',fontSize:24,cursor:'pointer',padding:'0 4px',lineHeight:1}}>×</div>
+                style={{color:'rgba(255,255,255,0.6)',fontSize:24,cursor:'pointer',padding:'0 4px',lineHeight:1}}></div>
             </div>
 
             {/* SVG con altezza contenuta su mobile */}
@@ -4485,7 +4485,7 @@ export default function VanoDetailPanel() {
               {allSegs.length===0 && (
                 <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
                   justifyContent:'center',flexDirection:'column',gap:8,color:'#94A3B8',pointerEvents:'none'}}>
-                  <div style={{fontSize:40}}>✏️</div>
+                  <div style={{fontSize:40}}></div>
                   <div style={{fontSize:14,fontWeight:600}}>Aggiungi il primo segmento</div>
                   <div style={{fontSize:11}}>Scegli direzione e inserisci i mm</div>
                 </div>
@@ -4495,13 +4495,13 @@ export default function VanoDetailPanel() {
                 <div style={{position:'absolute',bottom:10,right:10,zIndex:10,
                   background:'rgba(0,0,0,0.45)',color:'#fff',borderRadius:8,
                   padding:'4px 10px',fontSize:10,fontWeight:600,pointerEvents:'none'}}>
-                  🤏 Pizzica per zoomare · Trascina per muovere
+                   Pizzica per zoomare  Trascina per muovere
                 </div>
               )}
               {/* Bottoni zoom */}
               {allSegs.length>0 && (
                 <div style={{position:'absolute',top:10,right:10,zIndex:10,display:'flex',flexDirection:'column',gap:4}}>
-                  {[{l:'+',d:1.3},{l:'−',d:0.77},{l:'↺',d:0}].map(btn=>(
+                  {[{l:'+',d:1.3},{l:'',d:0.77},{l:'',d:0}].map(btn=>(
                     <div key={btn.l}
                       onClick={()=>{
                         if(btn.d===0){lamieraZoom.current=1;lamieraPan.current={x:0,y:0};}
@@ -4512,7 +4512,7 @@ export default function VanoDetailPanel() {
                       }}
                       style={{width:30,height:30,borderRadius:7,background:'rgba(255,255,255,0.92)',
                         border:'1px solid #E2E8F0',display:'flex',alignItems:'center',justifyContent:'center',
-                        fontSize:btn.l==='↺'?13:17,fontWeight:800,cursor:'pointer',color:'#1A2B4A',
+                        fontSize:btn.l===''?13:17,fontWeight:800,cursor:'pointer',color:'#1A2B4A',
                         boxShadow:'0 2px 6px rgba(0,0,0,0.10)'}}>
                       {btn.l}
                     </div>
@@ -4534,14 +4534,14 @@ export default function VanoDetailPanel() {
                   const isEst = lamieraLatoBuono === 'esterno';
                   const CLR = isEst ? '#3B7FE0' : '#D08008';
 
-                  // Segmento più lungo = direzione principale del profilo
+                  // Segmento pi lungo = direzione principale del profilo
                   const longestSeg = allSegs.reduce((a,b)=>b.mm>a.mm?b:a, allSegs[0]);
                   const mainDir = longestSeg.dir;
-                  // Perpendicolare: se profilo è verticale (su/giu) → freccia va a destra
-                  //                 se profilo è orizzontale (dx/sx) → freccia va in su
+                  // Perpendicolare: se profilo  verticale (su/giu)  freccia va a destra
+                  //                 se profilo  orizzontale (dx/sx)  freccia va in su
                   const perpX = (mainDir==='su'||mainDir==='giu') ? 50 : 0;
                   const perpY = (mainDir==='dx'||mainDir==='sx') ? -50 : 0;
-                  // Punto medio del segmento più lungo
+                  // Punto medio del segmento pi lungo
                   const longestIdx = allSegs.indexOf(longestSeg);
                   const midNode = {
                     x: (nodes[longestIdx].x + nodes[longestIdx+1].x) / 2,
@@ -4591,13 +4591,13 @@ export default function VanoDetailPanel() {
                             </text>
                             {seg.angolo && seg.angolo !== 90 && (
                               <text x={n.x.toFixed(1)} y={(n.y+16).toFixed(1)}
-                                textAnchor="middle" fontSize="10" fill="#D08008" fontWeight="700">{seg.angolo<90?'+':'−'}{Math.abs(seg.angolo-90)}°</text>
+                                textAnchor="middle" fontSize="10" fill="#D08008" fontWeight="700">{seg.angolo<90?'+':''}{Math.abs(seg.angolo-90)}</text>
                             )}
                           </g>
                         );
                       })}
 
-                      {/* LATO BUONO — freccia perpendicolare al profilo */}
+                      {/* LATO BUONO  freccia perpendicolare al profilo */}
                       <line x1={midNode.x} y1={midNode.y} x2={arrowTipX} y2={arrowTipY}
                         stroke={CLR} strokeWidth="2.5" strokeDasharray="5,4"/>
                       <polygon
@@ -4617,20 +4617,20 @@ export default function VanoDetailPanel() {
                         x={perpX>0 ? arrowTipX+36 : perpX<0 ? arrowTipX-36 : arrowTipX}
                         y={perpY<0 ? arrowTipY-10 : perpY>0 ? arrowTipY+18 : arrowTipY+4}
                         textAnchor="middle" fontSize="10" fill="#fff" fontWeight="800">
-                        ◐ {isEst?'ESTERNO':'INTERNO'}
+                         {isEst?'ESTERNO':'INTERNO'}
                       </text>
                     </g>
                   );
                 })()}
 
-                {/* Stato vuoto — solo START dot */}
+                {/* Stato vuoto  solo START dot */}
                 {allSegs.length === 0 && (
                   <circle cx="350" cy="230" r="7" fill="#0F766E" opacity="0.4"/>
                 )}
               </svg>
             </div>
 
-            {/* Chips segmenti — scroll orizzontale, nascosto in fullscreen */}
+            {/* Chips segmenti  scroll orizzontale, nascosto in fullscreen */}
             {allSegs.length > 0 && !lamieraFullscreen && (
               <div style={{padding:'5px 10px',background:'#fff',
                 borderTop:'1px solid #E2E8F0',display:'flex',gap:4,flexShrink:0,alignItems:'center',
@@ -4654,19 +4654,19 @@ export default function VanoDetailPanel() {
                           setLamieraAngoloInput((s.angolo||90)!==90);
                         }
                       }} style={{display:'flex',alignItems:'center',gap:4}}>
-                        <span style={{fontSize:13,color:isSel?'#0F766E':'#0F766E'}}>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
+                        <span style={{fontSize:13,color:isSel?'#0F766E':'#0F766E'}}>{s.dir==='dx'?'':s.dir==='sx'?'':s.dir==='giu'?'':''}</span>
                         <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,fontWeight:800,color:isSel?'#0F172A':'#0F172A'}}>{s.mm}</span>
                         {s.angolo && s.angolo!==90 && (
                           <span style={{fontSize:10,fontWeight:700,color:'#D08008',
                             background:'#D0800815',padding:'1px 5px',borderRadius:4,
                             border:'1px solid #D0800840'}}>
-                            {s.angolo<90?'+':'−'}{Math.abs(s.angolo-90)}°
+                            {s.angolo<90?'+':''}{Math.abs(s.angolo-90)}
                           </span>
                         )}
                       </span>
                       {/* X = elimina */}
                       <span onClick={e=>{e.stopPropagation();setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i));if(isSel)setLamieraSelIdx(null);}}
-                        style={{fontSize:12,color:'#DC4444',fontWeight:700,marginLeft:2,opacity:0.6,padding:'0 2px'}}>×</span>
+                        style={{fontSize:12,color:'#DC4444',fontWeight:700,marginLeft:2,opacity:0.6,padding:'0 2px'}}></span>
                     </div>
                   );
                 })}
@@ -4677,7 +4677,7 @@ export default function VanoDetailPanel() {
               </div>
             )}
 
-            {/* Pannello aggiunta — nascosto in fullscreen */}
+            {/* Pannello aggiunta  nascosto in fullscreen */}
             <div style={{background:'#fff',borderTop:'1px solid #E2E8F0',padding:'8px 12px 16px',flexShrink:0,overflowY:'auto',display:lamieraFullscreen?'none':'block'}}>
 
               {/* Lato infisso + Lunghezza */}
@@ -4686,7 +4686,7 @@ export default function VanoDetailPanel() {
                 <div style={{flex:1}}>
                   <div style={{fontSize:9,fontWeight:800,color:'#64748B',marginBottom:5,textTransform:'uppercase',letterSpacing:'0.06em'}}>Lato infisso</div>
                   <div style={{display:'flex',gap:4}}>
-                    {([['alto','↑','Alto'],['basso','↓','Basso'],['sx','←','Sx'],['dx','→','Dx']] as const).map(([val,icon,lbl])=>{
+                    {([['alto','','Alto'],['basso','','Basso'],['sx','','Sx'],['dx','','Dx']] as const).map(([val,icon,lbl])=>{
                       const sel = lamieraLatoInfisso===val;
                       return (
                         <div key={val} onClick={()=>setLamieraLatoInfisso(sel?'':val)}
@@ -4727,14 +4727,14 @@ export default function VanoDetailPanel() {
                   padding:'7px 12px',borderRadius:10,background:'#FFF8EC',
                   border:'1.5px solid #D08008',marginBottom:8}}>
                   <span style={{fontSize:12,fontWeight:700,color:'#D08008'}}>
-                    ✏️ Modifica segmento {lamieraSelIdx+1} — cambia valori e premi OK
+                     Modifica segmento {lamieraSelIdx+1}  cambia valori e premi OK
                   </span>
                   <span onClick={()=>{setLamieraSelIdx(null);setLamieraPMm('');}}
-                    style={{fontSize:18,color:'#D08008',cursor:'pointer',fontWeight:800}}>✕</span>
+                    style={{fontSize:18,color:'#D08008',cursor:'pointer',fontWeight:800}}></span>
                 </div>
               )}
 
-              {/* Angolo personalizzato — appare solo se lamieraAngoloInput */}
+              {/* Angolo personalizzato  appare solo se lamieraAngoloInput */}
               {lamieraAngoloInput && (
                 <div style={{marginBottom:8,display:'flex',alignItems:'center',gap:8,
                   padding:'8px 12px',background:'#FFF8EC',borderRadius:10,border:'1px solid #D0800830'}}>
@@ -4744,16 +4744,16 @@ export default function VanoDetailPanel() {
                       background:lamieraAngoloPM===1?'#FFF8EC':'#FFE8B0',
                       fontSize:18,fontWeight:900,color:'#D08008',cursor:'pointer',
                       minWidth:40,textAlign:'center',userSelect:'none' as any}}>
-                    {lamieraAngoloPM===1?'+':'−'}
+                    {lamieraAngoloPM===1?'+':''}
                   </div>
                   <input inputMode="decimal" value={lamieraAngolo}
                     onChange={e=>setLamieraAngolo(e.target.value)}
                     style={{width:60,padding:'6px 10px',borderRadius:8,border:'1px solid #D0800860',
                       fontSize:18,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
                       textAlign:'center',background:'#fff'}}/>
-                  <span style={{fontSize:12,color:'#D08008',fontWeight:600}}>°</span>
+                  <span style={{fontSize:12,color:'#D08008',fontWeight:600}}></span>
                   <div onClick={()=>setLamieraAngoloInput(false)}
-                    style={{marginLeft:'auto',fontSize:11,color:'#D08008',cursor:'pointer',fontWeight:700}}>90° default</div>
+                    style={{marginLeft:'auto',fontSize:11,color:'#D08008',cursor:'pointer',fontWeight:700}}>90 default</div>
                 </div>
               )}
 
@@ -4781,7 +4781,7 @@ export default function VanoDetailPanel() {
                     <div style={{fontSize:9,fontWeight:600,
                       color:lamieraPDir===d?'rgba(255,255,255,0.8)':'#CBD5E1',marginTop:3}}>{name}</div>
                     {lamieraPDir===d && !lamieraAngoloInput && (
-                      <div style={{fontSize:8,color:'rgba(255,255,255,0.6)',marginTop:1}}>tap 2x=°</div>
+                      <div style={{fontSize:8,color:'rgba(255,255,255,0.6)',marginTop:1}}>tap 2x=</div>
                     )}
                   </div>
                 ))}
@@ -4795,7 +4795,7 @@ export default function VanoDetailPanel() {
                     onKeyDown={e=>{
                       if(e.key==='Enter'&&lamieraPMm&&parseFloat(lamieraPMm)>0){
                         const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||0) : 0;
-                        // 90=dritto, PM=+ → 90-abs (piega sx), PM=- → 90+abs (piega dx)
+                        // 90=dritto, PM=+  90-abs (piega sx), PM=-  90+abs (piega dx)
                         const angolo = lamieraAngoloInput && angoloAbs > 0
                           ? (lamieraAngoloPM === 1 ? 90 - angoloAbs : 90 + angoloAbs)
                           : 90;
@@ -4841,7 +4841,7 @@ export default function VanoDetailPanel() {
                     fontSize:lamieraSelIdx!==null?11:28,fontWeight:800,cursor:'pointer',
                     boxShadow:`0 3px 0 ${lamieraSelIdx!==null?'#A06006':'#111E33'}`,
                     flexShrink:0,textAlign:'center',padding:'0 4px'}}>
-                  {lamieraSelIdx!==null?'✓ OK':'+'}
+                  {lamieraSelIdx!==null?' OK':'+'}
                 </div>
               </div>
 
@@ -4856,7 +4856,7 @@ export default function VanoDetailPanel() {
                 {/* ESPORTA */}
                 {allSegs.length>0 && (
                   <div onClick={()=>{
-                    const dirsym=(d:string)=>d==='dx'?'→':d==='sx'?'←':d==='giu'?'↓':'↑';
+                    const dirsym=(d:string)=>d==='dx'?'':d==='sx'?'':d==='giu'?'':'';
                     const parti=[
                       'LAMIERA '+(v.lamiera||''),
                       lamieraLatoInfisso?'Lato: '+lamieraLatoInfisso.toUpperCase():'',
@@ -4919,7 +4919,7 @@ export default function VanoDetailPanel() {
             {/* Safe area iOS */}
             <div style={{background:'#1A2B4A',height:'env(safe-area-inset-bottom,0px)',flexShrink:0,minHeight:0}}/>
 
-            {/* ── TENDINA SCHIZZO LIBERO ── */}
+            {/*  TENDINA SCHIZZO LIBERO  */}
             {lamieraSchizzoOpen && (
               <div style={{position:'absolute',
                 bottom:0,left:0,right:0,
@@ -4936,10 +4936,10 @@ export default function VanoDetailPanel() {
                 <div style={{display:'flex',alignItems:'center',gap:6,
                   padding:'7px 10px',borderBottom:'1px solid #E2E8F0',
                   flexShrink:0,background:'#fff'}}>
-                  <span style={{fontSize:11,fontWeight:800,color:'#1A2B4A',marginRight:4}}>✏️ Schizzo</span>
+                  <span style={{fontSize:11,fontWeight:800,color:'#1A2B4A',marginRight:4}}> Schizzo</span>
 
                   {/* Penna / Gomma */}
-                  {[{t:'pen',icon:'✒️',label:'Penna'},{t:'eraser',icon:'⬜',label:'Gomma'}].map(({t,icon,label})=>(
+                  {[{t:'pen',icon:'',label:'Penna'},{t:'eraser',icon:'',label:'Gomma'}].map(({t,icon,label})=>(
                     <div key={t} onClick={()=>setSchizzoTool(t as any)}
                       style={{padding:'4px 8px',borderRadius:7,cursor:'pointer',fontSize:10,fontWeight:700,
                         border:`1.5px solid ${schizzoTool===t?'#1A2B4A':'#E2E8F0'}`,
@@ -4973,7 +4973,7 @@ export default function VanoDetailPanel() {
                     <div onClick={()=>setLamieraSchizzoFull(f=>!f)}
                       style={{padding:'4px 7px',borderRadius:7,cursor:'pointer',fontSize:12,
                         border:'1.5px solid #E2E8F0',background:'#fff',color:'#64748B'}}>
-                      {lamieraSchizzoFull?'⊡':'⊞'}
+                      {lamieraSchizzoFull?'':''}
                     </div>
                     {/* Cancella */}
                     <div onClick={()=>{
@@ -4982,11 +4982,11 @@ export default function VanoDetailPanel() {
                       if(ctx&&cv) ctx.clearRect(0,0,cv.width,cv.height);
                     }} style={{padding:'4px 8px',borderRadius:7,background:'#FEE2E2',
                       color:'#DC4444',fontSize:10,fontWeight:700,cursor:'pointer',border:'1.5px solid #FCA5A5'}}>
-                      ✕
+                      
                     </div>
                     {/* Chiudi */}
                     <div onClick={()=>{setLamieraSchizzoOpen(false);setLamieraSchizzoFull(false);}}
-                      style={{fontSize:18,color:'#94A3B8',cursor:'pointer',fontWeight:300,lineHeight:1,padding:'0 2px'}}>×</div>
+                      style={{fontSize:18,color:'#94A3B8',cursor:'pointer',fontWeight:300,lineHeight:1,padding:'0 2px'}}></div>
                   </div>
                 </div>
 
@@ -5039,12 +5039,12 @@ export default function VanoDetailPanel() {
         );
       })()}
 
-      {/* ── BOX EDITOR 3D ── */}
+      {/*  BOX EDITOR 3D  */}
       {showBoxEditor && (
         <BoxEditor onClose={() => setShowBoxEditor(false)} />
       )}
 
-      {/* ── CASSONETTO EDITOR ── */}
+      {/*  CASSONETTO EDITOR  */}
       {showCassonettoEditor && (() => {
         const v2 = selectedVano;
         if (!v2) return null;
@@ -5073,7 +5073,7 @@ export default function VanoDetailPanel() {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 16, fontWeight: 900 }}>Report rilievo R{selectedRilievo.n || ""}</div>
-              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{(selectedRilievo.vani||[]).length} vani totali · {(() => { const vs = selectedRilievo.vani || []; if (!vs.length) return "0%"; let tot = 0, ok = 0; vs.forEach((v: any) => { const ver = v.verificato || {}; const keys = ["tipo","stanza","piano","pezzi","sistema","vetro","telaio","telaioAlaZ","rifilato","coprifilo","coloreInt","coloreEst","bicolore","coloreAcc","larghezze","altezze","diagonali","tapparella","persiana","zanzariera","difficoltaSalita","mezzoSalita","note"]; tot += keys.length; ok += keys.filter(k => ver[k]).length; }); return Math.round((ok/tot)*100) + "% verificato"; })()}</div>
+              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{(selectedRilievo.vani||[]).length} vani totali  {(() => { const vs = selectedRilievo.vani || []; if (!vs.length) return "0%"; let tot = 0, ok = 0; vs.forEach((v: any) => { const ver = v.verificato || {}; const keys = ["tipo","stanza","piano","pezzi","sistema","vetro","telaio","telaioAlaZ","rifilato","coprifilo","coloreInt","coloreEst","bicolore","coloreAcc","larghezze","altezze","diagonali","tapparella","persiana","zanzariera","difficoltaSalita","mezzoSalita","note"]; tot += keys.length; ok += keys.filter(k => ver[k]).length; }); return Math.round((ok/tot)*100) + "% verificato"; })()}</div>
             </div>
           </div>
           <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -5081,7 +5081,7 @@ export default function VanoDetailPanel() {
               const mm = vr.misure || {};
               const ac = vr.accessori || {};
               const hasMis = Object.values(mm).filter((x: any) => x > 0).length;
-              const livelli = [vr.livello_1, vr.livello_2, vr.livello_3].filter(Boolean).join(" · ");
+              const livelli = [vr.livello_1, vr.livello_2, vr.livello_3].filter(Boolean).join("  ");
               const verificato = vr.verificato || {};
               // Lista flat di tutti i campi con chiave univoca
               const ALL_FIELDS: [string, any, string][] = [
@@ -5117,7 +5117,7 @@ export default function VanoDetailPanel() {
               else if (flaggedCount === ALL_FIELDS.length && emptyFlagged > 0) statoVano = "incompleto";
               else if (flaggedCount > 0) statoVano = "incompleto";
               const statoColor = statoVano === "ok" ? "#1A9E73" : statoVano === "incompleto" ? "#E8A30A" : "#999";
-              const statoLabel = statoVano === "ok" ? "✓ OK" : statoVano === "incompleto" ? "⚠ Verificato incompleto" : "○ Non verificato";
+              const statoLabel = statoVano === "ok" ? " OK" : statoVano === "incompleto" ? " Verificato incompleto" : " Non verificato";
 
               const toggleFlag = async (fieldKey: string) => {
                 const next = { ...verificato, [fieldKey]: !verificato[fieldKey] };
@@ -5149,7 +5149,7 @@ export default function VanoDetailPanel() {
                       {ok && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                     </div>
                     <div style={{ flex: 1, fontSize: 11, color: "#888", fontWeight: 600 }}>{label}</div>
-                    <div style={{ flex: 1.5, fontSize: 12, color: value ? "#0D1F1F" : "#CCC", fontWeight: value ? 700 : 400, textAlign: "right" as any }}>{value || "—"}</div>
+                    <div style={{ flex: 1.5, fontSize: 12, color: value ? "#0D1F1F" : "#CCC", fontWeight: value ? 700 : 400, textAlign: "right" as any }}>{value || ""}</div>
                   </div>
                 );
               };
@@ -5169,7 +5169,7 @@ export default function VanoDetailPanel() {
                     </div>
                     <div style={{ padding: "6px 10px", borderRadius: 8, background: statoColor + "22", color: statoColor, fontSize: 10, fontWeight: 800, border: "1px solid " + statoColor + "66" }}>{statoLabel}</div>
                   </div>
-                  <div style={{ fontSize: 10, color: "#888", marginBottom: 6 }}>{hasMis} misure · {Object.keys(vr.foto||{}).length} foto · {flaggedCount}/{ALL_FIELDS.length} verificati</div>
+                  <div style={{ fontSize: 10, color: "#888", marginBottom: 6 }}>{hasMis} misure  {Object.keys(vr.foto||{}).length} foto  {flaggedCount}/{ALL_FIELDS.length} verificati</div>
                   {Sez("TIPOLOGIA", ALL_FIELDS.slice(0, 4), "tip" + idx)}
                   {Sez("SISTEMA", ALL_FIELDS.slice(4, 10), "sis" + idx)}
                   {Sez("COLORI", ALL_FIELDS.slice(10, 14), "col" + idx)}
