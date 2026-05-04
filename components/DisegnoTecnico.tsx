@@ -5066,7 +5066,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       else { innerPoly.push([ix2, iy1]); }
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-                                      const innerStr = innerPoly.map(p => p.join(",")).join(" ");
+                                      // FIX OMBRA: inner polygon segue il poly outer scalato verso centro (no bbox rect)
+                                      const _innerShrink = pts.map(p => {
+                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
+                                        const dist = Math.hypot(dx2, dy2) || 1;
+                                        const shrinkAmt = tk * 1.2;
+                                        return [(p[0] + dx2 / dist * shrinkAmt), (p[1] + dy2 / dist * shrinkAmt)];
+                                      });
+                                      const innerStr = _innerShrink.map(p => p.join(",")).join(" ");
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
                                           <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
