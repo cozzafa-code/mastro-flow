@@ -302,7 +302,7 @@ var state = {
   piattoMarca: 'mastro_90x90', piatto: 'effpietra', coloraPiatto: 'bianco',
   altPiatto: 'basso', scarico: 'centrale',
   piattoMode: 'standard', piattoW: 90, piattoD: 90,
-  cam: { rotY: Math.PI/4, rotX: Math.PI/9, dist: 1.0 },
+  cam: { rotY: Math.PI/4, rotX: Math.PI/9, dist: 1.0, panX: 0, panY: 0 },
   plan: { panX: 0, panY: 0, zoom: 1.0 },
   foto: { dataUrl: null, w: 0, h: 0, p1: null, p2: null, refDist: 100, showBox: true, boxX: 0.5, boxY: 0.7 },
   draw: { mode: 'wall', wallTh: 10, scale: 2, walls: [], box: null, showGrid: true, pendingPoint: null }
@@ -741,7 +741,7 @@ document.getElementById('root').addEventListener('click', function(e){
         state.current++; renderSteps(state.current);
         setTimeout(function(){ var els = document.querySelectorAll('.step'); if (els[state.current]) els[state.current].scrollIntoView({behavior:'smooth',block:'center'}); }, 100);
       } else { finish(); }
-    } else if (a === 'reset-cam') { state.cam = { rotY: Math.PI/4, rotX: Math.PI/9, dist: 1.0 }; document.getElementById('rot-info').textContent = '45\u00B0'; renderIso(); }
+    } else if (a === 'reset-cam') { state.cam = { rotY: Math.PI/4, rotX: Math.PI/9, dist: 1.0, panX: 0, panY: 0 }; document.getElementById('rot-info').textContent = '45\u00B0'; renderIso(); }
     else if (a === 'zoom-in') { state.cam.dist = Math.max(0.4, state.cam.dist * 0.85); renderIso(); }
     else if (a === 'zoom-out') { state.cam.dist = Math.min(2.5, state.cam.dist * 1.18); renderIso(); }
     else if (a === 'plan-reset') { state.plan = { panX: 0, panY: 0, zoom: 1.0 }; renderPlan(); }
@@ -833,7 +833,11 @@ isoSvg.addEventListener('pointerdown', function(e){
     var pts = Array.from(isoPointers.values());
     isoPinch = {
       dist: Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y),
-      camDist: state.cam.dist
+      camDist: state.cam.dist,
+      midX: (pts[0].x + pts[1].x) / 2,
+      midY: (pts[0].y + pts[1].y) / 2,
+      panX: state.cam.panX || 0,
+      panY: state.cam.panY || 0
     };
     isoDragStart = null;
   } else if (isoPointers.size === 1) {
@@ -849,6 +853,11 @@ isoSvg.addEventListener('pointermove', function(e){
     var pts = Array.from(isoPointers.values());
     var newDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
     state.cam.dist = Math.max(0.3, Math.min(3, isoPinch.camDist * (isoPinch.dist / newDist)));
+    // Pan 2 dita: sposta il midpoint
+    var newMidX = (pts[0].x + pts[1].x) / 2;
+    var newMidY = (pts[0].y + pts[1].y) / 2;
+    state.cam.panX = (isoPinch.panX || 0) + (newMidX - isoPinch.midX);
+    state.cam.panY = (isoPinch.panY || 0) + (newMidY - isoPinch.midY);
     renderIso();
   } else if (isoPointers.size === 1 && isoDragStart) {
     var dx = e.clientX - isoDragStart.x, dy = e.clientY - isoDragStart.y;
@@ -1167,38 +1176,97 @@ function showWalls() {
 
 function renderIso() {
   var W = state.w, D = state.d, H = state.h;
-  var cx = 160, cy = 175;
+  var cx = 160 + (state.cam.panX || 0) * 0.3;
+  var cy = 175 + (state.cam.panY || 0) * 0.3;
   var sc = 1.25 / state.cam.dist;
   function pt(x, y, z) { var p = project((x-W/2)*sc, y*sc, (z-D/2)*sc, cx, cy); return [p[0], p[1], p[2]]; }
   var profCol = PROF_COL[state.profilo], vetroCol = VETRO_COL[state.vetroTipo], piaCol = PIATTO_COL[state.coloraPiatto];
+  var profDark = adjustColor(profCol, -40);
+  var profLight = adjustColor(profCol, 30);
+  var piaDark = adjustColor(piaCol, -25);
   var walls = showWalls(), items = [];
   function add(z, h) { items.push({ z: z, h: h }); }
-  var svg = '<rect x="0" y="0" width="320" height="320" fill="#0A1818"/>';
+
+  // Defs: gradient per vetri, profili, piatto
+  var svg = '<defs>';
+  svg += '<linearGradient id="vetroGrad" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0%" stop-color="'+vetroCol.fill+'" stop-opacity="'+(1-vetroCol.op-0.05)+'"/><stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.08"/><stop offset="100%" stop-color="'+vetroCol.fill+'" stop-opacity="'+(1-vetroCol.op)+'"/></linearGradient>';
+  svg += '<linearGradient id="vetroRiflesso" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.18"/><stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.05"/><stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>';
+  svg += '<linearGradient id="profiloGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+profLight+'"/><stop offset="50%" stop-color="'+profCol+'"/><stop offset="100%" stop-color="'+profDark+'"/></linearGradient>';
+  svg += '<linearGradient id="piattoGrad" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0%" stop-color="'+adjustColor(piaCol, 15)+'"/><stop offset="50%" stop-color="'+piaCol+'"/><stop offset="100%" stop-color="'+piaDark+'"/></linearGradient>';
+  svg += '<radialGradient id="ombraPiatto" cx="0.5" cy="0.5" r="0.6"><stop offset="0%" stop-color="#000" stop-opacity="0.55"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>';
+  svg += '<linearGradient id="muroGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#243A3A"/><stop offset="100%" stop-color="#0F2020"/></linearGradient>';
+  svg += '<linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0F2424"/><stop offset="100%" stop-color="#061010"/></linearGradient>';
+  svg += '</defs>';
+  // Sfondo gradiente
+  svg += '<rect x="0" y="0" width="320" height="320" fill="url(#bgGrad)"/>';
+  // Griglia pavimento prospettica
   for (var gi = 0; gi < 11; gi++) {
-    svg += '<line x1="0" y1="'+(gi*32)+'" x2="320" y2="'+(gi*32)+'" stroke="#152828" stroke-width="0.5"/>';
-    svg += '<line x1="'+(gi*32)+'" y1="0" x2="'+(gi*32)+'" y2="320" stroke="#152828" stroke-width="0.5"/>';
+    svg += '<line x1="0" y1="'+(gi*32)+'" x2="320" y2="'+(gi*32)+'" stroke="#152828" stroke-width="0.4" opacity="0.5"/>';
+    svg += '<line x1="'+(gi*32)+'" y1="0" x2="'+(gi*32)+'" y2="320" stroke="#152828" stroke-width="0.4" opacity="0.5"/>';
   }
+
   var wallH = H + 30;
-  function wall(x1, z1, x2, z2) {
+
+  // Ombra del piatto sul pavimento (proiezione down)
+  var sh1 = pt(-5, 0, -5), sh2 = pt(W+5, 0, -5), sh3 = pt(W+5, 0, D+5), sh4 = pt(-5, 0, D+5);
+  var shZ = (sh1[2]+sh2[2]+sh3[2]+sh4[2])/4;
+  add(shZ + 100, '<polygon points="'+sh1[0]+','+sh1[1]+' '+sh2[0]+','+sh2[1]+' '+sh3[0]+','+sh3[1]+' '+sh4[0]+','+sh4[1]+'" fill="url(#ombraPiatto)" opacity="0.45"/>');
+
+  // Walls con texture muratura
+  function wall(x1, z1, x2, z2, faceLight) {
     var a = pt(x1, 0, z1), b = pt(x2, 0, z2), c = pt(x2, wallH, z2), d = pt(x1, wallH, z1);
     var cz = (a[2]+b[2]+c[2]+d[2])/4;
-    add(cz - 0.01, '<polygon points="'+a[0]+','+a[1]+' '+b[0]+','+b[1]+' '+c[0]+','+c[1]+' '+d[0]+','+d[1]+'" fill="#1F3838" stroke="#28A0A0" stroke-width="0.6" fill-opacity="0.55"/>');
+    var pts = a[0]+','+a[1]+' '+b[0]+','+b[1]+' '+c[0]+','+c[1]+' '+d[0]+','+d[1];
+    var html = '<polygon points="'+pts+'" fill="url(#muroGrad)" stroke="#28A0A0" stroke-width="0.5" opacity="'+(faceLight?'0.85':'0.65')+'"/>';
+    // Linee orizzontali: simulano piastrelle/finitura
+    var nSteps = 6;
+    for (var ti = 1; ti < nSteps; ti++) {
+      var ty = wallH * ti / nSteps;
+      var pa = pt(x1, ty, z1), pb = pt(x2, ty, z2);
+      html += '<line x1="'+pa[0]+'" y1="'+pa[1]+'" x2="'+pb[0]+'" y2="'+pb[1]+'" stroke="#0A1818" stroke-width="0.3" opacity="0.4"/>';
+    }
+    add(cz - 0.01, html);
   }
-  if (walls.sx) wall(0,-10,0,D+10);
-  if (walls.back) wall(0,-10,W+10,-10);
-  if (walls.dx) wall(W,-10,W,D+10);
+  if (walls.sx) wall(0,-10,0,D+10, true);
+  if (walls.back) wall(0,-10,W+10,-10, false);
+  if (walls.dx) wall(W,-10,W,D+10, true);
+
   var altP = 8;
+  // Piatto top con gradient + sccarico recess
   var pT = [pt(0,altP,0), pt(W,altP,0), pt(W,altP,D), pt(0,altP,D)];
   var ptz = (pT[0][2]+pT[1][2]+pT[2][2]+pT[3][2])/4;
-  add(ptz, '<polygon points="'+pT[0][0]+','+pT[0][1]+' '+pT[1][0]+','+pT[1][1]+' '+pT[2][0]+','+pT[2][1]+' '+pT[3][0]+','+pT[3][1]+'" fill="'+piaCol+'" stroke="#1F3838" stroke-width="0.5"/>');
+  var topPts = pT[0][0]+','+pT[0][1]+' '+pT[1][0]+','+pT[1][1]+' '+pT[2][0]+','+pT[2][1]+' '+pT[3][0]+','+pT[3][1];
+  add(ptz, '<polygon points="'+topPts+'" fill="url(#piattoGrad)" stroke="'+piaDark+'" stroke-width="0.6"/>');
+  // Bordo superiore highlight
+  add(ptz - 0.05, '<line x1="'+pT[0][0]+'" y1="'+pT[0][1]+'" x2="'+pT[1][0]+'" y2="'+pT[1][1]+'" stroke="'+adjustColor(piaCol, 35)+'" stroke-width="1" opacity="0.6"/>');
+  // Faccia frontale piatto
   var fP = [pt(0,0,D), pt(W,0,D), pt(W,altP,D), pt(0,altP,D)];
   var fpz = (fP[0][2]+fP[1][2]+fP[2][2]+fP[3][2])/4;
-  add(fpz - 0.5, '<polygon points="'+fP[0][0]+','+fP[0][1]+' '+fP[1][0]+','+fP[1][1]+' '+fP[2][0]+','+fP[2][1]+' '+fP[3][0]+','+fP[3][1]+'" fill="'+piaCol+'" fill-opacity="0.55" stroke="#1F3838" stroke-width="0.4"/>');
-  var sx_ = pt(W/2, altP+0.5, D/2);
-  add(sx_[2]-1, '<circle cx="'+sx_[0]+'" cy="'+sx_[1]+'" r="3" fill="#28A0A0"/><circle cx="'+sx_[0]+'" cy="'+sx_[1]+'" r="1.5" fill="#0A1818"/>');
+  add(fpz - 0.5, '<polygon points="'+fP[0][0]+','+fP[0][1]+' '+fP[1][0]+','+fP[1][1]+' '+fP[2][0]+','+fP[2][1]+' '+fP[3][0]+','+fP[3][1]+'" fill="'+piaDark+'" stroke="#1F3838" stroke-width="0.4"/>');
+  // Faccia laterale destra piatto
+  var fS = [pt(W,0,0), pt(W,0,D), pt(W,altP,D), pt(W,altP,0)];
+  var fsz = (fS[0][2]+fS[1][2]+fS[2][2]+fS[3][2])/4;
+  add(fsz - 0.5, '<polygon points="'+fS[0][0]+','+fS[0][1]+' '+fS[1][0]+','+fS[1][1]+' '+fS[2][0]+','+fS[2][1]+' '+fS[3][0]+','+fS[3][1]+'" fill="'+adjustColor(piaCol, -45)+'" stroke="#1F3838" stroke-width="0.4"/>');
+
+  // Scarico: cromato con riflesso
+  var sxC = W/2, szC = D/2;
+  if (state.scarico === 'lineare') { sxC = W/2; szC = D - 8; }
+  else if (state.scarico === 'laterale') { sxC = 8; szC = D/2; }
+  if (state.scarico === 'lineare') {
+    var sl1 = pt(sxC-W*0.35, altP+0.3, szC), sl2 = pt(sxC+W*0.35, altP+0.3, szC);
+    add(sl1[2]-2, '<rect x="'+(sl1[0])+'" y="'+(sl1[1]-1.5)+'" width="'+(sl2[0]-sl1[0])+'" height="3" rx="1" fill="#1A2A2A" stroke="#88A0A0" stroke-width="0.5"/>');
+    add(sl1[2]-2.5, '<rect x="'+(sl1[0]+1)+'" y="'+(sl1[1]-0.8)+'" width="'+(sl2[0]-sl1[0]-2)+'" height="0.6" fill="#A0B0B0" opacity="0.5"/>');
+  } else {
+    var sxx = pt(sxC, altP+0.3, szC);
+    add(sxx[2]-1.5, '<circle cx="'+sxx[0]+'" cy="'+sxx[1]+'" r="4.5" fill="#1A2A2A" stroke="#88A0A0" stroke-width="0.5"/>');
+    add(sxx[2]-1.7, '<circle cx="'+sxx[0]+'" cy="'+sxx[1]+'" r="3" fill="none" stroke="#88A0A0" stroke-width="0.4"/>');
+    add(sxx[2]-2, '<circle cx="'+sxx[0]+'" cy="'+sxx[1]+'" r="0.8" fill="#28A0A0"/>');
+  }
+
+  // Pannelli vetro 3D (con profilo cornice e riflesso)
   function panel(x1, z1, x2, z2, hStart, hEnd, opening) {
     opening = opening || 0;
-    var t = 1.2, baseY = hStart + altP, topY = hEnd + altP;
+    var baseY = hStart + altP, topY = hEnd + altP;
     var p1 = pt(x1,baseY,z1), p2 = pt(x2,baseY,z2), p3 = pt(x2,topY,z2), p4 = pt(x1,topY,z1);
     if (opening !== 0) {
       var len = Math.hypot(x2-x1, z2-z1), ang = Math.atan2(z2-z1, x2-x1), newAng = ang + opening*Math.PI/2;
@@ -1206,8 +1274,18 @@ function renderIso() {
       p2 = pt(nx2,baseY,nz2); p3 = pt(nx2,topY,nz2);
     }
     var cz = (p1[2]+p2[2]+p3[2]+p4[2])/4;
-    add(cz, '<polygon points="'+p1[0]+','+p1[1]+' '+p2[0]+','+p2[1]+' '+p3[0]+','+p3[1]+' '+p4[0]+','+p4[1]+'" fill="'+vetroCol.fill+'" fill-opacity="'+(1-vetroCol.op)+'" stroke="'+profCol+'" stroke-width="'+t+'"/>');
+    var pts = p1[0]+','+p1[1]+' '+p2[0]+','+p2[1]+' '+p3[0]+','+p3[1]+' '+p4[0]+','+p4[1];
+    // Vetro con gradient
+    var html = '<polygon points="'+pts+'" fill="url(#vetroGrad)"/>';
+    // Riflesso obliquo sul vetro
+    html += '<polygon points="'+pts+'" fill="url(#vetroRiflesso)"/>';
+    // Cornice profilo (bordo) con gradient simulato per effetto 3D
+    html += '<polygon points="'+pts+'" fill="none" stroke="url(#profiloGrad)" stroke-width="3" stroke-linejoin="miter"/>';
+    // Inner shadow del vetro
+    html += '<polygon points="'+pts+'" fill="none" stroke="#000" stroke-width="0.6" opacity="0.4"/>';
+    add(cz, html);
   }
+
   if (state.tipo === 'nicchia') {
     if (state.apertura === 'fissa') panel(0,D,W,D,0,H);
     else { var sX = W*0.55; panel(0,D,sX,D,0,H); panel(sX,D,W,D,0,H, state.apertura==='scorrevole'?-0.3:0.35); }
@@ -1216,12 +1294,14 @@ function renderIso() {
   else if (state.tipo === 'walkin') panel(0,D,W*0.7,D,0,H);
   else if (state.tipo === 'sopravasca') { var Hv = H*0.7; panel(0,D,W*0.5,D,0,Hv); panel(W*0.5,D,W,D,0,Hv,0.3); }
   else if (state.tipo === 'semicirc') {
-    var seg = 6, r = Math.min(W,D)/2;
+    var seg = 8, r = Math.min(W,D)/2;
     for (var si = 0; si < seg; si++) {
       var a1 = (si/seg)*Math.PI*0.5, a2 = ((si+1)/seg)*Math.PI*0.5;
       panel(r*Math.sin(a1), D - r*Math.cos(a1), r*Math.sin(a2), D - r*Math.cos(a2), 0, H);
     }
   }
+
+  // Maniglia 3D in rilievo
   if (state.apertura !== 'fissa' && state.apertura !== 'pivot' && state.apertura !== 'libro' && state.tipo !== 'walkin') {
     var hX = W*0.55, hZ = D;
     if (state.tipo === 'angolo') { hX = W; hZ = 0; }
@@ -1231,13 +1311,36 @@ function renderIso() {
     var baseAng = state.tipo === 'angolo' ? Math.PI/2 : 0, realAng = baseAng + handleAng*Math.PI/2;
     var handX = hX + Math.cos(realAng)*(hLen*0.85), handZ = hZ + Math.sin(realAng)*(hLen*0.85);
     var h1 = pt(handX, H*0.5+altP, handZ);
-    add(h1[2]-2, '<rect x="'+(h1[0]-1.4)+'" y="'+(h1[1]-10)+'" width="2.8" height="20" rx="1.2" fill="'+profCol+'" stroke="#0A1818" stroke-width="0.4"/>');
+    // Maniglia con shadow + gradient
+    var hHtml = '<rect x="'+(h1[0]-1.6)+'" y="'+(h1[1]-12)+'" width="3.2" height="24" rx="1.5" fill="url(#profiloGrad)" stroke="'+profDark+'" stroke-width="0.5"/>';
+    hHtml += '<rect x="'+(h1[0]-1)+'" y="'+(h1[1]-10)+'" width="0.8" height="20" fill="'+profLight+'" opacity="0.6"/>';
+    add(h1[2]-2, hHtml);
   }
+
+  // Sort z-index e render
   items.sort(function(a,b){ return b.z-a.z; });
   for (var ii = 0; ii < items.length; ii++) svg += items[ii].h;
-  svg += '<text x="160" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#28A0A0" letter-spacing="1">'+TIPO_NOMI[state.tipo].toUpperCase()+'</text>';
-  svg += '<text x="160" y="34" text-anchor="middle" font-size="9" font-weight="500" fill="#88928F" font-family="monospace">'+W+' x '+D+' x '+H+' cm</text>';
+
+  // Glow superiore (luce ambiente)
+  svg += '<ellipse cx="160" cy="40" rx="120" ry="20" fill="#28A0A0" opacity="0.05"/>';
+
+  // Header titolo
+  svg += '<rect x="80" y="10" width="160" height="32" rx="6" fill="#0D1F1F" fill-opacity="0.7" stroke="#28A0A0" stroke-width="0.5"/>';
+  svg += '<text x="160" y="24" text-anchor="middle" font-size="12" font-weight="800" fill="#28A0A0" letter-spacing="1.5">'+TIPO_NOMI[state.tipo].toUpperCase()+'</text>';
+  svg += '<text x="160" y="37" text-anchor="middle" font-size="9" font-weight="500" fill="#88928F" font-family="monospace">'+W+' x '+D+' x '+H+' cm</text>';
+
   isoSvg.innerHTML = svg;
+}
+
+// Helper per schiarire/scurire colori HEX
+function adjustColor(hex, amount) {
+  var c = hex.replace('#','');
+  if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+  var r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  r = Math.max(0, Math.min(255, r + amount));
+  g = Math.max(0, Math.min(255, g + amount));
+  b = Math.max(0, Math.min(255, b + amount));
+  return '#' + ('0'+r.toString(16)).slice(-2) + ('0'+g.toString(16)).slice(-2) + ('0'+b.toString(16)).slice(-2);
 }
 
 function renderPlan() {
