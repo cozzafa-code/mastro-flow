@@ -299,8 +299,9 @@ var state = {
   w: 90, d: 90, h: 200,
   vetroTipo: 'trasp', vetroSp: 8, anti: true,
   profilo: 'cromo',
-  piattoMarca: 'mastro_std', piatto: 'effpietra', coloraPiatto: 'bianco',
+  piattoMarca: 'mastro_90x90', piatto: 'effpietra', coloraPiatto: 'bianco',
   altPiatto: 'basso', scarico: 'centrale',
+  piattoMode: 'standard', piattoW: 90, piattoD: 90,
   cam: { rotY: Math.PI/4, rotX: Math.PI/9, dist: 1.0 },
   plan: { panX: 0, panY: 0, zoom: 1.0 },
   foto: { dataUrl: null, w: 0, h: 0, p1: null, p2: null, refDist: 100, showBox: true, boxX: 0.5, boxY: 0.7 },
@@ -320,28 +321,72 @@ var HP_NOMI = { filo:'Filo pavim.', basso:'Basso 5cm', medio:'Medio 11cm' };
 var SC_NOMI = { centrale:'Centrale', lineare:'Lineare', laterale:'Laterale' };
 var PA_NOMI = { auto:'Da tipologia', '3':'3 pareti', '2':'2 pareti (angolo)', '1':'1 parete', '0':'Nessuna parete' };
 
-// Catalogo piatti commerciali base. Sara' sovrascritto da Impostazioni se l'azienda ha caricato il proprio.
+// Catalogo piatti standard. Sovrascrivibile da Impostazioni > Box Doccia.
+// W,D = misure cm. Ogni voce contiene anche le misure standard del modello.
 var CATALOGO_PIATTI = [
-  { id:'mastro_std', brand:'MASTRO', model:'Standard effetto pietra', mat:'effpietra', col:'bianco' },
-  { id:'novell_max', brand:'Novellini', model:'Olympic Plus - acrilico', mat:'acrilico', col:'bianco' },
-  { id:'novell_pri', brand:'Novellini', model:'Custom Touch - resina', mat:'resina', col:'antracite' },
-  { id:'iddis_str', brand:'Ideal Standard', model:'Ultraflat S - stone', mat:'stoneulti', col:'grigio' },
-  { id:'iddis_ult', brand:'Ideal Standard', model:'Ultraflat New - acrilico', mat:'acrilico', col:'bianco' },
-  { id:'roca_terr', brand:'Roca', model:'Terran - mineral marmo', mat:'mineralm', col:'antracite' },
-  { id:'roca_aqu', brand:'Roca', model:'Aquos - acrilico', mat:'acrilico', col:'bianco' },
-  { id:'kald_sup', brand:'Kaldewei', model:'SuperPlan Plus - acciaio smaltato', mat:'ceramica', col:'bianco' },
-  { id:'kald_xet', brand:'Kaldewei', model:'Xetis - acciaio smaltato', mat:'ceramica', col:'bianco' },
-  { id:'duka_lit', brand:'Duka', model:'Litho - effetto pietra', mat:'effpietra', col:'sabbia' },
-  { id:'pozzi_kub', brand:'Pozzi-Ginori', model:'Kuba - ceramica', mat:'ceramica', col:'bianco' },
-  { id:'flam_qua', brand:'Flaminia', model:'Quaranta - ceramica', mat:'ceramica', col:'bianco' },
-  { id:'glob_str', brand:'Globo', model:'Strato - ceramica', mat:'ceramica', col:'tortora' },
-  { id:'cesa_son', brand:'Cesana', model:'Sonia 3 - acrilico', mat:'acrilico', col:'bianco' },
-  { id:'tend_dec', brand:'Teuco', model:'DecoStone - mineralmarmo', mat:'mineralm', col:'creta' },
-  { id:'samo_ele', brand:'Samo', model:'Elegance - resina', mat:'resina', col:'antracite' },
-  { id:'megi_eff', brand:'Megius', model:'Effetto Pietra - resina', mat:'resina', col:'sabbia' },
-  { id:'cazz_min', brand:'Cazzaniga', model:'Minimal - marmoresina', mat:'marmoresina', col:'antracite' },
-  { id:'huppe_pi', brand:'Hueppe', model:'EasyStep - acrilico', mat:'acrilico', col:'bianco' },
-  { id:'profilt_ms', brand:'Profiltek', model:'Marmo Stone - mineralmarmo', mat:'mineralm', col:'grigio' }
+  // MASTRO standard
+  { id:'mastro_70x90', brand:'MASTRO', model:'Standard 70x90', mat:'effpietra', col:'bianco', w:70, d:90 },
+  { id:'mastro_80x80', brand:'MASTRO', model:'Standard 80x80', mat:'effpietra', col:'bianco', w:80, d:80 },
+  { id:'mastro_80x100', brand:'MASTRO', model:'Standard 80x100', mat:'effpietra', col:'bianco', w:80, d:100 },
+  { id:'mastro_90x90', brand:'MASTRO', model:'Standard 90x90', mat:'effpietra', col:'bianco', w:90, d:90 },
+  { id:'mastro_90x120', brand:'MASTRO', model:'Standard 90x120', mat:'effpietra', col:'bianco', w:90, d:120 },
+  // Novellini
+  { id:'novell_olym_70x90', brand:'Novellini', model:'Olympic Plus 70x90', mat:'acrilico', col:'bianco', w:70, d:90 },
+  { id:'novell_olym_80x80', brand:'Novellini', model:'Olympic Plus 80x80', mat:'acrilico', col:'bianco', w:80, d:80 },
+  { id:'novell_olym_80x120', brand:'Novellini', model:'Olympic Plus 80x120', mat:'acrilico', col:'bianco', w:80, d:120 },
+  { id:'novell_cust_90x90', brand:'Novellini', model:'Custom Touch 90x90', mat:'resina', col:'antracite', w:90, d:90 },
+  { id:'novell_cust_80x140', brand:'Novellini', model:'Custom Touch 80x140', mat:'resina', col:'antracite', w:80, d:140 },
+  // Ideal Standard
+  { id:'iddis_str_80x80', brand:'Ideal Standard', model:'Ultraflat S 80x80', mat:'stoneulti', col:'grigio', w:80, d:80 },
+  { id:'iddis_str_90x90', brand:'Ideal Standard', model:'Ultraflat S 90x90', mat:'stoneulti', col:'grigio', w:90, d:90 },
+  { id:'iddis_str_80x120', brand:'Ideal Standard', model:'Ultraflat S 80x120', mat:'stoneulti', col:'grigio', w:80, d:120 },
+  { id:'iddis_str_90x140', brand:'Ideal Standard', model:'Ultraflat S 90x140', mat:'stoneulti', col:'antracite', w:90, d:140 },
+  { id:'iddis_str_100x160', brand:'Ideal Standard', model:'Ultraflat S 100x160 fuori misura', mat:'stoneulti', col:'antracite', w:100, d:160 },
+  // Roca
+  { id:'roca_terr_80x80', brand:'Roca', model:'Terran 80x80', mat:'mineralm', col:'antracite', w:80, d:80 },
+  { id:'roca_terr_90x90', brand:'Roca', model:'Terran 90x90', mat:'mineralm', col:'antracite', w:90, d:90 },
+  { id:'roca_terr_80x120', brand:'Roca', model:'Terran 80x120', mat:'mineralm', col:'sabbia', w:80, d:120 },
+  { id:'roca_terr_90x140', brand:'Roca', model:'Terran 90x140', mat:'mineralm', col:'tortora', w:90, d:140 },
+  { id:'roca_terr_100x180', brand:'Roca', model:'Terran 100x180 fuori misura', mat:'mineralm', col:'antracite', w:100, d:180 },
+  { id:'roca_aqu_80x80', brand:'Roca', model:'Aquos 80x80', mat:'acrilico', col:'bianco', w:80, d:80 },
+  { id:'roca_aqu_90x90', brand:'Roca', model:'Aquos 90x90', mat:'acrilico', col:'bianco', w:90, d:90 },
+  // Kaldewei
+  { id:'kald_sup_80x80', brand:'Kaldewei', model:'SuperPlan Plus 80x80', mat:'ceramica', col:'bianco', w:80, d:80 },
+  { id:'kald_sup_90x90', brand:'Kaldewei', model:'SuperPlan Plus 90x90', mat:'ceramica', col:'bianco', w:90, d:90 },
+  { id:'kald_sup_80x120', brand:'Kaldewei', model:'SuperPlan Plus 80x120', mat:'ceramica', col:'bianco', w:80, d:120 },
+  { id:'kald_sup_100x150', brand:'Kaldewei', model:'SuperPlan Plus 100x150 fuori misura', mat:'ceramica', col:'bianco', w:100, d:150 },
+  // Duka
+  { id:'duka_lit_80x80', brand:'Duka', model:'Litho 80x80', mat:'effpietra', col:'sabbia', w:80, d:80 },
+  { id:'duka_lit_90x90', brand:'Duka', model:'Litho 90x90', mat:'effpietra', col:'sabbia', w:90, d:90 },
+  { id:'duka_lit_80x140', brand:'Duka', model:'Litho 80x140', mat:'effpietra', col:'sabbia', w:80, d:140 },
+  { id:'duka_lit_100x170', brand:'Duka', model:'Litho 100x170 fuori misura', mat:'effpietra', col:'antracite', w:100, d:170 },
+  // Altri
+  { id:'pozzi_kub_80x80', brand:'Pozzi-Ginori', model:'Kuba 80x80', mat:'ceramica', col:'bianco', w:80, d:80 },
+  { id:'pozzi_kub_90x90', brand:'Pozzi-Ginori', model:'Kuba 90x90', mat:'ceramica', col:'bianco', w:90, d:90 },
+  { id:'flam_qua_80x80', brand:'Flaminia', model:'Quaranta 80x80', mat:'ceramica', col:'bianco', w:80, d:80 },
+  { id:'flam_qua_80x120', brand:'Flaminia', model:'Quaranta 80x120', mat:'ceramica', col:'bianco', w:80, d:120 },
+  { id:'globo_str_80x80', brand:'Globo', model:'Strato 80x80', mat:'ceramica', col:'tortora', w:80, d:80 },
+  { id:'cesa_son_90x90', brand:'Cesana', model:'Sonia 3 90x90', mat:'acrilico', col:'bianco', w:90, d:90 },
+  { id:'teuco_dec_90x90', brand:'Teuco', model:'DecoStone 90x90', mat:'mineralm', col:'creta', w:90, d:90 },
+  { id:'samo_ele_80x100', brand:'Samo', model:'Elegance 80x100', mat:'resina', col:'antracite', w:80, d:100 },
+  { id:'megi_eff_90x90', brand:'Megius', model:'Effetto Pietra 90x90', mat:'resina', col:'sabbia', w:90, d:90 },
+  { id:'cazz_min_90x90', brand:'Cazzaniga', model:'Minimal 90x90', mat:'marmoresina', col:'antracite', w:90, d:90 },
+  { id:'huppe_es_80x80', brand:'Hueppe', model:'EasyStep 80x80', mat:'acrilico', col:'bianco', w:80, d:80 },
+  { id:'profilt_ms_90x140', brand:'Profiltek', model:'Marmo Stone 90x140', mat:'mineralm', col:'grigio', w:90, d:140 }
+];
+
+// Misure fuori standard predefinite (custom dimensioni piu' usate dai serramentisti)
+var FUORIMISURA_PRESETS = [
+  { id:'fm_70x70', w:70, d:70, label:'70x70 cm - mini bagno' },
+  { id:'fm_75x75', w:75, d:75, label:'75x75 cm' },
+  { id:'fm_85x85', w:85, d:85, label:'85x85 cm' },
+  { id:'fm_85x120', w:85, d:120, label:'85x120 cm' },
+  { id:'fm_95x95', w:95, d:95, label:'95x95 cm' },
+  { id:'fm_100x100', w:100, d:100, label:'100x100 cm' },
+  { id:'fm_100x140', w:100, d:140, label:'100x140 cm' },
+  { id:'fm_110x110', w:110, d:110, label:'110x110 cm' },
+  { id:'fm_120x140', w:120, d:140, label:'120x140 cm' },
+  { id:'fm_130x180', w:130, d:180, label:'130x180 cm - extra large' }
 ];
 
 var PREZZI = {
@@ -374,8 +419,19 @@ var STEPS = [
     getValue: function(){ return PROF_NOMI[state.profilo]; },
     isReady: function(){ return !!state.profilo; } },
   { id:'piatto', title:'Piatto doccia',
-    getValue: function(){ var p = catalogoFind(state.piattoMarca); return p ? p.brand + ' . ' + PIATTO_COL_NOMI[state.coloraPiatto] : '- scegli'; },
-    isReady: function(){ return !!state.piattoMarca && !!state.coloraPiatto; } },
+    getValue: function(){
+      if (state.piattoMode === 'standard') {
+        var p = catalogoFind(state.piattoMarca);
+        return p ? p.brand + ' ' + (p.w && p.d ? p.w+'x'+p.d : '') + ' . ' + PIATTO_COL_NOMI[state.coloraPiatto] : '- scegli';
+      } else if (state.piattoMode === 'fuorimisura') {
+        return 'Fuori mis. ' + state.piattoW + 'x' + state.piattoD + ' . ' + PIATTO_COL_NOMI[state.coloraPiatto];
+      }
+      return 'Su misura ' + state.piattoW + 'x' + state.piattoD + ' . ' + PIATTO_MAT_NOMI[state.piatto];
+    },
+    isReady: function(){
+      if (state.piattoMode === 'standard') return !!state.piattoMarca && !!state.coloraPiatto;
+      return !!state.piattoW && !!state.piattoD && !!state.coloraPiatto;
+    } },
   { id:'scarico', title:'Scarico e altezza',
     getValue: function(){ return HP_NOMI[state.altPiatto] + ' . ' + SC_NOMI[state.scarico]; },
     isReady: function(){ return !!state.altPiatto && !!state.scarico; } }
@@ -446,14 +502,52 @@ function bodyHtml(i) {
     '</div>';
 
   if (i === 5) {
-    var rows = '';
-    for (var k = 0; k < CATALOGO_PIATTI.length; k++) {
-      var p = CATALOGO_PIATTI[k];
-      rows += '<button data-pick="piattoMarca" data-v="'+p.id+'" class="opt-mk '+selCls(s.piattoMarca===p.id)+'" style="margin-bottom:5px;width:100%;"><div class="mk-brand">'+p.brand+'</div><div class="mk-model">'+p.model+'</div></button>';
+    var modeBar = '<p class="lbl" style="margin-top:6px;">1. Tipo di piatto</p>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:12px;">' +
+        '<button data-pick="piattoMode" data-v="standard" class="opt-pa '+selCls(s.piattoMode==='standard')+'">Standard</button>' +
+        '<button data-pick="piattoMode" data-v="fuorimisura" class="opt-pa '+selCls(s.piattoMode==='fuorimisura')+'">Fuori misura</button>' +
+        '<button data-pick="piattoMode" data-v="sumisura" class="opt-pa '+selCls(s.piattoMode==='sumisura')+'">Su misura</button>' +
+      '</div>';
+
+    var content = '';
+    if (s.piattoMode === 'standard') {
+      // Catalogo standard - lista modelli con misura
+      var rows = '';
+      for (var k = 0; k < CATALOGO_PIATTI.length; k++) {
+        var p = CATALOGO_PIATTI[k];
+        var dim = (p.w && p.d) ? (' . '+p.w+'x'+p.d+'cm') : '';
+        rows += '<button data-pick="piattoMarca" data-v="'+p.id+'" class="opt-mk '+selCls(s.piattoMarca===p.id)+'" style="margin-bottom:5px;width:100%;"><div class="mk-brand">'+p.brand+dim+'</div><div class="mk-model">'+p.model+'</div></button>';
+      }
+      content = '<p class="lbl">2. Marca e modello (catalogo standard)</p>' +
+        '<div class="cat-list" style="margin-bottom:14px;">'+rows+'</div>';
+    } else if (s.piattoMode === 'fuorimisura') {
+      // Misure fuori standard predefinite
+      var fmRows = '';
+      for (var fk = 0; fk < FUORIMISURA_PRESETS.length; fk++) {
+        var fm = FUORIMISURA_PRESETS[fk];
+        var isSel = s.piattoW === fm.w && s.piattoD === fm.d;
+        fmRows += '<button data-pick-fm="'+fm.id+'" data-w="'+fm.w+'" data-d="'+fm.d+'" class="opt-mk '+selCls(isSel)+'" style="margin-bottom:5px;width:100%;"><div class="mk-brand">'+fm.label+'</div><div class="mk-model">'+(fm.w*fm.d/10000).toFixed(2)+' m2 . disponibile in '+PIATTO_MAT_NOMI[s.piatto]+'</div></button>';
+      }
+      content = '<p class="lbl">2. Misura fuori standard</p>' +
+        '<div class="cat-list" style="margin-bottom:14px;">'+fmRows+'</div>';
+    } else {
+      // Su misura - input liberi
+      content = '<p class="lbl">2. Misure piatto (cm)</p>' +
+        '<div class="num-row"><label>Larghezza</label><div class="stepper"><button class="step-btn" data-num-step="piattoW" data-delta="-5">-</button><input type="number" data-num="piattoW" value="'+s.piattoW+'" min="60" max="220" step="1"><button class="step-btn" data-num-step="piattoW" data-delta="5">+</button></div><span class="unit">cm</span></div>' +
+        '<div class="num-row"><label>Profondita</label><div class="stepper"><button class="step-btn" data-num-step="piattoD" data-delta="-5">-</button><input type="number" data-num="piattoD" value="'+s.piattoD+'" min="60" max="220" step="1"><button class="step-btn" data-num-step="piattoD" data-delta="5">+</button></div><span class="unit">cm</span></div>' +
+        '<p class="lbl" style="margin-top:14px;">Materiale</p>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;">' +
+          '<button data-pick="piatto" data-v="effpietra" class="opt-pa '+selCls(s.piatto==='effpietra')+'">Eff. pietra</button>' +
+          '<button data-pick="piatto" data-v="ceramica" class="opt-pa '+selCls(s.piatto==='ceramica')+'">Ceramica</button>' +
+          '<button data-pick="piatto" data-v="marmoresina" class="opt-pa '+selCls(s.piatto==='marmoresina')+'">Marmo-resina</button>' +
+          '<button data-pick="piatto" data-v="acrilico" class="opt-pa '+selCls(s.piatto==='acrilico')+'">Acrilico</button>' +
+          '<button data-pick="piatto" data-v="resina" class="opt-pa '+selCls(s.piatto==='resina')+'">Resina</button>' +
+          '<button data-pick="piatto" data-v="stoneulti" class="opt-pa '+selCls(s.piatto==='stoneulti')+'">Stone Ultra</button>' +
+        '</div>' +
+        '<div style="background:rgba(40,160,160,0.06);border-radius:8px;padding:10px;margin-bottom:12px;border:0.5px solid rgba(40,160,160,0.2);font-size:11px;color:var(--muted);"><b style="color:var(--acc);">'+s.piattoW+' x '+s.piattoD+' cm</b> = '+((s.piattoW*s.piattoD)/10000).toFixed(2)+' m2 . da realizzare su misura</div>';
     }
-    return '<p class="lbl" style="margin-top:6px;">1. Marca e modello</p>' +
-      '<div class="cat-list" style="margin-bottom:14px;">'+rows+'</div>' +
-      '<p class="lbl">2. Colore piatto</p>' +
+
+    var colors = '<p class="lbl">3. Colore piatto</p>' +
       '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">' +
         '<button data-pick="coloraPiatto" data-v="bianco" class="sw-pia '+selCls(s.coloraPiatto==='bianco')+'" style="background:#F8F8F8;"></button>' +
         '<button data-pick="coloraPiatto" data-v="grigio" class="sw-pia '+selCls(s.coloraPiatto==='grigio')+'" style="background:#A0A0A0;"></button>' +
@@ -463,6 +557,8 @@ function bodyHtml(i) {
         '<button data-pick="coloraPiatto" data-v="creta" class="sw-pia '+selCls(s.coloraPiatto==='creta')+'" style="background:#9C8B7A;"></button>' +
         '<button data-pick="coloraPiatto" data-v="nero" class="sw-pia '+selCls(s.coloraPiatto==='nero')+'" style="background:#0A0A0A;"></button>' +
       '</div>';
+
+    return modeBar + content + colors;
   }
 
   if (i === 6) return '<p class="lbl" style="margin-top:6px;">1. Altezza piatto</p>' +
@@ -574,6 +670,13 @@ document.getElementById('root').addEventListener('click', function(e){
       state.draw.scale = Math.max(0.5, Math.min(6, +(state.draw.scale + delta).toFixed(2)));
       var i3 = document.querySelector('[data-num="drawScale"]'); if (i3) i3.value = state.draw.scale;
       renderDraw();
+    } else if (key === 'piattoW' || key === 'piattoD') {
+      state[key] = Math.max(60, Math.min(220, state[key] + delta));
+      var ipw = document.querySelector('[data-num="'+key+'"]'); if (ipw) ipw.value = state[key];
+      // Aggiorna anche le misure box doccia per coerenza
+      if (key === 'piattoW') state.w = state.piattoW;
+      if (key === 'piattoD') state.d = state.piattoD;
+      renderSteps(); renderIso(); renderPlan(); renderDraw();
     } else {
       var lo = key === 'h' ? 160 : 60;
       state[key] = Math.max(lo, Math.min(300, state[key] + delta));
@@ -595,14 +698,35 @@ document.getElementById('root').addEventListener('click', function(e){
     t.classList.toggle('on');
     return;
   }
+  if (t.hasAttribute('data-pick-fm')) {
+    var fmW = +t.getAttribute('data-w');
+    var fmD = +t.getAttribute('data-d');
+    state.piattoW = fmW; state.piattoD = fmD;
+    state.w = fmW; state.d = fmD;
+    t.classList.add('flash-anim');
+    renderSteps(); renderIso(); renderPlan(); renderDraw();
+    maybeAdvance();
+    return;
+  }
   if (t.hasAttribute('data-pick')) {
     var pk = t.getAttribute('data-pick');
     var pv = t.getAttribute('data-v');
     if (pk === 'vetroSp') state[pk] = +pv;
     else state[pk] = pv;
+    if (pk === 'piattoMode') {
+      // Cambio modalita': re-rendera lo step
+      renderSteps(); return;
+    }
     if (pk === 'piattoMarca') {
       var p = catalogoFind(pv);
-      if (p) { state.piatto = p.mat; if (!state.coloraPiatto) state.coloraPiatto = p.col; }
+      if (p) {
+        state.piatto = p.mat;
+        if (!state.coloraPiatto) state.coloraPiatto = p.col;
+        if (p.w && p.d) {
+          state.piattoW = p.w; state.piattoD = p.d;
+          state.w = p.w; state.d = p.d;
+        }
+      }
     }
     t.classList.add('flash-anim');
     renderIso(); renderPlan(); renderFoto(); renderDraw();
@@ -648,6 +772,12 @@ document.getElementById('root').addEventListener('input', function(e){
       if (k === 'refDist') { state.foto.refDist = Math.max(20, Math.min(500, v)); renderFoto(); }
       else if (k === 'wallTh') { state.draw.wallTh = Math.max(5, Math.min(40, v)); renderDraw(); }
       else if (k === 'drawScale') { state.draw.scale = Math.max(0.5, Math.min(6, v)); renderDraw(); }
+      else if (k === 'piattoW' || k === 'piattoD') {
+        state[k] = Math.max(60, Math.min(220, v));
+        if (k === 'piattoW') state.w = state.piattoW;
+        if (k === 'piattoD') state.d = state.piattoD;
+        renderIso(); renderPlan(); renderDraw();
+      }
       else {
         var lo = k === 'h' ? 160 : 60;
         state[k] = Math.max(lo, Math.min(300, v));
@@ -1094,6 +1224,9 @@ window.mastroSerializeState = function(){
     boxdoccia_piatto_marca: state.piattoMarca,
     boxdoccia_piatto: state.piatto,
     boxdoccia_colora_piatto: state.coloraPiatto,
+    boxdoccia_piatto_mode: state.piattoMode,
+    boxdoccia_piatto_w: state.piattoW,
+    boxdoccia_piatto_d: state.piattoD,
     boxdoccia_alt_piatto: state.altPiatto,
     boxdoccia_scarico: state.scarico,
     boxdoccia_walls: state.draw.walls,
@@ -1122,6 +1255,9 @@ window.mastroOnInit = function(payload){
     if (payload.boxdoccia_piatto_marca) state.piattoMarca = payload.boxdoccia_piatto_marca;
     if (payload.boxdoccia_piatto) state.piatto = payload.boxdoccia_piatto;
     if (payload.boxdoccia_colora_piatto) state.coloraPiatto = payload.boxdoccia_colora_piatto;
+    if (payload.boxdoccia_piatto_mode) state.piattoMode = payload.boxdoccia_piatto_mode;
+    if (payload.boxdoccia_piatto_w !== undefined) state.piattoW = payload.boxdoccia_piatto_w;
+    if (payload.boxdoccia_piatto_d !== undefined) state.piattoD = payload.boxdoccia_piatto_d;
     if (payload.boxdoccia_alt_piatto) state.altPiatto = payload.boxdoccia_alt_piatto;
     if (payload.boxdoccia_scarico) state.scarico = payload.boxdoccia_scarico;
     if (payload.boxdoccia_walls) state.draw.walls = payload.boxdoccia_walls;
