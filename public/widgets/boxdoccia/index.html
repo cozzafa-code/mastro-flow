@@ -150,6 +150,29 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
 .totale-val { color: var(--acc); font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
 .restart-btn { width: 100%; margin-top: 10px; padding: 12px; background: var(--bdr); color: var(--acc); border: 0.5px solid var(--acc); border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
 </style>
+
+<!-- MASTRO_BOXDOCCIA_WIZARD_CATALOGO_START -->
+<link rel="stylesheet" href="wizard-catalogo.css">
+<script>
+  // Configurazione runtime - popolata dall'app MASTRO via window globals
+  window.MASTRO_SUPABASE_URL = window.MASTRO_SUPABASE_URL || 'https://fgefcigxlbrmbeqqzjmo.supabase.co';
+  window.MASTRO_SUPABASE_ANON_KEY = window.MASTRO_SUPABASE_ANON_KEY || '';
+  window.MASTRO_AZIENDA_ID = window.MASTRO_AZIENDA_ID || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+
+  // Bridge: callback opzionali implementati dall'host MASTRO
+  window.MastroBoxDocciaCanvasInit = window.MastroBoxDocciaCanvasInit || function() {};
+  window.MastroBoxDocciaOnSave = window.MastroBoxDocciaOnSave || async function(payload) {
+    console.log('[BD] Salvataggio:', payload);
+    alert('Configurazione salvata (modalita demo). Implementare MastroBoxDocciaOnSave per persistenza Supabase.');
+  };
+</script>
+<script src="wizard/01-state.js" defer></script>
+<script src="wizard/02-loaders.js" defer></script>
+<script src="wizard/03-steps-1-5.js" defer></script>
+<script src="wizard/04-step-6.js" defer></script>
+<script src="wizard/05-steps-7-9.js" defer></script>
+<!-- MASTRO_BOXDOCCIA_WIZARD_CATALOGO_END -->
+
 </head>
 <body>
 <div class="app" id="root">
