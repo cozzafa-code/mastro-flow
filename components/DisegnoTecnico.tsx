@@ -5096,7 +5096,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const _innerShrink = pts.map(p => {
                                         const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
                                         const dist = Math.hypot(dx2, dy2) || 1;
-                                        const shrinkAmt = tk * 1.2;
+                                        const shrinkAmt = tk * 2.8;
                                         return [(p[0] + dx2 / dist * shrinkAmt), (p[1] + dy2 / dist * shrinkAmt)];
                                       });
                                       const innerStr = _innerShrink.map(p => p.join(",")).join(" ");
@@ -5106,8 +5106,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           e3.stopPropagation();
                                           if (!drawMode) setMode({ selectedId: el.id });
                                         }}>
-                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
-                                          <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
+                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.55} stroke={"#3A3A3C"} strokeWidth={tk} strokeLinejoin="round" />
+                                          <polygon points={innerStr} fill="none" stroke={"#3A3A3C"} strokeWidth={tk * 0.75} strokeLinejoin="round" />
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
