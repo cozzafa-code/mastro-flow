@@ -5195,8 +5195,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         ey2 = el.y2 - halfT + TK_FRAME;
                                       }
                                       // Taglio 45° sul profilo: usa cornerModes esplicito (non tocca el.corners legacy)
-                                      const cut45Start = _cm.start === '45';
-                                      const cut45End = _cm.end === '45';
+                                      // AUTO: se cornerMode = 'auto', calcola in base all'angolo
+                                      const _resolveAuto = (which: 'start' | 'end') => {
+                                        if (_cm[which] !== 'auto') return _cm[which];
+                                        // Trova linea adiacente che condivide il vertice
+                                        const vx = which === 'start' ? el.x1 : el.x2;
+                                        const vy = which === 'start' ? el.y1 : el.y2;
+                                        const others = (els || []).filter((o: any) => o.type === "freeLine" && !o.subType && o.id !== el.id);
+                                        const adj = others.find((o: any) =>
+                                          (Math.hypot(o.x1 - vx, o.y1 - vy) < 5) ||
+                                          (Math.hypot(o.x2 - vx, o.y2 - vy) < 5)
+                                        );
+                                        if (!adj) return '45';
+                                        // Calcola angolo tra le due linee al vertice
+                                        const a1 = Math.atan2((which === 'start' ? el.y2 : el.y1) - vy, (which === 'start' ? el.x2 : el.x1) - vx);
+                                        const adjStart = Math.hypot(adj.x1 - vx, adj.y1 - vy) < 5;
+                                        const a2 = Math.atan2((adjStart ? adj.y2 : adj.y1) - vy, (adjStart ? adj.x2 : adj.x1) - vx);
+                                        let diff = Math.abs(a1 - a2) * 180 / Math.PI;
+                                        if (diff > 180) diff = 360 - diff;
+                                        // 75-105 = angolo retto -> 45; altri = bisettrice (45 funziona generico)
+                                        return '45';
+                                      };
+                                      const cut45Start = _resolveAuto('start') === '45';
+                                      const cut45End = _resolveAuto('end') === '45';
                                       const flCorners = (cut45Start || cut45End) ? [] : (el.corners || []);
                                       // Per giunto 45° pulito: il lato ESTERNO (verso angolo telaio) ha lunghezza piena,
                                       // il lato INTERNO è accorciato di halfT*2 lato per ogni estremo a 45.
