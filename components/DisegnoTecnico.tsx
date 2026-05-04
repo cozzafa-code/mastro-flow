@@ -5097,7 +5097,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const _innerShrink = pts.map(p => {
                                         const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
                                         const dist = Math.hypot(dx2, dy2) || 1;
-                                        const shrinkAmt = tk * 2.8;
+                                        const shrinkAmt = 14;
                                         return [(p[0] + dx2 / dist * shrinkAmt), (p[1] + dy2 / dist * shrinkAmt)];
                                       });
                                       const innerStr = _innerShrink.map(p => p.join(",")).join(" ");
@@ -5107,9 +5107,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           e3.stopPropagation();
                                           if (!drawMode) setMode({ selectedId: el.id });
                                         }}>
-                                          {(() => { console.log("[POLYANTA-DBG] tk=", tk, "strokeWidth=", tk * 1.5, "id=", el.id); return null; })()}
-                                          <polygon points={outerPts} fill="red" fillOpacity={0.4} stroke={"#FF0000"} strokeWidth={20} strokeLinejoin="round" />
-                                          <polygon points={innerStr} fill="none" stroke={"#2A2A2C"} strokeWidth={tk * 1.0} strokeLinejoin="round" />
+                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.6} stroke={"#1A1A1C"} strokeWidth={9} strokeLinejoin="round" />
+                                          <polygon points={innerStr} fill="none" stroke={"#1A1A1C"} strokeWidth={5} strokeLinejoin="round" />
                                           {(el.antaCount && el.antaIdx !== undefined && el.antaIdx < el.antaCount - 1) && (() => {
                                             const _xs = pts.map((p: number[]) => p[0]);
                                             const _ys = pts.map((p: number[]) => p[1]);
@@ -5118,9 +5117,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             const _maxY = Math.max(..._ys);
                                             return (
                                               <line
-                                                x1={_maxX - tk * 0.4} y1={_minY + tk * 1.2}
-                                                x2={_maxX - tk * 0.4} y2={_maxY - tk * 1.2}
-                                                stroke="#3A3A3C" strokeWidth={tk * 1.4} strokeLinecap="round"
+                                                x1={_maxX - 1} y1={_minY + 4}
+                                                x2={_maxX - 1} y2={_maxY - 4}
+                                                stroke="#1A1A1C" strokeWidth={7} strokeLinecap="round"
                                               />
                                             );
                                           })()}
