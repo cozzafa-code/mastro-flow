@@ -1801,7 +1801,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 } else if (poly) {
                                   const cx = snap(mx);
                                   const ys = segIntersectV(cx, poly);
-                                  if (ys) setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: ys[0], y2: ys[1] }]);
+                                  if (ys) {
+                                    // FIX: il montante deve fermarsi tra i traversi adiacenti al click (se presenti)
+                                    let y1f = ys[0], y2f = ys[1];
+                                    const trAtX = els.filter((e: any) => {
+                                      if (e.type !== "traverso") return false;
+                                      const tx1 = e.x1 ?? -Infinity, tx2 = e.x2 ?? Infinity;
+                                      return cx >= Math.min(tx1, tx2) && cx <= Math.max(tx1, tx2);
+                                    });
+                                    // Trova traverso sopra e sotto il click
+                                    const above = trAtX.filter((t: any) => t.y < my).sort((a: any, b: any) => b.y - a.y)[0];
+                                    const below = trAtX.filter((t: any) => t.y > my).sort((a: any, b: any) => a.y - b.y)[0];
+                                    if (above) y1f = Math.max(y1f, above.y);
+                                    if (below) y2f = Math.min(y2f, below.y);
+                                    setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: y1f, y2: y2f }]);
+                                  }
                                 } else if (!frame) {
                                   setDW([...els, { id: Date.now(), type: "montante", x: snap(mx), y1: fY, y2: fY + fH }]);
                                 }
@@ -1821,7 +1835,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 } else if (poly) {
                                   const cy = snap(my);
                                   const xs = segIntersectH(cy, poly);
-                                  if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: cy, x1: xs[0], x2: xs[1] }]);
+                                  if (xs) {
+                                    // FIX: il traverso deve fermarsi tra i montanti adiacenti al click (se presenti)
+                                    let x1f = xs[0], x2f = xs[1];
+                                    const mtAtY = els.filter((e: any) => {
+                                      if (e.type !== "montante") return false;
+                                      const my1 = e.y1 ?? -Infinity, my2 = e.y2 ?? Infinity;
+                                      return cy >= Math.min(my1, my2) && cy <= Math.max(my1, my2);
+                                    });
+                                    // Trova montante a sinistra e a destra del click
+                                    const left = mtAtY.filter((m: any) => m.x < mx).sort((a: any, b: any) => b.x - a.x)[0];
+                                    const right = mtAtY.filter((m: any) => m.x > mx).sort((a: any, b: any) => a.x - b.x)[0];
+                                    if (left) x1f = Math.max(x1f, left.x);
+                                    if (right) x2f = Math.min(x2f, right.x);
+                                    setDW([...els, { id: Date.now(), type: "traverso", y: cy, x1: x1f, x2: x2f }]);
+                                  }
                                 } else if (!frame) {
                                   setDW([...els, { id: Date.now(), type: "traverso", y: snap(my), x1: fX, x2: fX + fW }]);
                                 }
