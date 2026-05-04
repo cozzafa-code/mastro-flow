@@ -5930,7 +5930,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             const H2px = Math.round((H2mm || 0) * pxPerMm);
                                             const x0 = fX, y0 = fY;
                                             // Rimuovo rect/freeLine shape preesistenti
-                                            const elsKept = els.filter((e: any) => e.type !== "rect" && !e._isFromShape);
+                                            const elsKept = els.filter((e: any) => e.type !== "rect" && !e._isFromShape && e.type !== "freeLine");
                                             const newEls: any[] = [];
                                             const t0 = Date.now();
                                             if (shapePicker.shape === "casetta") {
@@ -5940,23 +5940,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               const ySpalla = y0 + H2px;
                                               const xColmo = x0 + Lpx / 2;
                                               const yColmo = y0;
-                                              // 5 freeLine che chiudono la forma
+                                              // 5 freeLine identiche a quelle utente Tel.Lib. (renderer applica TK_FRAME + miter)
                                               const pts = [
                                                 { x: xL, y: yBase }, { x: xL, y: ySpalla }, { x: xColmo, y: yColmo },
                                                 { x: xR, y: ySpalla }, { x: xR, y: yBase }, { x: xL, y: yBase }
                                               ];
                                               for (let i = 0; i < pts.length - 1; i++) {
-                                                newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y, _isFromShape: true });
+                                                newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y });
                                               }
                                             } else if (shapePicker.shape === "arco") {
-                                              // Rettangolo + arco approssimato con poligono a 12 segmenti
                                               const xL = x0, xR = x0 + Lpx;
                                               const yBase = y0 + H2px + Hpx;
                                               const ySpalla = y0 + H2px;
                                               const cx = x0 + Lpx / 2;
-                                              // Lato SX verticale
-                                              newEls.push({ id: t0, type: "freeLine", x1: xL, y1: yBase, x2: xL, y2: ySpalla, _isFromShape: true });
-                                              // Arco semicerchio (12 segmenti)
+                                              newEls.push({ id: t0, type: "freeLine", x1: xL, y1: yBase, x2: xL, y2: ySpalla });
                                               const SEGS = 16;
                                               const rx = Lpx / 2;
                                               const ry = H2px;
@@ -5967,14 +5964,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                 const y1a = ySpalla - ry * Math.sin(a1);
                                                 const x2a = cx + rx * Math.cos(a2);
                                                 const y2a = ySpalla - ry * Math.sin(a2);
-                                                newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a, _isFromShape: true });
+                                                newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
                                               }
-                                              // Lato DX verticale
-                                              newEls.push({ id: t0 + 100, type: "freeLine", x1: xR, y1: ySpalla, x2: xR, y2: yBase, _isFromShape: true });
-                                              // Base
-                                              newEls.push({ id: t0 + 101, type: "freeLine", x1: xR, y1: yBase, x2: xL, y2: yBase, _isFromShape: true });
+                                              newEls.push({ id: t0 + 100, type: "freeLine", x1: xR, y1: ySpalla, x2: xR, y2: yBase });
+                                              newEls.push({ id: t0 + 101, type: "freeLine", x1: xR, y1: yBase, x2: xL, y2: yBase });
                                             } else if (shapePicker.shape === "trapezio") {
-                                              // Trapezio: 1 falda inclinata. H = altezza SX, H2 = altezza DX
                                               const xL = x0, xR = x0 + Lpx;
                                               const yBase = y0 + Math.max(Hpx, H2px);
                                               const ySX = yBase - Hpx;
@@ -5983,7 +5977,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                 { x: xL, y: yBase }, { x: xL, y: ySX }, { x: xR, y: yDX }, { x: xR, y: yBase }, { x: xL, y: yBase }
                                               ];
                                               for (let i = 0; i < pts.length - 1; i++) {
-                                                newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y, _isFromShape: true });
+                                                newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y });
                                               }
                                             }
                                             setDW([...elsKept, ...newEls]);
