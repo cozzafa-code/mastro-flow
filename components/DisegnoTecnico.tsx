@@ -2374,9 +2374,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const _d = Math.hypot(_dx, _dy) || 1;
                                           return [p[0] - (_dx / _d) * TK_FRAME, p[1] - (_dy / _d) * TK_FRAME];
                                         });
-                                        // S-H clipping
-                                        const _inside = (p: number[], a: number[], b: number[]) =>
-                                          (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) <= 0;
+                                        // S-H clipping. Calcolo orientamento del poligono (signed area).
+                                        // Se CCW (area > 0) inverto la condizione inside per coerenza con CW assunto.
+                                        let _signedArea = 0;
+                                        for (let _sa = 0; _sa < _insetShape.length; _sa++) {
+                                          const _p1 = _insetShape[_sa];
+                                          const _p2 = _insetShape[(_sa + 1) % _insetShape.length];
+                                          _signedArea += _p1[0] * _p2[1] - _p2[0] * _p1[1];
+                                        }
+                                        const _isCW = _signedArea < 0;
+                                        const _inside = (p: number[], a: number[], b: number[]) => {
+                                          const _val = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+                                          return _isCW ? _val <= 0 : _val >= 0;
+                                        };
                                         const _intersect = (p1: number[], p2: number[], a: number[], b: number[]) => {
                                           const x1=p1[0], y1=p1[1], x2=p2[0], y2=p2[1];
                                           const x3=a[0], y3=a[1], x4=b[0], y4=b[1];
@@ -6648,17 +6658,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             const _bCx = (_bMinXq + _bMaxXq) / 2, _bCy = (_bMinYq + _bMaxYq) / 2;
                                             // Solo per segmenti significativi (lunghezza > 30px) e non per archi (troppi piccoli segmenti)
                                             const _isArc = shapePicker.shape && shapePicker.shape.startsWith("arco_");
+                                            // FIX: per gli archi NIENTE auto-quote (troppi segmenti = pallini sovrapposti)
+                                            // L'utente puo' usare il bottone "Aggiusta" per generare quote pulite
+                                            if (_isArc) {
+                                              setDW([...elsKept, ...newEls]);
+                                              setShapePicker(null);
+                                              return;
+                                            }
                                             newEls.forEach((seg: any, idx: number) => {
                                               if (seg.type !== "freeLine") return;
                                               const _dxQ = seg.x2 - seg.x1, _dyQ = seg.y2 - seg.y1;
                                               const _segPxQ = Math.hypot(_dxQ, _dyQ);
-                                              if (_segPxQ < 30) return; // skip segmenti corti (interpolazioni archi)
-                                              // Per archi: skip i segmenti centrali della curva, solo lati estremi (verticali/orizzontali)
-                                              const _isVert = Math.abs(_dxQ) < 5;
-                                              const _isHorz = Math.abs(_dyQ) < 5;
-                                              if (_isArc && !_isVert && !_isHorz) return; // skip segmenti curva
+                                              if (_segPxQ < 30) return;
                                               const _segMM = Math.round(_segPxQ / pxPerMm);
-                                              if (_segMM < 50) return; // skip < 50mm
+                                              if (_segMM < 50) return;
                                               // Offset esterno: dal centro del segmento perpendicolare verso fuori del bounding box
                                               const _midXq = (seg.x1 + seg.x2) / 2, _midYq = (seg.y1 + seg.y2) / 2;
                                               const _outX = _midXq - _bCx, _outY = _midYq - _bCy;
