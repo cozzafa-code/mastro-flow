@@ -5119,8 +5119,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const _bx = _n1x + _n2x, _by = _n1y + _n2y;
                                         const _bl = Math.hypot(_bx, _by) || 1;
                                         const _cosHalf = (_n1x * _n2x + _n1y * _n2y);
-                                        const _sinHalf = Math.sqrt(Math.max(0.001, (1 + _cosHalf) / 2));
-                                        const _scale = _TK_POLY / _sinHalf;
+                                        const _sinHalf = Math.sqrt(Math.max(0.25, (1 + _cosHalf) / 2));
+                                        const _scale = Math.min(_TK_POLY / _sinHalf, _TK_POLY * 2);
                                         _innerShrink.push([_curr[0] + (_bx / _bl) * _scale, _curr[1] + (_by / _bl) * _scale]);
                                       }
                                       const innerStr = _innerShrink.map(p => p.join(",")).join(" ");
