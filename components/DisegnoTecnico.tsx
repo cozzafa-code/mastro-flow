@@ -1,6 +1,6 @@
-import { splitCellIntoAnte } from "@/lib/cad/anta-poly";
 // Last update: 2026-05-02 force redeploy
 "use client";
+import { splitCellIntoAnte } from "@/lib/cad/anta-poly";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
