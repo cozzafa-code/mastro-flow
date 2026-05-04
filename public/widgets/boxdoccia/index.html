@@ -198,7 +198,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
 
 <div id="view-disegno" class="view">
   <div class="canvas-wrap">
-    <svg id="draw-svg" viewBox="0 0 320 320" style="cursor:crosshair;"></svg>
+    <svg id="draw-svg" viewBox="0 0 480 480" style="cursor:crosshair;"></svg>
     <div class="canvas-instr" id="draw-instr">Tap per posizionare i punti del muro</div>
   </div>
   <div class="draw-panel">
@@ -847,45 +847,204 @@ isoSvg.addEventListener('touchend', function(){ touchPrev = null; });
 
 var planSvg = document.getElementById('plan-svg');
 var planDrag = null;
-planSvg.addEventListener('pointerdown', function(e) { planSvg.setPointerCapture(e.pointerId); planDrag = { x: e.clientX, y: e.clientY, panX: state.plan.panX, panY: state.plan.panY }; });
+var planPinch = null;
+
+planSvg.addEventListener('touchstart', function(e){
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    planPinch = {
+      dist: getDist(e.touches[0], e.touches[1]),
+      mid: getMid(e.touches[0], e.touches[1]),
+      zoom: state.plan.zoom,
+      panX: state.plan.panX,
+      panY: state.plan.panY
+    };
+    planDrag = null;
+  }
+}, { passive: false });
+
+planSvg.addEventListener('touchmove', function(e){
+  if (e.touches.length === 2 && planPinch) {
+    e.preventDefault();
+    var nd = getDist(e.touches[0], e.touches[1]);
+    var ratio = nd / planPinch.dist;
+    state.plan.zoom = Math.max(0.4, Math.min(5, planPinch.zoom * ratio));
+    var nm = getMid(e.touches[0], e.touches[1]);
+    state.plan.panX = planPinch.panX + (nm.x - planPinch.mid.x);
+    state.plan.panY = planPinch.panY + (nm.y - planPinch.mid.y);
+    renderPlan();
+  }
+}, { passive: false });
+
+planSvg.addEventListener('touchend', function(e){
+  if (e.touches.length < 2) planPinch = null;
+});
+
+planSvg.addEventListener('pointerdown', function(e) {
+  if (planPinch) return;
+  planSvg.setPointerCapture(e.pointerId);
+  planDrag = { x: e.clientX, y: e.clientY, panX: state.plan.panX, panY: state.plan.panY };
+});
 planSvg.addEventListener('pointermove', function(e) {
-  if (!planDrag) return;
+  if (!planDrag || planPinch) return;
   state.plan.panX = planDrag.panX + (e.clientX - planDrag.x);
   state.plan.panY = planDrag.panY + (e.clientY - planDrag.y);
   renderPlan();
 });
 planSvg.addEventListener('pointerup', function(){ planDrag = null; });
 
+planSvg.addEventListener('wheel', function(e){
+  e.preventDefault();
+  state.plan.zoom = Math.max(0.4, Math.min(5, state.plan.zoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+  renderPlan();
+}, { passive: false });
+
 var drawSvg = document.getElementById('draw-svg');
-drawSvg.addEventListener('click', function(e){
-  var rect = drawSvg.getBoundingClientRect();
-  var x = (e.clientX - rect.left) / rect.width * 320;
-  var y = (e.clientY - rect.top) / rect.height * 320;
+
+function svgPoint(svg, clientX, clientY, vbSize) {
+  var rect = svg.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) / rect.width * vbSize,
+    y: (clientY - rect.top) / rect.height * vbSize
+  };
+}
+
+function snapDraw(p) {
   if (state.draw.showGrid) {
     var gridPx = 5 * state.draw.scale;
-    x = Math.round(x / gridPx) * gridPx;
-    y = Math.round(y / gridPx) * gridPx;
+    return { x: Math.round(p.x / gridPx) * gridPx, y: Math.round(p.y / gridPx) * gridPx };
   }
+  return p;
+}
+
+// Track touches per pinch+pan
+var drawTouches = [];
+var drawPinchStart = null, drawPanStart = null;
+state.draw.panX = state.draw.panX || 0;
+state.draw.panY = state.draw.panY || 0;
+
+function getDist(t1, t2) { return Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY); }
+function getMid(t1, t2) { return { x: (t1.clientX+t2.clientX)/2, y: (t1.clientY+t2.clientY)/2 }; }
+
+drawSvg.addEventListener('touchstart', function(e){
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    drawPinchStart = {
+      dist: getDist(e.touches[0], e.touches[1]),
+      scale: state.draw.scale,
+      mid: getMid(e.touches[0], e.touches[1]),
+      panX: state.draw.panX,
+      panY: state.draw.panY
+    };
+    state.draw.pendingPoint = null;
+    state.draw.cursor = null;
+    renderDraw();
+  }
+}, { passive: false });
+
+drawSvg.addEventListener('touchmove', function(e){
+  if (e.touches.length === 2 && drawPinchStart) {
+    e.preventDefault();
+    var newDist = getDist(e.touches[0], e.touches[1]);
+    var ratio = newDist / drawPinchStart.dist;
+    var newScale = Math.max(0.5, Math.min(8, drawPinchStart.scale * ratio));
+    state.draw.scale = +newScale.toFixed(2);
+    var newMid = getMid(e.touches[0], e.touches[1]);
+    state.draw.panX = drawPinchStart.panX + (newMid.x - drawPinchStart.mid.x);
+    state.draw.panY = drawPinchStart.panY + (newMid.y - drawPinchStart.mid.y);
+    var sInp = document.querySelector('[data-num="drawScale"]');
+    if (sInp) sInp.value = state.draw.scale;
+    renderDraw();
+  } else if (e.touches.length === 1 && state.draw.mode === 'wall' && state.draw.pendingPoint) {
+    // Aggiorna cursore per ghost line live
+    var p = svgPoint(drawSvg, e.touches[0].clientX, e.touches[0].clientY, 480);
+    p.x -= state.draw.panX; p.y -= state.draw.panY;
+    state.draw.cursor = snapDraw(p);
+    renderDraw();
+  }
+}, { passive: false });
+
+drawSvg.addEventListener('touchend', function(e){
+  if (e.touches.length < 2) drawPinchStart = null;
+});
+
+// Mouse: pinch via wheel, pan via Ctrl+drag o middle button
+drawSvg.addEventListener('wheel', function(e){
+  e.preventDefault();
+  var oldScale = state.draw.scale;
+  var newScale = Math.max(0.5, Math.min(8, oldScale * (e.deltaY > 0 ? 0.9 : 1.1)));
+  state.draw.scale = +newScale.toFixed(2);
+  var sInp = document.querySelector('[data-num="drawScale"]');
+  if (sInp) sInp.value = state.draw.scale;
+  renderDraw();
+}, { passive: false });
+
+// Pan mouse con tasto destro o shift+drag
+var mouseDrag = null;
+drawSvg.addEventListener('mousedown', function(e){
+  if (e.button === 2 || e.shiftKey) {
+    e.preventDefault();
+    mouseDrag = { x: e.clientX, y: e.clientY, panX: state.draw.panX, panY: state.draw.panY };
+  }
+});
+drawSvg.addEventListener('mousemove', function(e){
+  if (mouseDrag) {
+    state.draw.panX = mouseDrag.panX + (e.clientX - mouseDrag.x);
+    state.draw.panY = mouseDrag.panY + (e.clientY - mouseDrag.y);
+    renderDraw();
+  } else if (state.draw.mode === 'wall' && state.draw.pendingPoint) {
+    var p = svgPoint(drawSvg, e.clientX, e.clientY, 480);
+    p.x -= state.draw.panX; p.y -= state.draw.panY;
+    state.draw.cursor = snapDraw(p);
+    renderDraw();
+  }
+});
+drawSvg.addEventListener('mouseup', function(){ mouseDrag = null; });
+drawSvg.addEventListener('mouseleave', function(){ mouseDrag = null; });
+drawSvg.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+drawSvg.addEventListener('click', function(e){
+  // Skip se era zoom/pan
+  if (drawPinchStart || mouseDrag) return;
+  // Click su quote per editare misure box
+  var t = e.target;
+  if (t && t.hasAttribute && t.hasAttribute('data-edit-dim')) {
+    var dim = t.getAttribute('data-edit-dim');
+    var cur = (dim === 'w') ? state.w : state.d;
+    var nv = prompt('Misura ' + (dim === 'w' ? 'larghezza' : 'profondita') + ' (cm):', cur);
+    if (nv && !isNaN(+nv)) {
+      var v = Math.max(60, Math.min(300, +nv));
+      if (dim === 'w') { state.w = v; state.piattoW = v; }
+      else { state.d = v; state.piattoD = v; }
+      renderSteps(); renderIso(); renderPlan(); renderDraw();
+    }
+    return;
+  }
+  var p = svgPoint(drawSvg, e.clientX, e.clientY, 480);
+  p.x -= state.draw.panX; p.y -= state.draw.panY;
+  p = snapDraw(p);
   if (state.draw.mode === 'wall') {
     if (!state.draw.pendingPoint) {
-      state.draw.pendingPoint = { x: x, y: y };
-      document.getElementById('draw-instr').textContent = 'Ora tap il secondo punto del muro';
+      state.draw.pendingPoint = { x: p.x, y: p.y };
+      state.draw.cursor = { x: p.x, y: p.y };
+      document.getElementById('draw-instr').textContent = 'Tap secondo punto - vedi cm in tempo reale';
     } else {
-      state.draw.walls.push({ x1: state.draw.pendingPoint.x, y1: state.draw.pendingPoint.y, x2: x, y2: y, th: state.draw.wallTh });
+      state.draw.walls.push({ x1: state.draw.pendingPoint.x, y1: state.draw.pendingPoint.y, x2: p.x, y2: p.y, th: state.draw.wallTh });
       state.draw.pendingPoint = null;
-      document.getElementById('draw-instr').textContent = 'Continua: tap per il prossimo segmento';
+      state.draw.cursor = null;
+      document.getElementById('draw-instr').textContent = 'Continua: tap per altro segmento';
     }
   } else if (state.draw.mode === 'box') {
-    state.draw.box = { x: x, y: y };
-    document.getElementById('draw-instr').textContent = 'Box posizionato. Tap altrove per spostarlo';
+    state.draw.box = { x: p.x, y: p.y };
+    document.getElementById('draw-instr').textContent = 'Box posizionato. Click sulle quote per modificare misure';
   } else if (state.draw.mode === 'erase') {
     var minDist = 9999, idx = -1;
     for (var i = 0; i < state.draw.walls.length; i++) {
       var w = state.draw.walls[i];
-      var d = distToSeg(x, y, w.x1, w.y1, w.x2, w.y2);
-      if (d < minDist) { minDist = d; idx = i; }
+      var dd = distToSeg(p.x, p.y, w.x1, w.y1, w.x2, w.y2);
+      if (dd < minDist) { minDist = dd; idx = i; }
     }
-    if (idx >= 0 && minDist < 15) state.draw.walls.splice(idx, 1);
+    if (idx >= 0 && minDist < 20) state.draw.walls.splice(idx, 1);
   }
   renderDraw();
 });
@@ -1078,48 +1237,83 @@ function renderPlan() {
 
 function renderDraw() {
   var d = state.draw, sc = d.scale;
-  var svg = '<rect x="0" y="0" width="320" height="320" fill="#0A1818"/>';
+  // Pan offset applicato a tutto
+  var ox = d.panX || 0, oy = d.panY || 0;
+  var W = 480, H = 480;
+  var svg = '<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#0A1818"/>';
   if (d.showGrid) {
     var gridPx = 5 * sc;
-    for (var i = 0; i < 320/gridPx; i++) {
-      svg += '<line x1="'+(i*gridPx)+'" y1="0" x2="'+(i*gridPx)+'" y2="320" stroke="#152828" stroke-width="0.5"/>';
-      svg += '<line x1="0" y1="'+(i*gridPx)+'" x2="320" y2="'+(i*gridPx)+'" stroke="#152828" stroke-width="0.5"/>';
+    var nLines = Math.ceil(W / gridPx) + 4;
+    var sx = ((ox % gridPx) + gridPx) % gridPx, sy = ((oy % gridPx) + gridPx) % gridPx;
+    for (var i = 0; i < nLines; i++) {
+      svg += '<line x1="'+(sx + i*gridPx - gridPx)+'" y1="0" x2="'+(sx + i*gridPx - gridPx)+'" y2="'+H+'" stroke="#152828" stroke-width="0.5"/>';
+      svg += '<line x1="0" y1="'+(sy + i*gridPx - gridPx)+'" x2="'+W+'" y2="'+(sy + i*gridPx - gridPx)+'" stroke="#152828" stroke-width="0.5"/>';
     }
     var bigGrid = 50 * sc;
-    for (var bi = 0; bi < 320/bigGrid; bi++) {
-      svg += '<line x1="'+(bi*bigGrid)+'" y1="0" x2="'+(bi*bigGrid)+'" y2="320" stroke="#1F3838" stroke-width="1"/>';
-      svg += '<line x1="0" y1="'+(bi*bigGrid)+'" x2="320" y2="'+(bi*bigGrid)+'" stroke="#1F3838" stroke-width="1"/>';
+    var nBig = Math.ceil(W / bigGrid) + 4;
+    var bx = ((ox % bigGrid) + bigGrid) % bigGrid, by = ((oy % bigGrid) + bigGrid) % bigGrid;
+    for (var bi = 0; bi < nBig; bi++) {
+      svg += '<line x1="'+(bx + bi*bigGrid - bigGrid)+'" y1="0" x2="'+(bx + bi*bigGrid - bigGrid)+'" y2="'+H+'" stroke="#1F3838" stroke-width="1"/>';
+      svg += '<line x1="0" y1="'+(by + bi*bigGrid - bigGrid)+'" x2="'+W+'" y2="'+(by + bi*bigGrid - bigGrid)+'" stroke="#1F3838" stroke-width="1"/>';
     }
-    svg += '<text x="3" y="11" font-size="8" fill="#28A0A0" font-family="monospace">griglia 5cm . 1cm = '+sc.toFixed(1)+'px</text>';
+    svg += '<text x="6" y="14" font-size="10" fill="#28A0A0" font-family="monospace" font-weight="700">griglia 5cm . scala '+sc.toFixed(1)+'px/cm</text>';
   }
+  // Muri esistenti (con offset pan)
   for (var w = 0; w < d.walls.length; w++) {
     var wl = d.walls[w], th = wl.th * sc;
-    var dx = wl.x2 - wl.x1, dy = wl.y2 - wl.y1, len = Math.hypot(dx, dy);
+    var x1 = wl.x1 + ox, y1 = wl.y1 + oy, x2 = wl.x2 + ox, y2 = wl.y2 + oy;
+    var dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
     if (len < 1) continue;
     var nx = -dy/len * th/2, ny = dx/len * th/2;
-    var pts = (wl.x1+nx)+','+(wl.y1+ny)+' '+(wl.x2+nx)+','+(wl.y2+ny)+' '+(wl.x2-nx)+','+(wl.y2-ny)+' '+(wl.x1-nx)+','+(wl.y1-ny);
-    svg += '<polygon points="'+pts+'" fill="#1F3838" stroke="#28A0A0" stroke-width="0.6"/>';
-    var midX = (wl.x1+wl.x2)/2 + nx*1.5, midY = (wl.y1+wl.y2)/2 + ny*1.5;
+    var pts = (x1+nx)+','+(y1+ny)+' '+(x2+nx)+','+(y2+ny)+' '+(x2-nx)+','+(y2-ny)+' '+(x1-nx)+','+(y1-ny);
+    svg += '<polygon points="'+pts+'" fill="#1F3838" stroke="#28A0A0" stroke-width="0.8"/>';
+    var midX = (x1+x2)/2 + nx*1.8, midY = (y1+y2)/2 + ny*1.8;
     var lenCm = Math.round(len/sc);
-    svg += '<text x="'+midX+'" y="'+midY+'" text-anchor="middle" font-size="9" font-weight="700" fill="#28A0A0">'+lenCm+'cm</text>';
+    svg += '<rect x="'+(midX-18)+'" y="'+(midY-9)+'" width="36" height="14" rx="3" fill="#0D1F1F" fill-opacity="0.9" stroke="#28A0A0" stroke-width="0.4"/>';
+    svg += '<text x="'+midX+'" y="'+(midY+1)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#28A0A0">'+lenCm+'cm</text>';
   }
+  // Pending: punto 1 piazzato + ghost line al cursore corrente
   if (d.pendingPoint) {
-    svg += '<circle cx="'+d.pendingPoint.x+'" cy="'+d.pendingPoint.y+'" r="6" fill="#28A0A0" stroke="#fff" stroke-width="2"/>';
-    svg += '<text x="'+(d.pendingPoint.x+10)+'" y="'+(d.pendingPoint.y-8)+'" font-size="10" font-weight="700" fill="#28A0A0">P1</text>';
+    var ppx = d.pendingPoint.x + ox, ppy = d.pendingPoint.y + oy;
+    if (d.cursor) {
+      var cx2 = d.cursor.x + ox, cy2 = d.cursor.y + oy;
+      var ghLen = Math.hypot(cx2-ppx, cy2-ppy);
+      var ghLenCm = Math.round(ghLen / sc);
+      // Linea ghost del muro che sta nascendo (con spessore visualizzato)
+      var ghDx = cx2-ppx, ghDy = cy2-ppy;
+      if (ghLen > 1) {
+        var ghTh = d.wallTh * sc;
+        var ghNx = -ghDy/ghLen * ghTh/2, ghNy = ghDx/ghLen * ghTh/2;
+        var ghPts = (ppx+ghNx)+','+(ppy+ghNy)+' '+(cx2+ghNx)+','+(cy2+ghNy)+' '+(cx2-ghNx)+','+(cy2-ghNy)+' '+(ppx-ghNx)+','+(ppy-ghNy);
+        svg += '<polygon points="'+ghPts+'" fill="#28A0A0" fill-opacity="0.25" stroke="#28A0A0" stroke-width="1.2" stroke-dasharray="4 3"/>';
+        // Etichetta lunghezza live al centro
+        var ghMx = (ppx+cx2)/2, ghMy = (ppy+cy2)/2;
+        svg += '<rect x="'+(ghMx-26)+'" y="'+(ghMy-12)+'" width="52" height="20" rx="4" fill="#28A0A0" stroke="#fff" stroke-width="1"/>';
+        svg += '<text x="'+ghMx+'" y="'+(ghMy+3)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">'+ghLenCm+' cm</text>';
+      }
+    }
+    svg += '<circle cx="'+ppx+'" cy="'+ppy+'" r="8" fill="#28A0A0" stroke="#fff" stroke-width="2.5"/>';
+    svg += '<text x="'+(ppx+12)+'" y="'+(ppy-10)+'" font-size="11" font-weight="800" fill="#28A0A0">P1</text>';
   }
+  // Box doccia
   if (d.box) {
     var bw = state.w * sc, bh = state.d * sc;
-    var bx = d.box.x - bw/2, by = d.box.y - bh/2;
+    var bcx = d.box.x + ox, bcy = d.box.y + oy;
+    var bxx = bcx - bw/2, byy = bcy - bh/2;
     var profC = PROF_COL[state.profilo], vetC = VETRO_COL[state.vetroTipo], piaC = PIATTO_COL[state.coloraPiatto];
-    svg += '<rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="'+bh+'" fill="'+piaC+'" fill-opacity="0.55" stroke="#88928F" stroke-width="0.6"/>';
-    svg += '<line x1="'+bx+'" y1="'+(by+bh)+'" x2="'+(bx+bw)+'" y2="'+(by+bh)+'" stroke="'+vetC.fill+'" stroke-width="3.5" opacity="0.7"/>';
-    svg += '<line x1="'+bx+'" y1="'+(by+bh)+'" x2="'+(bx+bw)+'" y2="'+(by+bh)+'" stroke="'+profC+'" stroke-width="1"/>';
-    svg += '<text x="'+(bx+bw/2)+'" y="'+(by-4)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#28A0A0">'+state.w+'cm</text>';
-    svg += '<text x="'+(bx+bw+5)+'" y="'+(by+bh/2+3)+'" font-size="10" font-weight="800" fill="#28A0A0">'+state.d+'cm</text>';
-    svg += '<circle cx="'+(d.box.x)+'" cy="'+(d.box.y)+'" r="3" fill="#28A0A0"/>';
+    svg += '<rect x="'+bxx+'" y="'+byy+'" width="'+bw+'" height="'+bh+'" fill="'+piaC+'" fill-opacity="0.6" stroke="#88928F" stroke-width="0.8"/>';
+    svg += '<line x1="'+bxx+'" y1="'+(byy+bh)+'" x2="'+(bxx+bw)+'" y2="'+(byy+bh)+'" stroke="'+vetC.fill+'" stroke-width="4" opacity="0.75"/>';
+    svg += '<line x1="'+bxx+'" y1="'+(byy+bh)+'" x2="'+(bxx+bw)+'" y2="'+(byy+bh)+'" stroke="'+profC+'" stroke-width="1.2"/>';
+    // Quote cliccabili
+    svg += '<rect data-edit-dim="w" x="'+(bxx+bw/2-30)+'" y="'+(byy-22)+'" width="60" height="18" rx="3" fill="#0D1F1F" stroke="#28A0A0" stroke-width="1" style="cursor:pointer;"/>';
+    svg += '<text x="'+(bxx+bw/2)+'" y="'+(byy-9)+'" text-anchor="middle" font-size="11" font-weight="800" fill="#28A0A0" pointer-events="none">'+state.w+' cm</text>';
+    svg += '<rect data-edit-dim="d" x="'+(bxx+bw+4)+'" y="'+(byy+bh/2-9)+'" width="60" height="18" rx="3" fill="#0D1F1F" stroke="#28A0A0" stroke-width="1" style="cursor:pointer;"/>';
+    svg += '<text x="'+(bxx+bw+34)+'" y="'+(byy+bh/2+4)+'" text-anchor="middle" font-size="11" font-weight="800" fill="#28A0A0" pointer-events="none">'+state.d+' cm</text>';
+    svg += '<circle cx="'+bcx+'" cy="'+bcy+'" r="4" fill="#28A0A0" stroke="#fff" stroke-width="1.5"/>';
   }
-  svg += '<rect x="6" y="296" width="160" height="18" rx="3" fill="#0D1F1F" fill-opacity="0.85" stroke="#28A0A0" stroke-width="0.4"/>';
-  svg += '<text x="12" y="308" font-size="9" fill="#28A0A0" font-family="monospace">Muri: '+d.walls.length+' . Sp: '+d.wallTh+'cm</text>';
+  // Stats footer
+  svg += '<rect x="6" y="'+(H-26)+'" width="220" height="20" rx="3" fill="#0D1F1F" fill-opacity="0.9" stroke="#28A0A0" stroke-width="0.5"/>';
+  svg += '<text x="14" y="'+(H-12)+'" font-size="10" fill="#28A0A0" font-family="monospace" font-weight="700">Muri: '+d.walls.length+'   Spessore: '+d.wallTh+'cm   Pinch=zoom 2dita=pan</text>';
   drawSvg.innerHTML = svg;
 }
 
