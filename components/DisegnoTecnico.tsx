@@ -2316,13 +2316,109 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     [cellPoly[3][0], cpBot]
                                   ];
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
+                                    // FIX: clippa cellPoly contro il poligono delle freeLine telaio
+                                    // (Sutherland-Hodgman) cosi' l'anta segue la forma del telaio (arco, casetta...)
+                                    const _telLines = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                    if (_telLines.length >= 3) {
+                                      // Costruisci poligono telaio: orderdo i punti seguendo le linee
+                                      // Algoritmo: parto da un punto, cerco la linea successiva che condivide quel punto
+                                      const _shapePts: number[][] = [];
+                                      const _used = new Set<number>();
+                                      const _eq = (a: number, b: number) => Math.abs(a - b) < 2;
+                                      const _matchEnd = (l: any, x: number, y: number) => {
+                                        if (_eq(l.x1, x) && _eq(l.y1, y)) return [l.x2, l.y2];
+                                        if (_eq(l.x2, x) && _eq(l.y2, y)) return [l.x1, l.y1];
+                                        return null;
+                                      };
+                                      // Parti dalla prima linea
+                                      _shapePts.push([_telLines[0].x1, _telLines[0].y1]);
+                                      _shapePts.push([_telLines[0].x2, _telLines[0].y2]);
+                                      _used.add(0);
+                                      let _curX = _telLines[0].x2, _curY = _telLines[0].y2;
+                                      let _safety = 0;
+                                      while (_used.size < _telLines.length && _safety < _telLines.length * 2) {
+                                        _safety++;
+                                        let _found = false;
+                                        for (let _i = 0; _i < _telLines.length; _i++) {
+                                          if (_used.has(_i)) continue;
+                                          const _next = _matchEnd(_telLines[_i], _curX, _curY);
+                                          if (_next) {
+                                            _shapePts.push(_next);
+                                            _curX = _next[0]; _curY = _next[1];
+                                            _used.add(_i);
+                                            _found = true;
+                                            break;
+                                          }
+                                        }
+                                        if (!_found) break;
+                                      }
+                                      // Se ho almeno un poligono valido (>=3 punti), clippo
+                                      if (_shapePts.length >= 3) {
+                                        // Sutherland-Hodgman: clippa cellPoly contro _shapePts
+                                        // Inseta il telaio di TK_FRAME verso interno per stare dentro il profilo
+                                        const _cx = _shapePts.reduce((s, p) => s + p[0], 0) / _shapePts.length;
+                                        const _cy = _shapePts.reduce((s, p) => s + p[1], 0) / _shapePts.length;
+                                        const _insetShape = _shapePts.map(p => {
+                                          const _dx = p[0] - _cx, _dy = p[1] - _cy;
+                                          const _d = Math.hypot(_dx, _dy) || 1;
+                                          return [p[0] - (_dx / _d) * TK_FRAME, p[1] - (_dy / _d) * TK_FRAME];
+                                        });
+                                        // S-H clipping
+                                        const _inside = (p: number[], a: number[], b: number[]) =>
+                                          (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) <= 0;
+                                        const _intersect = (p1: number[], p2: number[], a: number[], b: number[]) => {
+                                          const x1=p1[0], y1=p1[1], x2=p2[0], y2=p2[1];
+                                          const x3=a[0], y3=a[1], x4=b[0], y4=b[1];
+                                          const denom = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
+                                          if (Math.abs(denom) < 0.001) return p2;
+                                          const t = ((x1-x3)*(y3-y4) - (y1-y3)*(x3-x4)) / denom;
+                                          return [x1 + t*(x2-x1), y1 + t*(y2-y1)];
+                                        };
+                                        let _output: number[][] = cellPoly.slice();
+                                        for (let _e = 0; _e < _insetShape.length; _e++) {
+                                          if (_output.length === 0) break;
+                                          const _a = _insetShape[_e];
+                                          const _b = _insetShape[(_e + 1) % _insetShape.length];
+                                          const _input = _output;
+                                          _output = [];
+                                          for (let _i2 = 0; _i2 < _input.length; _i2++) {
+                                            const _p = _input[_i2];
+                                            const _pPrev = _input[(_i2 - 1 + _input.length) % _input.length];
+                                            const _inP = _inside(_p, _a, _b);
+                                            const _inPrev = _inside(_pPrev, _a, _b);
+                                            if (_inP) {
+                                              if (!_inPrev) _output.push(_intersect(_pPrev, _p, _a, _b));
+                                              _output.push(_p);
+                                            } else if (_inPrev) {
+                                              _output.push(_intersect(_pPrev, _p, _a, _b));
+                                            }
+                                          }
+                                        }
+                                        // Aggiungi tutti i punti delle freeLine telaio che cadono dentro cellPoly
+                                        // Cosi' la curva viene catturata con tutti i suoi vertici
+                                        if (_output.length >= 3) {
+                                          // Confronta con cellPoly: solo se ho effettivamente clippato (output diverso da rect)
+                                          const _origArea = Math.abs((cellPoly[2][0]-cellPoly[0][0]) * (cellPoly[2][1]-cellPoly[0][1]));
+                                          let _newArea = 0;
+                                          for (let _i = 0; _i < _output.length; _i++) {
+                                            const _p1 = _output[_i], _p2 = _output[(_i+1) % _output.length];
+                                            _newArea += _p1[0] * _p2[1] - _p2[0] * _p1[1];
+                                          }
+                                          _newArea = Math.abs(_newArea / 2);
+                                          // Solo se area significativa (>5% rect originale) usa clip
+                                          if (_newArea > _origArea * 0.05) {
+                                            cellPoly = _output;
+                                          }
+                                        }
+                                      }
+                                    }
                                     // Rimuovi solo le polyAnta nella stessa zona X
-                                    const subMinX = Math.min(...cellPoly.map(p => p[0]));
-                                    const subMaxX = Math.max(...cellPoly.map(p => p[0]));
+                                    const subMinX = Math.min(...cellPoly.map((p: number[]) => p[0]));
+                                    const subMaxX = Math.max(...cellPoly.map((p: number[]) => p[0]));
                                     const newEls = els.filter(e => {
                                       if (e.type !== "polyAnta") return true;
-                                      const eMinX = Math.min(...e.poly.map(p => p[0]));
-                                      const eMaxX = Math.max(...e.poly.map(p => p[0]));
+                                      const eMinX = Math.min(...e.poly.map((p: number[]) => p[0]));
+                                      const eMaxX = Math.max(...e.poly.map((p: number[]) => p[0]));
                                       // Rimuovi se si sovrappone alla zona cliccata
                                       return !(eMinX < subMaxX - 5 && eMaxX > subMinX + 5);
                                     });
