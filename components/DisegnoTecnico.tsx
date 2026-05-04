@@ -5106,8 +5106,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           e3.stopPropagation();
                                           if (!drawMode) setMode({ selectedId: el.id });
                                         }}>
-                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.55} stroke={"#3A3A3C"} strokeWidth={tk} strokeLinejoin="round" />
-                                          <polygon points={innerStr} fill="none" stroke={"#3A3A3C"} strokeWidth={tk * 0.75} strokeLinejoin="round" />
+                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.7} stroke={"#2A2A2C"} strokeWidth={tk * 1.5} strokeLinejoin="round" />
+                                          <polygon points={innerStr} fill="none" stroke={"#2A2A2C"} strokeWidth={tk * 1.0} strokeLinejoin="round" />
                                           {(el.antaCount && el.antaIdx !== undefined && el.antaIdx < el.antaCount - 1) && (() => {
                                             const _xs = pts.map((p: number[]) => p[0]);
                                             const _ys = pts.map((p: number[]) => p[1]);
