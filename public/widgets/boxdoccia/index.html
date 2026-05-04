@@ -17,8 +17,8 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; background: transparent; font-family: 'Inter', -apple-system, system-ui, sans-serif; color: var(--txt); }
 body { padding: 0; }
-.app { width: 100%; max-width: 100%; margin: 0; background: var(--bg); border-radius: 0; padding: 12px; min-height: 100vh; }
-@media (min-width: 600px) { .app { padding: 16px; } }
+.app { width: 100%; max-width: 100%; margin: 0; background: var(--bg); border-radius: 0; padding: 6px; min-height: 100vh; }
+@media (min-width: 600px) { .app { padding: 10px; } }
 @media (min-width: 900px) {
   .app { display: grid; grid-template-columns: 1fr 380px; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: start; }
   .left-col { grid-column: 1; position: sticky; top: 12px; }
@@ -43,10 +43,10 @@ body { padding: 0; }
 
 .view { display: none; }
 .view.active { display: block; }
-.canvas-wrap { background: var(--bg3); border-radius: 12px; border: 1px solid var(--acc); overflow: hidden; position: relative; margin-bottom: 8px; }
-.canvas-wrap svg { width: 100%; height: auto; display: block; touch-action: none; user-select: none; min-height: 320px; max-height: 70vh; }
-@media (min-width: 600px) { .canvas-wrap svg { min-height: 400px; } }
-@media (min-width: 900px) { .canvas-wrap svg { min-height: 500px; } }
+.canvas-wrap { background: var(--bg3); border-radius: 12px; border: 1px solid var(--acc); overflow: hidden; position: relative; margin-bottom: 8px; padding: 0; line-height: 0; }
+.canvas-wrap svg { width: 100%; height: auto; display: block; touch-action: none; user-select: none; min-height: 80vh; max-height: 90vh; aspect-ratio: 1; }
+@media (min-width: 600px) { .canvas-wrap svg { min-height: 85vh; } }
+@media (min-width: 900px) { .canvas-wrap svg { min-height: 88vh; aspect-ratio: 1; } }
 .canvas-info { position: absolute; bottom: 6px; left: 6px; right: 6px; display: flex; justify-content: space-between; pointer-events: none; }
 .canvas-info > div { font-size: 9px; color: rgba(40,160,160,0.7); padding: 2px 6px; background: rgba(13,31,31,0.85); border-radius: 4px; }
 .canvas-instr { position: absolute; top: 6px; left: 6px; right: 6px; padding: 4px 8px; background: rgba(40,160,160,0.95); color: #fff; font-size: 10px; font-weight: 700; border-radius: 4px; text-align: center; pointer-events: none; }
@@ -175,7 +175,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
 
 <div id="view-3d" class="view active">
   <div class="canvas-wrap">
-    <svg id="iso-svg" viewBox="0 0 320 240"></svg>
+    <svg id="iso-svg" viewBox="0 0 320 320"></svg>
     <div class="canvas-info"><div>DRAG ruota</div><div id="rot-info">45°</div></div>
   </div>
   <div class="btn-row">
@@ -187,7 +187,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
 
 <div id="view-pianta" class="view">
   <div class="canvas-wrap">
-    <svg id="plan-svg" viewBox="0 0 320 240"></svg>
+    <svg id="plan-svg" viewBox="0 0 320 320"></svg>
   </div>
   <div class="btn-row">
     <button data-act="plan-reset" class="ico-btn">Reset</button>
@@ -247,7 +247,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
   </div>
   <div id="foto-canvas" style="display:none;">
     <div class="canvas-wrap">
-      <svg id="foto-svg" viewBox="0 0 320 240"></svg>
+      <svg id="foto-svg" viewBox="0 0 320 320"></svg>
       <div class="canvas-instr" id="foto-instr">1) Tap sul primo riferimento</div>
     </div>
     <div id="foto-controls" style="display:none;margin-bottom:8px;">
@@ -824,16 +824,16 @@ function showWalls() {
 
 function renderIso() {
   var W = state.w, D = state.d, H = state.h;
-  var cx = 160, cy = 160;
-  var sc = 0.42 / state.cam.dist;
+  var cx = 160, cy = 175;
+  var sc = 1.25 / state.cam.dist;
   function pt(x, y, z) { var p = project((x-W/2)*sc, y*sc, (z-D/2)*sc, cx, cy); return [p[0], p[1], p[2]]; }
   var profCol = PROF_COL[state.profilo], vetroCol = VETRO_COL[state.vetroTipo], piaCol = PIATTO_COL[state.coloraPiatto];
   var walls = showWalls(), items = [];
   function add(z, h) { items.push({ z: z, h: h }); }
-  var svg = '<rect x="0" y="0" width="320" height="240" fill="#0A1818"/>';
-  for (var gi = 0; gi < 9; gi++) {
-    svg += '<line x1="0" y1="'+(gi*30)+'" x2="320" y2="'+(gi*30)+'" stroke="#152828" stroke-width="0.5"/>';
-    svg += '<line x1="'+(gi*40)+'" y1="0" x2="'+(gi*40)+'" y2="240" stroke="#152828" stroke-width="0.5"/>';
+  var svg = '<rect x="0" y="0" width="320" height="320" fill="#0A1818"/>';
+  for (var gi = 0; gi < 11; gi++) {
+    svg += '<line x1="0" y1="'+(gi*32)+'" x2="320" y2="'+(gi*32)+'" stroke="#152828" stroke-width="0.5"/>';
+    svg += '<line x1="'+(gi*32)+'" y1="0" x2="'+(gi*32)+'" y2="320" stroke="#152828" stroke-width="0.5"/>';
   }
   var wallH = H + 30;
   function wall(x1, z1, x2, z2) {
@@ -899,17 +899,17 @@ function renderIso() {
 
 function renderPlan() {
   var W = state.w, D = state.d;
-  var cx = 160 + state.plan.panX, cy = 120 + state.plan.panY;
-  var sc = 0.55 * state.plan.zoom;
+  var cx = 160 + state.plan.panX, cy = 160 + state.plan.panY;
+  var sc = 1.65 * state.plan.zoom;
   var w2 = W * sc / 2, d2 = D * sc / 2;
   var profCol = PROF_COL[state.profilo], vetroCol = VETRO_COL[state.vetroTipo], piaCol = PIATTO_COL[state.coloraPiatto];
   var walls = showWalls();
-  var svg = '<rect x="0" y="0" width="320" height="240" fill="#0A1818"/>';
+  var svg = '<rect x="0" y="0" width="320" height="320" fill="#0A1818"/>';
   var gz = 20 * state.plan.zoom;
-  for (var i = 0; i < 20; i++) {
+  for (var i = 0; i < 22; i++) {
     var gx = (state.plan.panX % gz) + i*gz;
     var gy = (state.plan.panY % gz) + i*gz;
-    svg += '<line x1="'+gx+'" y1="0" x2="'+gx+'" y2="240" stroke="#152828" stroke-width="0.5"/>';
+    svg += '<line x1="'+gx+'" y1="0" x2="'+gx+'" y2="320" stroke="#152828" stroke-width="0.5"/>';
     svg += '<line x1="0" y1="'+gy+'" x2="320" y2="'+gy+'" stroke="#152828" stroke-width="0.5"/>';
   }
   var wW = 5 * state.plan.zoom;
@@ -996,16 +996,16 @@ function renderDraw() {
 function renderFoto() {
   var f = state.foto;
   if (!f.dataUrl) return;
-  var ar = f.w / f.h, vbW = 320, vbH = 240, iw, ih, ix, iy;
+  var ar = f.w / f.h, vbW = 320, vbH = 320, iw, ih, ix, iy;
   if (ar > vbW/vbH) { iw = vbW; ih = vbW/ar; ix = 0; iy = (vbH-ih)/2; }
   else { ih = vbH; iw = vbH*ar; ix = (vbW-iw)/2; iy = 0; }
   var svg = '<image x="'+ix+'" y="'+iy+'" width="'+iw+'" height="'+ih+'" href="'+f.dataUrl+'" preserveAspectRatio="xMidYMid meet"/>';
-  svg += '<rect x="0" y="0" width="320" height="240" fill="#0D1F1F" fill-opacity="0.15"/>';
-  if (f.p1) { var p1x = f.p1.x*320, p1y = f.p1.y*240; svg += '<circle cx="'+p1x+'" cy="'+p1y+'" r="10" fill="none" stroke="#28A0A0" stroke-width="2"/><circle cx="'+p1x+'" cy="'+p1y+'" r="3" fill="#28A0A0"/><text x="'+(p1x+14)+'" y="'+(p1y+4)+'" font-size="11" font-weight="700" fill="#28A0A0">A</text>'; }
+  svg += '<rect x="0" y="0" width="320" height="320" fill="#0D1F1F" fill-opacity="0.15"/>';
+  if (f.p1) { var p1x = f.p1.x*320, p1y = f.p1.y*320; svg += '<circle cx="'+p1x+'" cy="'+p1y+'" r="10" fill="none" stroke="#28A0A0" stroke-width="2"/><circle cx="'+p1x+'" cy="'+p1y+'" r="3" fill="#28A0A0"/><text x="'+(p1x+14)+'" y="'+(p1y+4)+'" font-size="11" font-weight="700" fill="#28A0A0">A</text>'; }
   if (f.p2) {
-    var p2x = f.p2.x*320, p2y = f.p2.y*240;
+    var p2x = f.p2.x*320, p2y = f.p2.y*320;
     svg += '<circle cx="'+p2x+'" cy="'+p2y+'" r="10" fill="none" stroke="#28A0A0" stroke-width="2"/><circle cx="'+p2x+'" cy="'+p2y+'" r="3" fill="#28A0A0"/><text x="'+(p2x+14)+'" y="'+(p2y+4)+'" font-size="11" font-weight="700" fill="#28A0A0">B</text>';
-    var p1x2 = f.p1.x*320, p1y2 = f.p1.y*240;
+    var p1x2 = f.p1.x*320, p1y2 = f.p1.y*320;
     svg += '<line x1="'+p1x2+'" y1="'+p1y2+'" x2="'+p2x+'" y2="'+p2y+'" stroke="#28A0A0" stroke-width="1.5" stroke-dasharray="4 3"/>';
     var midX = (p1x2+p2x)/2, midY = (p1y2+p2y)/2;
     svg += '<rect x="'+(midX-22)+'" y="'+(midY-10)+'" width="44" height="18" rx="3" fill="#0D1F1F" stroke="#28A0A0" stroke-width="0.6"/>';
@@ -1013,7 +1013,7 @@ function renderFoto() {
     if (f.showBox) {
       var pixDist = Math.hypot(p2x-p1x2, p2y-p1y2), pxPerCm = pixDist / f.refDist;
       var bw = state.w * pxPerCm, bh = state.h * pxPerCm;
-      var bx = f.boxX * 320, by = f.boxY * 240, bx0 = bx - bw/2, by0 = by - bh;
+      var bx = f.boxX * 320, by = f.boxY * 320, bx0 = bx - bw/2, by0 = by - bh;
       var profC = PROF_COL[state.profilo], vetC = VETRO_COL[state.vetroTipo];
       svg += '<rect x="'+bx0+'" y="'+by0+'" width="'+bw+'" height="'+bh+'" fill="'+vetC.fill+'" fill-opacity="'+(1-vetC.op-0.1)+'" stroke="'+profC+'" stroke-width="2"/>';
       var splitX = bx0 + bw*0.55;
