@@ -175,7 +175,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
 
 <div id="view-3d" class="view active">
   <div class="canvas-wrap">
-    <svg id="iso-svg" viewBox="0 0 320 320"></svg>
+    <svg id="iso-svg" viewBox="0 0 320 320" style="touch-action:none;"></svg>
     <div class="canvas-info"><div>DRAG ruota</div><div id="rot-info">45°</div></div>
   </div>
   <div class="btn-row">
@@ -187,7 +187,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
 
 <div id="view-pianta" class="view">
   <div class="canvas-wrap">
-    <svg id="plan-svg" viewBox="0 0 320 320"></svg>
+    <svg id="plan-svg" viewBox="0 0 320 320" style="touch-action:none;"></svg>
   </div>
   <div class="btn-row">
     <button data-act="plan-reset" class="ico-btn">Reset</button>
@@ -198,7 +198,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
 
 <div id="view-disegno" class="view">
   <div class="canvas-wrap">
-    <svg id="draw-svg" viewBox="0 0 480 480" style="cursor:crosshair;"></svg>
+    <svg id="draw-svg" viewBox="0 0 480 480" style="cursor:crosshair;touch-action:none;"></svg>
     <div class="canvas-instr" id="draw-instr">Tap per posizionare i punti del muro</div>
   </div>
   <div class="draw-panel">
@@ -247,7 +247,7 @@ button.sw-pia.sel { border-color: var(--acc) !important; box-shadow: 0 0 0 2px v
   </div>
   <div id="foto-canvas" style="display:none;">
     <div class="canvas-wrap">
-      <svg id="foto-svg" viewBox="0 0 320 320"></svg>
+      <svg id="foto-svg" viewBox="0 0 320 320" style="touch-action:none;"></svg>
       <div class="canvas-instr" id="foto-instr">1) Tap sul primo riferimento</div>
     </div>
     <div id="foto-controls" style="display:none;margin-bottom:8px;">
@@ -819,79 +819,115 @@ function finish() {
   setTimeout(function(){ document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
 }
 
-// 3D camera handlers
+// 3D camera handlers (pointer events unificato)
 var isoSvg = document.getElementById('iso-svg');
-var drag = null, touchPrev = null;
-function getTouchDist(t1, t2) { return Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY); }
-isoSvg.addEventListener('pointerdown', function(e) { isoSvg.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY, rotY: state.cam.rotY, rotX: state.cam.rotX }; });
-isoSvg.addEventListener('pointermove', function(e) {
-  if (!drag) return;
-  var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-  state.cam.rotY = drag.rotY - dx * 0.012;
-  state.cam.rotX = Math.max(-Math.PI/2 + 0.15, Math.min(Math.PI/2 - 0.15, drag.rotX + dy * 0.01));
-  document.getElementById('rot-info').textContent = Math.round(state.cam.rotY * 180 / Math.PI) + '\u00B0';
-  renderIso();
-});
-isoSvg.addEventListener('pointerup', function(){ drag = null; });
-isoSvg.addEventListener('pointercancel', function(){ drag = null; });
-isoSvg.addEventListener('wheel', function(e) { e.preventDefault(); state.cam.dist = Math.max(0.4, Math.min(2.5, state.cam.dist * (e.deltaY > 0 ? 1.1 : 0.9))); renderIso(); }, { passive: false });
-isoSvg.addEventListener('touchstart', function(e) { if (e.touches.length === 2) { touchPrev = getTouchDist(e.touches[0], e.touches[1]); drag = null; } }, { passive: true });
-isoSvg.addEventListener('touchmove', function(e) {
-  if (e.touches.length === 2 && touchPrev) {
-    var nd = getTouchDist(e.touches[0], e.touches[1]);
-    state.cam.dist = Math.max(0.4, Math.min(2.5, state.cam.dist * (touchPrev / nd)));
-    touchPrev = nd; renderIso();
+var isoPointers = new Map();
+var isoPinch = null;
+var isoDragStart = null;
+
+isoSvg.addEventListener('pointerdown', function(e){
+  e.preventDefault();
+  isoSvg.setPointerCapture(e.pointerId);
+  isoPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (isoPointers.size === 2) {
+    var pts = Array.from(isoPointers.values());
+    isoPinch = {
+      dist: Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y),
+      camDist: state.cam.dist
+    };
+    isoDragStart = null;
+  } else if (isoPointers.size === 1) {
+    isoDragStart = { x: e.clientX, y: e.clientY, rotY: state.cam.rotY, rotX: state.cam.rotX };
   }
-}, { passive: true });
-isoSvg.addEventListener('touchend', function(){ touchPrev = null; });
+}, { passive: false });
+
+isoSvg.addEventListener('pointermove', function(e){
+  if (!isoPointers.has(e.pointerId)) return;
+  e.preventDefault();
+  isoPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (isoPointers.size === 2 && isoPinch) {
+    var pts = Array.from(isoPointers.values());
+    var newDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+    state.cam.dist = Math.max(0.3, Math.min(3, isoPinch.camDist * (isoPinch.dist / newDist)));
+    renderIso();
+  } else if (isoPointers.size === 1 && isoDragStart) {
+    var dx = e.clientX - isoDragStart.x, dy = e.clientY - isoDragStart.y;
+    state.cam.rotY = isoDragStart.rotY - dx * 0.012;
+    state.cam.rotX = Math.max(-Math.PI/2 + 0.15, Math.min(Math.PI/2 - 0.15, isoDragStart.rotX + dy * 0.01));
+    var ri = document.getElementById('rot-info');
+    if (ri) ri.textContent = Math.round(state.cam.rotY * 180 / Math.PI) + '\u00B0';
+    renderIso();
+  }
+}, { passive: false });
+
+function endIsoPointer(e){
+  if (!isoPointers.has(e.pointerId)) return;
+  isoPointers.delete(e.pointerId);
+  if (isoPointers.size < 2) isoPinch = null;
+  if (isoPointers.size === 0) isoDragStart = null;
+}
+isoSvg.addEventListener('pointerup', endIsoPointer);
+isoSvg.addEventListener('pointercancel', endIsoPointer);
+isoSvg.addEventListener('pointerleave', endIsoPointer);
+
+isoSvg.addEventListener('wheel', function(e){
+  e.preventDefault();
+  state.cam.dist = Math.max(0.3, Math.min(3, state.cam.dist * (e.deltaY > 0 ? 1.1 : 0.9)));
+  renderIso();
+}, { passive: false });
 
 var planSvg = document.getElementById('plan-svg');
-var planDrag = null;
+var planPointers = new Map();
 var planPinch = null;
 
-planSvg.addEventListener('touchstart', function(e){
-  if (e.touches.length === 2) {
-    e.preventDefault();
+planSvg.addEventListener('pointerdown', function(e){
+  e.preventDefault();
+  planSvg.setPointerCapture(e.pointerId);
+  planPointers.set(e.pointerId, { x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY });
+  if (planPointers.size === 2) {
+    var pts = Array.from(planPointers.values());
     planPinch = {
-      dist: getDist(e.touches[0], e.touches[1]),
-      mid: getMid(e.touches[0], e.touches[1]),
+      dist: Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y),
+      midX: (pts[0].x + pts[1].x) / 2,
+      midY: (pts[0].y + pts[1].y) / 2,
       zoom: state.plan.zoom,
       panX: state.plan.panX,
       panY: state.plan.panY
     };
-    planDrag = null;
   }
 }, { passive: false });
 
-planSvg.addEventListener('touchmove', function(e){
-  if (e.touches.length === 2 && planPinch) {
-    e.preventDefault();
-    var nd = getDist(e.touches[0], e.touches[1]);
-    var ratio = nd / planPinch.dist;
-    state.plan.zoom = Math.max(0.4, Math.min(5, planPinch.zoom * ratio));
-    var nm = getMid(e.touches[0], e.touches[1]);
-    state.plan.panX = planPinch.panX + (nm.x - planPinch.mid.x);
-    state.plan.panY = planPinch.panY + (nm.y - planPinch.mid.y);
+planSvg.addEventListener('pointermove', function(e){
+  if (!planPointers.has(e.pointerId)) return;
+  e.preventDefault();
+  var prev = planPointers.get(e.pointerId);
+  planPointers.set(e.pointerId, Object.assign(prev, { x: e.clientX, y: e.clientY }));
+  if (planPointers.size === 2 && planPinch) {
+    var pts = Array.from(planPointers.values());
+    var newDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+    state.plan.zoom = Math.max(0.4, Math.min(5, planPinch.zoom * (newDist / planPinch.dist)));
+    var newMidX = (pts[0].x + pts[1].x) / 2;
+    var newMidY = (pts[0].y + pts[1].y) / 2;
+    state.plan.panX = planPinch.panX + (newMidX - planPinch.midX);
+    state.plan.panY = planPinch.panY + (newMidY - planPinch.midY);
+    renderPlan();
+  } else if (planPointers.size === 1) {
+    // Pan singolo dito
+    var dx = e.clientX - prev.startX, dy = e.clientY - prev.startY;
+    state.plan.panX = (prev.basePanX !== undefined ? prev.basePanX : (prev.basePanX = state.plan.panX, state.plan.panX)) + dx;
+    state.plan.panY = (prev.basePanY !== undefined ? prev.basePanY : (prev.basePanY = state.plan.panY, state.plan.panY)) + dy;
     renderPlan();
   }
 }, { passive: false });
 
-planSvg.addEventListener('touchend', function(e){
-  if (e.touches.length < 2) planPinch = null;
-});
-
-planSvg.addEventListener('pointerdown', function(e) {
-  if (planPinch) return;
-  planSvg.setPointerCapture(e.pointerId);
-  planDrag = { x: e.clientX, y: e.clientY, panX: state.plan.panX, panY: state.plan.panY };
-});
-planSvg.addEventListener('pointermove', function(e) {
-  if (!planDrag || planPinch) return;
-  state.plan.panX = planDrag.panX + (e.clientX - planDrag.x);
-  state.plan.panY = planDrag.panY + (e.clientY - planDrag.y);
-  renderPlan();
-});
-planSvg.addEventListener('pointerup', function(){ planDrag = null; });
+function endPlanPointer(e){
+  if (!planPointers.has(e.pointerId)) return;
+  planPointers.delete(e.pointerId);
+  if (planPointers.size < 2) planPinch = null;
+}
+planSvg.addEventListener('pointerup', endPlanPointer);
+planSvg.addEventListener('pointercancel', endPlanPointer);
+planSvg.addEventListener('pointerleave', endPlanPointer);
 
 planSvg.addEventListener('wheel', function(e){
   e.preventDefault();
@@ -900,6 +936,8 @@ planSvg.addEventListener('wheel', function(e){
 }, { passive: false });
 
 var drawSvg = document.getElementById('draw-svg');
+state.draw.panX = state.draw.panX || 0;
+state.draw.panY = state.draw.panY || 0;
 
 function svgPoint(svg, clientX, clientY, vbSize) {
   var rect = svg.getBoundingClientRect();
@@ -908,7 +946,6 @@ function svgPoint(svg, clientX, clientY, vbSize) {
     y: (clientY - rect.top) / rect.height * vbSize
   };
 }
-
 function snapDraw(p) {
   if (state.draw.showGrid) {
     var gridPx = 5 * state.draw.scale;
@@ -917,99 +954,105 @@ function snapDraw(p) {
   return p;
 }
 
-// Track touches per pinch+pan
-var drawTouches = [];
-var drawPinchStart = null, drawPanStart = null;
-state.draw.panX = state.draw.panX || 0;
-state.draw.panY = state.draw.panY || 0;
+// === POINTER-BASED unified touch+mouse handlers ===
+// Tracking pointers attivi per ogni canvas
+var drawPointers = new Map();
+var drawPinch = null;
+var drawTapStart = null; // per distinguere tap da drag
 
-function getDist(t1, t2) { return Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY); }
-function getMid(t1, t2) { return { x: (t1.clientX+t2.clientX)/2, y: (t1.clientY+t2.clientY)/2 }; }
+drawSvg.addEventListener('pointerdown', function(e){
+  e.preventDefault();
+  drawSvg.setPointerCapture(e.pointerId);
+  drawPointers.set(e.pointerId, { x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY });
 
-drawSvg.addEventListener('touchstart', function(e){
-  if (e.touches.length === 2) {
-    e.preventDefault();
-    drawPinchStart = {
-      dist: getDist(e.touches[0], e.touches[1]),
+  if (drawPointers.size === 2) {
+    // Inizio pinch+pan a 2 dita
+    var pts = Array.from(drawPointers.values());
+    drawPinch = {
+      dist: Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y),
       scale: state.draw.scale,
-      mid: getMid(e.touches[0], e.touches[1]),
+      midX: (pts[0].x + pts[1].x) / 2,
+      midY: (pts[0].y + pts[1].y) / 2,
       panX: state.draw.panX,
       panY: state.draw.panY
     };
+    // Cancella pendingPoint se stavi disegnando
     state.draw.pendingPoint = null;
     state.draw.cursor = null;
+    drawTapStart = null;
     renderDraw();
+  } else if (drawPointers.size === 1) {
+    // Memorizzo posizione iniziale per riconoscere tap vs drag
+    drawTapStart = { x: e.clientX, y: e.clientY, time: Date.now() };
   }
 }, { passive: false });
 
-drawSvg.addEventListener('touchmove', function(e){
-  if (e.touches.length === 2 && drawPinchStart) {
-    e.preventDefault();
-    var newDist = getDist(e.touches[0], e.touches[1]);
-    var ratio = newDist / drawPinchStart.dist;
-    var newScale = Math.max(0.5, Math.min(8, drawPinchStart.scale * ratio));
-    state.draw.scale = +newScale.toFixed(2);
-    var newMid = getMid(e.touches[0], e.touches[1]);
-    state.draw.panX = drawPinchStart.panX + (newMid.x - drawPinchStart.mid.x);
-    state.draw.panY = drawPinchStart.panY + (newMid.y - drawPinchStart.mid.y);
+drawSvg.addEventListener('pointermove', function(e){
+  if (!drawPointers.has(e.pointerId)) return;
+  e.preventDefault();
+  drawPointers.set(e.pointerId, Object.assign(drawPointers.get(e.pointerId), { x: e.clientX, y: e.clientY }));
+
+  if (drawPointers.size === 2 && drawPinch) {
+    // Pinch + pan
+    var pts = Array.from(drawPointers.values());
+    var newDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+    var ratio = newDist / drawPinch.dist;
+    state.draw.scale = +Math.max(0.5, Math.min(8, drawPinch.scale * ratio)).toFixed(2);
+    var newMidX = (pts[0].x + pts[1].x) / 2;
+    var newMidY = (pts[0].y + pts[1].y) / 2;
+    state.draw.panX = drawPinch.panX + (newMidX - drawPinch.midX);
+    state.draw.panY = drawPinch.panY + (newMidY - drawPinch.midY);
     var sInp = document.querySelector('[data-num="drawScale"]');
     if (sInp) sInp.value = state.draw.scale;
     renderDraw();
-  } else if (e.touches.length === 1 && state.draw.mode === 'wall' && state.draw.pendingPoint) {
-    // Aggiorna cursore per ghost line live
-    var p = svgPoint(drawSvg, e.touches[0].clientX, e.touches[0].clientY, 480);
-    p.x -= state.draw.panX; p.y -= state.draw.panY;
-    state.draw.cursor = snapDraw(p);
-    renderDraw();
+  } else if (drawPointers.size === 1) {
+    // Singolo dito/mouse:
+    // - Se sta disegnando muro con pendingPoint: aggiorna cursor per ghost line
+    // - Se shift/right-button: pan (mouse only)
+    var ptr = drawPointers.get(e.pointerId);
+    if (state.draw.mode === 'wall' && state.draw.pendingPoint) {
+      var p = svgPoint(drawSvg, e.clientX, e.clientY, 480);
+      p.x -= state.draw.panX; p.y -= state.draw.panY;
+      state.draw.cursor = snapDraw(p);
+      renderDraw();
+    }
   }
 }, { passive: false });
 
-drawSvg.addEventListener('touchend', function(e){
-  if (e.touches.length < 2) drawPinchStart = null;
-});
+function endDrawPointer(e) {
+  if (!drawPointers.has(e.pointerId)) return;
+  e.preventDefault && e.preventDefault();
+  var ptr = drawPointers.get(e.pointerId);
+  var wasPinch = drawPointers.size === 2;
+  drawPointers.delete(e.pointerId);
 
-// Mouse: pinch via wheel, pan via Ctrl+drag o middle button
-drawSvg.addEventListener('wheel', function(e){
-  e.preventDefault();
-  var oldScale = state.draw.scale;
-  var newScale = Math.max(0.5, Math.min(8, oldScale * (e.deltaY > 0 ? 0.9 : 1.1)));
-  state.draw.scale = +newScale.toFixed(2);
-  var sInp = document.querySelector('[data-num="drawScale"]');
-  if (sInp) sInp.value = state.draw.scale;
-  renderDraw();
-}, { passive: false });
+  if (drawPointers.size < 2) drawPinch = null;
 
-// Pan mouse con tasto destro o shift+drag
-var mouseDrag = null;
-drawSvg.addEventListener('mousedown', function(e){
-  if (e.button === 2 || e.shiftKey) {
-    e.preventDefault();
-    mouseDrag = { x: e.clientX, y: e.clientY, panX: state.draw.panX, panY: state.draw.panY };
+  // Click logico: solo se 1 solo pointer e movimento minimo (era un tap)
+  if (drawPointers.size === 0 && !wasPinch && drawTapStart) {
+    var dx = Math.abs(e.clientX - drawTapStart.x);
+    var dy = Math.abs(e.clientY - drawTapStart.y);
+    if (dx < 8 && dy < 8 && (Date.now() - drawTapStart.time) < 500) {
+      // E' un tap valido
+      handleDrawTap(e.clientX, e.clientY, e.target);
+    }
+  }
+  drawTapStart = null;
+}
+drawSvg.addEventListener('pointerup', endDrawPointer);
+drawSvg.addEventListener('pointercancel', endDrawPointer);
+drawSvg.addEventListener('pointerleave', function(e){
+  // Solo per cleanup, non chiudere il tap
+  if (drawPointers.has(e.pointerId)) {
+    drawPointers.delete(e.pointerId);
+    if (drawPointers.size < 2) drawPinch = null;
   }
 });
-drawSvg.addEventListener('mousemove', function(e){
-  if (mouseDrag) {
-    state.draw.panX = mouseDrag.panX + (e.clientX - mouseDrag.x);
-    state.draw.panY = mouseDrag.panY + (e.clientY - mouseDrag.y);
-    renderDraw();
-  } else if (state.draw.mode === 'wall' && state.draw.pendingPoint) {
-    var p = svgPoint(drawSvg, e.clientX, e.clientY, 480);
-    p.x -= state.draw.panX; p.y -= state.draw.panY;
-    state.draw.cursor = snapDraw(p);
-    renderDraw();
-  }
-});
-drawSvg.addEventListener('mouseup', function(){ mouseDrag = null; });
-drawSvg.addEventListener('mouseleave', function(){ mouseDrag = null; });
-drawSvg.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 
-drawSvg.addEventListener('click', function(e){
-  // Skip se era zoom/pan
-  if (drawPinchStart || mouseDrag) return;
-  // Click su quote per editare misure box
-  var t = e.target;
-  if (t && t.hasAttribute && t.hasAttribute('data-edit-dim')) {
-    var dim = t.getAttribute('data-edit-dim');
+function handleDrawTap(clientX, clientY, target) {
+  // Se cliccato sulle quote del box
+  if (target && target.hasAttribute && target.hasAttribute('data-edit-dim')) {
+    var dim = target.getAttribute('data-edit-dim');
     var cur = (dim === 'w') ? state.w : state.d;
     var nv = prompt('Misura ' + (dim === 'w' ? 'larghezza' : 'profondita') + ' (cm):', cur);
     if (nv && !isNaN(+nv)) {
@@ -1020,14 +1063,14 @@ drawSvg.addEventListener('click', function(e){
     }
     return;
   }
-  var p = svgPoint(drawSvg, e.clientX, e.clientY, 480);
+  var p = svgPoint(drawSvg, clientX, clientY, 480);
   p.x -= state.draw.panX; p.y -= state.draw.panY;
   p = snapDraw(p);
   if (state.draw.mode === 'wall') {
     if (!state.draw.pendingPoint) {
       state.draw.pendingPoint = { x: p.x, y: p.y };
       state.draw.cursor = { x: p.x, y: p.y };
-      document.getElementById('draw-instr').textContent = 'Tap secondo punto - vedi cm in tempo reale';
+      document.getElementById('draw-instr').textContent = 'Muovi e tap secondo punto . cm live';
     } else {
       state.draw.walls.push({ x1: state.draw.pendingPoint.x, y1: state.draw.pendingPoint.y, x2: p.x, y2: p.y, th: state.draw.wallTh });
       state.draw.pendingPoint = null;
@@ -1036,7 +1079,7 @@ drawSvg.addEventListener('click', function(e){
     }
   } else if (state.draw.mode === 'box') {
     state.draw.box = { x: p.x, y: p.y };
-    document.getElementById('draw-instr').textContent = 'Box posizionato. Click sulle quote per modificare misure';
+    document.getElementById('draw-instr').textContent = 'Box posizionato. Tap sulle quote per modificare';
   } else if (state.draw.mode === 'erase') {
     var minDist = 9999, idx = -1;
     for (var i = 0; i < state.draw.walls.length; i++) {
@@ -1047,7 +1090,18 @@ drawSvg.addEventListener('click', function(e){
     if (idx >= 0 && minDist < 20) state.draw.walls.splice(idx, 1);
   }
   renderDraw();
-});
+}
+
+// Wheel zoom desktop
+drawSvg.addEventListener('wheel', function(e){
+  e.preventDefault();
+  state.draw.scale = +Math.max(0.5, Math.min(8, state.draw.scale * (e.deltaY > 0 ? 0.9 : 1.1))).toFixed(2);
+  var sInp = document.querySelector('[data-num="drawScale"]');
+  if (sInp) sInp.value = state.draw.scale;
+  renderDraw();
+}, { passive: false });
+
+drawSvg.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 function distToSeg(px, py, x1, y1, x2, y2) {
   var A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
   var dot = A*C + B*D, lenSq = C*C + D*D;
