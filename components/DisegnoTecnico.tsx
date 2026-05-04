@@ -5107,7 +5107,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           e3.stopPropagation();
                                           if (!drawMode) setMode({ selectedId: el.id });
                                         }}>
-                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.7} stroke={"#2A2A2C"} strokeWidth={tk * 1.5} strokeLinejoin="round" />
+                                          {(() => { console.log("[POLYANTA-DBG] tk=", tk, "strokeWidth=", tk * 1.5, "id=", el.id); return null; })()}
+                                          <polygon points={outerPts} fill="red" fillOpacity={0.4} stroke={"#FF0000"} strokeWidth={20} strokeLinejoin="round" />
                                           <polygon points={innerStr} fill="none" stroke={"#2A2A2C"} strokeWidth={tk * 1.0} strokeLinejoin="round" />
                                           {(el.antaCount && el.antaIdx !== undefined && el.antaIdx < el.antaCount - 1) && (() => {
                                             const _xs = pts.map((p: number[]) => p[0]);
