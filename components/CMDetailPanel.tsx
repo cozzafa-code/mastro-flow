@@ -25,6 +25,7 @@ import PreventivoConfiguratoreTab from "./PreventivoConfiguratoreTab";
 import GuidaIvaDetrazioni from "./GuidaIvaDetrazioni";
 import TabFiscale from "./TabFiscale";
 import DisegnoTecnico from "./DisegnoTecnico";
+import Timeline from "./Timeline";
 // @cadDraw state added below
 
 // ═══ v58 · Cronologia app-nell-app ═══
@@ -248,7 +249,6 @@ export default function CMDetailPanel() {
   // AUTO_PICK: se ci sono rilievi, seleziona l'ultimo. NON crea pi+ bozze automatiche.
   const [autoPickDoneForCm, setAutoPickDoneForCm] = React.useState<number | null>(null);
   const [cronOpenV70, setCronOpenV70] = React.useState<boolean>(false);
-  const [expandedEventIdx, setExpandedEventIdx] = React.useState<number | null>(null);
   const [centroApertoV70, setCentroApertoV70] = React.useState<string | null>(null);
   const [diarioFormOpenV74, setDiarioFormOpenV74] = React.useState<boolean>(false);
   const [diarioChiV74, setDiarioChiV74] = React.useState<"IO" | "CLIENTE">("IO");
@@ -2215,256 +2215,13 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             </div>
           )}
 
-          {/* ═══ TIMELINE V3 · sempre aperta + eventi espandibili ═══ */}
-          <div style={{
-            background: "#FFF",
-            border: "1px solid #CBD5E1",
-            borderRadius: 14,
-            overflow: "hidden",
-            boxShadow: "0 3px 10px rgba(15,23,42,0.05)",
-          }}>
-            {/* Header timeline */}
-            <div style={{
-              padding: "11px 14px",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              background: "linear-gradient(180deg, #F8FAFC, #F1F5F9)",
-              borderBottom: "1px solid #E2E8F0",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: 8,
-                  background: "#1E3A5F", color: "#FFF",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 800, color: "#0A1628" }}>Cronologia commessa</div>
-                  <div style={{ fontSize: 9.5, color: "#475A75", fontWeight: 600, marginTop: 1 }}>
-                    {logV70.length > 0 ? `${logV70.length} eventi · ultimo ${logV70[logV70.length - 1]?.quando || "Adesso"}` : "1 evento · ultimo Adesso"}
-                  </div>
-                </div>
-              </div>
-              <div style={{
-                background: "#1E3A5F", color: "#FFF",
-                fontSize: 10, fontWeight: 800,
-                padding: "3px 9px", borderRadius: 999,
-                minWidth: 22, textAlign: "center" as any,
-              }}>{logV70.length || 1}</div>
-            </div>
-
-            {/* Filtri categoria */}
-            <div style={{ display: "flex", gap: 4, padding: "8px 12px", borderBottom: "1px solid #E2E8F0", background: "#F8FAFC", overflowX: "auto" as any }}>
-              {[
-                { id: "tutti", l: "Tutti", n: logV70.length || 1 },
-                { id: "vani", l: "Vani", n: vaniV70.length || 0 },
-                { id: "foto", l: "Foto", n: 0 },
-                { id: "chiamate", l: "Chiamate", n: 0 },
-                { id: "documenti", l: "Documenti", n: 0 },
-              ].map((f, i) => (
-                <div key={f.id} style={{
-                  background: i === 0 ? "#1E3A5F" : "#FFF",
-                  border: i === 0 ? "1px solid #1E3A5F" : "1px solid #CBD5E1",
-                  borderRadius: 999,
-                  padding: "4px 9px",
-                  fontSize: 9.5, fontWeight: 700,
-                  color: i === 0 ? "#FFF" : "#475A75",
-                  whiteSpace: "nowrap" as any,
-                  flexShrink: 0,
-                  cursor: "pointer",
-                }}>{f.l} · {f.n}</div>
-              ))}
-            </div>
-
-            {/* Body eventi */}
-            <div style={{ padding: "12px 12px 14px", position: "relative" as any }}>
-              {logV70.length > 0 && (
-                <div style={{
-                  position: "absolute" as any,
-                  left: 24, top: 22, bottom: 22,
-                  width: 2, background: "#CBD5E1",
-                }} />
-              )}
-
-              {(logV70.length > 0 ? logV70 : [{ chi: "Sistema", cosa: "Commessa creata", quando: "Adesso", _placeholder: true }]).slice().reverse().map((ev: any, idx: number) => {
-                const isExpanded = expandedEventIdx === idx;
-                const evType = ev.tipo || ev.type || "evento";
-                const dotColor = ev.completato ? "#065F46" : (ev.urgente ? "#991B1B" : (ev.warning ? "#92400E" : "#1E3A5F"));
-                const autorIniz = ((ev.chi || "Sistema").split(/\s+/).slice(0, 2).map((w: string) => w[0] || "").join("") || "S").toUpperCase();
-
-                return (
-                  <div key={idx} onClick={() => setExpandedEventIdx(isExpanded ? null : idx)} style={{
-                    position: "relative" as any,
-                    paddingLeft: 28,
-                    marginBottom: 9,
-                    cursor: "pointer",
-                  }}>
-                    {/* Dot */}
-                    <div style={{
-                      position: "absolute" as any,
-                      left: 5, top: 8,
-                      width: 14, height: 14, borderRadius: "50%",
-                      background: dotColor,
-                      border: "3px solid #FFF",
-                      boxShadow: "0 0 0 1px #CBD5E1",
-                    }} />
-
-                    {/* Card evento */}
-                    <div style={{
-                      background: isExpanded ? "#FFF" : "#F8FAFC",
-                      border: isExpanded ? "1px solid #1E3A5F" : "1px solid #E2E8F0",
-                      borderRadius: 10,
-                      padding: "8px 10px",
-                      boxShadow: isExpanded ? "0 4px 12px rgba(30,58,95,0.12)" : "none",
-                      transition: "all 0.15s",
-                    }}>
-                      {/* Riga titolo + ora */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
-                        <div style={{ fontSize: 11.5, fontWeight: 800, color: "#0A1628", flex: 1 }}>
-                          {ev.cosa || ev.titolo || "Evento commessa"}
-                        </div>
-                        <div style={{ fontSize: 9.5, color: "#94A3B8", fontWeight: 700, flexShrink: 0 }}>
-                          {ev.quando || "ora"}
-                        </div>
-                      </div>
-
-                      {/* Mini autore (collassato) */}
-                      {!isExpanded && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3, fontSize: 10, color: "#475A75", fontWeight: 600 }}>
-                          <div style={{
-                            width: 16, height: 16, borderRadius: 5,
-                            background: "linear-gradient(135deg, #1E3A5F, #2D5A87)",
-                            color: "#FFF",
-                            display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 8, fontWeight: 800, flexShrink: 0,
-                          }}>{autorIniz}</div>
-                          {ev.chi || "Sistema"}{ev.ruolo ? ` · ${ev.ruolo}` : ""}
-                        </div>
-                      )}
-
-                      {/* DETTAGLIO ESPANSO */}
-                      {isExpanded && (
-                        <div style={{ marginTop: 9, paddingTop: 9, borderTop: "1px solid #E2E8F0" }}>
-
-                          {/* Eseguito da */}
-                          <div style={{ marginBottom: 10 }}>
-                            <div style={{ fontSize: 9, fontWeight: 800, color: "#475A75", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 5, display: "flex", alignItems: "center", gap: 5 }}>
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                              Eseguito da
-                            </div>
-                            <div style={{
-                              display: "flex", alignItems: "center", gap: 9,
-                              padding: "8px 10px",
-                              background: "linear-gradient(180deg, #F1F5F9, #FFF)",
-                              border: "1px solid #E2E8F0",
-                              borderRadius: 9,
-                            }}>
-                              <div style={{
-                                width: 32, height: 32, borderRadius: 9,
-                                background: "linear-gradient(135deg, #1E3A5F, #2D5A87)",
-                                color: "#FFF",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 11, fontWeight: 800, flexShrink: 0,
-                              }}>{autorIniz}</div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 12, fontWeight: 800, color: "#0A1628" }}>{ev.chi || "Sistema"}</div>
-                                <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 1 }}>
-                                  {ev.ruolo || "Sistema MASTRO"} · {ev.quando || "ora"}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Cosa è stato fatto */}
-                          {(ev.dettagli || ev.descrizione || evType) && (
-                            <div style={{ marginBottom: 10 }}>
-                              <div style={{ fontSize: 9, fontWeight: 800, color: "#475A75", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 5, display: "flex", alignItems: "center", gap: 5 }}>
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><polyline points="20 6 9 17 4 12"/></svg>
-                                Cosa è stato fatto
-                              </div>
-                              <div style={{
-                                background: "#FFF",
-                                border: "1px solid #E2E8F0",
-                                borderRadius: 9,
-                                padding: "9px 11px",
-                              }}>
-                                <div style={{ fontSize: 11.5, color: "#0A1628", fontWeight: 600, lineHeight: 1.4 }}>
-                                  {ev.dettagli || ev.descrizione || `Tipo evento: ${evType}`}
-                                </div>
-                                {ev.note && (
-                                  <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 500, marginTop: 6, paddingTop: 6, borderTop: "1px solid #F1F5F9" }}>
-                                    {ev.note}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Documenti generati */}
-                          {ev.documenti && Array.isArray(ev.documenti) && ev.documenti.length > 0 && (
-                            <div style={{ marginBottom: 10 }}>
-                              <div style={{ fontSize: 9, fontWeight: 800, color: "#475A75", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 5, display: "flex", alignItems: "center", gap: 5 }}>
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                Documenti · {ev.documenti.length}
-                              </div>
-                              <div style={{ display: "flex", flexDirection: "column" as any, gap: 5 }}>
-                                {ev.documenti.map((doc: any, di: number) => {
-                                  const ext = ((doc.nome || "").split(".").pop() || "").toLowerCase();
-                                  const docColor = ext === "pdf" ? "#991B1B" : (["jpg","jpeg","png"].includes(ext) ? "#1E3A5F" : (["mp3","wav","m4a"].includes(ext) ? "#6D28D9" : (["xlsx","csv","xls"].includes(ext) ? "#065F46" : "#92400E")));
-                                  const docBg = ext === "pdf" ? "#FEE2E2" : (["jpg","jpeg","png"].includes(ext) ? "#DBE6F1" : (["mp3","wav","m4a"].includes(ext) ? "#EDE9FE" : (["xlsx","csv","xls"].includes(ext) ? "#D1FAE5" : "#FEF3C7")));
-                                  return (
-                                    <div key={di} onClick={(e) => { e.stopPropagation(); if (doc.url) window.open(doc.url, "_blank"); }} style={{
-                                      display: "flex", alignItems: "center", gap: 9,
-                                      padding: "8px 10px",
-                                      background: "#F8FAFC",
-                                      border: "1px solid #E2E8F0",
-                                      borderRadius: 9,
-                                      cursor: doc.url ? "pointer" : "default",
-                                    }}>
-                                      <div style={{
-                                        width: 32, height: 32, borderRadius: 8,
-                                        background: docBg, color: docColor,
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                        flexShrink: 0,
-                                      }}>
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
-                                      </div>
-                                      <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 11, fontWeight: 800, color: "#0A1628", whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis" }}>{doc.nome || "Documento"}</div>
-                                        <div style={{ fontSize: 9.5, color: "#475A75", fontWeight: 600, marginTop: 1 }}>{doc.size || ""} {doc.descrizione ? `· ${doc.descrizione}` : ""}</div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Misure (se evento è un vano) */}
-                          {ev.misure && typeof ev.misure === "object" && (
-                            <div style={{ marginBottom: 10 }}>
-                              <div style={{ fontSize: 9, fontWeight: 800, color: "#475A75", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 5, display: "flex", alignItems: "center", gap: 5 }}>
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 6H3M21 12H3M21 18H3"/></svg>
-                                Misure rilevate
-                              </div>
-                              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4 }}>
-                                {Object.entries(ev.misure).slice(0, 8).map(([k, v]: any) => (
-                                  <div key={k} style={{ background: "#F1F5F9", borderRadius: 6, padding: "5px 6px", textAlign: "center" as any }}>
-                                    <div style={{ fontSize: 8.5, color: "#94A3B8", fontWeight: 800, letterSpacing: "0.3px", textTransform: "uppercase" as any }}>{k}</div>
-                                    <div style={{ fontSize: 11, color: "#0A1628", fontWeight: 800, marginTop: 1 }}>{String(v)}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          {/* ═══ TIMELINE UNIVERSALE · componente standalone ═══ */}
+          <Timeline
+            modulo="commessa"
+            entitaId={cV70.id || ""}
+            aziendaId={(cV70 as any).azienda_id || (cV70 as any).aziendaId || undefined}
+            titolo="Cronologia commessa"
+          />
 
         </div>
       </div>
