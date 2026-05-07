@@ -100,7 +100,7 @@ export default function MessaggiPanel() {
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 12px) 10px 0" }}>
           <div style={{
             background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
-            padding: "14px 16px",
+            padding: "16px 16px 18px",
             borderRadius: 22,
             boxShadow: "0 8px 22px rgba(15,23,42,0.25)",
           }}>
@@ -123,7 +123,7 @@ export default function MessaggiPanel() {
             </div>
 
             {/* Tab switch coerente con agenda */}
-            <div style={{ display: "flex", gap: 4, marginTop: 12, background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: 3 }}>
+            <div style={{ display: "flex", gap: 4, marginTop: 14, background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: 3 }}>
               {[
                 { id:"chat", l:"Chat", ico:ICO.messageCircle, count:unread },
                 { id:"email", l:"Email", ico:ICO.mail, count:gmailMessages.filter(m => m.unread).length },
@@ -158,61 +158,289 @@ export default function MessaggiPanel() {
         </div>
         {/* == CHAT TAB == */}
         {msgSubTab === "chat" && (<>
-          <div style={{ padding:"10px 14px 8px" }}>
+          {/* ═══ INSIGHTS COMPATTI (max 3) ═══ */}
+          {(() => {
+            const insights: any[] = [];
+            // Insight 1: Silenzio prolungato
+            const silente = msgs.find(m => !m.read && m.giorniDaInvio && m.giorniDaInvio >= 5);
+            if (silente) insights.push({
+              tipo: "silenzio",
+              icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+              title: silente.from + " non risponde da " + silente.giorniDaInvio + " giorni",
+              sub: silente.cm ? "Preventivo " + silente.cm + " inviato" : "In attesa di risposta",
+              cta: "Chiama"
+            });
+            // Insight 2: Allegati raggruppabili (>=3 foto stesso giorno)
+            const oggiMsgs = msgs.filter(m => !m.read && m.allegati);
+            if (oggiMsgs.length >= 3) insights.push({
+              tipo: "allegati",
+              icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="13" r="4"/><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/></svg>,
+              title: oggiMsgs.length + " foto da raggruppare",
+              sub: "Vuoi salvarle nel rilievo?",
+              cta: "Salva"
+            });
+            // Mostra max 2 per non saturare
+            const visibili = insights.slice(0, 2);
+            if (!visibili.length) return null;
+            return (
+              <div style={{ padding: "10px 14px 4px" }}>
+                <div style={{ fontSize: 9.5, fontWeight: 800, color: "#1E3A5F", letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 7, paddingLeft: 4 }}>
+                  Da controllare
+                </div>
+                {visibili.map((ins, i) => (
+                  <div key={i} style={{
+                    background: "#FFFFFF",
+                    borderRadius: 12,
+                    padding: 10,
+                    marginBottom: 6,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 9,
+                    borderLeft: "3px solid #6D28D9",
+                    boxShadow: "0 2px 6px rgba(15,23,42,0.06)",
+                  }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 9,
+                      background: "#F5F3FF", color: "#6D28D9",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                    }}>{ins.icon}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 800, color: "#0A1628", lineHeight: 1.3 }}>{ins.title}</div>
+                      <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 2 }}>{ins.sub}</div>
+                    </div>
+                    <button style={{
+                      background: "#6D28D9", color: "#FFF",
+                      padding: "5px 10px", borderRadius: 7,
+                      fontSize: 10, fontWeight: 800,
+                      border: "none", cursor: "pointer",
+                      flexShrink: 0,
+                      WebkitTapHighlightColor: "transparent",
+                      touchAction: "manipulation",
+                    }}>{ins.cta}</button>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* ═══ SEARCH BAR ═══ */}
+          <div style={{ padding: "10px 14px 8px" }}>
             <div style={{
-              display:"flex", alignItems:"center", gap:8, padding:"11px 14px",
-              background:"#FFFFFF",
-              borderRadius:13,
-              boxShadow:"0 6px 16px rgba(30,58,95,0.15), inset 0 1px 1px rgba(255,255,255,0.8)",
-              border:"1px solid rgba(148,163,184,0.5)",
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "10px 14px",
+              background: "#FFFFFF",
+              borderRadius: 12,
+              border: "1px solid #CBD5E1",
+              boxShadow: "0 2px 6px rgba(15,23,42,0.05)",
             }}>
-              <Ico d={ICO.search} s={14} c="#475A75" />
-              <input style={{ flex:1, border:"none", background:"transparent", fontSize:14, fontWeight:600, color:"#0D1F1F", outline:"none", fontFamily:"inherit" }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
-              {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor:"pointer", fontSize:16, color:"#475A75" }}>×</div>}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475A75" strokeWidth="2.2" strokeLinecap="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input style={{
+                flex: 1, border: "none", background: "transparent",
+                fontSize: 13, fontWeight: 600, color: "#0A1628",
+                outline: "none", fontFamily: "inherit",
+              }} placeholder="Cerca cliente, commessa, parola..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
+              {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor: "pointer", fontSize: 16, color: "#475A75", padding: "0 4px" }}>×</div>}
             </div>
           </div>
-          <div style={{ display:"flex", gap:6, padding:"0 14px 10px", overflowX:"auto" }}>
+
+          {/* ═══ FILTRI CANALE NAVY/BIANCO ═══ */}
+          <div style={{ display: "flex", gap: 5, padding: "0 14px 10px", overflowX: "auto" }}>
             {[
-              { id:"tutti", l:"Tutti", c:"#1E3A5F" },
-              { id:"whatsapp", l:"WhatsApp", ico:ICO.messageCircle, c:"#25d366" },
-              { id:"email", l:"Email", ico:ICO.mail, c:"#3B7FE0" },
-              { id:"sms", l:"SMS", ico:ICO.phone, c:"#D08008" },
-              { id:"telegram", l:"Telegram", ico:ICO.send, c:"#0088cc" },
+              { id: "tutti", l: "Tutti", c: "#1E3A5F" },
+              { id: "whatsapp", l: "WhatsApp", ico: ICO.messageCircle, c: "#25D366" },
+              { id: "email", l: "Email", ico: ICO.mail, c: "#4A7AB0" },
+              { id: "sms", l: "SMS", ico: ICO.phone, c: "#92400E" },
+              { id: "telegram", l: "Telegram", ico: ICO.send, c: "#0088CC" },
             ].map(f => {
               const unr = f.id === "tutti" ? unread : msgs.filter(m => m.canale === f.id && !m.read).length;
               const sel = msgFilter === f.id;
               return (
-                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding:"8px 14px", borderRadius:18, border: sel ? "none" : "1px solid #CBD5E1", background: sel ? `linear-gradient(145deg, ${f.c}, ${f.c}CC)` : "#FFFFFF", fontSize:11, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#475A75", display:"flex", alignItems:"center", gap:5, boxShadow: sel ? `0 4px 10px ${f.c}40, inset 0 1px 1px rgba(255,255,255,0.2)` : "0 3px 8px rgba(15,23,42,0.10)", letterSpacing:"0.2px" }}>
-                  {f.ico && <Ico d={f.ico} s={12} c={sel ? "white" : "#475A75"} />}{f.l}
-                  {unr > 0 && <span style={{ width:16, height:16, borderRadius:"50%", background: sel ? "rgba(255,255,255,0.3)" : f.c, color:"white", fontSize:9, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center" }}>{unr}</span>}
-                </div>
+                <button key={f.id} onClick={() => setMsgFilter(f.id)} style={{
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${sel ? "#1E3A5F" : "#CBD5E1"}`,
+                  background: sel ? "#1E3A5F" : "#FFFFFF",
+                  color: sel ? "#FFF" : "#475A75",
+                  fontSize: 11, fontWeight: 700,
+                  cursor: "pointer", fontFamily: "inherit",
+                  whiteSpace: "nowrap" as const,
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  flexShrink: 0,
+                  WebkitTapHighlightColor: "transparent",
+                  touchAction: "manipulation",
+                  letterSpacing: 0.2,
+                }}>
+                  {f.ico && <Ico d={f.ico} s={11} c={sel ? "#FFF" : f.c} />}
+                  <span>{f.l}</span>
+                  {unr > 0 && <span style={{
+                    background: sel ? "rgba(15,27,45,0.9)" : "#475A75",
+                    color: "#FFF",
+                    fontSize: 9, fontWeight: 800,
+                    padding: "1px 6px", borderRadius: 999,
+                    minWidth: 18, textAlign: "center" as const,
+                  }}>{unr}</span>}
+                </button>
               );
             })}
           </div>
-          <div style={{ padding:"0 14px" }}>
+
+          {/* ═══ LISTA CONVERSAZIONI ═══ */}
+          <div style={{ padding: "0 14px" }}>
             {filteredMsgs.length === 0 ? (
-              <div style={{ padding:30, textAlign:"center", color:"#475A75", fontSize:13, fontWeight:700 }}>Nessun messaggio</div>
-            ) : (
-              <div style={{ background:"#FFFFFF", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(15,23,42,0.12)", border:"1px solid #CBD5E1" }}>
-                {filteredMsgs.map(m => (
-                  <div key={m.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"13px 14px", borderBottom:"0.5px solid #F0EFEC", cursor:"pointer", background: m.read ? "transparent" : "#DBE6F1" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
-                    <div style={{ width:44, height:44, borderRadius:12, background: chBg[m.canale] || "#F1F5F9", border:`2px solid ${chCol[m.canale] || "#CBD5E1"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:900, color: chCol[m.canale] || "#1E3A5F", flexShrink:0, position:"relative", boxShadow:"0 2px 6px rgba(0,0,0,0.1)" }}>
-                      {m.from.charAt(0).toUpperCase()}
-                      <div style={{ position:"absolute", bottom:-2, right:-2, background:"white", borderRadius:"50%", padding:1 }}>{chIco[m.canale]}</div>
+              <div style={{
+                background: "#FFFFFF",
+                border: "1px dashed #CBD5E1",
+                borderRadius: 14,
+                padding: 30,
+                textAlign: "center" as const,
+                color: "#475A75",
+                fontSize: 13,
+                fontWeight: 700,
+              }}>Nessun messaggio</div>
+            ) : (() => {
+              // Raggruppa: urgenti / non letti / letti
+              const urgenti = filteredMsgs.filter((m: any) => m.urgente || m.priorita === "alta");
+              const nonLetti = filteredMsgs.filter((m: any) => !m.read && !m.urgente && m.priorita !== "alta");
+              const letti = filteredMsgs.filter((m: any) => m.read);
+
+              const renderCard = (m: any) => {
+                const canColor = chCol[m.canale] || "#1E3A5F";
+                const canBg = chBg[m.canale] || "#F1F5F9";
+                const isUnread = !m.read;
+                const isUrg = m.urgente || m.priorita === "alta";
+                const initials = (m.from || "").split(" ").map((s: string) => s.charAt(0)).slice(0, 2).join("").toUpperCase();
+
+                return (
+                  <div key={m.id} onClick={() => {
+                    setMsgs((ms: any) => ms.map((x: any) => x.id === m.id ? { ...x, read: true } : x));
+                    setSelectedMsg(m);
+                  }} style={{
+                    background: isUrg ? "#FEE2E2" : (isUnread ? "#DBE6F1" : "#FFFFFF"),
+                    border: "1px solid " + (isUrg ? "#991B1B" : (isUnread ? "#1E3A5F" : "#E2E8F0")),
+                    borderLeft: "4px solid " + (isUrg ? "#991B1B" : (isUnread ? "#1E3A5F" : "transparent")),
+                    borderRadius: 14,
+                    padding: 10,
+                    marginBottom: 7,
+                    display: "flex", alignItems: "flex-start", gap: 10,
+                    cursor: "pointer",
+                    WebkitTapHighlightColor: "transparent",
+                    touchAction: "manipulation",
+                  }}>
+                    {/* AVATAR + canale badge */}
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 11,
+                      background: "linear-gradient(135deg, #1E3A5F 0%, #2D5A87 100%)",
+                      color: "#FFF",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 12.5, fontWeight: 800,
+                      flexShrink: 0, position: "relative" as const,
+                    }}>
+                      {initials || (m.from || "?").charAt(0).toUpperCase()}
+                      <div style={{
+                        position: "absolute" as const,
+                        bottom: -2, right: -2,
+                        width: 17, height: 17, borderRadius: "50%",
+                        background: canColor,
+                        border: "2px solid #FFF",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>{m.canale && chIco[m.canale] && React.cloneElement(chIco[m.canale], { c: "#FFF", s: 9 })}</div>
                     </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <div style={{ fontSize:14, fontWeight: m.read ? 700 : 900, color:"#0D1F1F", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const }}>{m.from}</div>
-                        <div style={{ fontSize:10, color: m.read ? "#475A75" : "#1E3A5F", fontWeight: m.read ? 700 : 900, flexShrink:0, marginLeft:8 }}>{m.time}</div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Riga 1: nome + ora */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 1 }}>
+                        <div style={{
+                          fontSize: 13, fontWeight: 800,
+                          color: "#0A1628",
+                          textTransform: "uppercase" as const,
+                          letterSpacing: -0.2,
+                          textOverflow: "ellipsis" as const,
+                          overflow: "hidden" as const,
+                          whiteSpace: "nowrap" as const,
+                        }}>{m.from}</div>
+                        <div style={{
+                          fontSize: 10, color: "#94A3B8",
+                          fontWeight: 600, flexShrink: 0,
+                          marginLeft: 6,
+                        }}>{m.time}</div>
                       </div>
-                      <div style={{ fontSize:12, fontWeight: m.read ? 600 : 800, color: m.read ? "#475A75" : "#0D1F1F", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const }}>{m.preview}</div>
-                      {m.cm && <div style={{ marginTop:4 }}><span style={{ padding:"2px 8px", borderRadius:20, background:"rgba(208,128,8,0.12)", color:"#D08008", fontSize:9, fontWeight:900, boxShadow:"0 2px 0 0 rgba(208,128,8,0.25)" }}>{m.cm}</span></div>}
+
+                      {/* Riga 2: pills */}
+                      {(m.cm || isUrg) && (
+                        <div style={{ display: "flex", gap: 4, marginBottom: 3 }}>
+                          {m.cm && <span style={{
+                            background: "#1E3A5F", color: "#FFF",
+                            fontFamily: "JetBrains Mono, monospace",
+                            fontSize: 9, fontWeight: 800,
+                            padding: "2px 6px", borderRadius: 4,
+                            letterSpacing: 0.3,
+                          }}>{m.cm}</span>}
+                          {isUrg && <span style={{
+                            background: "#FEE2E2", color: "#991B1B",
+                            fontSize: 9, fontWeight: 800,
+                            padding: "2px 6px", borderRadius: 4,
+                            letterSpacing: 0.3, textTransform: "uppercase" as const,
+                          }}>URGENTE</span>}
+                        </div>
+                      )}
+
+                      {/* Riga 3: preview */}
+                      <div style={{
+                        fontSize: 11.5,
+                        color: isUnread ? "#0A1628" : "#475A75",
+                        fontWeight: isUnread ? 600 : 500,
+                        lineHeight: 1.35,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical" as const,
+                        overflow: "hidden" as const,
+                      }}>{m.preview}</div>
+
+                      {/* Riga 4: badge non letti se ce ne sono */}
+                      {isUnread && m.unreadCount > 0 && (
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+                          <span style={{
+                            background: "#1E3A5F", color: "#FFF",
+                            fontSize: 10, fontWeight: 800,
+                            padding: "2px 7px", borderRadius: 999,
+                            minWidth: 22, textAlign: "center" as const,
+                          }}>{m.unreadCount}</span>
+                        </div>
+                      )}
                     </div>
-                    {!m.read && <div style={{ width:9, height:9, borderRadius:"50%", background:"#1E3A5F", flexShrink:0, boxShadow:"0 2px 0 0 #156060" }} />}
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              };
+
+              return (
+                <>
+                  {urgenti.length > 0 && (<>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: "#991B1B", letterSpacing: 0.6, textTransform: "uppercase", margin: "10px 4px 6px", display: "flex", alignItems: "center", gap: 5 }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+                      Urgente
+                    </div>
+                    {urgenti.map(renderCard)}
+                  </>)}
+
+                  {nonLetti.length > 0 && (<>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: "#1E3A5F", letterSpacing: 0.6, textTransform: "uppercase", margin: (urgenti.length > 0 ? "12px" : "10px") + " 4px 6px" }}>
+                      Da rispondere
+                    </div>
+                    {nonLetti.map(renderCard)}
+                  </>)}
+
+                  {letti.length > 0 && (<>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: "#475A75", letterSpacing: 0.6, textTransform: "uppercase", margin: ((urgenti.length + nonLetti.length) > 0 ? "12px" : "10px") + " 4px 6px" }}>
+                      Letti
+                    </div>
+                    {letti.map(renderCard)}
+                  </>)}
+                </>
+              );
+            })()}
           </div>
         </>)}
 
@@ -764,7 +992,7 @@ Grazie per il suo messaggio.
             );})}
           </div>
           <div style={{ padding:"0 14px" }}>
-            <div style={{ background:"#FFFFFF", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(15,23,42,0.12)", border:"1px solid #CBD5E1" }}>
+            <div style={{ background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(30,58,95,0.15)", border:"1px solid rgba(148,163,184,0.5)" }}>
               {filteredContatti.length === 0 ? (
                 <div style={{ padding:30, textAlign:"center", color:"#475A75", fontSize:13, fontWeight:700 }}>Nessun contatto trovato</div>
               ) : filteredContatti.map(c => {
