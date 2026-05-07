@@ -222,7 +222,7 @@ export default function MessaggiPanel() {
                     {st.count > 0 && (
                       <span style={{
                         fontSize: 8, fontWeight: 800, padding: "1px 4px", borderRadius: 8,
-                        background: active ? "#FF7B4D" : "rgba(255,255,255,0.3)",
+                        background: active ? "#991B1B" : "rgba(255,255,255,0.3)",
                         color: "#fff",
                       }}>{st.count}</span>
                     )}
