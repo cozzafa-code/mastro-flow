@@ -153,10 +153,10 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
                       {tel && (
                         <a href={telLink(tel)} onClick={(e: any) => e.stopPropagation()} style={{
                           flex: 1, padding: "7px", borderRadius: 8, textDecoration: "none",
-                          background: "rgba(29,158,117,0.1)", color: "#04342C",
+                          background: "rgba(30,58,95,0.1)", color: "#0F1B2D",
                           fontSize: 10, fontWeight: 900, textAlign: "center" as any,
                           letterSpacing: "0.3px",
-                          border: "1px solid rgba(29,158,117,0.3)",
+                          border: "1px solid rgba(30,58,95,0.3)",
                         }}>☎ CHIAMA</a>
                       )}
                       {tel && (
@@ -580,7 +580,7 @@ export default function CMDetailPanel() {
         }}>
           {/* HEADER (codice + cliente) */}
           <div style={{
-            background: "linear-gradient(135deg, #1B6B5E 0%, #0F4D44 100%)",
+            background: "linear-gradient(135deg, #1B6B5E 0%, #0F1B2D 100%)",
             borderRadius: 20,
             padding: "16px 18px",
             marginBottom: 12,
@@ -626,7 +626,7 @@ export default function CMDetailPanel() {
           {/* BIG CARD PREVENTIVO INVIATO (layout v73-style ma colore teal scuro) */}
           <div style={{
             borderRadius: 26, padding: "22px 20px 20px",
-            background: "linear-gradient(155deg, #2DA89A 0%, #1B6B5E 55%, #0F4D44 100%)",
+            background: "linear-gradient(155deg, #1E3A5F 0%, #1B6B5E 55%, #0F1B2D 100%)",
             color: "#fff",
             boxShadow: "0 18px 40px rgba(15,77,68,0.35), 0 6px 12px rgba(15,77,68,0.2)",
             position: "relative", overflow: "hidden",
@@ -685,7 +685,7 @@ export default function CMDetailPanel() {
               }}>
                 <div style={{
                   width: 46, height: 46, borderRadius: 13,
-                  background: tipoRis === "accettato" ? "linear-gradient(145deg, #5FE0A8, #1D9E75)" : "linear-gradient(145deg, #2DA89A, #0F4D44)",
+                  background: tipoRis === "accettato" ? "linear-gradient(145deg, #2D5A87, #1E3A5F)" : "linear-gradient(145deg, #1E3A5F, #0F1B2D)",
                   boxShadow: "0 4px 10px rgba(15,77,68,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
                   color: "#fff",
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -698,14 +698,14 @@ export default function CMDetailPanel() {
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F4D44", letterSpacing: "-0.1px" }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F1B2D", letterSpacing: "-0.1px" }}>
                     {tipoRis === "accettato" ? "Crea conferma d'ordine" : "Aggiorna preventivo"}
                   </div>
                   <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>
                     {tipoRis === "accettato" ? "Avanza alla fase conferma e parti con l'ordine" : "Crea un nuovo preventivo R" + (numeroRilievo + 1) + " partendo da quello attuale"}
                   </div>
                   <div style={{
-                    fontSize: 8.5, fontWeight: 900, color: "#0F4D44",
+                    fontSize: 8.5, fontWeight: 900, color: "#0F1B2D",
                     background: "linear-gradient(145deg, rgba(45,168,154,0.3), rgba(15,77,68,0.18))",
                     padding: "3px 8px", borderRadius: 50,
                     letterSpacing: "0.4px", display: "inline-block", marginTop: 6,
@@ -745,7 +745,7 @@ export default function CMDetailPanel() {
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F4D44", letterSpacing: "-0.1px" }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F1B2D", letterSpacing: "-0.1px" }}>
                     {telPulitoV23 && tipoRis !== "accettato" ? "Contatta cliente" : "Aspetta cliente"}
                   </div>
                   <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>
@@ -1340,8 +1340,8 @@ export default function CMDetailPanel() {
               }}>
                 <div style={{
                   width: 46, height: 46, borderRadius: 13,
-                  background: "linear-gradient(145deg, #5DCAA5, #1D9E75)",
-                  boxShadow: "0 4px 10px rgba(29,158,117,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
+                  background: "linear-gradient(145deg, #2D5A87, #1E3A5F)",
+                  boxShadow: "0 4px 10px rgba(30,58,95,0.30), inset 0 1px 1px rgba(255,255,255,0.3)",
                   color: "#fff",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   flexShrink: 0,
@@ -1349,17 +1349,17 @@ export default function CMDetailPanel() {
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#04342C", letterSpacing: "-0.1px" }}>Preventivo al volo</div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F1B2D", letterSpacing: "-0.1px" }}>Preventivo al volo</div>
                   <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Hai già i prezzi, invia subito al cliente in 2 tap</div>
                   <div style={{
-                    fontSize: 8.5, fontWeight: 900, color: "#04342C",
-                    background: "linear-gradient(145deg, rgba(93,202,165,0.3), rgba(29,158,117,0.18))",
+                    fontSize: 8.5, fontWeight: 900, color: "#0F1B2D",
+                    background: "linear-gradient(145deg, rgba(93,202,165,0.3), rgba(30,58,95,0.18))",
                     padding: "3px 8px", borderRadius: 50,
                     letterSpacing: "0.4px", display: "inline-block", marginTop: 6,
-                    border: "1px solid rgba(29,158,117,0.25)",
+                    border: "1px solid rgba(30,58,95,0.25)",
                   }}>⚡ CONSIGLIATO</div>
                 </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
               </div>
 
               {/* STRADA 2 - Chiudi rilievo e basta */}
@@ -1380,18 +1380,18 @@ export default function CMDetailPanel() {
               }}>
                 <div style={{
                   width: 46, height: 46, borderRadius: 13,
-                  background: "linear-gradient(145deg, rgba(93,202,165,0.2), rgba(29,158,117,0.1))",
+                  background: "linear-gradient(145deg, rgba(93,202,165,0.2), rgba(30,58,95,0.1))",
                   boxShadow: "inset 0 1px 2px rgba(255,255,255,0.5)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   flexShrink: 0,
                 }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#04342C", letterSpacing: "-0.1px" }}>Chiudi rilievo e basta</div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F1B2D", letterSpacing: "-0.1px" }}>Chiudi rilievo e basta</div>
                   <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Salva il rilievo, il preventivo lo fai dopo in azienda con calma</div>
                 </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
               </div>
             </div>
 
@@ -1442,7 +1442,7 @@ export default function CMDetailPanel() {
             const dataFirmaFmt29 = dataFirma29 ? new Date(dataFirma29).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : null;
 
             // Badge stato
-            const badge29 = haFirmato29 ? { txt: "FIRMATO", bg: "#15803D", icon: "✓" } :
+            const badge29 = haFirmato29 ? { txt: "FIRMATO", bg: "#065F46", icon: "✓" } :
                             (tipoRis29 === "accettato" && c29.fase === "conferma") ? { txt: "DA FIRMARE", bg: "#F59E0B", icon: "✍" } :
                             tipoRis29 === "accettato" ? { txt: "ACCETTATO", bg: "#28A268", icon: "✓" } :
                             tipoRis29 === "modifiche" ? { txt: "CHIEDE MODIFICHE", bg: "#F59E0B", icon: "✏" } :
@@ -1451,7 +1451,7 @@ export default function CMDetailPanel() {
                             { txt: "IN ATTESA" + giorniLbl29, bg: inAttesaBg29, icon: "⏳" };
 
             // Prossima azione consigliata
-            const prossima = haFirmato29 ? { lbl: "AVVIA PRODUZIONE", bg: "linear-gradient(135deg, #28A0A0 0%, #1A7A7A 100%)", action: () => { setFaseTo(c29.id, "ordini"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "ordini" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "ordini" }) : p); } } :
+            const prossima = haFirmato29 ? { lbl: "AVVIA PRODUZIONE", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { setFaseTo(c29.id, "ordini"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "ordini" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "ordini" }) : p); } } :
                            (tipoRis29 === "accettato" && c29.fase === "conferma") ? { lbl: "INVIA LINK FIRMA AL CLIENTE", bg: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)", action: () => setShowModalFirma(true) } :
                            tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D\'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); setShowModalFirma(true); } } :
                            tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
@@ -1466,7 +1466,7 @@ export default function CMDetailPanel() {
                              setSelectedRilievo(nuovo);
                            } } :
                            tipoRis29 === "chiamare" && telPul29 ? { lbl: "💬 CONTATTA SU WHATSAPP", bg: "#3B82F6", action: () => window.open("https://wa.me/" + numWA29, "_blank") } :
-                           { lbl: "REINVIA PREVENTIVO", bg: "#28A0A0", action: async () => {
+                           { lbl: "REINVIA PREVENTIVO", bg: "#1E3A5F", action: async () => {
                              // v54: rigenero il link + apro il modal di invio
                              try {
                                const r = await fetch("/api/preventivo-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cm_id: c29.id, cm_code: c29.code, cliente: (c29.cliente || "") + " " + (c29.cognome || "")}) });
@@ -1498,13 +1498,13 @@ export default function CMDetailPanel() {
                 borderRadius: 18,
                 padding: "14px 16px",
                 boxShadow: "0 4px 14px rgba(13,31,31,0.08)",
-                border: "1px solid rgba(40,160,160,0.15)",
+                border: "1px solid rgba(30,58,95,0.15)",
                 marginTop: 0,
               }}>
                 {/* Header pannello */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <div>
-                    <div style={{ fontSize: 9, color: "#28A0A0", fontWeight: 900, letterSpacing: 1.2 }}>{haFirmato29 ? "📋 GESTIONE CONFERMA D'ORDINE" : "📋 GESTIONE PREVENTIVI"}</div>
+                    <div style={{ fontSize: 9, color: "#1E3A5F", fontWeight: 900, letterSpacing: 1.2 }}>{haFirmato29 ? "📋 GESTIONE CONFERMA D'ORDINE" : "📋 GESTIONE PREVENTIVI"}</div>
                     <div style={{ fontSize: 13, color: "#0D1F1F", fontWeight: 800, marginTop: 2 }}>
                       {haFirmato29
                         ? <>Firmata {dataFirmaFmt29 || "—"} · totale {fmtEur29(totale29)}</>
@@ -1528,14 +1528,14 @@ export default function CMDetailPanel() {
                     const isAttivo = idx === 0;
                     return (
                       <div key={r.id || idx} style={{
-                        background: isAttivo ? "linear-gradient(135deg, rgba(40,160,160,0.08) 0%, rgba(40,160,160,0.02) 100%)" : "#FAFAFA",
-                        border: isAttivo ? "1.5px solid rgba(40,160,160,0.3)" : "1px solid #E4E4E7",
+                        background: isAttivo ? "linear-gradient(135deg, rgba(30,58,95,0.08) 0%, rgba(30,58,95,0.02) 100%)" : "#FAFAFA",
+                        border: isAttivo ? "1.5px solid rgba(30,58,95,0.3)" : "1px solid #E4E4E7",
                         borderRadius: 12, padding: "10px 12px",
                         display: "flex", alignItems: "center", gap: 10,
                       }}>
                         <div style={{
                           width: 30, height: 30, borderRadius: 15, flexShrink: 0,
-                          background: isAttivo ? "#28A0A0" : "#A1A1AA",
+                          background: isAttivo ? "#1E3A5F" : "#A1A1AA",
                           color: "#fff",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 11, fontWeight: 900,
@@ -1543,7 +1543,7 @@ export default function CMDetailPanel() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 12, fontWeight: 800, color: "#0D1F1F", display: "flex", alignItems: "center", gap: 6 }}>
                             Rilievo R{r.numero || idx + 1}
-                            {isAttivo && <span style={{ fontSize: 8, fontWeight: 900, color: "#28A0A0", background: "rgba(40,160,160,0.15)", padding: "2px 6px", borderRadius: 50, letterSpacing: 0.5 }}>ATTIVO</span>}
+                            {isAttivo && <span style={{ fontSize: 8, fontWeight: 900, color: "#1E3A5F", background: "rgba(30,58,95,0.15)", padding: "2px 6px", borderRadius: 50, letterSpacing: 0.5 }}>ATTIVO</span>}
                           </div>
                           <div style={{ fontSize: 10, color: "#71717A", marginTop: 2 }}>
                             {r.data ? new Date(r.data).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "—"}
@@ -1563,7 +1563,7 @@ export default function CMDetailPanel() {
                             // v56: navigo a sopralluoghi per aprire vani/misure
                             if (typeof setCmSubTab === "function") setCmSubTab("sopralluoghi");
                           }} style={{
-                            padding: "6px 10px", borderRadius: 8, border: "1px solid #28A0A0",
+                            padding: "6px 10px", borderRadius: 8, border: "1px solid #1E3A5F",
                             background: "#fff", color: "#0F5E55",
                             fontSize: 10, fontWeight: 800, cursor: "pointer", flexShrink: 0,
                           }}>
@@ -1577,7 +1577,7 @@ export default function CMDetailPanel() {
 
                 {/* v53: TIMELINE 4 step ciclo preventivo */}
                 <div style={{ background: "#F8FAFA", borderRadius: 10, padding: "10px 12px", marginBottom: 12, border: "1px solid #E4F2F2" }}>
-                  <div style={{ fontSize: 9, fontWeight: 900, color: "#28A0A0", letterSpacing: 1, marginBottom: 8 }}>CICLO PREVENTIVO</div>
+                  <div style={{ fontSize: 9, fontWeight: 900, color: "#1E3A5F", letterSpacing: 1, marginBottom: 8 }}>CICLO PREVENTIVO</div>
                   {(() => {
                     const steps = [
                       { lbl: "Inviato", done: !!c29.preventivoInviatoAt || !!c29.dataPreventivoInvio || haPreventivoInviato, ts: c29.preventivoInviatoAt ? new Date(c29.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : (c29.dataPreventivoInvio ? new Date(c29.dataPreventivoInvio).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : null) },
@@ -1590,7 +1590,7 @@ export default function CMDetailPanel() {
                     const activeIdx = steps.findIndex((s: any) => !s.done);
                     return steps.map((s: any, i: number) => {
                       const isActive = i === activeIdx;
-                      const dot = s.warn ? "#F59E0B" : s.done ? "#15803D" : isActive ? "#28A0A0" : "#D4D4D8";
+                      const dot = s.warn ? "#F59E0B" : s.done ? "#065F46" : isActive ? "#1E3A5F" : "#D4D4D8";
                       const txt = s.done ? "#0D1F1F" : isActive ? "#0D1F1F" : "#A1A1AA";
                       return (
                         <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: i === steps.length - 1 ? 0 : 6 }}>
@@ -1749,7 +1749,7 @@ export default function CMDetailPanel() {
             const diarioList: any[] = (cV70.diarioCliente || []).slice().sort((a: any, b: any) => (b.ts || 0) - (a.ts || 0));
             const TAG_COLORS: any = {
               ACCORDO:      { bg: "rgba(239,159,39,0.14)",  fg: "#854F0B" },
-              TELEFONATA:   { bg: "rgba(127,119,221,0.14)", fg: "#3C3489" },
+              TELEFONATA:   { bg: "rgba(30,58,95,0.14)", fg: "#3C3489" },
               SOPRALLUOGO:  { bg: "rgba(55,138,221,0.14)",  fg: "#042C53" },
               WHATSAPP:     { bg: "rgba(37,211,102,0.14)",  fg: "#075E54" },
               EMAIL:        { bg: "rgba(55,138,221,0.14)",  fg: "#042C53" },
@@ -1772,13 +1772,13 @@ export default function CMDetailPanel() {
             return (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {/* Scheda cliente */}
-                <div style={{ background: "linear-gradient(155deg, #E8F8F3 0%, #C4EAD9 100%)", border: "1px solid rgba(29,158,117,0.18)", borderRadius: 18, padding: 14, display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ background: "linear-gradient(155deg, #E8F8F3 0%, #C4EAD9 100%)", border: "1px solid rgba(30,58,95,0.18)", borderRadius: 18, padding: 14, display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{
                     width: 52, height: 52, borderRadius: 16,
-                    background: "linear-gradient(145deg, #5DCAA5, #1D9E75)",
+                    background: "linear-gradient(145deg, #2D5A87, #1E3A5F)",
                     color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 17, fontWeight: 900,
-                    boxShadow: "0 4px 12px rgba(29,158,117,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
+                    boxShadow: "0 4px 12px rgba(30,58,95,0.30), inset 0 1px 1px rgba(255,255,255,0.3)",
                     textShadow: "0 1px 2px rgba(0,0,0,0.15)", flexShrink: 0,
                   }}>
                     {((cV70.cliente || "?").split(/\s+/).slice(0, 2).map((w: string) => w[0] || "").join("") || "?").toUpperCase()}
@@ -1794,7 +1794,7 @@ export default function CMDetailPanel() {
 
                 {/* Azioni rapide */}
                 <div style={{ display: "flex", gap: 6 }}>
-                  {cV70.telefono && <a href={`tel:${cV70.telefono}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(29,158,117,0.12)", color: "#04342C", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(29,158,117,0.25)" }}>☎ CHIAMA</a>}
+                  {cV70.telefono && <a href={`tel:${cV70.telefono}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(30,58,95,0.12)", color: "#0F1B2D", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(30,58,95,0.25)" }}>☎ CHIAMA</a>}
                   {cV70.telefono && <a href={`https://wa.me/${(cV70.telefono || "").replace(/\D/g, "")}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(37,211,102,0.12)", color: "#075E54", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(37,211,102,0.25)" }}>💬 WA</a>}
                   {cV70.email && <a href={`mailto:${cV70.email}?subject=Commessa ${cV70.code || ""}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>✉ EMAIL</a>}
                   {cV70.indirizzo && <a href={`https://maps.google.com/?q=${encodeURIComponent(cV70.indirizzo)}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>🗺 NAVIGA</a>}
@@ -1810,11 +1810,11 @@ export default function CMDetailPanel() {
                     <div onClick={() => { setDiarioFormOpenV74(v => !v); setDiarioTestoV74(""); setDiarioChiV74("IO"); setDiarioTagV74("NOTA"); }} style={{
                       display: "flex", alignItems: "center", gap: 5,
                       padding: "7px 12px",
-                      background: diarioFormOpenV74 ? "rgba(226,75,74,0.12)" : "linear-gradient(145deg, #5DCAA5, #1D9E75)",
+                      background: diarioFormOpenV74 ? "rgba(226,75,74,0.12)" : "linear-gradient(145deg, #2D5A87, #1E3A5F)",
                       color: diarioFormOpenV74 ? "#8B1A1A" : "#fff",
                       borderRadius: 50, fontSize: 10, fontWeight: 900, letterSpacing: "0.3px",
                       cursor: "pointer",
-                      boxShadow: diarioFormOpenV74 ? "none" : "0 3px 8px rgba(29,158,117,0.3)",
+                      boxShadow: diarioFormOpenV74 ? "none" : "0 3px 8px rgba(30,58,95,0.3)",
                       border: diarioFormOpenV74 ? "1px solid rgba(226,75,74,0.3)" : "none",
                     }}>
                       {diarioFormOpenV74 ? "✕ CHIUDI" : "+ SCRIVI"}
@@ -1828,7 +1828,7 @@ export default function CMDetailPanel() {
                       <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
                         <div onClick={() => setDiarioChiV74("IO")} style={{
                           flex: 1, padding: "8px 10px", borderRadius: 10, cursor: "pointer",
-                          background: diarioChiV74 === "IO" ? "rgba(127,119,221,0.18)" : "#fff",
+                          background: diarioChiV74 === "IO" ? "rgba(30,58,95,0.18)" : "#fff",
                           border: `1.5px solid ${diarioChiV74 === "IO" ? "#7F77DD" : "rgba(200,228,228,0.5)"}`,
                           textAlign: "center" as any, fontSize: 11, fontWeight: 900,
                           color: diarioChiV74 === "IO" ? "#3C3489" : "#5A7878",
@@ -1836,10 +1836,10 @@ export default function CMDetailPanel() {
                         }}>IO</div>
                         <div onClick={() => setDiarioChiV74("CLIENTE")} style={{
                           flex: 1, padding: "8px 10px", borderRadius: 10, cursor: "pointer",
-                          background: diarioChiV74 === "CLIENTE" ? "rgba(29,158,117,0.14)" : "#fff",
-                          border: `1.5px solid ${diarioChiV74 === "CLIENTE" ? "#1D9E75" : "rgba(200,228,228,0.5)"}`,
+                          background: diarioChiV74 === "CLIENTE" ? "rgba(30,58,95,0.14)" : "#fff",
+                          border: `1.5px solid ${diarioChiV74 === "CLIENTE" ? "#1E3A5F" : "rgba(200,228,228,0.5)"}`,
                           textAlign: "center" as any, fontSize: 11, fontWeight: 900,
-                          color: diarioChiV74 === "CLIENTE" ? "#04342C" : "#5A7878",
+                          color: diarioChiV74 === "CLIENTE" ? "#0F1B2D" : "#5A7878",
                           letterSpacing: "0.3px",
                         }}>CLIENTE</div>
                       </div>
@@ -1899,10 +1899,10 @@ export default function CMDetailPanel() {
                           setDiarioFormOpenV74(false); setDiarioTestoV74("");
                         }} style={{
                           flex: 2, padding: "9px 10px", borderRadius: 10, cursor: "pointer",
-                          background: diarioTestoV74.trim() ? "linear-gradient(145deg, #5DCAA5, #1D9E75)" : "#ccc",
+                          background: diarioTestoV74.trim() ? "linear-gradient(145deg, #2D5A87, #1E3A5F)" : "#ccc",
                           textAlign: "center" as any, fontSize: 11, fontWeight: 900,
                           color: "#fff", letterSpacing: "0.3px",
-                          boxShadow: diarioTestoV74.trim() ? "0 3px 8px rgba(29,158,117,0.3)" : "none",
+                          boxShadow: diarioTestoV74.trim() ? "0 3px 8px rgba(30,58,95,0.3)" : "none",
                         }}>SALVA VOCE</div>
                       </div>
                     </div>
@@ -1928,8 +1928,8 @@ export default function CMDetailPanel() {
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" as any }}>
                               <span style={{
                                 fontSize: 10, fontWeight: 900,
-                                color: isIo ? "#3C3489" : "#04342C",
-                                background: isIo ? "rgba(127,119,221,0.14)" : "rgba(29,158,117,0.14)",
+                                color: isIo ? "#3C3489" : "#0F1B2D",
+                                background: isIo ? "rgba(30,58,95,0.14)" : "rgba(30,58,95,0.14)",
                                 padding: "2px 8px", borderRadius: 6, letterSpacing: "0.2px",
                               }}>{ev.chi}</span>
                               <span style={{
@@ -1962,7 +1962,7 @@ export default function CMDetailPanel() {
                 {[
                   { k: "foto", l: "Foto", c: "#7F77DD", cDark: "#3C3489", tintA: "#AFA9EC", tintB: "#7F77DD", n: fotoGlobalV70, act: () => { try { (fotoInputRef as any).current?.click(); } catch (e) {} } },
                   { k: "audio", l: "Audio", c: "#EF9F27", cDark: "#854F0B", tintA: "#FAC775", tintB: "#EF9F27", n: audioGlobalV70, act: () => { try { (setShowAllegatiModal as any)("vocale"); } catch (e) {} } },
-                  { k: "nota", l: "Nota", c: "#1D9E75", cDark: "#04342C", tintA: "#5DCAA5", tintB: "#1D9E75", n: noteGlobalV70, act: () => { try { (setShowAllegatiModal as any)("nota"); (setAllegatiText as any)(""); } catch (e) {} } },
+                  { k: "nota", l: "Nota", c: "#1E3A5F", cDark: "#0F1B2D", tintA: "#2D5A87", tintB: "#1E3A5F", n: noteGlobalV70, act: () => { try { (setShowAllegatiModal as any)("nota"); (setAllegatiText as any)(""); } catch (e) {} } },
                   { k: "file", l: "File", c: "#378ADD", cDark: "#042C53", tintA: "#85B7EB", tintB: "#378ADD", n: fileGlobalV70, act: () => { try { (fileInputRef as any).current?.click(); } catch (e) {} } },
                 ].map((a: any) => (
                   <div key={a.k} onClick={a.act} style={{
@@ -2028,14 +2028,14 @@ export default function CMDetailPanel() {
                   display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
                   borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
                 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(29,158,117,0.15), rgba(29,158,117,0.08))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(30,58,95,0.15), rgba(30,58,95,0.08))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta PDF</div>
                     <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 1 }}>Scheda tecnica per officina</div>
                   </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               )}
               {/* v75 · EXPORT CSV */}
@@ -2111,7 +2111,7 @@ export default function CMDetailPanel() {
                 display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
                 borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
               }}>
-                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(127,119,221,0.15), rgba(127,119,221,0.08))", color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(30,58,95,0.15), rgba(30,58,95,0.08))", color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -2136,15 +2136,15 @@ export default function CMDetailPanel() {
                   const html = `<!DOCTYPE html>
 <html lang="it"><head><meta charset="UTF-8"><title>Commessa ${esc(cV70.code || cV70.id)}</title>
 <style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#0D1F1F;max-width:900px;margin:40px auto;padding:20px;}
-h1{color:#28A0A0;border-bottom:3px solid #28A0A0;padding-bottom:8px;}
-h2{color:#1E8080;margin-top:30px;}
+h1{color:#1E3A5F;border-bottom:3px solid #1E3A5F;padding-bottom:8px;}
+h2{color:#0F1B2D;margin-top:30px;}
 table{width:100%;border-collapse:collapse;margin-top:12px;}
-th{background:#28A0A0;color:#fff;padding:10px;text-align:left;font-size:12px;}
+th{background:#1E3A5F;color:#fff;padding:10px;text-align:left;font-size:12px;}
 td{padding:8px 10px;border-bottom:1px solid #E4F2F2;font-size:13px;}
 tr:nth-child(even){background:#F4F6F5;}
 .meta{background:#F4F6F5;padding:14px;border-radius:10px;margin-top:10px;}
 .meta div{margin:4px 0;font-size:13px;}
-.meta strong{color:#1A7A7A;margin-right:8px;}</style></head><body>
+.meta strong{color:#0F1B2D;margin-right:8px;}</style></head><body>
 <h1>Commessa ${esc(cV70.code || cV70.id)}</h1>
 <div class="meta">
 <div><strong>Cliente:</strong> ${esc(cV70.cliente || "")}</div>
@@ -2242,10 +2242,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                 <div onClick={() => setNuovoRilievoComplesso(false)} style={{
                   padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-                  background: !nuovoRilievoComplesso ? "#28A0A015" : T.card,
-                  border: `1.5px solid ${!nuovoRilievoComplesso ? "#28A0A0" : T.bdr}`,
+                  background: !nuovoRilievoComplesso ? "#1E3A5F15" : T.card,
+                  border: `1.5px solid ${!nuovoRilievoComplesso ? "#1E3A5F" : T.bdr}`,
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: !nuovoRilievoComplesso ? "#28A0A0" : T.text }}>Semplice</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: !nuovoRilievoComplesso ? "#1E3A5F" : T.text }}>Semplice</div>
                   <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Vani senza gerarchia</div>
                 </div>
                 <div onClick={() => setNuovoRilievoComplesso(true)} style={{
@@ -2435,7 +2435,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "#fff", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px", background: "#1A1A1C", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ color: "#28A0A0", fontWeight: 700, fontSize: 14 }}><I d={ICO.ruler} /> {selectedCM?.nome || "Disegno"}</span>
+          <span style={{ color: "#1E3A5F", fontWeight: 700, fontSize: 14 }}><I d={ICO.ruler} /> {selectedCM?.nome || "Disegno"}</span>
           <button onClick={() => setShowCadDraw(false)} style={{ background: "none", border: "none", color: "#fff", fontSize: 22, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ flex: 1, overflow: "hidden" }}>
@@ -2542,13 +2542,13 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
       const chipPw = (on) => ({ padding: "7px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: "pointer", background: on ? `${T.acc}15` : T.card, color: on ? T.acc : T.sub, border: `1.5px solid ${on ? T.acc : T.bdr}` });
       const chipPwGrn = (on) => ({ padding: "7px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: "pointer", background: on ? `${T.grn}15` : T.card, color: on ? T.grn : T.sub, border: `1.5px solid ${on ? T.grn : T.bdr}` });
       const inputPw = { width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" as any, background: T.card };
-      const tabPw = (t) => ({ flex: 1, padding: "10px 6px", textAlign: "center" as any, fontSize: 11, fontWeight: 700, cursor: "pointer", color: prevTab === t ? "#fff" : "#6A8484", background: prevTab === t ? "#28A0A0" : "transparent", borderRadius: 8, margin: "4px 2px", transition: "all .15s" });
+      const tabPw = (t) => ({ flex: 1, padding: "10px 6px", textAlign: "center" as any, fontSize: 11, fontWeight: 700, cursor: "pointer", color: prevTab === t ? "#fff" : "#6A8484", background: prevTab === t ? "#1E3A5F" : "transparent", borderRadius: 8, margin: "4px 2px", transition: "all .15s" });
 
       return (
         <div style={{ paddingBottom: 80 }}>
           {/* v81 · HEADER ULTRA HD identico pannello v8 */}
           <div style={{
-            background: "linear-gradient(135deg, #2FB2A8 0%, #28A0A0 45%, #1E8080 100%)",
+            background: "linear-gradient(135deg, #1E3A5F 0%, #1E3A5F 45%, #0F1B2D 100%)",
             padding: "calc(env(safe-area-inset-top, 0px) + 22px) 18px 22px",
             color: "#fff", position: "sticky", top: 0, zIndex: 30, overflow: "hidden",
             boxShadow: "0 10px 32px rgba(30,128,128,0.35), 0 4px 12px rgba(30,128,128,0.15)",
@@ -2583,8 +2583,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 18px 0" }}>
             <div style={{ fontSize: 9.5, fontWeight: 900, color: "#475A75", letterSpacing: "0.5px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 2/8</div>
             <div style={{ display: "flex", gap: 3, flex: 1 }}>
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #3ABDBD, #28A0A0)", boxShadow: "0 0 5px rgba(40,160,160,0.5)" }} />
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", boxShadow: "0 0 7px rgba(29,158,117,0.6)" }} />
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #1E3A5F)", boxShadow: "0 0 5px rgba(30,58,95,0.5)" }} />
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #2D5A87, #1E3A5F)", boxShadow: "0 0 7px rgba(30,58,95,0.6)" }} />
               <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
               <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
               <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
@@ -2592,7 +2592,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
               <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
             </div>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#1D9E75", letterSpacing: "0.5px", textTransform: "uppercase" as any, flexShrink: 0 }}>Preventivo</div>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#1E3A5F", letterSpacing: "0.5px", textTransform: "uppercase" as any, flexShrink: 0 }}>Preventivo</div>
           </div>
 
           {/* v81 · 2 TAB SOLTANTO */}
@@ -2601,7 +2601,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               flex: 1, padding: "12px 10px", borderRadius: 13, fontSize: 11, fontWeight: 900,
               textAlign: "center" as any, cursor: "pointer",
               background: prevTab === "fiscale"
-                ? "linear-gradient(145deg, #2FB2A8 0%, #1E8080 100%)"
+                ? "linear-gradient(145deg, #1E3A5F 0%, #0F1B2D 100%)"
                 : "#fff",
               color: prevTab === "fiscale" ? "#fff" : "#5A7878",
               letterSpacing: "0.4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -2618,7 +2618,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               flex: 1, padding: "12px 10px", borderRadius: 13, fontSize: 11, fontWeight: 900,
               textAlign: "center" as any, cursor: "pointer",
               background: prevTab === "riepilogo"
-                ? "linear-gradient(145deg, #2FB2A8 0%, #1E8080 100%)"
+                ? "linear-gradient(145deg, #1E3A5F 0%, #0F1B2D 100%)"
                 : "#fff",
               color: prevTab === "riepilogo" ? "#fff" : "#5A7878",
               letterSpacing: "0.4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -2666,9 +2666,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     onClick={() => setSelectedVaniBulk(selectedVaniBulk.length === pwVani.length ? [] : pwVani.map(v => v.id))}
                     style={{
                       padding: "6px 12px", borderRadius: 6,
-                      background: selectedVaniBulk.length === pwVani.length ? "#28A0A0" : "#fff",
-                      color: selectedVaniBulk.length === pwVani.length ? "#fff" : "#28A0A0",
-                      border: "1px solid #28A0A0",
+                      background: selectedVaniBulk.length === pwVani.length ? "#1E3A5F" : "#fff",
+                      color: selectedVaniBulk.length === pwVani.length ? "#fff" : "#1E3A5F",
+                      border: "1px solid #1E3A5F",
                       fontSize: 11, fontWeight: 700, cursor: "pointer",
                       fontFamily: "inherit",
                     }}>
@@ -2735,7 +2735,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 }}
               />
               <div style={{ marginTop: 24, padding: "16px 0" }}>
-                <button onClick={() => setPrevTab("fiscale")} style={{ width: "100%", padding: 18, borderRadius: 12, background: "#28A0A0", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(40,160,160,0.25)" }}>
+                <button onClick={() => setPrevTab("fiscale")} style={{ width: "100%", padding: 18, borderRadius: 12, background: "#1E3A5F", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(30,58,95,0.25)" }}>
                   Prossimo: Imposta fiscalità
                 </button>
               </div>
@@ -2877,7 +2877,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             const tplColor: any = {
               blue: "linear-gradient(145deg, #85B7EB, #378ADD)",
               violet: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
-              green: "linear-gradient(145deg, #5DCAA5, #1D9E75)",
+              green: "linear-gradient(145deg, #2D5A87, #1E3A5F)",
               amber: "linear-gradient(145deg, #FAC775, #EF9F27)",
               pink: "linear-gradient(145deg, #ED93B1, #D4537E)",
               slate: "linear-gradient(145deg, #8BA8A8, #5F7878)",
@@ -2888,7 +2888,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
                 {/* ══════ SEZIONE 1: DESTINAZIONE IMMOBILE ══════ */}
                 <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                   </div>
                   Passo 1 &middot; Destinazione immobile
@@ -2906,17 +2906,17 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       return (
                         <div key={o.k} onClick={() => { setFiscDestV77(o.k as any); updCM("destImmobile", o.k); }} style={{
                           padding: "13px 11px 11px", borderRadius: 13, cursor: "pointer",
-                          border: on ? "1.5px solid #1D9E75" : "1.5px solid rgba(200,228,228,0.5)",
-                          background: on ? "linear-gradient(145deg, rgba(93,202,165,0.1), rgba(29,158,117,0.04))" : "linear-gradient(145deg, #fff, #FAFCFC)",
-                          boxShadow: on ? "0 5px 14px rgba(29,158,117,0.18)" : "none",
+                          border: on ? "1.5px solid #1E3A5F" : "1.5px solid rgba(200,228,228,0.5)",
+                          background: on ? "linear-gradient(145deg, rgba(93,202,165,0.1), rgba(30,58,95,0.04))" : "linear-gradient(145deg, #fff, #FAFCFC)",
+                          boxShadow: on ? "0 5px 14px rgba(30,58,95,0.18)" : "none",
                           position: "relative",
                         }}>
                           {on && (
-                            <div style={{ position: "absolute", top: 8, right: 8, width: 16, height: 16, borderRadius: "50%", background: "linear-gradient(145deg, #5DCAA5, #1D9E75)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(29,158,117,0.4)" }}>
+                            <div style={{ position: "absolute", top: 8, right: 8, width: 16, height: 16, borderRadius: "50%", background: "linear-gradient(145deg, #2D5A87, #1E3A5F)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(30,58,95,0.4)" }}>
                               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                             </div>
                           )}
-                          <div style={{ fontSize: 15, fontWeight: 900, color: on ? "#04342C" : "#0F2525", letterSpacing: "-0.3px", lineHeight: 1.1 }}>{o.big}</div>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: on ? "#0F1B2D" : "#0F2525", letterSpacing: "-0.3px", lineHeight: 1.1 }}>{o.big}</div>
                           <div style={{ fontSize: 9.5, color: "#475A75", fontWeight: 700, marginTop: 4, lineHeight: 1.35 }}>{o.sub}</div>
                         </div>
                       );
@@ -2926,7 +2926,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
                 {/* ══════ SEZIONE 2: BONUS FISCALE ══════ */}
                 <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2L15.09 8.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
                   </div>
                   Passo 2 &middot; Bonus fiscale
@@ -2937,7 +2937,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Ogni bonus ha documenti diversi. Ti guido io, passo-passo.</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                     {[
-                      { k: "50", icoBg: "linear-gradient(145deg, #5DCAA5, #1D9E75)", nome: "Bonus Casa", perc: "50%", percBg: "rgba(29,158,117,0.14)", percCol: "#04342C", desc: "Ristrutturazione edilizia · art. 16-bis DPR 917/86 · scelta più comune, più semplice", stats: "MAX € 96.000 · 10 ANNI · NO LIMITI Uw" },
+                      { k: "50", icoBg: "linear-gradient(145deg, #2D5A87, #1E3A5F)", nome: "Bonus Casa", perc: "50%", percBg: "rgba(30,58,95,0.14)", percCol: "#0F1B2D", desc: "Ristrutturazione edilizia · art. 16-bis DPR 917/86 · scelta più comune, più semplice", stats: "MAX € 96.000 · 10 ANNI · NO LIMITI Uw" },
                       { k: "65", icoBg: "linear-gradient(145deg, #FAC775, #EF9F27)", nome: "Ecobonus", perc: "50%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Risparmio energetico · L. 296/2006 · richiede Uw compatibile + ENEA obbligatoria", stats: "DETRAZIONE MAX € 60.000 · ENEA SÌ" },
                       { k: "75", icoBg: "linear-gradient(145deg, #AFA9EC, #7F77DD)", nome: "Barriere architettoniche", perc: "75%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Art. 119-ter DL 34/2020 · richiede relazione tecnica asseverata", stats: "SOLO CONDOMINI 2026" },
                       { k: "nessuna", icoBg: "linear-gradient(145deg, #B8C5C5, #7A9090)", nome: "Nessuna detrazione", perc: "0%", percBg: "rgba(122,144,144,0.14)", percCol: "#3C4F4F", desc: "Cliente non vuole o non può · bonifico ordinario, nessuna pratica", stats: "" },
@@ -2946,10 +2946,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       return (
                         <div key={b.k} onClick={() => updCM("detrazione", b.k)} style={{
                           padding: "13px 14px", borderRadius: 15, cursor: "pointer",
-                          border: on ? "1.5px solid #1D9E75" : "1.5px solid rgba(200,228,228,0.5)",
-                          background: on ? "linear-gradient(145deg, rgba(93,202,165,0.08), rgba(29,158,117,0.02))" : "#fff",
+                          border: on ? "1.5px solid #1E3A5F" : "1.5px solid rgba(200,228,228,0.5)",
+                          background: on ? "linear-gradient(145deg, rgba(93,202,165,0.08), rgba(30,58,95,0.02))" : "#fff",
                           display: "flex", gap: 12, alignItems: "flex-start",
-                          boxShadow: on ? "0 6px 16px rgba(29,158,117,0.15)" : "0 3px 8px rgba(13,31,31,0.04)",
+                          boxShadow: on ? "0 6px 16px rgba(30,58,95,0.15)" : "0 3px 8px rgba(13,31,31,0.04)",
                           position: "relative",
                         }}>
                           <div style={{ width: 44, height: 44, borderRadius: 13, background: b.icoBg, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "inset 0 1px 2px rgba(255,255,255,0.35)" }}>
@@ -2967,7 +2967,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             {b.stats && <div style={{ fontSize: 9, color: "#475A75", fontWeight: 800, letterSpacing: "0.3px", marginTop: 6 }}>{b.stats}</div>}
                           </div>
                           {on && (
-                            <div style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(145deg, #5DCAA5, #1D9E75)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 5px rgba(29,158,117,0.4)" }}>
+                            <div style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(145deg, #2D5A87, #1E3A5F)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 5px rgba(30,58,95,0.4)" }}>
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                             </div>
                           )}
@@ -2996,7 +2996,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 {bonusV77 === "65" && (
                   <>
                     <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                      <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                       </div>
                       Requisiti tecnici
@@ -3029,13 +3029,13 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                           );
                         })}
                       </div>
-                      <div style={{ padding: "11px 12px", background: uwOk ? "rgba(29,158,117,0.08)" : "rgba(226,75,74,0.08)", border: `1.5px solid ${uwOk ? "rgba(29,158,117,0.3)" : "rgba(226,75,74,0.3)"}`, borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 26, height: 26, borderRadius: 8, background: uwOk ? "linear-gradient(145deg, #5DCAA5, #1D9E75)" : "linear-gradient(145deg, #F09595, #E24B4A)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ padding: "11px 12px", background: uwOk ? "rgba(30,58,95,0.08)" : "rgba(226,75,74,0.08)", border: `1.5px solid ${uwOk ? "rgba(30,58,95,0.3)" : "rgba(226,75,74,0.3)"}`, borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 26, height: 26, borderRadius: 8, background: uwOk ? "linear-gradient(145deg, #2D5A87, #1E3A5F)" : "linear-gradient(145deg, #F09595, #E24B4A)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           {uwOk
                             ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                             : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
                         </div>
-                        <div style={{ flex: 1, fontSize: 10.5, color: uwOk ? "#04342C" : "#8B1A1A", fontWeight: 800, lineHeight: 1.4 }}>
+                        <div style={{ flex: 1, fontSize: 10.5, color: uwOk ? "#0F1B2D" : "#8B1A1A", fontWeight: 800, lineHeight: 1.4 }}>
                           <strong>{pwVani[0]?.sistema || "Sistema"} · Uw {uwProd.toFixed(1)}</strong><br/>
                           Richiesto ≤ {uwLimit[fiscZonaV77].toFixed(2)} per Zona {uwZonaLbl[fiscZonaV77]} · {uwOk ? "ampiamente conforme" : "NON CONFORME"}
                         </div>
@@ -3046,10 +3046,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
                 {/* ══════ CHECKLIST DOCUMENTI ══════ */}
                 <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
                   </div>
-                  Documenti da raccogliere <span style={{ background: "rgba(29,158,117,0.14)", color: "#1D9E75", padding: "1px 7px", borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</span>
+                  Documenti da raccogliere <span style={{ background: "rgba(30,58,95,0.14)", color: "#1E3A5F", padding: "1px 7px", borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</span>
                 </div>
 
                 <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
@@ -3057,9 +3057,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Checklist {bonusLblV77[bonusV77]}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                       <div style={{ width: 60, height: 6, background: "rgba(15,27,45,0.15)", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${pctDone}%`, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", borderRadius: 3, boxShadow: "0 0 6px rgba(29,158,117,0.4)" }} />
+                        <div style={{ height: "100%", width: `${pctDone}%`, background: "linear-gradient(90deg, #2D5A87, #1E3A5F)", borderRadius: 3, boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
                       </div>
-                      <div style={{ fontSize: 10, fontWeight: 900, color: "#1D9E75", letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</div>
+                      <div style={{ fontSize: 10, fontWeight: 900, color: "#1E3A5F", letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</div>
                     </div>
                   </div>
                   <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Conservare tutto per 10 anni · L'Agenzia delle Entrate può chiederli fino al {new Date().getFullYear() + 10}</div>
@@ -3071,10 +3071,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                         <div onClick={() => setCheckDoc(d.id, !isDone)} style={{
                           width: 26, height: 26, borderRadius: 8, flexShrink: 0,
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          border: isDone ? "1.5px solid #1D9E75" : "1.5px solid rgba(200,228,228,0.6)",
-                          background: isDone ? "linear-gradient(145deg, #5DCAA5, #1D9E75)" : "#fff",
+                          border: isDone ? "1.5px solid #1E3A5F" : "1.5px solid rgba(200,228,228,0.6)",
+                          background: isDone ? "linear-gradient(145deg, #2D5A87, #1E3A5F)" : "#fff",
                           cursor: "pointer",
-                          boxShadow: isDone ? "0 3px 7px rgba(29,158,117,0.3)" : "none",
+                          boxShadow: isDone ? "0 3px 7px rgba(30,58,95,0.3)" : "none",
                         }}>
                           {isDone
                             ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
@@ -3093,9 +3093,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             width: 28, height: 28, borderRadius: 8,
                             display: "flex", alignItems: "center", justifyContent: "center",
                             cursor: "pointer",
-                            background: isDone ? "rgba(29,158,117,0.1)" : "rgba(200,228,228,0.25)",
-                            color: isDone ? "#1D9E75" : "#4A6E6E",
-                            border: `1px solid ${isDone ? "rgba(29,158,117,0.3)" : "rgba(200,228,228,0.4)"}`,
+                            background: isDone ? "rgba(30,58,95,0.1)" : "rgba(200,228,228,0.25)",
+                            color: isDone ? "#1E3A5F" : "#4A6E6E",
+                            border: `1px solid ${isDone ? "rgba(30,58,95,0.3)" : "rgba(200,228,228,0.4)"}`,
                           }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
                           </div>
@@ -3103,9 +3103,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             width: 28, height: 28, borderRadius: 8,
                             display: "flex", alignItems: "center", justifyContent: "center",
                             cursor: "pointer",
-                            background: isDone ? "rgba(29,158,117,0.1)" : "rgba(200,228,228,0.25)",
-                            color: isDone ? "#1D9E75" : "#4A6E6E",
-                            border: `1px solid ${isDone ? "rgba(29,158,117,0.3)" : "rgba(200,228,228,0.4)"}`,
+                            background: isDone ? "rgba(30,58,95,0.1)" : "rgba(200,228,228,0.25)",
+                            color: isDone ? "#1E3A5F" : "#4A6E6E",
+                            border: `1px solid ${isDone ? "rgba(30,58,95,0.3)" : "rgba(200,228,228,0.4)"}`,
                           }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                           </div>
@@ -3118,7 +3118,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 {/* ══════ CAUSALE BONIFICO ══════ */}
                 {bonusV77 !== "nessuna" && (<>
                   <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                     </div>
                     Causale bonifico parlante
@@ -3134,7 +3134,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     }} style={{
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                       width: "100%", padding: 11,
-                      background: fiscCopied === "causale" ? "#1D9E75" : "#0F2525",
+                      background: fiscCopied === "causale" ? "#1E3A5F" : "#0F2525",
                       color: "#fff", borderRadius: 11, fontSize: 11.5, fontWeight: 900, marginTop: 10, cursor: "pointer", letterSpacing: "0.3px", border: "none", fontFamily: "inherit",
                       boxShadow: "0 5px 12px rgba(15,37,37,0.25)",
                     }}>
@@ -3147,7 +3147,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
                 {/* ══════ TEMPLATE MESSAGGI ══════ */}
                 <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                   </div>
                   Messaggi pronti per il cliente
@@ -3184,13 +3184,13 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 {/* ══════ PRATICA ENEA ══════ */}
                 {bonusV77 !== "nessuna" && (<>
                   <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/></svg>
                     </div>
                     Pratica ENEA
                   </div>
 
-                  <div style={{ background: "linear-gradient(155deg, #1E8080 0%, #0F5555 100%)", borderRadius: 20, padding: 18, color: "#fff", boxShadow: "0 14px 32px rgba(15,68,68,0.3)", position: "relative", overflow: "hidden" }}>
+                  <div style={{ background: "linear-gradient(155deg, #0F1B2D 0%, #0F5555 100%)", borderRadius: 20, padding: 18, color: "#fff", boxShadow: "0 14px 32px rgba(15,68,68,0.3)", position: "relative", overflow: "hidden" }}>
                     <div style={{ position: "absolute", top: -40, right: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, rgba(95,208,208,0.25), transparent 65%)", pointerEvents: "none" as any }} />
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", background: "rgba(255,255,255,0.2)", borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px", textTransform: "uppercase" as any, position: "relative" }}>
                       {bonusV77 === "65" ? "OBBLIGATORIA ENTRO 90 GG" : "NON OBBLIGATORIA PER " + bonusLblV77[bonusV77].toUpperCase()}
@@ -3217,7 +3217,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 </>)}
 
                 {/* ══════ TOTALE + COSTO REALE ══════ */}
-                <div style={{ background: "linear-gradient(155deg, #8FE5C5 0%, #1D9E75 55%, #0F7A58 100%)", borderRadius: 24, padding: 18, color: "#fff", boxShadow: "0 18px 40px rgba(15,122,88,0.35)", position: "relative", overflow: "hidden" }}>
+                <div style={{ background: "linear-gradient(155deg, #8FE5C5 0%, #1E3A5F 55%, #0F7A58 100%)", borderRadius: 24, padding: 18, color: "#fff", boxShadow: "0 18px 40px rgba(15,122,88,0.35)", position: "relative", overflow: "hidden" }}>
                   <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%)", pointerEvents: "none" as any }} />
                   <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 11, position: "relative" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, fontWeight: 700 }}><span>Imponibile</span> <span>€ {fmtV77(subtotV77)}</span></div>
@@ -3246,7 +3246,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <button onClick={() => setPrevTab("sopralluogo")} style={{ padding: 14, borderRadius: 12, background: "#fff", color: "#4A6E6E", border: "1px solid rgba(200,228,228,0.5)", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", minWidth: 90 }}>
                     Indietro
                   </button>
-                  <button onClick={() => setPrevTab("condizioni")} style={{ flex: 1, padding: 14, borderRadius: 12, background: "linear-gradient(145deg, #1D9E75, #0F7A58)", color: "#fff", border: "none", fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 14px rgba(15,122,88,0.3), inset 0 -2px 0 rgba(0,0,0,0.08)", letterSpacing: "0.3px" }}>
+                  <button onClick={() => setPrevTab("condizioni")} style={{ flex: 1, padding: 14, borderRadius: 12, background: "linear-gradient(145deg, #1E3A5F, #0F7A58)", color: "#fff", border: "none", fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 14px rgba(15,122,88,0.3), inset 0 -2px 0 rgba(0,0,0,0.08)", letterSpacing: "0.3px" }}>
                     Prossimo: Condizioni →
                   </button>
                 </div>
@@ -3259,9 +3259,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           {prevTab === "condizioni" && (
             <div style={{ padding: "0 12px 20px" }}>
               {/* CARD PAGAMENTO */}
-              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(30,58,95,0.06)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.euro} s={14} c="#28A0A0" /></div>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(30,58,95,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.euro} s={14} c="#1E3A5F" /></div>
                   <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Modalit+ di pagamento</div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
@@ -3298,7 +3298,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               </div>
 
               {/* CARD CONSEGNA */}
-              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(30,58,95,0.06)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                   <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(123,107,165,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.package} s={14} c="#7B6BA5" /></div>
                   <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Tempi di consegna</div>
@@ -3317,7 +3317,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               </div>
 
               {/* CARD GARANZIA */}
-              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(30,58,95,0.06)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                   <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(16,185,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.shieldCheck} s={14} c="#10B981" /></div>
                   <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Garanzia</div>
@@ -3336,7 +3336,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               </div>
 
               {/* NOTE */}
-              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, boxShadow: "0 2px 10px rgba(30,58,95,0.06)" }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, letterSpacing: "0.5px", marginBottom: 6 }}>NOTE PREVENTIVO (visibili al cliente)</div>
                 <textarea value={c.notePreventivo || ""} onChange={e => updCM("notePreventivo", e.target.value)} placeholder="Es. Prezzo comprensivo di posa in opera standard. Lavori supplementari da concordare." style={{ width: "100%", minHeight: 80, padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 12, fontFamily: "inherit", resize: "vertical" as any, boxSizing: "border-box" as any }} />
               </div>
@@ -3344,7 +3344,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 <button onClick={() => setPrevTab("fiscale")} style={{ padding: 18, borderRadius: 12, background: "#fff", color: "#6A8484", border: "1px solid #C8E4E4", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minWidth: 90 }}>
                   Indietro
                 </button>
-                <button onClick={() => setPrevTab("riepilogo")} style={{ flex: 1, padding: 18, borderRadius: 12, background: "#28A0A0", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(40,160,160,0.25)" }}>
+                <button onClick={() => setPrevTab("riepilogo")} style={{ flex: 1, padding: 18, borderRadius: 12, background: "#1E3A5F", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(30,58,95,0.25)" }}>
                   Prossimo: Vedi riepilogo
                 </button>
               </div>
@@ -3357,7 +3357,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               <div style={{ background: "linear-gradient(135deg, #0D1F1F 0%, #143636 100%)", borderRadius: 14, padding: 18, marginBottom: 10, color: "#fff" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <div><div style={{ fontSize: 10, color: "#ffffff60" }}>PREVENTIVO</div><div style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>€{pwFmt(pwTotale)}</div></div>
-                  {pwDetrObj && pwDetrObj.perc > 0 && (<div style={{ background: "#28A0A030", borderRadius: 8, padding: "6px 10px", textAlign: "right" as any, border: "1px solid #28A0A060" }}><div style={{ fontSize: 9, color: "#ffffffa0", fontWeight: 700 }}>{pwDetrObj.l}</div><div style={{ fontSize: 14, fontWeight: 900, color: "#7FE5E5" }}>−€{pwFmt(pwDetraibile)}</div></div>)}
+                  {pwDetrObj && pwDetrObj.perc > 0 && (<div style={{ background: "#1E3A5F30", borderRadius: 8, padding: "6px 10px", textAlign: "right" as any, border: "1px solid #1E3A5F60" }}><div style={{ fontSize: 9, color: "#ffffffa0", fontWeight: 700 }}>{pwDetrObj.l}</div><div style={{ fontSize: 14, fontWeight: 900, color: "#7FE5E5" }}>−€{pwFmt(pwDetraibile)}</div></div>)}
                 </div>
                 <div style={{ fontSize: 10, color: "#ffffff60", marginTop: 6 }}>{c.code} · {c.cliente} · {pwVani.length} vani · {pwVani.reduce((s, v) => s + (v.pezzi || 1), 0)}pz</div>
               </div>
@@ -3392,9 +3392,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <span style={{ fontSize: 22, fontWeight: 900, color: T.acc }}>€{pwFmt(pwTotale)}</span>
                 </div>
                 {pwDetrObj && pwDetrObj.perc > 0 && (<>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "8px 10px", background: "#28A0A010", borderRadius: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#28A0A0" }}><I d={ICO.building} /> {pwDetrObj.l}</span>
-                    <span style={{ fontSize: 14, fontWeight: 900, color: "#28A0A0" }}>-€{pwFmt(pwDetraibile)}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "8px 10px", background: "#1E3A5F10", borderRadius: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#1E3A5F" }}><I d={ICO.building} /> {pwDetrObj.l}</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: "#1E3A5F" }}>-€{pwFmt(pwDetraibile)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                     <span style={{ fontSize: 11, fontWeight: 700 }}>Costo effettivo</span>
@@ -3412,7 +3412,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
               {/* SCHEDE COMMERCIALI */}
               <div style={{ marginTop: 14, background: T.card, borderRadius: 12, padding: 14, border: `1px solid ${T.bdr}` }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#28A0A0", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE COMMERCIALI</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#1E3A5F", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE COMMERCIALI</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <div onClick={() => alert("Scheda tecnica in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
                     <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Scheda tecnica</div>
@@ -3434,7 +3434,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               </div>
               {/* SCHEDE TECNICHE */}
               <div style={{ marginTop: 10, background: T.card, borderRadius: 12, padding: 14, border: `1px solid ${T.bdr}` }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#28A0A0", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE TECNICHE DETTAGLIATE</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#1E3A5F", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE TECNICHE DETTAGLIATE</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <div onClick={() => alert("Trasmittanze in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
                     <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Trasmittanze</div>
@@ -3477,7 +3477,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   } finally {
                     setPdfBusy(null);
                   }
-                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "pdf" ? "#28A0A018" : "#fff", color: "#28A0A0", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "pdf" ? 0.5 : 1 }}>{pdfBusy === "pdf" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid #28A0A0", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.fileText} /> PDF</>}</button>
+                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "pdf" ? "#1E3A5F18" : "#fff", color: "#1E3A5F", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "pdf" ? 0.5 : 1 }}>{pdfBusy === "pdf" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid #1E3A5F", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.fileText} /> PDF</>}</button>
                 <button disabled={!!pdfBusy} onClick={async () => {
                   if (pdfBusy) return;
                   setPdfBusy("anteprima");
@@ -3492,7 +3492,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   } finally {
                     setPdfBusy(null);
                   }
-                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "anteprima" ? "#28A0A018" : T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "anteprima" ? 0.5 : 1 }}>{pdfBusy === "anteprima" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid " + T.sub, borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.eye} /> Anteprima</>}</button>
+                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "anteprima" ? "#1E3A5F18" : T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "anteprima" ? 0.5 : 1 }}>{pdfBusy === "anteprima" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid " + T.sub, borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.eye} /> Anteprima</>}</button>
               </div>
               <button disabled={!!pdfBusy} onClick={async () => {
                 if (pdfBusy) return;
@@ -3648,7 +3648,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 } finally {
                   setPdfBusy(null);
                 }
-              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: pdfBusy === "invia" ? "#0D1F1F" : "linear-gradient(135deg, #0D1F1F 0%, #28A0A0 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(40,160,160,0.25)", opacity: pdfBusy && pdfBusy !== "invia" ? 0.5 : 1 }}>{pdfBusy === "invia" ? <><span style={{ display: "inline-block", width: 14, height: 14, border: "2.5px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 8, verticalAlign: "middle" }} /> Generazione PDF e link...</> : <><I d={ICO.upload} /> INVIA PREVENTIVO AL CLIENTE {"->"}</>}</button>
+              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: pdfBusy === "invia" ? "#0D1F1F" : "linear-gradient(135deg, #0D1F1F 0%, #1E3A5F 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(30,58,95,0.25)", opacity: pdfBusy && pdfBusy !== "invia" ? 0.5 : 1 }}>{pdfBusy === "invia" ? <><span style={{ display: "inline-block", width: 14, height: 14, border: "2.5px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 8, verticalAlign: "middle" }} /> Generazione PDF e link...</> : <><I d={ICO.upload} /> INVIA PREVENTIVO AL CLIENTE {"->"}</>}</button>
               <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Invia PDF via WhatsApp. La firma verrà richiesta solo dopo la conferma del cliente.</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
                 <span onClick={() => { updCM("preventivoInviato", true); setCcDone("✓ Completato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000); }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>✓ Segna completato</span>
@@ -3664,7 +3664,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     const storico = await getFascicoliCommessa(c.id);
                     setFascicoliStorico(storico);
                   }}
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1.5px solid #28A0A0", background: "#fff", color: "#0D1F1F", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1.5px solid #1E3A5F", background: "#fff", color: "#0D1F1F", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                 >
                   <span style={{ fontSize: 16 }}><I d={ICO.ruler} /></span> Documenti tecnici commessa
                 </button>
@@ -3688,7 +3688,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   </div>
                 );
               })()}
-              {ccDone && <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#28A0A018", border: "1px solid #28A0A040", fontSize: 12, fontWeight: 700, color: "#28A0A0", textAlign: "center" }}>{ccDone}</div>}
+              {ccDone && <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#1E3A5F18", border: "1px solid #1E3A5F40", fontSize: 12, fontWeight: 700, color: "#1E3A5F", textAlign: "center" }}>{ccDone}</div>}
             </div>
           )}
 
@@ -3708,8 +3708,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   ✓+ Apri disegnatore
                 </button>
                 {c.cadData && (
-                  <div style={{ marginTop: 12, padding: "10px 14px", background: "#28A0A012", borderRadius: 10, border: "1px solid #28A0A030" }}>
-                    <div style={{ fontSize: 11, color: "#28A0A0", fontWeight: 700 }}>
+                  <div style={{ marginTop: 12, padding: "10px 14px", background: "#1E3A5F12", borderRadius: 10, border: "1px solid #1E3A5F30" }}>
+                    <div style={{ fontSize: 11, color: "#1E3A5F", fontWeight: 700 }}>
                       ✓ {c.cadData.oggetti?.length || 0} elementi disegnati
                     </div>
                   </div>
@@ -4076,7 +4076,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
         {/* HERO_TEAL_CM2_V2 - hero fliwoX + ripristino tutti gli elementi */}
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2" }}>
           <div style={{
-            background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+            background: "linear-gradient(145deg, #5FD0D0 0%, #1E3A5F 50%, #0F1B2D 100%)",
             borderRadius: 22, padding: "34px 22px 70px",
             position: "relative", overflow: "hidden",
             boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
@@ -4233,17 +4233,17 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           const progCC = Math.round((doneCC / stepsCC.length) * 100);
 
           return (
-            <div style={{ margin: "14px 16px 8px", padding: "18px 16px", background: "#fff", borderRadius: 16, border: "1px solid #E4F2F2", boxShadow: "0 2px 8px rgba(40,160,160,0.08)" }}>
+            <div style={{ margin: "14px 16px 8px", padding: "18px 16px", background: "#fff", borderRadius: 16, border: "1px solid #E4F2F2", boxShadow: "0 2px 8px rgba(30,58,95,0.08)" }}>
               {/* Stato lavoro header - hide when selectedRilievo (v67) */}
               {!selectedRilievo && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#28A0A0", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(40,160,160,0.3)" }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(30,58,95,0.3)" }}>
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
                   <span style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", letterSpacing: "-0.3px" }}>Stato lavoro</span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 800, color: "#1A7A7A", background: "#fff", padding: "4px 11px", borderRadius: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.12)" }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#0F1B2D", background: "#fff", padding: "4px 11px", borderRadius: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.12)" }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
               </div>
               )}
               {/* Progress dots con label - hide when selectedRilievo (v67) */}
@@ -4254,14 +4254,14 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                       <div style={{
                         width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
-                        background: s.skipped ? "#ff9500" : s.done ? "#28A0A0" : i === curIdxCC ? T.acc : "#F0EDE5",
+                        background: s.skipped ? "#ff9500" : s.done ? "#1E3A5F" : i === curIdxCC ? T.acc : "#F0EDE5",
                         color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
-                        boxShadow: i === curIdxCC ? "0 2px 8px rgba(40,160,160,0.35)" : "none",
-                        border: i === curIdxCC ? "2px solid #fff" : s.done ? "2px solid #28A0A0" : "2px solid transparent",
+                        boxShadow: i === curIdxCC ? "0 2px 8px rgba(30,58,95,0.35)" : "none",
+                        border: i === curIdxCC ? "2px solid #fff" : s.done ? "2px solid #1E3A5F" : "2px solid transparent",
                       }}>{s.skipped ? <I d={ICO.check} s={14} c="#fff" /> : s.done ? <I d={ICO.check} s={14} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={14} c={i === curIdxCC ? "#fff" : T.sub} />}</div>
                       <div style={{ fontSize: 9, color: i === curIdxCC ? "#0D1F1F" : s.done ? "#0F6E56" : T.sub, fontWeight: i === curIdxCC ? 800 : 600, whiteSpace: "nowrap", maxWidth: 42, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center", marginTop: 4 }}>{s.l}</div>
                     </div>
-                    {i < stepsCC.length - 1 && <div style={{ flex: 1, minWidth: 4, height: 2, background: s.done ? "#28A0A0" : T.bdr, borderRadius: 2, marginBottom: 18, marginTop: 0 }} />}
+                    {i < stepsCC.length - 1 && <div style={{ flex: 1, minWidth: 4, height: 2, background: s.done ? "#1E3A5F" : T.bdr, borderRadius: 2, marginBottom: 18, marginTop: 0 }} />}
                   </div>
                 ))}
               </div>
@@ -4274,13 +4274,13 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   display: "flex", alignItems: "center", gap: 12,
                   boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "#28A0A015", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <I d={ICO.mapPin} s={14} c="#28A0A0" />
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "#1E3A5F15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <I d={ICO.mapPin} s={14} c="#1E3A5F" />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                       <span style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Rilievo</span>
-                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "#28A0A0", color: "#fff" }}>✓ FATTO</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "#1E3A5F", color: "#fff" }}>✓ FATTO</span>
                     </div>
                     <div style={{ fontSize: 10, color: T.sub }}>{rilieviCC.length} rilievi · {vaniCC.length} vani · tap per consultare</div>
                   </div>
@@ -4290,26 +4290,26 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
               {/* Current action - hide when selectedRilievo (v67) */}
               {!selectedRilievo && curCC && (
-                <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: "14px 16px", boxShadow: "0 2px 12px rgba(40,160,160,0.08)" }}>
+                <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: "14px 16px", boxShadow: "0 2px 12px rgba(30,58,95,0.08)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <IcoKey name={curCC.icon} s={16} c="#28A0A0" />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(30,58,95,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <IcoKey name={curCC.icon} s={16} c="#1E3A5F" />
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 15, fontWeight: 800, color: "#0D1F1F" }}>{curCC.l}</span>
-                        <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: "#28A0A0", color: "#fff", letterSpacing: "0.04em" }}>DA FARE</span>
+                        <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: "#1E3A5F", color: "#fff", letterSpacing: "0.04em" }}>DA FARE</span>
                       </div>
                       <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{curCC.desc}</div>
                     </div>
                     {hasFattCC && (
-                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: tuttoCC ? "#28A0A020" : "#D0800820", color: tuttoCC ? "#28A0A0" : "#D08008" }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: tuttoCC ? "#1E3A5F20" : "#D0800820", color: tuttoCC ? "#1E3A5F" : "#D08008" }}>
                         {tuttoCC ? "✓ Pagata" : <I d={ICO.fileText} />}
                       </span>
                     )}
                   </div>
                   {/* Success flash */}
-                  {ccDone && <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#28A0A018", border: "1px solid #28A0A040", fontSize: 12, fontWeight: 700, color: "#28A0A0", textAlign: "center" }}>{ccDone}</div>}
+                  {ccDone && <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#1E3A5F18", border: "1px solid #1E3A5F40", fontSize: 12, fontWeight: 700, color: "#1E3A5F", textAlign: "center" }}>{ccDone}</div>}
 
                   {/* Skipped steps log */}
                   <PassaggiSaltati
@@ -4334,7 +4334,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             const tipoMap: any = {
                               provvisorio: { l: "Provvisorio", c: "#412402", bg: "#FAC775" },
                               verificato:  { l: "Verificato",  c: "#0A2842", bg: "#9FC6F0" },
-                              definitivo:  { l: "Definitivo",  c: "#04342C", bg: "#A5DCC6" },
+                              definitivo:  { l: "Definitivo",  c: "#0F1B2D", bg: "#A5DCC6" },
                               da_rivedere: { l: "Da rivedere", c: "#4B1515", bg: "#F7B5B5" },
                               indicativa:  { l: "Provvisorio", c: "#412402", bg: "#FAC775" },
                               personalizzato: { l: "Personalizzato", c: "#26215C", bg: "#B5B0E8" },
@@ -4440,7 +4440,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                     borderRadius: 22, padding: "20px 18px 18px",
                                     background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
                                     color: "#fff",
-                                    boxShadow: "0 14px 32px rgba(127,119,221,0.35), 0 6px 12px rgba(127,119,221,0.2)",
+                                    boxShadow: "0 14px 32px rgba(30,58,95,0.35), 0 6px 12px rgba(30,58,95,0.2)",
                                     position: "relative", overflow: "hidden",
                                     display: "flex", flexDirection: "column",
                                   }}>
@@ -4567,8 +4567,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                       boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
                                     }}>
                                       <div style={{ width: 30, height: 30, borderRadius: 9,
-                                        background: "linear-gradient(145deg, rgba(93,202,165,0.22), rgba(29,158,117,0.12))",
-                                        color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center",
+                                        background: "linear-gradient(145deg, rgba(45,90,135,0.22), rgba(30,58,95,0.12))",
+                                        color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center",
                                         boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
                                       }}>
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -4585,7 +4585,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                       boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
                                     }}>
                                       <div style={{ width: 30, height: 30, borderRadius: 9,
-                                        background: "linear-gradient(145deg, rgba(175,169,236,0.22), rgba(127,119,221,0.12))",
+                                        background: "linear-gradient(145deg, rgba(175,169,236,0.22), rgba(30,58,95,0.12))",
                                         color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center",
                                         boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
                                       }}>
@@ -4666,14 +4666,14 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                         border: "none", borderBottom: "1px solid rgba(200,228,228,0.3)",
                                         cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left" as any,
                                       }}>
-                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(29,158,117,0.15), rgba(29,158,117,0.08))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(30,58,95,0.15), rgba(30,58,95,0.08))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                         </div>
                                         <div style={{ flex: 1 }}>
                                           <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta PDF rilievo</div>
                                           <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 1 }}>Scheda tecnica per officina</div>
                                         </div>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                                       </button>
 
                                       {/* Duplica */}
@@ -4712,7 +4712,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                         border: "none", borderBottom: "1px solid rgba(200,228,228,0.3)",
                                         cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left" as any,
                                       }}>
-                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(127,119,221,0.15), rgba(127,119,221,0.08))", color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(30,58,95,0.15), rgba(30,58,95,0.08))", color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 -2 -2V4a2 2 0 0 1 2 -2h9a2 2 0 0 1 2 2v1"/></svg>
                                         </div>
                                         <div style={{ flex: 1 }}>
@@ -4765,7 +4765,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                         }}>
                                           <div style={{
                                             width: 34, height: 34, borderRadius: 10,
-                                            background: "linear-gradient(145deg, rgba(127,119,221,0.18), rgba(29,158,117,0.12))",
+                                            background: "linear-gradient(145deg, rgba(30,58,95,0.18), rgba(30,58,95,0.12))",
                                             display: "flex", alignItems: "center", justifyContent: "center",
                                             color: "#0F1B2D",
                                             boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
@@ -4780,15 +4780,15 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                           </div>
                                           <div style={{
                                             fontSize: 10, fontWeight: 900, color: "#0F1B2D",
-                                            background: "linear-gradient(145deg, rgba(175,169,236,0.28), rgba(127,119,221,0.15))",
+                                            background: "linear-gradient(145deg, rgba(175,169,236,0.28), rgba(30,58,95,0.15))",
                                             padding: "4px 10px", borderRadius: 50, letterSpacing: "0.3px",
-                                            border: "1px solid rgba(127,119,221,0.22)",
+                                            border: "1px solid rgba(30,58,95,0.22)",
                                           }}>{storicoCron.length || 1}</div>
                                           <div style={{
                                             width: 24, height: 24, borderRadius: 8,
-                                            background: "rgba(40,160,160,0.08)",
+                                            background: "rgba(30,58,95,0.08)",
                                             display: "flex", alignItems: "center", justifyContent: "center",
-                                            color: "#1A7A7A",
+                                            color: "#0F1B2D",
                                             transform: cronOpenV67 ? "rotate(180deg)" : "none",
                                             transition: "transform 0.2s",
                                           }}>
@@ -4805,7 +4805,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                             position: "relative",
                                             boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
                                           }}>
-                                            <div style={{ position: "absolute", left: 30, top: 22, bottom: 22, width: 2, background: "linear-gradient(180deg, #AFA9EC 0%, #5DCAA5 50%, #FAC775 100%)", borderRadius: 1, opacity: 0.3 }} />
+                                            <div style={{ position: "absolute", left: 30, top: 22, bottom: 22, width: 2, background: "linear-gradient(180deg, #AFA9EC 0%, #2D5A87 50%, #FAC775 100%)", borderRadius: 1, opacity: 0.3 }} />
                                             {storicoCron.length > 0 ? storicoCron.slice().reverse().map((ev, k) => (
                                               <div key={k} style={{ display: "flex", gap: 12, padding: "7px 0", position: "relative" }}>
                                                 <div style={{
@@ -4813,11 +4813,11 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                                   background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
                                                   color: "#fff", flexShrink: 0,
                                                   display: "flex", alignItems: "center", justifyContent: "center",
-                                                  boxShadow: "0 3px 8px rgba(127,119,221,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
+                                                  boxShadow: "0 3px 8px rgba(30,58,95,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
                                                 }}>
                                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
                                                 </div>
-                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
+                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(30,58,95,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
                                                   <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
                                                     <strong style={{ color: "#0F1B2D", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
                                                   </div>
@@ -4831,11 +4831,11 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                                   background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
                                                   color: "#fff", flexShrink: 0,
                                                   display: "flex", alignItems: "center", justifyContent: "center",
-                                                  boxShadow: "0 3px 8px rgba(127,119,221,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
+                                                  boxShadow: "0 3px 8px rgba(30,58,95,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
                                                 }}>
                                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
                                                 </div>
-                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
+                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(30,58,95,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
                                                   <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
                                                     <strong style={{ color: "#0F1B2D", fontWeight: 900 }}>Tu</strong> · creato la commessa
                                                   </div>
@@ -4919,7 +4919,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                               borderRadius: 22, padding: "20px 18px 18px",
                               background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
                               color: "#fff",
-                              boxShadow: "0 14px 32px rgba(127,119,221,0.35), 0 6px 12px rgba(127,119,221,0.2)",
+                              boxShadow: "0 14px 32px rgba(30,58,95,0.35), 0 6px 12px rgba(30,58,95,0.2)",
                               position: "relative", overflow: "hidden",
                               display: "flex", flexDirection: "column",
                             }}>
@@ -5005,7 +5005,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       </button>}
 
                       {vaniCC.length > 0 && (
-                        <div style={{ fontSize: 12, color: "#28A0A0", fontWeight: 700, textAlign: "center", marginTop: 8 }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
+                        <div style={{ fontSize: 12, color: "#1E3A5F", fontWeight: 700, textAlign: "center", marginTop: 8 }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
                       )}
                     </div>
                   )}
@@ -5096,7 +5096,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             try { generaExcelFascicolo && generaExcelFascicolo(c, r); } catch(e) { console.warn(e); }
                             setCcDone("✓ Excel pronto per gestionale"); setTimeout(() => setCcDone(null), 2500);
                           }} style={{
-                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #28A0A030", background: "#28A0A008", cursor: "pointer", fontFamily: "inherit",
+                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #1E3A5F30", background: "#1E3A5F08", cursor: "pointer", fontFamily: "inherit",
                             display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                           }}>
                             <I d={ICO.clipboard} s={18} c={T.acc} />
@@ -5157,7 +5157,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                         padding: "18px 16px", borderRadius: 14, cursor: "pointer",
                         background: T.acc, border: "2px solid " + T.acc,
                         display: "flex", alignItems: "center", gap: 12,
-                        boxShadow: "0 4px 14px rgba(40,160,160,0.3)",
+                        boxShadow: "0 4px 14px rgba(30,58,95,0.3)",
                       }}>
                         <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <I d={ICO.euro} s={20} c="#fff" />
@@ -5297,7 +5297,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                               setSelectedCM((prev: any) => ({ ...prev, preventivoAccettato: true, dataPreventivoAccett: new Date().toISOString().split("T")[0] }));
                               setFaseTo(c.id, "conferma");
                               setCcDone("✓ Cliente accettato → Conferma"); setTimeout(() => setCcDone(null), 3000);
-                            }} style={{ padding: "12px 10px", borderRadius: 8, border: "none", background: "#28A0A0", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                            }} style={{ padding: "12px 10px", borderRadius: 8, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                               ✓ Cliente OK
                             </button>
                             <button onClick={() => {
@@ -5370,11 +5370,11 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}>Totale: €{fmtCC(totIvaCC)} (IVA {ivaPercCC}% incl.)</div>
                       {c.firmaCliente && (
-                        <div style={{ marginBottom: 10, padding: 12, borderRadius: 10, background: "#28A0A012", border: "1px solid #28A0A030" }}>
+                        <div style={{ marginBottom: 10, padding: 12, borderRadius: 10, background: "#1E3A5F12", border: "1px solid #1E3A5F30" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                             <span style={{ fontSize: 18 }}>✓</span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 12, fontWeight: 800, color: "#28A0A0" }}>Firma ricevuta</div>
+                              <div style={{ fontSize: 12, fontWeight: 800, color: "#1E3A5F" }}>Firma ricevuta</div>
                               <div style={{ fontSize: 10, color: T.sub }}>{c.dataFirma ? new Date(c.dataFirma).toLocaleDateString("it-IT") : ""}</div>
                             </div>
                           </div>
@@ -5384,10 +5384,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                 if (!c.firmaDocumento?.dataUrl) return;
                                 const w = window.open("");
                                 w?.document.write(`<iframe src="${c.firmaDocumento.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
-                              }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #28A0A0", background: "#fff", color: "#28A0A0", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                              }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #1E3A5F", background: "#fff", color: "#1E3A5F", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                                 Vedi documento
                               </button>
-                              <a href={c.firmaDocumento.dataUrl} download={c.firmaDocumento.nome || "documento_firmato.pdf"} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #28A0A0", background: "#28A0A0", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "center", textDecoration: "none", boxSizing: "border-box" as const }}>
+                              <a href={c.firmaDocumento.dataUrl} download={c.firmaDocumento.nome || "documento_firmato.pdf"} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #1E3A5F", background: "#1E3A5F", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "center", textDecoration: "none", boxSizing: "border-box" as const }}>
                                 Scarica PDF
                               </a>
                             </div>
@@ -5415,11 +5415,11 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       )}
                       {firmaStep === 0 ? (
                         <div>
-                          <button onClick={() => setShowModalFirma(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA {"->"}</button>
+                          <button onClick={() => setShowModalFirma(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA {"->"}</button>
                           <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 6 }}>Scarica PDF e invia link firma elettronica via WhatsApp</div>
                           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                            <button onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #28A0A0", background: "#28A0A012", color: "#28A0A0", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> Solo PDF</button>
-                            <button onClick={() => setFirmaStep(1)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #28A0A0", background: "#28A0A012", color: "#28A0A0", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Già firmato? Carica</button>
+                            <button onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #1E3A5F", background: "#1E3A5F12", color: "#1E3A5F", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> Solo PDF</button>
+                            <button onClick={() => setFirmaStep(1)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #1E3A5F", background: "#1E3A5F12", color: "#1E3A5F", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Già firmato? Carica</button>
                           </div>
                         </div>
                       ) : !firmaFileUrl ? (
@@ -5472,10 +5472,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                         </div>
                       ) : (
                         <div>
-                          <div style={{ padding: 8, borderRadius: 8, background: "#28A0A012", marginBottom: 6, fontSize: 11, color: "#28A0A0", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ padding: 8, borderRadius: 8, background: "#1E3A5F12", marginBottom: 6, fontSize: 11, color: "#1E3A5F", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
                             <I d={ICO.paperclip} />
                             <span onClick={() => { if (firmaFileUrl) { const w = window.open(""); w?.document.write(`<iframe src="${firmaFileUrl}" style="width:100%;height:100vh;border:none"></iframe>`); } }} style={{ flex: 1, cursor: "pointer", textDecoration: "underline", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{firmaFileName}</span>
-                            <a href={firmaFileUrl || "#"} download={firmaFileName} style={{ fontSize: 10, color: "#28A0A0", cursor: "pointer", textDecoration: "none", flexShrink: 0 }}>🔗</a>
+                            <a href={firmaFileUrl || "#"} download={firmaFileName} style={{ fontSize: 10, color: "#1E3A5F", cursor: "pointer", textDecoration: "none", flexShrink: 0 }}>🔗</a>
                             <span onClick={() => { setFirmaFileUrl(null); setFirmaFileName(""); }} style={{ cursor: "pointer", flexShrink: 0 }}>✓</span>
                           </div>
                           <button onClick={() => {
@@ -5484,7 +5484,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             setSelectedCM(prev => ({ ...prev, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0] }));
                             setFirmaStep(0); setFirmaFileUrl(null); setFirmaFileName("");
                             setCcDone("✓ Firma registrata!"); setTimeout(() => setCcDone(null), 3000);
-                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA FIRMA →</button>
+                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA FIRMA →</button>
                         </div>
                       )}
                     </div>
@@ -5712,13 +5712,13 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       {!ordConfCC ? (
                         <button onClick={() => apriInboxDocumento(c.id, "conferma")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#af52de", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.download} /> CARICA CONFERMA FORNITORE →</button>
                       ) : ccConfirm !== "conferma_ok" ? (
-                        <button onClick={() => setCcConfirm("conferma_ok")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ APPROVA E AVVIA PRODUZIONE →</button>
+                        <button onClick={() => setCcConfirm("conferma_ok")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ APPROVA E AVVIA PRODUZIONE →</button>
                       ) : (
-                        <div style={{ background: "#28A0A012", borderRadius: 10, padding: 12, border: "1px solid #28A0A030" }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: "#28A0A0", marginBottom: 4 }}>Confermi avvio produzione?</div>
+                        <div style={{ background: "#1E3A5F12", borderRadius: 10, padding: 12, border: "1px solid #1E3A5F30" }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: "#1E3A5F", marginBottom: 4 }}>Confermi avvio produzione?</div>
                           <div style={{ display: "flex", gap: 8 }}>
                             <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-                            <button onClick={() => { setOrdiniFornDB(prev => prev.map(o => o.cmId === c.id ? { ...o, conferma: { ...o.conferma, firmata: true } } : o)); setCcConfirm(null); setCcDone("✓ Produzione avviata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO</button>
+                            <button onClick={() => { setOrdiniFornDB(prev => prev.map(o => o.cmId === c.id ? { ...o, conferma: { ...o.conferma, firmata: true } } : o)); setCcConfirm(null); setCcDone("✓ Produzione avviata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO</button>
                           </div>
                         </div>
                       )}
@@ -5736,7 +5736,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             const isDone = ["completato","collaudo","chiuso"].includes(st);
                             const sq = squadreDB.find(s => s.id === m.squadraId);
                             return (
-                              <div key={mi} style={{ background: T.card, border: `1.5px solid ${isDone ? "#28A0A040" : T.bdr}`, borderRadius: 10, padding: "10px 12px", marginBottom: 6 }}>
+                              <div key={mi} style={{ background: T.card, border: `1.5px solid ${isDone ? "#1E3A5F40" : T.bdr}`, borderRadius: 10, padding: "10px 12px", marginBottom: 6 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                                   <div>
                                     <div style={{ fontSize: 12, fontWeight: 800, color: T.text }}>
@@ -5746,7 +5746,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                       {sq?.nome || "Squadra"} · {m.durata || `${m.giorni || 1}g`}
                                     </div>
                                   </div>
-                                  <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: isDone ? "#28A0A020" : "#F5A62320", color: isDone ? "#28A0A0" : "#D08008", textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>
+                                  <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: isDone ? "#1E3A5F20" : "#F5A62320", color: isDone ? "#1E3A5F" : "#D08008", textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>
                                     {st}
                                   </span>
                                 </div>
@@ -5754,12 +5754,12 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                   <button onClick={() => {
                                     setMontaggiDB(prev => prev.map(x => x.id === m.id ? { ...x, stato: "completato", interventoStato: "completato", dataCompletamento: new Date().toISOString() } : x));
                                     setCcDone("✓ Montaggio completato!"); setTimeout(() => setCcDone(null), 3000);
-                                  }} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#28A0A0", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                                  }} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                                     <I d={ICO.check} /> Montaggio completato
                                   </button>
                                 )}
                                 {isDone && (
-                                  <div style={{ fontSize: 11, color: "#28A0A0", fontWeight: 700, textAlign: "center", padding: "4px 0" }}>
+                                  <div style={{ fontSize: 11, color: "#1E3A5F", fontWeight: 700, textAlign: "center", padding: "4px 0" }}>
                                     ✓ Completato · vai al Collaudo
                                   </div>
                                 )}
@@ -5928,7 +5928,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                               setEvents(prev => [...prev, { id: "ev_m_" + Date.now(), date: montFormData.data, time: montFormData.orario, text: `🔧 Montaggio ${c.cliente} (${montGiorni}g)`, tipo: "montaggio", persona: c.cliente, cm: c.code, addr: c.indirizzo || "", done: false }]);
                               setMontFormOpen(false);
                               setCcDone("✓ Montaggio pianificato!"); setTimeout(() => setCcDone(null), 3000);
-                            }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA</button>
+                            }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA</button>
                           </div>
                         </div>
                       )}
@@ -5972,23 +5972,23 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       )}
                       {saldoFatCC && !saldoPagatoCC && (
                         ccConfirm !== "pagata" ? (
-                          <button onClick={() => setCcConfirm("pagata")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ SEGNA PAGATA €{fmtCC(restoCC)} →</button>
+                          <button onClick={() => setCcConfirm("pagata")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ SEGNA PAGATA €{fmtCC(restoCC)} →</button>
                         ) : (
-                          <div style={{ background: "#28A0A012", borderRadius: 10, padding: 12, border: "1px solid #28A0A030" }}>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: "#28A0A0", marginBottom: 4 }}>Conferma pagamento €{fmtCC(restoCC)}</div>
+                          <div style={{ background: "#1E3A5F12", borderRadius: 10, padding: 12, border: "1px solid #1E3A5F30" }}>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#1E3A5F", marginBottom: 4 }}>Conferma pagamento €{fmtCC(restoCC)}</div>
                             <div style={{ display: "flex", gap: 8 }}>
                               <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                               <button onClick={() => {
                                 setFattureDB(prev => prev.map(f => f.cmId === c.id && !f.pagata ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: "Bonifico" } : f));
                                 setFaseTo(c.id, "chiusura");
                                 setCcConfirm(null); setCcDone("✓ Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000);
-                              }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO INCASSO</button>
+                              }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO INCASSO</button>
                             </div>
                           </div>
                         )
                       )}
                       {!saldoFatCC && restoCC <= 0 && (
-                        <button onClick={() => { setFaseTo(c.id, "chiusura"); setCcDone("✓ Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CHIUDI COMMESSA →</button>
+                        <button onClick={() => { setFaseTo(c.id, "chiusura"); setCcDone("✓ Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CHIUDI COMMESSA →</button>
                       )}
                     </div>
                     );
@@ -6049,9 +6049,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           <div style={{ padding: "12px 16px" }}>
             {/* Stato misure globale */}
             <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 14, textAlign: "center", fontSize: 12, fontWeight: 700,
-              background: c.firmaCliente ? "#28A0A012" : "#ff950012",
-              color: c.firmaCliente ? "#28A0A0" : "#ff9500",
-              border: `1px solid ${c.firmaCliente ? "#28A0A030" : "#ff950030"}`,
+              background: c.firmaCliente ? "#1E3A5F12" : "#ff950012",
+              color: c.firmaCliente ? "#1E3A5F" : "#ff9500",
+              border: `1px solid ${c.firmaCliente ? "#1E3A5F30" : "#ff950030"}`,
             }}>
               {c.firmaCliente
                 ? "✓ Misure definitive · cliente ha firmato"
@@ -6065,7 +6065,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 setNuovoRilievoRilevatore("");
                 setNuovoRilievoNote("");
                 setShowNuovoRilievoModal(true);
-              }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
+              }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
                 + NUOVO RILIEVO
               </button>
             )}
@@ -6112,7 +6112,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     </div>
                     {ril.motivoModifica && <div style={{ fontSize: 11, color: "#ff9500", marginTop: 2 }}><I d={ICO.wrench} /> {ril.motivoModifica}</div>}
                     {ril.note && <div style={{ fontSize: 11, color: T.sub, marginTop: 2, fontStyle: "italic" }}>"{ril.note}"</div>}
-                    {ril._ereditatiCount > 0 && <div style={{ fontSize: 10, color: "#28A0A0", marginTop: 2 }}><I d={ICO.clipboard} /> {ril._ereditatiCount} vani ereditati da R{ril.n - 1}</div>}
+                    {ril._ereditatiCount > 0 && <div style={{ fontSize: 10, color: "#1E3A5F", marginTop: 2 }}><I d={ICO.clipboard} /> {ril._ereditatiCount} vani ereditati da R{ril.n - 1}</div>}
                   </div>
                   <span style={{ color: T.sub, fontSize: 14, alignSelf: "center" }}>📷</span>
                 </div>
@@ -6132,7 +6132,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               const tipoMap: any = {
                 provvisorio: { l: "Provvisorio", bg: "#FAC775", c: "#412402" },
                 verificato:  { l: "Verificato",  bg: "#9FC6F0", c: "#0A2842" },
-                definitivo:  { l: "Definitivo",  bg: "#A5DCC6", c: "#04342C" },
+                definitivo:  { l: "Definitivo",  bg: "#A5DCC6", c: "#0F1B2D" },
                 da_rivedere: { l: "Da rivedere", bg: "#F7B5B5", c: "#4B1515" },
                 indicativa:  { l: "Provvisorio", bg: "#FAC775", c: "#412402" },
                 personalizzato: { l: "Personalizzato", bg: "#B5B0E8", c: "#26215C" },
@@ -6141,7 +6141,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               const dataFmt = r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" }) : null;
               return (
                 <div style={{
-                  background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+                  background: "linear-gradient(145deg, #5FD0D0 0%, #1E3A5F 50%, #0F1B2D 100%)",
                   borderRadius: 16, padding: "14px 16px", marginBottom: 12,
                   boxShadow: "0 6px 18px rgba(31,120,120,0.25), inset 0 1px 2px rgba(255,255,255,0.25)",
                   position: "relative" as any, overflow: "hidden",
@@ -6194,10 +6194,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       style={{
                         padding: "5px 11px", borderRadius: 9, cursor: "pointer",
                         fontSize: 11, fontWeight: 800,
-                        background: isSel ? "linear-gradient(145deg, #5FD0D0, #1A7A7A)" : "#fff",
+                        background: isSel ? "linear-gradient(145deg, #5FD0D0, #0F1B2D)" : "#fff",
                         color: isSel ? "#fff" : T.sub,
                         border: `1.5px solid ${isSel ? "transparent" : T.bdr}`,
-                        boxShadow: isSel ? "0 3px 8px rgba(40,160,160,0.35)" : "none",
+                        boxShadow: isSel ? "0 3px 8px rgba(30,58,95,0.35)" : "none",
                         display: "flex", alignItems: "center", gap: 4,
                       }}>
                       R{ril.n} {!isLast && isSel ? "🔒" : ""}
@@ -6229,10 +6229,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 </div>
                 <div onClick={() => { if (lastRilievo) setSelectedRilievo(lastRilievo); }} style={{
                   padding: "7px 12px", borderRadius: 9,
-                  background: "linear-gradient(145deg, #5FD0D0, #1A7A7A)",
+                  background: "linear-gradient(145deg, #5FD0D0, #0F1B2D)",
                   color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer",
                   whiteSpace: "nowrap" as any,
-                  boxShadow: "0 3px 8px rgba(40,160,160,0.35)",
+                  boxShadow: "0 3px 8px rgba(30,58,95,0.35)",
                   flexShrink: 0,
                 }}>
                   R{lastRilievo?.n} →
@@ -6358,9 +6358,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 }}>
                 <div style={{
                   width: 26, height: 26, borderRadius: 8,
-                  background: `linear-gradient(145deg, #5FD0D0, #28A0A0)`,
+                  background: `linear-gradient(145deg, #5FD0D0, #1E3A5F)`,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 5px rgba(40,160,160,0.35)",
+                  boxShadow: "0 2px 5px rgba(30,58,95,0.35)",
                 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </div>
@@ -6499,7 +6499,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     )}
                     {a.tipo === "foto" && a.dataUrl && <img src={a.dataUrl} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} alt="" />}
                     {a.tipo === "file" && a.dataUrl && <a href={a.dataUrl} download={a.nome} style={{ padding: "3px 8px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 600, color: T.acc, cursor: "pointer", textDecoration: "none" }}><I d={ICO.folder} /> Apri</a>}
-                    {a.tipo === "firma" && a.dataUrl && <span onClick={() => { const w = window.open(""); w?.document.write(`<iframe src="${a.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`); }} style={{ padding: "3px 8px", borderRadius: 6, background: "#28A0A012", fontSize: 10, fontWeight: 600, color: "#28A0A0", cursor: "pointer" }}>📸 Apri</span>}
+                    {a.tipo === "firma" && a.dataUrl && <span onClick={() => { const w = window.open(""); w?.document.write(`<iframe src="${a.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`); }} style={{ padding: "3px 8px", borderRadius: 6, background: "#1E3A5F12", fontSize: 10, fontWeight: 600, color: "#1E3A5F", cursor: "pointer" }}>📸 Apri</span>}
                     {a.tipo === "firma" && a.dataUrl && <a href={a.dataUrl} download={a.nome} style={{ padding: "3px 8px", borderRadius: 6, background: T.bg, fontSize: 10, fontWeight: 600, color: T.sub, cursor: "pointer", textDecoration: "none" }}>🔗</a>}
                     {/* Delete */}
                     <div onClick={() => { setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: (x.allegati || []).filter(al => al.id !== a.id) } : x)); setSelectedCM(p => ({ ...p, allegati: (p.allegati || []).filter(al => al.id !== a.id) })); }} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={12} c={T.sub} /></div>
@@ -6552,10 +6552,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
         {!selectedRilievo && c.log && c.log.length > 0 && (() => {
           // Colori per tipo evento (palette mockup v3)
           const EV_COLORS: any = {
-            creazione:    { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", icon: "✦" },
-            rilievo:      { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", icon: "◆" },
-            preventivo:   { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", solid: "#1D9E75", dark: "#04342C", tint: "rgba(29,158,117,0.12)", icon: "€" },
-            firma:        { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", solid: "#1D9E75", dark: "#04342C", tint: "rgba(29,158,117,0.12)", icon: "✓" },
+            creazione:    { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(30,58,95,0.12)", icon: "✦" },
+            rilievo:      { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(30,58,95,0.12)", icon: "◆" },
+            preventivo:   { grad: "linear-gradient(155deg, #2D5A87 0%, #1E3A5F 100%)", solid: "#1E3A5F", dark: "#0F1B2D", tint: "rgba(30,58,95,0.12)", icon: "€" },
+            firma:        { grad: "linear-gradient(155deg, #2D5A87 0%, #1E3A5F 100%)", solid: "#1E3A5F", dark: "#0F1B2D", tint: "rgba(30,58,95,0.12)", icon: "✓" },
             ordine:       { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", solid: "#EF9F27", dark: "#854F0B", tint: "rgba(239,159,39,0.15)", icon: "▶" },
             produzione:   { grad: "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)", solid: "#378ADD", dark: "#042C53", tint: "rgba(55,138,221,0.12)", icon: "⚙" },
             posa:         { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)", icon: "⬒" },
@@ -6745,10 +6745,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                     <div onClick={() => setNuovoRilievoComplesso(false)} style={{
                       padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-                      background: !nuovoRilievoComplesso ? "#28A0A015" : T.card,
-                      border: `1.5px solid ${!nuovoRilievoComplesso ? "#28A0A0" : T.bdr}`,
+                      background: !nuovoRilievoComplesso ? "#1E3A5F15" : T.card,
+                      border: `1.5px solid ${!nuovoRilievoComplesso ? "#1E3A5F" : T.bdr}`,
                     }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: !nuovoRilievoComplesso ? "#28A0A0" : T.text }}>Semplice</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: !nuovoRilievoComplesso ? "#1E3A5F" : T.text }}>Semplice</div>
                       <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Vani senza gerarchia</div>
                     </div>
                     <div onClick={() => setNuovoRilievoComplesso(true)} style={{
@@ -6849,7 +6849,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             <div style={{ background: T.bg, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 580, maxHeight: "88vh", overflowY: "auto", padding: "20px 16px 32px" }}>
               {/* Header */}
               <div style={{ display: "flex", alignItems: "center", marginBottom: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "#28A0A0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginRight: 10 }}><I d={ICO.ruler} s={18} c="#fff" /></div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginRight: 10 }}><I d={ICO.ruler} s={18} c="#fff" /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>Fascicolo Geometra</div>
                   <div style={{ fontSize: 11, color: T.sub }}>{(getVaniAttivi(c) || []).length} vani · {c.code || c.id}</div>
@@ -6912,7 +6912,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     }
                   }}
                   disabled={fascicoloLoading}
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: fascicoloLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: fascicoloLoading ? 0.7 : 1 }}
+                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: fascicoloLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: fascicoloLoading ? 0.7 : 1 }}
                 >
                   {fascicoloLoading ? "+▶ Generazione..." : "🔧 Genera link condivisibile (30gg)"}
                 </button>
@@ -7067,7 +7067,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 setQuickEditCliente(null);
                 setCcDone("Dato salvato!");
                 setTimeout(() => { setCcDone(null); setShowModalFirma(true); }, 800);
-              }} style={{ flex: 2, padding: 12, borderRadius: 10, background: "#28A0A0", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Salva e torna a firma</button>
+              }} style={{ flex: 2, padding: 12, borderRadius: 10, background: "#1E3A5F", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Salva e torna a firma</button>
             </div>
           </div>
         </div>
