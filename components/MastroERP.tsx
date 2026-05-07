@@ -1731,7 +1731,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     badge: (bg, color) => ({ fontSize: 11*fs, fontWeight: 600, padding: `${3*fs}px ${8*fs}px`, borderRadius: 6, background: bg, color, display: "inline-block" }),
     input: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 10, border: "0.5px solid #F0EFEC", background: "#F7F7F5", fontSize: 14*fs, color: "#1A1A18", outline: "none", fontFamily: FF, boxSizing: "border-box" },
     select: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 10, border: "0.5px solid #F0EFEC", background: "#F7F7F5", fontSize: 14*fs, color: "#1A1A18", outline: "none", fontFamily: FF, boxSizing: "border-box" },
-    btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 14, border: "none", background: "#28A0A0", color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: FF, boxShadow: "0 2px 8px rgba(40,160,160,0.3)" },
+    btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 14, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: FF, boxShadow: "0 2px 8px rgba(30,58,95,0.3)" },
     btnCancel: { width: "100%", padding: `${12*fs}px`, borderRadius: 10, border: "none", background: "none", color: T.sub, fontSize: 14*fs, fontWeight: 600, cursor: "pointer", fontFamily: FF },
     tabBar: { position: "fixed", bottom: 0, left: 0, right: 0, width: "100%", background: T.card + "ee", backdropFilter: "blur(20px)", borderTop: `1px solid ${T.bdr}`, display: "flex", padding: `${6*fs}px 0 ${8*fs}px`, zIndex: 100 },
     tabItem: (active) => ({ flex: 1, textAlign: "center", padding: "4px 0", cursor: "pointer", opacity: active ? 1 : 0.5, transition: "opacity 0.15s" }),
@@ -2357,7 +2357,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       return (
         <div style={{ minHeight: "100vh", background: "#F5F4F0" }}>
           {/* Header */}
-          <div style={{ background: "#0D1F1F", padding: "20px 16px 24px", paddingTop: "calc(20px + env(safe-area-inset-top, 0px))" }}>
+          <div style={{ background: "#0F1B2D", padding: "20px 16px 24px", paddingTop: "calc(20px + env(safe-area-inset-top, 0px))" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
               <div onClick={() => { setSelectedCliente(null); setClienteDetailTab("info"); }}
                 style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
@@ -2367,7 +2367,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 <div style={{ fontSize: 18, fontWeight: 900, color: "#fff" }}>{cl.nome}{cl.cognome ? " " + cl.cognome : ""}</div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)" }}>{cl.tipo || "cliente"}</div>
               </div>
-              <span style={{ fontSize: 10, fontWeight: 800, color: "#0D1F1F", background: T.acc, padding: "4px 10px", borderRadius: 8, textTransform: "uppercase" as any }}>{cl.tipo || "cliente"}</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "#0F1B2D", background: T.acc, padding: "4px 10px", borderRadius: 8, textTransform: "uppercase" as any }}>{cl.tipo || "cliente"}</span>
             </div>
             {/* Quick actions */}
             <div style={{ display: "flex", gap: 8 }}>
@@ -3927,7 +3927,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           return (
             <div style={{ minHeight: "100vh", paddingBottom: 100, background: T.bg }}>
               {/* HEADER */}
-              <div style={{ background: "#0D1F1F", padding: "16px 16px 12px", paddingTop: "calc(16px + env(safe-area-inset-top, 0px))" }}>
+              <div style={{ background: "#0F1B2D", padding: "16px 16px 12px", paddingTop: "calc(16px + env(safe-area-inset-top, 0px))" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                   <div>
                     <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>Centro Operativo</div>
@@ -4202,7 +4202,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
               {/* QUICK ACTIONS BAR */}
               <div style={{ position: "fixed", bottom: 70, left: 0, right: 0, zIndex: 50, padding: "0 12px" }}>
-                <div style={{ display: "flex", gap: 6, background: "#0D1F1F", borderRadius: 16, padding: "8px 10px", boxShadow: "0 -4px 20px rgba(0,0,0,.15)" }}>
+                <div style={{ display: "flex", gap: 6, background: "#0F1B2D", borderRadius: 16, padding: "8px 10px", boxShadow: "0 -4px 20px rgba(0,0,0,.25)" }}>
                   <div onClick={() => { setNewCompito(p => ({...p, data: selectedDayStr})); setShowNewCompito(true); }}
                     style={{ flex: 1, padding: "10px 4px", borderRadius: 12, background: T.acc || "#28A0A0", textAlign: "center", cursor: "pointer",
                       boxShadow: "0 3px 0 0 " + (T.accDk || "#156060") }}>
@@ -4333,7 +4333,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         {tab === "altro" && (() => {
           return (
             <div style={{ padding:"20px 16px 100px", minHeight:"100vh" }}>
-              <div style={{ fontSize:20, fontWeight:900, color:"#0D1F1F", marginBottom:20 }}>Altro</div>
+              <div style={{ fontSize:20, fontWeight:900, color:"#0F1B2D", marginBottom:20 }}>Altro</div>
               <div onClick={() => setTab("settings")}
                 style={{ background:"#fff", borderRadius:16, border:"1px solid #C8E4E4",
                   boxShadow:"0 4px 0 0 #A8CCCC", padding:"18px 16px",
@@ -4344,7 +4344,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <I d={ICO.settings} s={22} c="#4A7070" />
                 </div>
                 <div>
-                  <div style={{ fontSize:15, fontWeight:800, color:"#0D1F1F" }}>Impostazioni</div>
+                  <div style={{ fontSize:15, fontWeight:800, color:"#0F1B2D" }}>Impostazioni</div>
                   <div style={{ fontSize:12, color:"#4A7070", marginTop:2 }}>Azienda, team, piani</div>
                 </div>
                 <svg style={{ marginLeft:"auto" }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8BBCBC" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
@@ -4458,7 +4458,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
               <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
               <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", zIndex: 10001, background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius: "22px 22px 0 0", padding: "20px 16px 28px", width: "100%", maxWidth: 500, boxShadow: "0 -10px 40px rgba(0,0,0,0.25)" }}>
                 <div style={{ width: 40, height: 4, background: "#C8E4E4", borderRadius: 2, margin: "0 auto 14px" }} />
-                <div style={{ fontSize: 16, fontWeight: 900, color: "#0D1F1F", marginBottom: 4 }}>Condividi evento</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: "#0F1B2D", marginBottom: 4 }}>Condividi evento</div>
                 <div style={{ fontSize: 11, color: "#5A7878", marginBottom: 16, fontWeight: 500 }}>{ev.text} {dataFmt}{oraFmt}</div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 10 }}>
@@ -4490,7 +4490,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div onClick={shareNative} style={{ padding: "12px 4px", borderRadius: 12, background: "linear-gradient(145deg, #0D1F1F, #1A3535)", color: "#5FD0D0", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, boxShadow: "0 4px 10px rgba(13,31,31,0.25)" }}>
+                  <div onClick={shareNative} style={{ padding: "12px 4px", borderRadius: 12, background: "linear-gradient(145deg, #0F1B2D, #1E3A5F)", color: "#93C5FD", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, boxShadow: "0 4px 10px rgba(15,27,45,0.25)" }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5FD0D0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:4}}><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                     Altro
                   </div>
