@@ -3,7 +3,7 @@
 
 'use client'
 
-import React from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import { IconCheck, IconClock } from './HomeIcons'
 
 export const T = {
@@ -45,9 +45,60 @@ export const btnBaseStyle: React.CSSProperties = {
   letterSpacing: 0.3, height: 36,
 }
 
-export function Card({ children }: { children: React.ReactNode }) {
+
+// ============================================================
+// HOME STATE CONTEXT — opt-in per expand/collapse cards
+// Se V2 non monta <HomeStateProvider>, le card restano sempre aperte (comportamento attuale)
+// ============================================================
+type HomeStateCtx = {
+  isExpanded: (id: string) => boolean
+  toggle: (id: string) => void
+  enabled: boolean
+}
+const HomeStateContext = createContext<HomeStateCtx>({
+  isExpanded: () => true,
+  toggle: () => {},
+  enabled: false,
+})
+
+export function HomeStateProvider({
+  children,
+  defaultExpandedIds,
+  onChange,
+}: {
+  children: React.ReactNode
+  defaultExpandedIds?: string[]
+  onChange?: (expanded: string[]) => void
+}) {
+  const [expanded, setExpanded] = useState<string[]>(defaultExpandedIds ?? [])
+  const onChangeRef = useRef(onChange)
+  useEffect(() => { onChangeRef.current = onChange }, [onChange])
+
+  const toggle = useCallback((id: string) => {
+    setExpanded(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      try { onChangeRef.current?.(next) } catch {}
+      return next
+    })
+  }, [])
+
+  const isExpanded = useCallback((id: string) => expanded.includes(id), [expanded])
+
   return (
-    <div style={{
+    <HomeStateContext.Provider value={{ isExpanded, toggle, enabled: true }}>
+      {children}
+    </HomeStateContext.Provider>
+  )
+}
+
+export function Card({
+  children, cardId,
+}: {
+  children: React.ReactNode
+  cardId?: string
+}) {
+  return (
+    <div data-card-id={cardId} style={{
       background: T.card, border: `1px solid ${T.bdr}`,
       borderRadius: 16, padding: 14, boxShadow: T.shadow,
       WebkitFontSmoothing: 'antialiased',
@@ -58,19 +109,90 @@ export function Card({ children }: { children: React.ReactNode }) {
 }
 
 export function CardHeader({
-  index, title, link, indexBg, onLink,
-}: { index: number; title: string; link?: string; indexBg: string; onLink?: () => void }) {
+  index, title, link, indexBg, onLink, cardId, summary,
+}: {
+  index: number
+  title: string
+  link?: string
+  indexBg: string
+  onLink?: () => void
+  cardId?: string
+  summary?: string
+}) {
+  const ctx = useContext(HomeStateContext)
+  const useExpand = ctx.enabled && !!cardId
+  const expanded = useExpand ? ctx.isExpanded(cardId!) : true
+
+  const handleHeaderClick = useExpand
+    ? (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement
+        if (target.closest('[data-no-toggle]')) return
+        ctx.toggle(cardId!)
+      }
+    : undefined
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ background: indexBg, color: '#FFF', fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6 }}>{index}</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: T.text, letterSpacing: 0.4 }}>{title}</span>
+    <div
+      onClick={handleHeaderClick}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: expanded ? 12 : 0,
+        cursor: useExpand ? 'pointer' : 'default',
+        userSelect: 'none' as const,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+        <span style={{ background: indexBg, color: '#FFF', fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, flexShrink: 0 }}>{index}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: T.text, letterSpacing: 0.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
       </div>
-      {link && (
-        <span onClick={onLink} style={{ fontSize: 11, color: T.acc, fontWeight: 600, cursor: onLink ? 'pointer' : 'default' }}>
+      {!expanded && summary && (
+        <span style={{
+          fontSize: 11, fontWeight: 700, color: T.muted, background: T.graySoft,
+          padding: '3px 8px', borderRadius: 6, marginRight: 8,
+          fontVariantNumeric: 'tabular-nums', flexShrink: 0,
+        }}>{summary}</span>
+      )}
+      {expanded && link && (
+        <span data-no-toggle onClick={(e) => { e.stopPropagation(); onLink && onLink() }} style={{ fontSize: 11, color: T.acc, fontWeight: 600, cursor: onLink ? 'pointer' : 'default', flexShrink: 0 }}>
           {link} ›
         </span>
       )}
+      {useExpand && (
+        <svg
+          width={16} height={16} viewBox="0 0 24 24" fill="none"
+          stroke={T.acc} strokeWidth={2.5}
+          style={{
+            marginLeft: 8,
+            transition: 'transform 0.25s ease',
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            flexShrink: 0,
+          }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      )}
+    </div>
+  )
+}
+
+// Wrapper interno: nasconde i figli quando la card e collassata
+// I widget esistenti devono essere wrappati con <CardBody cardId={...}> per attivare collapse
+// Senza CardBody, il body resta sempre visibile (comportamento attuale)
+export function CardBody({
+  children, cardId,
+}: {
+  children: React.ReactNode
+  cardId?: string
+}) {
+  const ctx = useContext(HomeStateContext)
+  const visible = !ctx.enabled || !cardId || ctx.isExpanded(cardId)
+  return (
+    <div style={{
+      maxHeight: visible ? 2000 : 0,
+      overflow: 'hidden',
+      transition: 'max-height 0.3s ease',
+    }}>
+      {children}
     </div>
   )
 }
