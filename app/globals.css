@@ -71,3 +71,30 @@ button[style*="border-radius: 6"][style*="border: 1px solid rgb(30, 58, 95)"]:ac
   0%   { transform: rotate(-0.4deg); }
   100% { transform: rotate(0.4deg); }
 }
+/* === MASTRO HD OVERSCROLL FIX START ===
+   Top: navy (uguale all'header)
+   Bottom: grigio acciaio (uguale al body)
+   Risolve le strisce bianche durante bounce scroll iOS/Android
+*/
+html {
+  background: #94A3B8;
+}
+body {
+  background: #94A3B8;
+  overscroll-behavior: none;
+}
+/* Top safe-area: navy uguale all'header */
+html, body {
+  background-color: #94A3B8;
+}
+/* Per Safari iOS: forziamo split colore */
+@supports (-webkit-touch-callout: none) {
+  html {
+    background: linear-gradient(to bottom, #0F1B2D 0%, #0F1B2D 50%, #94A3B8 50%, #94A3B8 100%);
+    background-attachment: fixed;
+  }
+  body {
+    background: transparent;
+  }
+}
+/* === MASTRO HD OVERSCROLL FIX END ===*/

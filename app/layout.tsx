@@ -3,6 +3,8 @@ import * as Sentry from '@sentry/nextjs'
 import type { Metadata, Viewport } from 'next'
 import { CookieBanner } from '@/components/mastro/ui/CookieBanner'
 
+export const themeColor = '#0F1B2D';
+
 export const metadata: Metadata = {
   title: 'fliwoX',
   description: 'Fatto per chi lavora con le mani',
