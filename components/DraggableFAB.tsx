@@ -1,7 +1,7 @@
 "use client";
 import { useMastro } from "./MastroContext";
 import { useState, useEffect, useRef } from "react";
-export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCliente, onCommessa, onMessaggio, onLastCM, recentActions }) {
+export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCliente, onCommessa, onMessaggio, onLastCM, recentActions, hidden }: any) {
   const mastroCtx = (() => { try { return useMastro(); } catch { return null; } })();
 
   const buildContext = () => {
@@ -440,7 +440,7 @@ Per accettare il preventivo o per qualsiasi informazione non esiti a contattarci
           ))}
         </div>
       )}
-      <div ref={wrapRef} style={{ position: "fixed", [isRight ? "right" : "left"]: 0, top: topPx, zIndex: 92 }}>
+      <div ref={wrapRef} style={{ position: "fixed", [isRight ? "right" : "left"]: 0, top: topPx, zIndex: 92, display: hidden ? "none" : undefined }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 110 : 0, overflow: "hidden", background: "#0f1f38",
             borderRadius: isRight ? "12px 0 0 0" : "0 12px 0 0",
