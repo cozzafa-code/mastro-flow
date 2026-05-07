@@ -17,19 +17,19 @@ import RiepilogoPanel from "./RiepilogoPanel";
 
 // ─── fliwoX THEME ──────────────────────────────────────────────
 const TH = {
-  bgPage: "#E4F2F2",
+  bgPage: "#F1F5F9",
   bgCard: "#FFFFFF",
-  bgCardAlt: "#F5FBFB",
-  tealBright: "#5FD0D0",
+  bgCardAlt: "#F8FAFC",
+  tealBright: "#1E3A5F",
   teal: "#1E3A5F",
   tealDark: "#0F1B2D",
-  tealDeep: "#0D4040",
-  tealMuted: "#8FA8A8",
-  ink: "#0D1F1F",
-  sub: "#5A7878",
-  subLight: "#8FA8A8",
-  border: "rgba(40,160,160,0.08)",
-  borderSolid: "#C8E4E4",
+  tealDeep: "#0F1B2D",
+  tealMuted: "#475A75",
+  ink: "#0F1B2D",
+  sub: "#475A75",
+  subLight: "#475A75",
+  border: "rgba(30,58,95,0.10)",
+  borderSolid: "#CBD5E1",
   red: "#E24B4A",
   redBright: "#FF7B4D",
   amber: "#F5A030",
@@ -45,7 +45,7 @@ const AV_GRADS = [
   "linear-gradient(145deg, #FFA94D, #C97716)",
   "linear-gradient(145deg, #A3DC5E, #6A9A26)",
   "linear-gradient(145deg, #7B6BA5, #5A4D85)",
-  "linear-gradient(145deg, #1A3535, #0D1F1F)",
+  "linear-gradient(145deg, #1E3A5F, #0F1B2D)",
 ];
 
 // Colori fase fliwoX
@@ -374,7 +374,7 @@ export default function CommessePanel() {
                   fontSize: 9, fontWeight: 900,
                   padding: "4px 9px", borderRadius: 7,
                   background: "rgba(255,255,255,0.95)",
-                  color: "#0D1F1F",
+                  color: "#0F1B2D",
                   letterSpacing: "0.4px", textTransform: "uppercase" as any,
                   whiteSpace: "nowrap" as any, flexShrink: 0,
                 }}>{fs.text}</span>
@@ -422,7 +422,7 @@ export default function CommessePanel() {
                     })()}
               </span>
               <span style={{
-                color: "#8FA8A8", fontSize: 16, fontWeight: 900,
+                color: "#475A75", fontSize: 16, fontWeight: 900,
                 transform: isExpanded ? "rotate(180deg)" : "none",
                 transition: "transform 0.2s",
               }}>▼</span>
@@ -667,7 +667,7 @@ export default function CommessePanel() {
             >
               {/* Prossima azione */}
               <div style={{
-                background: "linear-gradient(145deg, rgba(95,208,208,0.15), rgba(40,160,160,0.08))",
+                background: "linear-gradient(145deg, rgba(30,58,95,0.18), rgba(30,58,95,0.10))",
                 borderRadius: 12, padding: "10px 12px", marginBottom: 10,
                 border: "1px solid rgba(40,160,160,0.25)",
               }}>
@@ -708,7 +708,7 @@ export default function CommessePanel() {
                 {[
                   { l: "VANI", v: vani.length || "—", c: TH.tealDark },
                   { l: "INCASSATO", v: incassato > 0 ? "€" + (incassato/1000).toFixed(1) + "k" : "€0", c: TH.greenDark },
-                  { l: "PROG", v: Math.round(((PIPELINE.findIndex(p => p.id === c.fase) + 1) / PIPELINE.length) * 100) + "%", c: "#1A3535" },
+                  { l: "PROG", v: Math.round(((PIPELINE.findIndex(p => p.id === c.fase) + 1) / PIPELINE.length) * 100) + "%", c: "#1E3A5F" },
                 ].map((s, i) => (
                   <div key={i} style={{
                     padding: "8px 6px", borderRadius: 10,
@@ -888,7 +888,7 @@ export default function CommessePanel() {
           fontSize: 9, fontWeight: 900,
           padding: "3px 8px", borderRadius: 6,
           background: "rgba(255,255,255,0.95)",
-          color: "#0D1F1F",
+          color: "#0F1B2D",
           letterSpacing: "0.4px", textTransform: "uppercase" as any,
           whiteSpace: "nowrap" as any, flexShrink: 0,
         }}>{fs.text}</span>
@@ -914,7 +914,7 @@ export default function CommessePanel() {
 
       {/* ═══ HERO TEAL fliwoX ═══ */}
       <div style={{
-        background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+        background: "linear-gradient(145deg, #2D5A87 0%, #1E3A5F 50%, #0F1B2D 100%)",
         borderRadius: 22,
         padding: "14px 16px 16px",
         position: "relative" as any,
@@ -1068,7 +1068,7 @@ export default function CommessePanel() {
                   whiteSpace: "nowrap" as any, flexShrink: 0,
                   letterSpacing: "0.3px",
                   background: sel ? style.grad : "#fff",
-                  color: sel ? "#fff" : "#0D1F1F",
+                  color: sel ? "#fff" : "#0F1B2D",
                   boxShadow: sel
                     ? `0 4px 12px ${style.shadow}, inset 0 1px 1px rgba(255,255,255,0.25)`
                     : "0 2px 6px rgba(13,31,31,0.08)",
@@ -1082,7 +1082,7 @@ export default function CommessePanel() {
                   fontSize: 10, fontWeight: 900,
                   padding: "1px 6px", borderRadius: 8,
                   background: sel ? "rgba(255,255,255,0.25)" : "rgba(40,160,160,0.12)",
-                  color: sel ? "#fff" : "#1A7A7A",
+                  color: sel ? "#fff" : "#0F1B2D",
                   border: sel ? "1px solid rgba(255,255,255,0.25)" : "none",
                   minWidth: 18, textAlign: "center" as any,
                 }}>{p.count}</span>
@@ -1096,7 +1096,7 @@ export default function CommessePanel() {
       <div style={{
         display: "flex", gap: 4, alignItems: "center",
         marginBottom: 12, padding: 4,
-        background: "linear-gradient(145deg, rgba(40,160,160,0.08), rgba(40,160,160,0.04))",
+        background: "linear-gradient(145deg, rgba(30,58,95,0.10), rgba(30,58,95,0.06))",
         borderRadius: 14,
         border: "1px solid rgba(200,228,228,0.5)",
         boxShadow: "inset 0 1px 2px rgba(13,31,31,0.04)",
@@ -1109,7 +1109,7 @@ export default function CommessePanel() {
               fontSize: 11, fontWeight: 900, cursor: "pointer",
               whiteSpace: "nowrap" as any,
               background: sel ? "#fff" : "transparent",
-              color: sel ? "#0D1F1F" : "#5A7878",
+              color: sel ? "#0F1B2D" : "#475A75",
               boxShadow: sel ? "0 2px 6px rgba(13,31,31,0.1), 0 0 0 1px rgba(200,228,228,0.4)" : "none",
               letterSpacing: "0.2px",
               transition: "all 0.15s",
@@ -1120,7 +1120,7 @@ export default function CommessePanel() {
           <div style={{
             marginLeft: "auto",
             padding: "6px 11px", borderRadius: 10,
-            background: "linear-gradient(145deg, #1A7A7A 0%, #0F5454 100%)",
+            background: "linear-gradient(145deg, #1E3A5F 0%, #0F1B2D 100%)",
             fontSize: 10, fontWeight: 900, color: "#fff",
             fontFamily: FM, letterSpacing: "-0.1px",
             boxShadow: "0 2px 6px rgba(26,122,122,0.3)",
@@ -1156,7 +1156,7 @@ export default function CommessePanel() {
           <div onClick={() => setShowModal("commessa")} style={{
             marginTop: 16, display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 13,
-            background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+            background: "linear-gradient(145deg, #2D5A87 0%, #1E3A5F 50%, #0F1B2D 100%)",
             color: "#fff", fontSize: 14, fontWeight: 800,
             cursor: "pointer",
             boxShadow: "0 6px 14px rgba(31,120,120,0.35), inset 0 1px 2px rgba(255,255,255,0.3)",
@@ -1215,7 +1215,7 @@ export default function CommessePanel() {
             left: 10, right: 10,
             bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)",
             zIndex: 100,
-            background: "linear-gradient(145deg, #1E8080 0%, #155A5A 55%, #0F4444 100%)",
+            background: "linear-gradient(145deg, #1E3A5F 0%, #0F1B2D 55%, #0F1B2D 100%)",
             borderRadius: 22,
             padding: "12px 12px 12px",
             boxShadow: "0 18px 40px rgba(15,68,68,0.45), 0 6px 14px rgba(15,68,68,0.25), inset 0 1px 1px rgba(255,255,255,0.12)",
@@ -1238,14 +1238,14 @@ export default function CommessePanel() {
                 style={{
                   padding: "8px 11px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.2)",
                   background: "rgba(255,255,255,0.1)",
-                  color: "#E8F8F8", fontSize: 10, fontWeight: 900, cursor: "pointer",
+                  color: "#F1F5F9", fontSize: 10, fontWeight: 900, cursor: "pointer",
                   letterSpacing: "0.5px", fontFamily: "inherit",
                   display: "flex", alignItems: "center", gap: 5,
                   flexShrink: 0,
                 }}
                 title="Esci dalla modalità selezione"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8F8F8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F1F5F9" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                 ESCI
               </button>
 
@@ -1253,7 +1253,7 @@ export default function CommessePanel() {
               <div style={{ flex: 1, textAlign: "center" as any, display: "flex", flexDirection: "column" as any, gap: 1 }}>
                 <div style={{ fontSize: 8.5, fontWeight: 900, color: "rgba(200,228,228,0.75)", letterSpacing: "1.4px" }}>SELEZIONATE</div>
                 <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", letterSpacing: "-0.2px", fontFamily: FM }}>
-                  <span style={{ color: "#AEE9E9" }}>{nSel}</span>
+                  <span style={{ color: "#94A3B8" }}>{nSel}</span>
                   <span style={{ opacity: 0.5, margin: "0 6px", fontSize: 13, fontWeight: 600 }}>di</span>
                   <span style={{ opacity: 0.9 }}>{filteredSorted.length}</span>
                 </div>
@@ -1269,7 +1269,7 @@ export default function CommessePanel() {
                   padding: "8px 11px", borderRadius: 11,
                   border: `1px solid ${allSel ? "rgba(174,233,233,0.5)" : "rgba(255,255,255,0.2)"}`,
                   background: allSel ? "rgba(174,233,233,0.25)" : "rgba(255,255,255,0.1)",
-                  color: "#E8F8F8", fontSize: 10, fontWeight: 900, cursor: "pointer",
+                  color: "#F1F5F9", fontSize: 10, fontWeight: 900, cursor: "pointer",
                   letterSpacing: "0.5px", fontFamily: "inherit",
                   display: "flex", alignItems: "center", gap: 5,
                   flexShrink: 0,
@@ -1277,9 +1277,9 @@ export default function CommessePanel() {
                 title={allSel ? "Deseleziona tutto" : "Seleziona tutto"}
               >
                 {allSel ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8F8F8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F1F5F9" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                 ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8F8F8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F1F5F9" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                 )}
                 {allSel ? "NESSUNA" : "TUTTE"}
               </button>
