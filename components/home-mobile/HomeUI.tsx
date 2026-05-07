@@ -58,6 +58,10 @@ type HomeStateCtx = {
   allIds: string[]
   expandedCount: number
   enabled: boolean
+  editMode: boolean
+  setEditMode: (v: boolean) => void
+  registerDragStart: (handler: (e: React.PointerEvent, cardId: string) => void) => void
+  triggerDragStart: (e: React.PointerEvent, cardId: string) => void
 }
 const HomeStateContext = createContext<HomeStateCtx>({
   isExpanded: () => true,
@@ -67,9 +71,13 @@ const HomeStateContext = createContext<HomeStateCtx>({
   allIds: [],
   expandedCount: 0,
   enabled: false,
+  editMode: false,
+  setEditMode: () => {},
+  registerDragStart: () => {},
+  triggerDragStart: () => {},
 })
 
-// Hook export per consumer esterni (es. HomeToolbar)
+// Hook export per consumer esterni
 export function useHomeState() {
   return useContext(HomeStateContext)
 }
@@ -79,15 +87,31 @@ export function HomeStateProvider({
   defaultExpandedIds,
   allIds,
   onChange,
+  editMode: editModeProp,
+  setEditMode: setEditModeProp,
 }: {
   children: React.ReactNode
   defaultExpandedIds?: string[]
   allIds?: string[]
   onChange?: (expanded: string[]) => void
+  editMode?: boolean
+  setEditMode?: (v: boolean) => void
 }) {
   const [expanded, setExpanded] = useState<string[]>(defaultExpandedIds ?? [])
+  const [editModeLocal, setEditModeLocal] = useState(false)
+  const editMode = editModeProp ?? editModeLocal
+  const setEditMode = setEditModeProp ?? setEditModeLocal
+
   const onChangeRef = useRef(onChange)
   useEffect(() => { onChangeRef.current = onChange }, [onChange])
+
+  const dragStartHandlerRef = useRef<((e: React.PointerEvent, cardId: string) => void) | null>(null)
+  const registerDragStart = useCallback((handler: (e: React.PointerEvent, cardId: string) => void) => {
+    dragStartHandlerRef.current = handler
+  }, [])
+  const triggerDragStart = useCallback((e: React.PointerEvent, cardId: string) => {
+    dragStartHandlerRef.current?.(e, cardId)
+  }, [])
 
   const toggle = useCallback((id: string) => {
     setExpanded(prev => {
@@ -116,6 +140,8 @@ export function HomeStateProvider({
       allIds: allIds ?? [],
       expandedCount: expanded.length,
       enabled: true,
+      editMode, setEditMode,
+      registerDragStart, triggerDragStart,
     }}>
       {children}
     </HomeStateContext.Provider>
@@ -128,12 +154,45 @@ export function Card({
   children: React.ReactNode
   cardId?: string
 }) {
+  const ctx = useContext(HomeStateContext)
+  const isEdit = ctx.enabled && ctx.editMode && !!cardId
+
   return (
     <div data-card-id={cardId} style={{
-      background: T.card, border: `1px solid ${T.bdr}`,
+      background: T.card,
+      border: isEdit ? `2px dashed ${T.acc}` : `1px solid ${T.bdr}`,
       borderRadius: 16, padding: 14, boxShadow: T.shadow,
       WebkitFontSmoothing: 'antialiased',
+      animation: isEdit ? 'mastroWiggle 0.4s ease-in-out infinite alternate' : undefined,
+      position: 'relative' as const,
+      transition: 'border 0.2s ease',
     }}>
+      {isEdit && (
+        <div
+          data-handle
+          onPointerDown={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            ctx.triggerDragStart(e, cardId!)
+          }}
+          style={{
+            position: 'absolute' as const,
+            left: -8, top: '50%', transform: 'translateY(-50%)',
+            width: 28, height: 28, borderRadius: 6,
+            background: T.acc, color: '#FFF',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'grab', touchAction: 'none' as const,
+            boxShadow: '0 2px 6px rgba(15,23,42,0.25)',
+            zIndex: 10,
+          }}
+        >
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor">
+            <circle cx={9} cy={6} r={1.5}/><circle cx={15} cy={6} r={1.5}/>
+            <circle cx={9} cy={12} r={1.5}/><circle cx={15} cy={12} r={1.5}/>
+            <circle cx={9} cy={18} r={1.5}/><circle cx={15} cy={18} r={1.5}/>
+          </svg>
+        </div>
+      )}
       {children}
     </div>
   )
@@ -154,10 +213,11 @@ export function CardHeader({
   const useExpand = ctx.enabled && !!cardId
   const expanded = useExpand ? ctx.isExpanded(cardId!) : true
 
-  const handleHeaderClick = useExpand
+  const handleHeaderClick = useExpand && !ctx.editMode
     ? (e: React.MouseEvent) => {
         const target = e.target as HTMLElement
         if (target.closest('[data-no-toggle]')) return
+        if (target.closest('[data-handle]')) return
         ctx.toggle(cardId!)
       }
     : undefined
