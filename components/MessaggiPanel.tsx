@@ -10,20 +10,20 @@ import AiTecnicoChat from "./AiTecnicoChat";
 const L = {
   bg:          "#D8EEEE",
   surface:     "#ffffff",
-  surfaceLow:  "#EEF8F8",
+  surfaceLow:  "#F1F5F9",
   surfaceMid:  "#D8EEEE",
-  primary:     "#28A0A0",
-  primaryCont: "#156060",
+  primary:     "#1E3A5F",
+  primaryCont: "#0F1B2D",
   onPrimary:   "#ffffff",
   muted:       "#8BBCBC",
   text:        "#0D1F1F",
-  sub:         "#4A7070",
+  sub:         "#475A75",
   placeholder: "#8BBCBC",
   green:       "#1A9E73",
   red:         "#DC4444",
   amber:       "#D08008",
   amberBg:     "rgba(208,128,8,0.12)",
-  border:      "#C8E4E4",
+  border:      "#CBD5E1",
   glass:       "rgba(255,255,255,0.9)",
 } as const;
 const SH = {
@@ -41,7 +41,7 @@ export default function MessaggiPanel() {
     // === EMAIL FOLDERS ===
     const [emailCartelle, setEmailCartelle] = React.useState<any[]>(() => {
       try { const v = localStorage.getItem("mastro:emailCartelle"); return v ? JSON.parse(v) : [
-        { id: "inbox", nome: "Inbox", icon: "inbox", color: "#28A0A0", regole: [], system: true },
+        { id: "inbox", nome: "Inbox", icon: "inbox", color: "#1E3A5F", regole: [], system: true },
         { id: "clienti", nome: "Clienti", icon: "users", color: "#1A9E73", regole: [] },
         { id: "fornitori", nome: "Fornitori", icon: "package", color: "#F97316", regole: [] },
         { id: "commercialista", nome: "Commercialista", icon: "wallet", color: "#3B7FE0", regole: [] },
@@ -112,7 +112,7 @@ export default function MessaggiPanel() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer",
               }}>
-                <Ico d={ICO.pen} s={14} c="#28A0A0" />
+                <Ico d={ICO.pen} s={14} c="#1E3A5F" />
               </div>
             </div>
             <div style={{ color: "#FFFFFF", fontSize: 24, fontWeight: 600, letterSpacing: -0.3 }}>Messaggi</div>
@@ -137,11 +137,11 @@ export default function MessaggiPanel() {
                     flex: 1, textAlign: "center" as const, padding: 7, borderRadius: 10,
                     fontSize: 11, fontWeight: active ? 700 : 500, cursor: "pointer",
                     background: active ? "#FFFFFF" : "transparent",
-                    color: active ? "#28A0A0" : "rgba(255,255,255,0.85)",
+                    color: active ? "#1E3A5F" : "rgba(255,255,255,0.85)",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                     position: "relative" as const,
                   }}>
-                    <Ico d={st.ico} s={11} c={active ? "#28A0A0" : "rgba(255,255,255,0.85)"} />
+                    <Ico d={st.ico} s={11} c={active ? "#1E3A5F" : "rgba(255,255,255,0.85)"} />
                     {st.l}
                     {st.count > 0 && (
                       <span style={{
@@ -163,17 +163,17 @@ export default function MessaggiPanel() {
               display:"flex", alignItems:"center", gap:8, padding:"11px 14px",
               background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
               borderRadius:13,
-              boxShadow:"0 6px 16px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)",
-              border:"1px solid rgba(200,228,228,0.5)",
+              boxShadow:"0 6px 16px rgba(30,58,95,0.15), inset 0 1px 1px rgba(255,255,255,0.8)",
+              border:"1px solid rgba(148,163,184,0.5)",
             }}>
-              <Ico d={ICO.search} s={14} c="#4A7070" />
+              <Ico d={ICO.search} s={14} c="#475A75" />
               <input style={{ flex:1, border:"none", background:"transparent", fontSize:14, fontWeight:600, color:"#0D1F1F", outline:"none", fontFamily:"inherit" }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
-              {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor:"pointer", fontSize:16, color:"#4A7070" }}>×</div>}
+              {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor:"pointer", fontSize:16, color:"#475A75" }}>×</div>}
             </div>
           </div>
           <div style={{ display:"flex", gap:6, padding:"0 14px 10px", overflowX:"auto" }}>
             {[
-              { id:"tutti", l:"Tutti", c:"#28A0A0" },
+              { id:"tutti", l:"Tutti", c:"#1E3A5F" },
               { id:"whatsapp", l:"WhatsApp", ico:ICO.messageCircle, c:"#25d366" },
               { id:"email", l:"Email", ico:ICO.mail, c:"#3B7FE0" },
               { id:"sms", l:"SMS", ico:ICO.phone, c:"#D08008" },
@@ -182,8 +182,8 @@ export default function MessaggiPanel() {
               const unr = f.id === "tutti" ? unread : msgs.filter(m => m.canale === f.id && !m.read).length;
               const sel = msgFilter === f.id;
               return (
-                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding:"8px 14px", borderRadius:18, border: sel ? "none" : "1px solid #C8E4E4", background: sel ? `linear-gradient(145deg, ${f.c}, ${f.c}CC)` : "linear-gradient(155deg, #FFFFFF, #F5FBFB)", fontSize:11, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#4A7070", display:"flex", alignItems:"center", gap:5, boxShadow: sel ? `0 4px 10px ${f.c}40, inset 0 1px 1px rgba(255,255,255,0.2)` : "0 2px 6px rgba(31,120,120,0.08)", letterSpacing:"0.2px" }}>
-                  {f.ico && <Ico d={f.ico} s={12} c={sel ? "white" : "#4A7070"} />}{f.l}
+                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding:"8px 14px", borderRadius:18, border: sel ? "none" : "1px solid #C8E4E4", background: sel ? `linear-gradient(145deg, ${f.c}, ${f.c}CC)` : "linear-gradient(155deg, #FFFFFF, #F5FBFB)", fontSize:11, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#475A75", display:"flex", alignItems:"center", gap:5, boxShadow: sel ? `0 4px 10px ${f.c}40, inset 0 1px 1px rgba(255,255,255,0.2)` : "0 2px 6px rgba(30,58,95,0.12)", letterSpacing:"0.2px" }}>
+                  {f.ico && <Ico d={f.ico} s={12} c={sel ? "white" : "#475A75"} />}{f.l}
                   {unr > 0 && <span style={{ width:16, height:16, borderRadius:"50%", background: sel ? "rgba(255,255,255,0.3)" : f.c, color:"white", fontSize:9, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center" }}>{unr}</span>}
                 </div>
               );
@@ -191,24 +191,24 @@ export default function MessaggiPanel() {
           </div>
           <div style={{ padding:"0 14px" }}>
             {filteredMsgs.length === 0 ? (
-              <div style={{ padding:30, textAlign:"center", color:"#4A7070", fontSize:13, fontWeight:700 }}>Nessun messaggio</div>
+              <div style={{ padding:30, textAlign:"center", color:"#475A75", fontSize:13, fontWeight:700 }}>Nessun messaggio</div>
             ) : (
-              <div style={{ background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(31,120,120,0.1)", border:"1px solid rgba(200,228,228,0.5)" }}>
+              <div style={{ background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(30,58,95,0.15)", border:"1px solid rgba(148,163,184,0.5)" }}>
                 {filteredMsgs.map(m => (
                   <div key={m.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"13px 14px", borderBottom:"0.5px solid #F0EFEC", cursor:"pointer", background: m.read ? "transparent" : "rgba(40,160,160,0.05)" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
-                    <div style={{ width:44, height:44, borderRadius:12, background: chBg[m.canale] || "#EEF8F8", border:`2px solid ${chCol[m.canale] || "#C8E4E4"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:900, color: chCol[m.canale] || "#28A0A0", flexShrink:0, position:"relative", boxShadow:"0 2px 6px rgba(0,0,0,0.1)" }}>
+                    <div style={{ width:44, height:44, borderRadius:12, background: chBg[m.canale] || "#F1F5F9", border:`2px solid ${chCol[m.canale] || "#CBD5E1"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:900, color: chCol[m.canale] || "#1E3A5F", flexShrink:0, position:"relative", boxShadow:"0 2px 6px rgba(0,0,0,0.1)" }}>
                       {m.from.charAt(0).toUpperCase()}
                       <div style={{ position:"absolute", bottom:-2, right:-2, background:"white", borderRadius:"50%", padding:1 }}>{chIco[m.canale]}</div>
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                         <div style={{ fontSize:14, fontWeight: m.read ? 700 : 900, color:"#0D1F1F", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const }}>{m.from}</div>
-                        <div style={{ fontSize:10, color: m.read ? "#4A7070" : "#28A0A0", fontWeight: m.read ? 700 : 900, flexShrink:0, marginLeft:8 }}>{m.time}</div>
+                        <div style={{ fontSize:10, color: m.read ? "#475A75" : "#1E3A5F", fontWeight: m.read ? 700 : 900, flexShrink:0, marginLeft:8 }}>{m.time}</div>
                       </div>
-                      <div style={{ fontSize:12, fontWeight: m.read ? 600 : 800, color: m.read ? "#4A7070" : "#0D1F1F", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const }}>{m.preview}</div>
+                      <div style={{ fontSize:12, fontWeight: m.read ? 600 : 800, color: m.read ? "#475A75" : "#0D1F1F", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const }}>{m.preview}</div>
                       {m.cm && <div style={{ marginTop:4 }}><span style={{ padding:"2px 8px", borderRadius:20, background:"rgba(208,128,8,0.12)", color:"#D08008", fontSize:9, fontWeight:900, boxShadow:"0 2px 0 0 rgba(208,128,8,0.25)" }}>{m.cm}</span></div>}
                     </div>
-                    {!m.read && <div style={{ width:9, height:9, borderRadius:"50%", background:"#28A0A0", flexShrink:0, boxShadow:"0 2px 0 0 #156060" }} />}
+                    {!m.read && <div style={{ width:9, height:9, borderRadius:"50%", background:"#1E3A5F", flexShrink:0, boxShadow:"0 2px 0 0 #156060" }} />}
                   </div>
                 ))}
               </div>
@@ -555,7 +555,7 @@ export default function MessaggiPanel() {
                         if (!nuovaRegola.trim()) return;
                         setEmailCartelle(prev => prev.map(c => c.id === cart.id ? {...c, regole: [...(c.regole || []), nuovaRegola.trim()]} : c));
                         setNuovaRegola("");
-                      }} style={{ padding: "10px 14px", borderRadius: 10, border: "none", background: cart.color || L.primary, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", boxShadow: "0 3px 0 0 " + (cart.color || "#156060") + "80" }}>+ Aggiungi</button>
+                      }} style={{ padding: "10px 14px", borderRadius: 10, border: "none", background: cart.color || L.primary, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", boxShadow: "0 3px 0 0 " + (cart.color || "#0F1B2D") + "80" }}>+ Aggiungi</button>
                     </div>
                     <button onClick={() => setShowRegolaModal(null)} style={{ width: "100%", marginTop: 8, padding: "10px", borderRadius: 10, border: "1.5px solid " + L.border, background: L.surface, fontSize: 12, fontWeight: 700, cursor: "pointer", color: L.sub }}>Chiudi</button>
                   </div>
@@ -743,14 +743,14 @@ Grazie per il suo messaggio.
         {msgSubTab === "rubrica" && (<>
           <div style={{ padding:"10px 14px 8px" }}>
             <div style={{ display:"flex", alignItems:"center", gap:8, padding:"11px 14px", background:"white", borderRadius:14, border:"1.5px solid #C8E4E4", boxShadow:"0 5px 0 0 #A8CCCC" }}>
-              <Ico d={ICO.search} s={14} c="#4A7070" />
+              <Ico d={ICO.search} s={14} c="#475A75" />
               <input style={{ flex:1, border:"none", background:"transparent", fontSize:14, fontWeight:700, color:"#0D1F1F", outline:"none", fontFamily:FF }} placeholder="Cerca nella rubrica..." value={rubricaSearch} onChange={e => setRubricaSearch(e.target.value)} />
-              {rubricaSearch && <div onClick={() => setRubricaSearch("")} style={{ cursor:"pointer", fontSize:16, color:"#4A7070" }}>×</div>}
+              {rubricaSearch && <div onClick={() => setRubricaSearch("")} style={{ cursor:"pointer", fontSize:16, color:"#475A75" }}>×</div>}
             </div>
           </div>
           <div style={{ display:"flex", gap:6, padding:"0 14px 10px", overflowX:"auto" }}>
             {[
-              { id:"tutti", l:"Tutti", c:"#28A0A0" },
+              { id:"tutti", l:"Tutti", c:"#1E3A5F" },
               { id:"preferiti", l:"Preferiti", c:"#D08008" },
               { id:"team", l:"Team", c:"#1A9E73" },
               { id:"clienti", l:"Clienti", c:"#3B7FE0" },
@@ -758,15 +758,15 @@ Grazie per il suo messaggio.
             ].map(f => {
               const sel = rubricaFilter === f.id;
               return (
-              <div key={f.id} onClick={() => setRubricaFilter(f.id)} style={{ padding:"7px 13px", borderRadius:20, border:`1.5px solid ${sel ? f.c : "#C8E4E4"}`, background: sel ? f.c : "white", fontSize:11, fontWeight:900, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#4A7070", boxShadow: "none" }}>
+              <div key={f.id} onClick={() => setRubricaFilter(f.id)} style={{ padding:"7px 13px", borderRadius:20, border:`1.5px solid ${sel ? f.c : "#CBD5E1"}`, background: sel ? f.c : "white", fontSize:11, fontWeight:900, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#475A75", boxShadow: "none" }}>
                 {f.l}
               </div>
             );})}
           </div>
           <div style={{ padding:"0 14px" }}>
-            <div style={{ background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(31,120,120,0.1)", border:"1px solid rgba(200,228,228,0.5)" }}>
+            <div style={{ background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(30,58,95,0.15)", border:"1px solid rgba(148,163,184,0.5)" }}>
               {filteredContatti.length === 0 ? (
-                <div style={{ padding:30, textAlign:"center", color:"#4A7070", fontSize:13, fontWeight:700 }}>Nessun contatto trovato</div>
+                <div style={{ padding:30, textAlign:"center", color:"#475A75", fontSize:13, fontWeight:700 }}>Nessun contatto trovato</div>
               ) : filteredContatti.map(c => {
                 const tipoColor = c.tipo === "team" ? "#1A9E73" : c.tipo === "cliente" ? "#3B7FE0" : c.tipo === "fornitore" ? "#7C5FBF" : "#D08008";
                 const tipoLabel = c.tipo === "team" ? "Team" : c.tipo === "cliente" ? "Cliente" : c.tipo === "fornitore" ? "Fornitore" : "Professionista";
@@ -780,7 +780,7 @@ Grazie per il suo messaggio.
                       <div style={{ fontSize:14, fontWeight:900, color:"#0D1F1F" }}>{c.nome}</div>
                       <div style={{ display:"flex", gap:5, marginTop:3, alignItems:"center", flexWrap:"wrap" as const }}>
                         <span style={{ padding:"2px 8px", borderRadius:20, background:tipoColor+"18", color:tipoColor, fontSize:9, fontWeight:900, boxShadow:`0 2px 0 0 ${tipoColor}44` }}>{tipoLabel}</span>
-                        {c.ruolo && <span style={{ fontSize:10, color:"#4A7070", fontWeight:700 }}>{c.ruolo}</span>}
+                        {c.ruolo && <span style={{ fontSize:10, color:"#475A75", fontWeight:700 }}>{c.ruolo}</span>}
                         {c.cm && <span style={{ padding:"2px 8px", borderRadius:20, background:"rgba(208,128,8,0.12)", color:"#D08008", fontSize:9, fontWeight:900 }}>{c.cm}</span>}
                       </div>
                     </div>
@@ -791,7 +791,7 @@ Grazie per il suo messaggio.
                       {(c.canali || []).includes("email") && (
                         <div onClick={() => { setComposeMsg(m => ({ ...m, canale:"email", to:c.nome })); setShowCompose(true); }} style={{ width:32, height:32, borderRadius:9, background:"rgba(59,127,224,0.12)", border:"1px solid rgba(59,127,224,0.3)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}><I d={ICO.mail} /></div>
                       )}
-                      <div onClick={() => { setContatti(cs => cs.map(x => x.id === c.id ? { ...x, preferito: !x.preferito } : x)); }} style={{ width:32, height:32, borderRadius:9, background: c.preferito ? "rgba(208,128,8,0.12)" : "#EEF8F8", border:"1.5px solid #C8E4E4", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+                      <div onClick={() => { setContatti(cs => cs.map(x => x.id === c.id ? { ...x, preferito: !x.preferito } : x)); }} style={{ width:32, height:32, borderRadius:9, background: c.preferito ? "rgba(208,128,8,0.12)" : "#F1F5F9", border:"1.5px solid #C8E4E4", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
                         <span style={{ fontSize:14, color: c.preferito ? "#D08008" : "#8BBCBC" }}>★</span>
                       </div>
                     </div>
