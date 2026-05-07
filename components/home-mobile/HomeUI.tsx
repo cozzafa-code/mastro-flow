@@ -53,21 +53,36 @@ export const btnBaseStyle: React.CSSProperties = {
 type HomeStateCtx = {
   isExpanded: (id: string) => boolean
   toggle: (id: string) => void
+  expandAll: () => void
+  collapseAll: () => void
+  allIds: string[]
+  expandedCount: number
   enabled: boolean
 }
 const HomeStateContext = createContext<HomeStateCtx>({
   isExpanded: () => true,
   toggle: () => {},
+  expandAll: () => {},
+  collapseAll: () => {},
+  allIds: [],
+  expandedCount: 0,
   enabled: false,
 })
+
+// Hook export per consumer esterni (es. HomeToolbar)
+export function useHomeState() {
+  return useContext(HomeStateContext)
+}
 
 export function HomeStateProvider({
   children,
   defaultExpandedIds,
+  allIds,
   onChange,
 }: {
   children: React.ReactNode
   defaultExpandedIds?: string[]
+  allIds?: string[]
   onChange?: (expanded: string[]) => void
 }) {
   const [expanded, setExpanded] = useState<string[]>(defaultExpandedIds ?? [])
@@ -82,10 +97,26 @@ export function HomeStateProvider({
     })
   }, [])
 
+  const expandAll = useCallback(() => {
+    const ids = allIds ?? []
+    setExpanded(ids)
+    try { onChangeRef.current?.(ids) } catch {}
+  }, [allIds])
+
+  const collapseAll = useCallback(() => {
+    setExpanded([])
+    try { onChangeRef.current?.([]) } catch {}
+  }, [])
+
   const isExpanded = useCallback((id: string) => expanded.includes(id), [expanded])
 
   return (
-    <HomeStateContext.Provider value={{ isExpanded, toggle, enabled: true }}>
+    <HomeStateContext.Provider value={{
+      isExpanded, toggle, expandAll, collapseAll,
+      allIds: allIds ?? [],
+      expandedCount: expanded.length,
+      enabled: true,
+    }}>
       {children}
     </HomeStateContext.Provider>
   )

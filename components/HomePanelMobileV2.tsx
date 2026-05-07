@@ -5,7 +5,7 @@
 import React from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
 import * as UI from './home-mobile/HomeUI'
-import { HomeStateProvider } from './home-mobile/HomeUI'
+import { HomeStateProvider, useHomeState } from './home-mobile/HomeUI'
 import { useState } from 'react'
 import { IconCalendar, IconMenu } from './home-mobile/HomeIcons'
 import {
@@ -34,8 +34,11 @@ export default function HomePanelMobileV2(props: any) {
     <div style={{ background: palette.bg, minHeight: '100vh', paddingBottom: 110 }}>
       <Header user={data.user} palette={palette} onMenu={apriSettings} />
 
+      <HomeStateProvider
+        defaultExpandedIds={['oggi-operativo']}
+        allIds={['oggi-operativo','team-live','commesse-critiche','problemi','agenda-live','produzione','carico-lavoro','cassa','azioni-rapide']}
+      >
       <HomeToolbar />
-      <HomeStateProvider defaultExpandedIds={['oggi-operativo']}>
       <div style={{ padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <CardOggiOperativo
           cardId="oggi-operativo"
@@ -88,37 +91,61 @@ export default function HomePanelMobileV2(props: any) {
 }
 
 // ============================================================
-// HomeToolbar: pulsanti Apri/Chiudi tutto
-// Comunica con HomeStateProvider tramite eventi custom (semplice e isolato)
+// HomeToolbar funzionante: usa context HomeStateProvider direttamente
+// Stile clean: 2 chips minimal navy, niente fondo blu chiaro
 // ============================================================
 function HomeToolbar() {
+  const ctx = useHomeState()
+  const total = ctx.allIds.length
+  const open = ctx.expandedCount
+  const allOpen = open === total
+  const allClosed = open === 0
+
   return (
     <div style={{
-      background: '#DBEAFE',
-      borderBottom: '1px solid #93C5FD',
-      padding: '8px 12px',
+      padding: '12px 16px 4px',
       display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       gap: 8,
-      justifyContent: 'flex-end',
     }}>
-      <button
-        onClick={() => window.dispatchEvent(new CustomEvent('mastro-home-expand-all'))}
-        style={{
-          padding: '6px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-          letterSpacing: 0.4, textTransform: 'uppercase' as const,
-          border: '1px solid #1E3A5F', background: '#FFF', color: '#1E3A5F',
-          cursor: 'pointer',
-        }}
-      >Apri tutto</button>
-      <button
-        onClick={() => window.dispatchEvent(new CustomEvent('mastro-home-collapse-all'))}
-        style={{
-          padding: '6px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-          letterSpacing: 0.4, textTransform: 'uppercase' as const,
-          border: '1px solid #1E3A5F', background: '#FFF', color: '#1E3A5F',
-          cursor: 'pointer',
-        }}
-      >Chiudi tutto</button>
+      <span style={{
+        fontSize: 11, fontWeight: 700, color: '#475A75',
+        letterSpacing: 0.5, textTransform: 'uppercase' as const,
+        fontVariantNumeric: 'tabular-nums',
+      }}>
+        {open}/{total} aperte
+      </span>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button
+          onClick={ctx.expandAll}
+          disabled={allOpen}
+          style={{
+            padding: '6px 12px', borderRadius: 999,
+            fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
+            border: '1px solid #1E3A5F',
+            background: allOpen ? '#E2E8F0' : '#FFFFFF',
+            color: allOpen ? '#94A3B8' : '#1E3A5F',
+            cursor: allOpen ? 'default' : 'pointer',
+            opacity: allOpen ? 0.6 : 1,
+            transition: 'all 0.15s ease',
+          }}
+        >Apri tutte</button>
+        <button
+          onClick={ctx.collapseAll}
+          disabled={allClosed}
+          style={{
+            padding: '6px 12px', borderRadius: 999,
+            fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
+            border: '1px solid #1E3A5F',
+            background: allClosed ? '#E2E8F0' : '#1E3A5F',
+            color: allClosed ? '#94A3B8' : '#FFFFFF',
+            cursor: allClosed ? 'default' : 'pointer',
+            opacity: allClosed ? 0.6 : 1,
+            transition: 'all 0.15s ease',
+          }}
+        >Chiudi tutte</button>
+      </div>
     </div>
   )
 }
