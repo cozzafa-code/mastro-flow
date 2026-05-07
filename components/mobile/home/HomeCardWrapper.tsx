@@ -171,7 +171,7 @@ export function HomeCardWrapper(props: HomeCardWrapperProps) {
                 fontSize: 12, fontWeight: 700, color: '#1E3A5F',
                 textDecoration: 'none', cursor: 'pointer',
               }}
-            >{link.label} ›</a>
+            >{link.label} â€º</a>
           )}
           <svg
             width="18" height="18" viewBox="0 0 24 24" fill="none"
