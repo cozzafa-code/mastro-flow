@@ -43,6 +43,18 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   const [side, setSide] = useState("right");
   const [topPx, setTopPx] = useState(300);
   const [aiOpen, setAiOpen] = useState(false);
+  React.useEffect(() => {
+    const openAI = () => { setAiOpen(true); setFabOpen?.(false); };
+    const openAILive = () => { setAiOpen(true); setFabOpen?.(false); };
+    (window as any).__mastroOpenAI = openAI;
+    (window as any).__mastroOpenAILive = openAILive;
+    window.addEventListener("mastro:open-ai", openAI);
+    window.addEventListener("mastro:open-ai-live", openAILive);
+    return () => {
+      window.removeEventListener("mastro:open-ai", openAI);
+      window.removeEventListener("mastro:open-ai-live", openAILive);
+    };
+  }, [setFabOpen]);
   const [wakeActive, setWakeActive] = useState(false);
   const [audioUnlocked, setAudioUnlocked] = useState(false); // wake word listener attivo
   const [aiInput, setAiInput] = useState("");

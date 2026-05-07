@@ -398,21 +398,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   });
   const logoInputRef = useRef(null);
   const [aiChat, setAiChat] = useState(false);
-  useEffect(() => {
-    const openAI = () => {
-      try { setTab && setTab("messaggi"); } catch {}
-      try { setMsgSubTab && setMsgSubTab("ai"); } catch {}
-      setAiChat(true);
-    };
-    window.addEventListener("mastro:open-ai", openAI);
-    window.addEventListener("mastro:open-ai-live", openAI);
-    (window as any).__mastroOpenAI = openAI;
-    (window as any).__mastroOpenAILive = openAI;
-    return () => {
-      window.removeEventListener("mastro:open-ai", openAI);
-      window.removeEventListener("mastro:open-ai-live", openAI);
-    };
-  }, []);
+  // bridge AI gestito da DraggableFAB tramite window.__mastroOpenAI
   const [aiInput, setAiInput] = useState("");
   const [aiMsgs, setAiMsgs] = useState([{ role: "ai", text: "Ciao Fabio! Sono MASTRO AI. Chiedimi qualsiasi cosa sulle tue commesse, task o misure." }]);
   
