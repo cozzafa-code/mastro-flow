@@ -21,8 +21,8 @@ const TH = {
   bgCard: "#FFFFFF",
   bgCardAlt: "#F5FBFB",
   tealBright: "#5FD0D0",
-  teal: "#28A0A0",
-  tealDark: "#1A7A7A",
+  teal: "#1E3A5F",
+  tealDark: "#0F1B2D",
   tealDeep: "#0D4040",
   tealMuted: "#8FA8A8",
   ink: "#0D1F1F",
@@ -40,8 +40,8 @@ const TH = {
 };
 
 const AV_GRADS = [
-  "linear-gradient(145deg, #42D0DC, #1A7A7A)",
-  "linear-gradient(145deg, #5FD0D0, #28A0A0)",
+  "linear-gradient(145deg, #2D5A87, #0F1B2D)",
+  "linear-gradient(145deg, #1E3A5F, #0F1B2D)",
   "linear-gradient(145deg, #FFA94D, #C97716)",
   "linear-gradient(145deg, #A3DC5E, #6A9A26)",
   "linear-gradient(145deg, #7B6BA5, #5A4D85)",
