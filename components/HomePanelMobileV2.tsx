@@ -16,7 +16,7 @@ import { useMastro } from './MastroContext'
 
 const DEFAULT_ORDER = [
   'oggi-operativo','team-live','commesse-critiche','problemi','agenda-live',
-  'produzione','carico-lavoro','cassa','azioni-rapide',
+  'produzione','carico-lavoro','cassa','operatore-fermo','azioni-rapide',
 ]
 
 // ============================================================
@@ -176,6 +176,20 @@ export default function HomePanelMobileV2(props: any) {
       case 'cassa': return wrap(
         <CardCassa soldi={data.soldi} onApri={() => goto('contabilita')} />
       )
+      case 'operatore-fermo': return wrap(
+        data.operatore_fermo ? (
+          <CardOperatoreFermo op={data.operatore_fermo} onApri={() => goto('team')} />
+        ) : (
+          <div style={{ padding: '20px 14px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 8 }}>
+              <span style={{ background: '#92400E', color: '#FFF', fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6 }}>9</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#0A1628', letterSpacing: 0.4 }}>OPERATORE FERMO</span>
+            </div>
+            <div style={{ fontSize: 13, color: '#065F46', fontWeight: 600, marginTop: 12 }}>Tutti operativi</div>
+            <div style={{ fontSize: 11, color: '#475A75', marginTop: 4 }}>Nessun operatore fermo al momento</div>
+          </div>
+        )
+      )
       case 'azioni-rapide': return wrap(
         <CardAzioniRapide
           onTask={() => goto('team')} onCommessa={() => goto('commesse')}
@@ -198,9 +212,7 @@ export default function HomePanelMobileV2(props: any) {
         />
         <div style={{ padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {order.map(id => renderCard(id))}
-          {data.operatore_fermo && (
-            <CardOperatoreFermo op={data.operatore_fermo} onApri={() => goto('team')} />
-          )}
+
         </div>
       </div>
     </EditModeContext.Provider>
@@ -276,6 +288,7 @@ function CardCollapsedHead({ cardId }: { cardId: string }) {
     'produzione':        { n: 6, title: 'PRODUZIONE', bg: '#1E3A5F' },
     'carico-lavoro':     { n: 7, title: 'CARICO LAVORO', bg: '#1E3A5F' },
     'cassa':             { n: 8, title: 'CASSA', bg: '#065F46' },
+    'operatore-fermo':   { n: 9, title: 'OPERATORE FERMO', bg: '#92400E' },
     'azioni-rapide':     { n: 10, title: 'AZIONI RAPIDE', bg: '#1E3A5F' },
   }
   const m = map[cardId] ?? { n: '?', title: cardId, bg: '#1E3A5F' }
