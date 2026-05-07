@@ -107,7 +107,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpe
   // ===== VISTA PROBLEMI =====
   if (a.view === "problemi") {
     return (
-      <div style={{ background: "#F5F8F8", minHeight: "100vh", paddingBottom: 90, fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
+      <div style={{ background: "#94A3B8", minHeight: "100vh", paddingBottom: 90, fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
         <AgendaProblemsMobile
           events={a.events}
           onSegnala={() => setFabOpen(true)}
@@ -120,7 +120,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpe
   }
 
   return (
-    <div style={{ background: "#F5F8F8", minHeight: "100vh", paddingBottom: 90, fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
+    <div style={{ background: "#94A3B8", minHeight: "100vh", paddingBottom: 90, fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
       {/* HEADER GRADIENT con TUTTO dentro: titolo + day strip + switch */}
       <AgendaHeaderMobile
         title={formatHeaderTitle(a.view)}
@@ -145,7 +145,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpe
                   padding: "8px 14px",
                   borderRadius: 999,
                   background: active ? "#fff" : "rgba(255,255,255,0.12)",
-                  color: active ? "#0D1F1F" : "rgba(255,255,255,0.85)",
+                  color: active ? "#0A1628" : "rgba(255,255,255,0.85)",
                   fontSize: 12,
                   fontWeight: active ? 800 : 600,
                   cursor: "pointer",
@@ -202,14 +202,14 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpe
           })()}
 
           <div style={{ padding: "16px 16px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: "#28A0A0", letterSpacing: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: "#1E3A5F", letterSpacing: 1 }}>
               {a.selectedDate === TODAY_ISO ? "OGGI" : "GIORNO"} · {a.eventsOfDay.length} {a.eventsOfDay.length === 1 ? "IMPEGNO" : "IMPEGNI"}
             </div>
             <button
               onClick={() => setFiltersOpen(true)}
               style={{ padding: "6px 12px", borderRadius: 10, background: "#fff", border: "1px solid #E4E4E7", fontSize: 11, fontWeight: 700, color: "#0D1F1F", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0D1F1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A1628" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
               Filtri
@@ -260,13 +260,13 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpe
           width: 56,
           height: 56,
           borderRadius: "50%",
-          background: "linear-gradient(135deg, #28A0A0 0%, #1A7A7A 100%)",
+          background: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)",
           border: "none",
           color: "#fff",
           fontSize: 30,
           fontWeight: 300,
           cursor: "pointer",
-          boxShadow: "0 8px 22px rgba(40,160,160,0.5)",
+          boxShadow: "0 8px 22px rgba(15,27,45,0.5)",
           zIndex: 90,
           display: "flex",
           alignItems: "center",
@@ -320,7 +320,7 @@ function CompletedScreen({ event, onClose, onOpenCommessa }: { event: AgendaEven
   // confetti pseudo-random posizionati
   const confetti = useMemo(() => {
     const arr: { x: number; y: number; c: string; r: number }[] = [];
-    const colors = ["#FFD166", "#28A0A0", "#F08599", "#7AA0E0", "#5FBA7D", "#F0A658"];
+    const colors = ["#FFD166", "#2D5A87", "#F08599", "#7AA0E0", "#5FBA7D", "#F0A658"];
     for (let i = 0; i < 26; i++) {
       arr.push({
         x: Math.random() * 100,
@@ -338,7 +338,7 @@ function CompletedScreen({ event, onClose, onOpenCommessa }: { event: AgendaEven
       style={{
         position: "fixed",
         inset: 0,
-        background: "linear-gradient(160deg, #1F8B8B 0%, #0F4040 100%)",
+        background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
         zIndex: 1500,
         display: "flex",
         flexDirection: "column",
@@ -370,12 +370,12 @@ function CompletedScreen({ event, onClose, onOpenCommessa }: { event: AgendaEven
           width: 90,
           height: 90,
           borderRadius: "50%",
-          background: "#28A0A0",
+          background: "#1E3A5F",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           marginBottom: 22,
-          boxShadow: "0 0 0 10px rgba(40,160,160,0.18)",
+          boxShadow: "0 0 0 10px rgba(30,58,95,0.25)",
           zIndex: 1,
         }}
       >
@@ -395,7 +395,7 @@ function CompletedScreen({ event, onClose, onOpenCommessa }: { event: AgendaEven
 
       <div style={{ width: "100%", maxWidth: 320, marginTop: 28, display: "flex", flexDirection: "column", gap: 10, zIndex: 1 }}>
         <div style={{ fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,0.7)", letterSpacing: 1.5, textAlign: "center", marginBottom: 4 }}>COSA VUOI FARE ORA?</div>
-        <button onClick={(e) => { e.stopPropagation(); onOpenCommessa(); }} style={{ padding: 13, background: "#28A0A0", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+        <button onClick={(e) => { e.stopPropagation(); onOpenCommessa(); }} style={{ padding: 13, background: "#1E3A5F", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
           Vai alla commessa
         </button>
         <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ padding: 13, background: "transparent", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>

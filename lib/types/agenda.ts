@@ -46,17 +46,23 @@ export interface AgendaFilters {
 
 export type AgendaView = "giorno" | "settimana" | "mese" | "problemi";
 
-export const TIPO_COLORS: Record<AgendaEventType, { bg: string; bd: string; tx: string; chip: string; chipTx: string; dot: string }> = {
-  montaggio:   { bg: "#E5F6EC", bd: "#5FBA7D", tx: "#2F8C56", chip: "#D4EFDD", chipTx: "#2F8C56", dot: "#5FBA7D" },
-  sopralluogo: { bg: "#E6EEFB", bd: "#7AA0E0", tx: "#3F66B2", chip: "#D4E0F5", chipTx: "#3F66B2", dot: "#7AA0E0" },
-  produzione:  { bg: "#FFF1DB", bd: "#F0A658", tx: "#B36B1F", chip: "#FCE4C2", chipTx: "#B36B1F", dot: "#F0A658" },
-  problema:    { bg: "#FFE6E9", bd: "#F08599", tx: "#C0445D", chip: "#FCD2D9", chipTx: "#C0445D", dot: "#F08599" },
-  task:        { bg: "#EFEAF7", bd: "#A78EC9", tx: "#6E54A0", chip: "#E0D6F0", chipTx: "#6E54A0", dot: "#A78EC9" },
-  preventivo:  { bg: "#FFF8E1", bd: "#E5B23A", tx: "#9C7A1A", chip: "#FCEBB0", chipTx: "#9C7A1A", dot: "#E5B23A" },
-  firma:       { bg: "#FCE6F2", bd: "#D459A2", tx: "#9C2E7A", chip: "#F7CCE2", chipTx: "#9C2E7A", dot: "#D459A2" },
-  acconto:     { bg: "#E0F2EE", bd: "#28A0A0", tx: "#1A6B6B", chip: "#C8E5DF", chipTx: "#1A6B6B", dot: "#28A0A0" },
-  saldo:       { bg: "#E5F0F9", bd: "#4A7AB0", tx: "#264F7E", chip: "#CCDEF0", chipTx: "#264F7E", dot: "#4A7AB0" },
-  pagata:      { bg: "#EFEFEF", bd: "#A1A1AA", tx: "#52525B", chip: "#DEDEE2", chipTx: "#52525B", dot: "#A1A1AA" },
+// ─── PALETTE NAVY 50/20 (allineata al resto dell'app) ──────────────
+// Ogni tipo ha: bg (sfondo card), bd (bordo sx 4px), tx (testo accent),
+// chip (sfondo pill stato), chipTx (testo pill), dot (pallino mese)
+// soft (background ridotto per griglia settimanale)
+export const TIPO_COLORS: Record<AgendaEventType, { bg: string; bd: string; tx: string; chip: string; chipTx: string; dot: string; soft: string }> = {
+  // Operativi
+  montaggio:   { bg: "#DBE6F1", bd: "#1E3A5F", tx: "#1E3A5F", chip: "#C7D8EA", chipTx: "#1E3A5F", dot: "#1E3A5F", soft: "#EAF1F8" },
+  sopralluogo: { bg: "#E0EAF6", bd: "#2D5A87", tx: "#1E3A5F", chip: "#CCDBE9", chipTx: "#1E3A5F", dot: "#2D5A87", soft: "#EEF3FA" },
+  produzione:  { bg: "#FEF3C7", bd: "#92400E", tx: "#92400E", chip: "#FCE5A1", chipTx: "#92400E", dot: "#92400E", soft: "#FEF8DD" },
+  problema:    { bg: "#FEE2E2", bd: "#991B1B", tx: "#991B1B", chip: "#FCC9C9", chipTx: "#991B1B", dot: "#991B1B", soft: "#FEEDED" },
+  task:        { bg: "#F1F5F9", bd: "#475A75", tx: "#475A75", chip: "#E2E8F0", chipTx: "#475A75", dot: "#475A75", soft: "#F8FAFC" },
+  // Documentali
+  preventivo:  { bg: "#FEF3C7", bd: "#92400E", tx: "#92400E", chip: "#FCE5A1", chipTx: "#92400E", dot: "#92400E", soft: "#FEF8DD" },
+  firma:       { bg: "#FEF3C7", bd: "#B45309", tx: "#92400E", chip: "#FCE5A1", chipTx: "#92400E", dot: "#B45309", soft: "#FEF8DD" },
+  acconto:     { bg: "#DBE6F1", bd: "#1E3A5F", tx: "#1E3A5F", chip: "#C7D8EA", chipTx: "#1E3A5F", dot: "#1E3A5F", soft: "#EAF1F8" },
+  saldo:       { bg: "#E0EAF6", bd: "#2D5A87", tx: "#1E3A5F", chip: "#CCDBE9", chipTx: "#1E3A5F", dot: "#2D5A87", soft: "#EEF3FA" },
+  pagata:      { bg: "#ECFDF5", bd: "#065F46", tx: "#065F46", chip: "#D1FAE5", chipTx: "#065F46", dot: "#065F46", soft: "#F4FFF9" },
 };
 
 export const TIPO_LABEL: Record<AgendaEventType, string> = {
@@ -72,13 +78,15 @@ export const TIPO_LABEL: Record<AgendaEventType, string> = {
   pagata: "PAGATA",
 };
 
+// ─── TOKEN GLOBALI navy 50/20 ──────────────────────────────────────
 export const T = {
-  acc: "#28A0A0",
-  accDk: "#1A7A7A",
-  bg: "#F5F8F8",
-  card: "#FFFFFF",
-  bdr: "#E4F2F2",
-  text: "#0D1F1F",
-  sub: "#71717A",
-  headerGrad: "linear-gradient(160deg, #1F8B8B 0%, #176868 60%, #0F4040 100%)",
+  acc:    "#1E3A5F",   // navy primario
+  accDk:  "#0F1B2D",   // navy scuro
+  bg:     "#94A3B8",   // grigio acciaio body
+  card:   "#FFFFFF",
+  bdr:    "#CBD5E1",
+  text:   "#0A1628",
+  sub:    "#475A75",
+  // Header gradient: navy 50/20 (matches all other panels)
+  headerGrad: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
 };
