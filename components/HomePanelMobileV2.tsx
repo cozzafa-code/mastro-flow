@@ -58,7 +58,9 @@ export default function HomePanelMobileV2(props: any) {
   const startDrag = (e: React.PointerEvent, id: string) => {
     e.preventDefault()
     e.stopPropagation()
-    const cardEl = (e.currentTarget as HTMLElement).closest('[data-card-id]') as HTMLElement
+    ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
+    const handleEl = e.currentTarget as HTMLElement
+    const cardEl = handleEl.closest('[data-card-id]') as HTMLElement
     if (!cardEl) return
     const container = cardEl.parentElement
     if (!container) return
