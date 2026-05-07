@@ -99,8 +99,15 @@ export function HomeStateProvider({
 }) {
   const [expanded, setExpanded] = useState<string[]>(defaultExpandedIds ?? [])
   const [editModeLocal, setEditModeLocal] = useState(false)
-  const editMode = editModeProp ?? editModeLocal
-  const setEditMode = setEditModeProp ?? setEditModeLocal
+  // Sincronizza prop esterna -> state interno
+  useEffect(() => {
+    if (typeof editModeProp === 'boolean') setEditModeLocal(editModeProp)
+  }, [editModeProp])
+  const editMode = editModeLocal
+  const setEditMode = (v: boolean) => {
+    setEditModeLocal(v)
+    setEditModeProp?.(v)
+  }
 
   const onChangeRef = useRef(onChange)
   useEffect(() => { onChangeRef.current = onChange }, [onChange])
