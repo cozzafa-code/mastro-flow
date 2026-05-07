@@ -261,7 +261,11 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
         } else {
           const picked = getNearestVoice(ms, stateRef.current.tx, stateRef.current.ty, stateRef.current.voices);
           if (picked) {
-            if (picked.id === "ai") { try { window.dispatchEvent(new CustomEvent("mastro:open-ai")); (window as any).__mastroOpenAI?.(); } catch {} return; }
+            if (picked.id === "ai") {
+              try { window.dispatchEvent(new CustomEvent("mastro:open-ai")); (window as any).__mastroOpenAI?.(); } catch {}
+              setMenuSide(null); setActionSheet(false);
+              return;
+            }
             if (picked.id !== "commesse") setSelectedCM(null);
             setTab(picked.id);
           }
