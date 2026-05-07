@@ -5,8 +5,8 @@ import React, { useState, useEffect, useRef } from "react";
    GestureNav v2 — sistema navigazione swipe MASTRO (fix back-swipe)
    ═══════════════════════════════════════════════════════════════ */
 
-const TEAL = "#28A0A0";
-const TEAL_DARK = "#1A7A7A";
+const TEAL = "#1E3A5F";
+const TEAL_DARK = "#0F1B2D";
 const DARK = "#0D1F1F";
 const WHITE = "#FFFFFF";
 
