@@ -155,6 +155,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
 
   const unreadMsg = (msgs || []).filter((m: any) => !m.letto).length;
   const voices: Voice[] = [
+    { id: "ai", label: "MASTRO AI", icon: iconSvg(IC.ai) },
     { id: "home", label: "Home", icon: iconSvg(IC.home) },
     { id: "commesse", label: "Commesse", icon: iconSvg(IC.commesse) },
     { id: "agenda", label: "Agenda", icon: iconSvg(IC.agenda) },
@@ -165,6 +166,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
 
   // Mappa voice.id → quick handler (crea veloce)
   const quickHandlers: Record<string, (() => void) | undefined> = {
+    ai: undefined,
     home: undefined,
     commesse: onQuickCommessa,
     agenda: onQuickEvento,
@@ -259,6 +261,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
         } else {
           const picked = getNearestVoice(ms, stateRef.current.tx, stateRef.current.ty, stateRef.current.voices);
           if (picked) {
+            if (picked.id === "ai") { try { window.dispatchEvent(new CustomEvent("mastro:open-ai")); (window as any).__mastroOpenAI?.(); } catch {} return; }
             if (picked.id !== "commesse") setSelectedCM(null);
             setTab(picked.id);
           }
