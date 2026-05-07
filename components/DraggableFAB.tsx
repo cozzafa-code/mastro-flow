@@ -127,10 +127,10 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   const isRight = side === "right";
   const baseItems = [
     { l: "Assistente AI", c: "#1a2b47", t: "AI",  a: () => { setAiOpen(true); setFabOpen(false); } },
-    { l: "Appuntamento", c: "#1A9E73", t: "CAL", a: onEvento },
-    { l: "Nuovo cliente", c: "#3B7FE0", t: "USR", a: onCliente },
-    { l: "Nuova commessa", c: "#d4a843", t: "FLD", a: onCommessa },
-    { l: "Messaggio", c: "#8B5CF6", t: "MSG", a: onMessaggio },
+    { l: "Appuntamento", c: "#1E3A5F", t: "CAL", a: onEvento },
+    { l: "Nuovo cliente", c: "#2D5A87", t: "USR", a: onCliente },
+    { l: "Nuova commessa", c: "#92400E", t: "FLD", a: onCommessa },
+    { l: "Messaggio", c: "#475A75", t: "MSG", a: onMessaggio },
   ];
   const recent = (recentActions || []).slice(0, 3).map(ra => ({
     l: ra.label, c: "#1a2b47", t: "BCK",
