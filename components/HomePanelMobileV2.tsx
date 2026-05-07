@@ -53,6 +53,7 @@ export default function HomePanelMobileV2(props: any) {
         setEditMode={setEditMode}
       >
       <DragReorderBridge order={order} setOrder={setOrder} />
+      <HomeToolbar />
       <div data-card-list style={{ padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         {order.map(id => {
           switch (id) {
@@ -155,6 +156,65 @@ function DragReorderBridge({ order, setOrder }: { order: string[]; setOrder: (o:
   return null
 }
 
+// ============================================================
+// HomeToolbar funzionante: usa context HomeStateProvider direttamente
+// Stile clean: 2 chips minimal navy, niente fondo blu chiaro
+// ============================================================
+function HomeToolbar() {
+  const ctx = useHomeState()
+  const total = ctx.allIds.length
+  const open = ctx.expandedCount
+  const allOpen = open === total
+  const allClosed = open === 0
+
+  return (
+    <div style={{
+      padding: '12px 16px 4px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+    }}>
+      <span style={{
+        fontSize: 11, fontWeight: 700, color: '#475A75',
+        letterSpacing: 0.5, textTransform: 'uppercase' as const,
+        fontVariantNumeric: 'tabular-nums',
+      }}>
+        {open}/{total} aperte
+      </span>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button
+          onClick={ctx.expandAll}
+          disabled={allOpen}
+          style={{
+            padding: '6px 12px', borderRadius: 999,
+            fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
+            border: '1px solid #1E3A5F',
+            background: allOpen ? '#E2E8F0' : '#FFFFFF',
+            color: allOpen ? '#94A3B8' : '#1E3A5F',
+            cursor: allOpen ? 'default' : 'pointer',
+            opacity: allOpen ? 0.6 : 1,
+            transition: 'all 0.15s ease',
+          }}
+        >Apri tutte</button>
+        <button
+          onClick={ctx.collapseAll}
+          disabled={allClosed}
+          style={{
+            padding: '6px 12px', borderRadius: 999,
+            fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
+            border: '1px solid #1E3A5F',
+            background: allClosed ? '#E2E8F0' : '#1E3A5F',
+            color: allClosed ? '#94A3B8' : '#FFFFFF',
+            cursor: allClosed ? 'default' : 'pointer',
+            opacity: allClosed ? 0.6 : 1,
+            transition: 'all 0.15s ease',
+          }}
+        >Chiudi tutte</button>
+      </div>
+    </div>
+  )
+}
 
 function Header({ user, palette, onMenu, editMode, onToggleEdit }: { user: any; palette: any; onMenu?: () => void; editMode?: boolean; onToggleEdit?: () => void }) {
   return (
