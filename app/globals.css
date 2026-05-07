@@ -71,30 +71,30 @@ button[style*="border-radius: 6"][style*="border: 1px solid rgb(30, 58, 95)"]:ac
   0%   { transform: rotate(-0.4deg); }
   100% { transform: rotate(0.4deg); }
 }
-/* === MASTRO HD OVERSCROLL FIX START ===
-   Top: navy (uguale all'header)
-   Bottom: grigio acciaio (uguale al body)
-   Risolve le strisce bianche durante bounce scroll iOS/Android
-*/
+/* === MASTRO HD OVERSCROLL FIX START === */
+/* Top: navy (header) - Bottom: grigio acciaio (body)
+   Tecnica: html navy fisso, body grigio fisso -> bounce mostra colori giusti */
 html {
-  background: #94A3B8;
+  background-color: #0F1B2D !important;
+  background: #0F1B2D !important;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 body {
-  background: #94A3B8;
-  overscroll-behavior: none;
+  background-color: #94A3B8 !important;
+  background: #94A3B8 !important;
+  overscroll-behavior-y: none;
+  margin: 0;
+  min-height: 100vh;
 }
-/* Top safe-area: navy uguale all'header */
-html, body {
-  background-color: #94A3B8;
-}
-/* Per Safari iOS: forziamo split colore */
-@supports (-webkit-touch-callout: none) {
-  html {
-    background: linear-gradient(to bottom, #0F1B2D 0%, #0F1B2D 50%, #94A3B8 50%, #94A3B8 100%);
-    background-attachment: fixed;
-  }
-  body {
-    background: transparent;
-  }
+/* Safe area top: zona sotto Dynamic Island = navy header */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: env(safe-area-inset-top, 0);
+  background: #0F1B2D;
+  z-index: 9999;
+  pointer-events: none;
 }
 /* === MASTRO HD OVERSCROLL FIX END ===*/
