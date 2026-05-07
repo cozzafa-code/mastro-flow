@@ -7,15 +7,16 @@ import React, { useState, useEffect } from "react";
    fliwoX design · header + footer sticky · no muro unico
    ═══════════════════════════════════════════════════════════════ */
 
-const TEAL = "#28A0A0";
-const TEAL_DARK = "#1A7A7A";
-const TEAL_BRIGHT = "#5FD0D0";
-const DARK = "#0D1F1F";
-const SUB = "#5A7878";
-const LIGHT = "#EEF8F8";
-const BORDER = "#C8E4E4";
-const AMBER = "#F5A030";
-const RED = "#DC4444";
+// PALETTE NAVY 50/20 (mantengo i nomi TEAL_* per minimizzare diff col resto del file)
+const TEAL = "#1E3A5F";          // navy primario
+const TEAL_DARK = "#0F1B2D";     // navy scuro
+const TEAL_BRIGHT = "#2D5A87";   // navy chiaro
+const DARK = "#0A1628";
+const SUB = "#475A75";
+const LIGHT = "#DBE6F1";         // navy soft (era teal soft)
+const BORDER = "#CBD5E1";
+const AMBER = "#92400E";
+const RED = "#991B1B";
 
 interface Props {
   newEvent: any;
