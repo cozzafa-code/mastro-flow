@@ -786,33 +786,29 @@ export default function CommessePanel() {
     const fs = faseStyle(c.fase, alert, ferma, giorniFermaCM(c), fase.nome);
     const isLast = idx === filteredSorted.length - 1;
 
-    // ── v58: Lista colorata piena fase (mockup v3) ──
-    const FASE_GRAD_ROW: any = {
-      sopralluogo:  "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)",
-      rilievo:      "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)",
-      preventivo:   "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)",
-      conferma:     "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)",
-      ordini:       "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)",
-      produzione:   "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)",
-      posa:         "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)",
-      collaudo:     "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)",
-      fattura:      "linear-gradient(155deg, #97C459 0%, #639922 100%)",
-      chiusura:     "linear-gradient(155deg, #888780 0%, #5F5E5A 100%)",
+    // Banner color per stato
+    const FASE_COLOR: any = {
+      sopralluogo:  "#1E3A5F",
+      rilievo:      "#1E3A5F",
+      preventivo:   "#92400E",
+      conferma:     "#92400E",
+      ordini:       "#1E3A5F",
+      produzione:   "#2D5A87",
+      posa:         "#2D5A87",
+      collaudo:     "#475A75",
+      fattura:      "#065F46",
+      chiusura:     "#475A75",
     };
-    const rowGrad = alert
-      ? "linear-gradient(155deg, #F09595 0%, #E24B4A 100%)"
-      : (FASE_GRAD_ROW[c.fase] || FASE_GRAD_ROW.sopralluogo);
+    const stColor = alert ? "#991B1B" : (FASE_COLOR[c.fase] || "#1E3A5F");
 
-    // Info compatta sotto nome
     const fatt = (fattureDB || []).filter((f: any) => f.cmId === c.id);
     const fattTutte = fatt.length > 0 && fatt.every((f: any) => f.pagata);
     const infoParts: string[] = [];
     if (vaniA.length > 0) infoParts.push(`${vaniA.length} van${vaniA.length === 1 ? "o" : "i"}`);
     if (euroVal > 0) infoParts.push(fmtEuro(euroVal));
-    if (fattTutte) infoParts.push("pagata ✓");
-    else if (fatt.length > 0) infoParts.push("fatturata");
+    if (fattTutte) infoParts.push("pagata");
     const infoText = ferma
-      ? `${giorniFermaCM(c)} gg ferma •`
+      ? `${giorniFermaCM(c)}gg ferma`
       : (scad ? "scadenza superata" : (infoParts.length > 0 ? infoParts.join(" · ") : c.indirizzo || ""));
 
     return (
@@ -824,82 +820,63 @@ export default function CommessePanel() {
         onContextMenu={(e) => { e.preventDefault(); enterSelection(c.id); }}
         style={{
           display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 12px",
-          borderRadius: 12,
-          marginBottom: 6,
+          padding: "12px 14px",
+          background: "#FFFFFF",
+          borderBottom: isLast ? "none" : "1px solid #F1F5F9",
           cursor: "pointer",
-          background: rowGrad,
-          color: "#fff",
-          boxShadow: "0 3px 8px rgba(13,31,31,0.12)",
-          border: "1px solid rgba(255,255,255,0.25)",
+          position: "relative",
           opacity: selectionMode && !selectedIds.has(c.id) ? 0.6 : 1,
         }}>
+        {/* Bordo verticale stato */}
+        <div style={{
+          position: "absolute", left: 0, top: 0, bottom: 0,
+          width: 4, background: stColor,
+        }} />
 
         {selectionMode && (
           <div style={{
-            width: 22, height: 22, borderRadius: 11, flexShrink: 0,
-            background: selectedIds.has(c.id) ? "#fff" : "rgba(255,255,255,0.25)",
-            border: `2px solid rgba(255,255,255,0.6)`,
+            width: 22, height: 22, borderRadius: 6,
+            border: `2px solid ${selectedIds.has(c.id) ? "#1E3A5F" : "#94A3B8"}`,
+            background: selectedIds.has(c.id) ? "#1E3A5F" : "transparent",
             display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
           }}>
-            {selectedIds.has(c.id) && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TH.tealDark} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            )}
+            {selectedIds.has(c.id) && <span style={{ color: "#FFF", fontSize: 12, fontWeight: 900 }}>{"✓"}</span>}
           </div>
         )}
 
-        {/* Avatar bianco traslucido */}
-        <div style={{
-          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-          background: "rgba(255,255,255,0.25)",
-          border: "1px solid rgba(255,255,255,0.3)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 11, fontWeight: 900, color: "#fff",
-          letterSpacing: "-0.2px",
-          boxShadow: "inset 0 1px 2px rgba(0,0,0,0.1)",
-        }}>{initials(c)}</div>
-
-        {/* Nome + info */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: 12, fontWeight: 900, color: "#fff",
-            letterSpacing: "-0.1px",
-            whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis",
-            textShadow: "0 1px 2px rgba(0,0,0,0.15)",
-            textTransform: "uppercase" as any,
-          }}>
-            {c.cliente}{c.cognome ? " " + c.cognome : ""}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 800, color: "#1E3A5F",
+              background: "#DBE6F1", padding: "2px 6px", borderRadius: 4,
+              letterSpacing: 0.5, flexShrink: 0,
+            }}>{c.code}</span>
+            <span style={{
+              fontSize: 13, fontWeight: 800, color: "#0A1628",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              flex: 1, minWidth: 0,
+            }}>{(c.cliente || "").toUpperCase()}{c.cognome ? " " + c.cognome.toUpperCase() : ""}</span>
           </div>
-          <div style={{
-            fontSize: 10, fontWeight: 700,
-            color: "rgba(255,255,255,0.85)",
-            marginTop: 1,
-            letterSpacing: "0.2px",
-            whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis",
-          }}>
-            {c.code}{infoText ? " · " + infoText : ""}
+          <div style={{ fontSize: 11, color: "#475A75", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {infoText}
           </div>
         </div>
 
-        {/* Pill stato bianca 95% */}
-        <span style={{
-          fontSize: 9, fontWeight: 900,
-          padding: "3px 8px", borderRadius: 6,
-          background: "rgba(255,255,255,0.95)",
-          color: "#0F1B2D",
-          letterSpacing: "0.4px", textTransform: "uppercase" as any,
-          whiteSpace: "nowrap" as any, flexShrink: 0,
-        }}>{fs.text}</span>
-
-        {/* Chevron > */}
-        <span style={{
-          color: "rgba(255,255,255,0.85)",
-          fontSize: 16, fontWeight: 900,
-          flexShrink: 0,
-          textShadow: "0 1px 2px rgba(0,0,0,0.15)",
-        }}>{"›"}</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+          <span style={{
+            background: alert ? "#FEE2E2" : "#DBE6F1",
+            color: alert ? "#991B1B" : "#1E3A5F",
+            padding: "3px 8px", borderRadius: 999,
+            fontSize: 9, fontWeight: 800,
+            textTransform: "uppercase" as any,
+            letterSpacing: 0.5,
+            whiteSpace: "nowrap",
+          }}>{(fase.nome || "").substring(0, 4)}.</span>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth={2.5} strokeLinecap="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
       </div>
     );
   };
@@ -1160,7 +1137,12 @@ export default function CommessePanel() {
           <div onClick={() => setShowModal("commessa")} style={{
             marginTop: 16, display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 13,
-            background: "linear-gradient(145deg, #2D5A87 0%, #1E3A5F 50%, #0F1B2D 100%)",
+            background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
+        marginLeft: -12,
+        marginRight: -12,
+        marginTop: -8,
             color: "#fff", fontSize: 14, fontWeight: 800,
             cursor: "pointer",
             boxShadow: "0 6px 14px rgba(31,120,120,0.35), inset 0 1px 2px rgba(255,255,255,0.3)",
