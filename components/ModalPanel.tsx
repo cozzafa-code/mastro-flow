@@ -321,15 +321,15 @@ Fabio Cozza - Walter Cozza Serramenti` },
               <button onClick={() => setShowModal(null)} style={{
                 width: "100%", marginTop: 8, padding: "13px 16px",
                 borderRadius: 13,
-                background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
-                border: "1.5px solid #C8E4E4",
-                color: "#5A7878",
+                background: "#F1F5F9",
+                border: "1.5px solid #CBD5E1",
+                color: "#475A75",
                 fontSize: 14, fontWeight: 800,
                 cursor: "pointer", fontFamily: "inherit",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                boxShadow: "0 2px 6px rgba(31,120,120,0.06)",
+                boxShadow: "none",
               }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A7878" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475A75" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="19" y1="12" x2="5" y2="12"/>
                   <polyline points="12 19 5 12 12 5"/>
                 </svg>
@@ -358,7 +358,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                 setContatti(prev => [...prev, { id: "CT-" + Date.now(), nome, cognome: (newCM as any)._ctCognome || "", tipo: "cliente", telefono: (newCM as any)._ctTel || "", email: (newCM as any)._ctEmail || "", indirizzo: (newCM as any)._ctAddr || "", preferito: false }]);
                 setNewCM({ cliente: "", indirizzo: "", telefono: "", sistema: "", tipo: "nuova" });
                 setShowModal(null);
-              }} style={{ padding: "14px", borderRadius: 12, background: `linear-gradient(135deg, ${T.acc}, #b86e06)`, color: "#fff", textAlign: "center", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+              }} style={{ padding: "14px", borderRadius: 12, background: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", color: "#fff", textAlign: "center", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
                 Salva cliente ✓
               </div>
             </div>
@@ -367,9 +367,9 @@ Fabio Cozza - Walter Cozza Serramenti` },
           {showModal === "commessa" && (
             <>
               <div style={{
-                background: "linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)",
+                background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
                 borderRadius: 22, padding: "18px 18px", marginBottom: 16, marginLeft: -4, marginRight: -4,
-                boxShadow: "0 4px 16px rgba(40,160,160,0.18)",
+                boxShadow: "0 8px 22px rgba(15,23,42,0.25)",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                   <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 500, letterSpacing: 0.5 }}>CREA NUOVA</div>
@@ -379,7 +379,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0, padding: 0,
                   }} aria-label="Chiudi">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.5" strokeLinecap="round">
                       <line x1="18" y1="6" x2="6" y2="18"/>
                       <line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
@@ -834,15 +834,15 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       <button onClick={() => setShowModal(null)} style={{
                 width: "100%", marginTop: 8, padding: "13px 16px",
                 borderRadius: 13,
-                background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
-                border: "1.5px solid #C8E4E4",
-                color: "#5A7878",
+                background: "#F1F5F9",
+                border: "1.5px solid #CBD5E1",
+                color: "#475A75",
                 fontSize: 14, fontWeight: 800,
                 cursor: "pointer", fontFamily: "inherit",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                boxShadow: "0 2px 6px rgba(31,120,120,0.06)",
+                boxShadow: "none",
               }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A7878" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475A75" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="19" y1="12" x2="5" y2="12"/>
                   <polyline points="12 19 5 12 12 5"/>
                 </svg>
