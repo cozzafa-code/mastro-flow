@@ -126,7 +126,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   }, [setFabOpen]);
   const isRight = side === "right";
   const baseItems = [
-    { l: "Assistente AI", c: "#1a2b47", t: "AI",  a: () => { setAiOpen(true); setFabOpen(false); } },
+    { l: "MASTRO AI", c: "#1a2b47", t: "AI",  a: () => { setAiOpen(true); setFabOpen(false); } },
     { l: "Appuntamento", c: "#1E3A5F", t: "CAL", a: onEvento },
     { l: "Nuovo cliente", c: "#2D5A87", t: "USR", a: onCliente },
     { l: "Nuova commessa", c: "#92400E", t: "FLD", a: onCommessa },
