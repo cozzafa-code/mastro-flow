@@ -95,14 +95,14 @@ export default function MessaggiPanel() {
     }).sort((a, b) => (b.preferito ? 1 : 0) - (a.preferito ? 1 : 0) || a.nome.localeCompare(b.nome));
 
     return (
-      <div style={{ paddingBottom:110, backgroundColor:"#F4F1EA", minHeight:"100vh", fontFamily:"'Manrope', -apple-system, system-ui, sans-serif" }}>
+      <div style={{ paddingBottom:110, backgroundColor:"#94A3B8", minHeight:"100vh", fontFamily:"'Manrope', -apple-system, system-ui, sans-serif" }}>
         {/* HEADER TEAL CAPSULA v5 */}
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 12px) 10px 0" }}>
           <div style={{
-            background: "linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)",
+            background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
             padding: "14px 16px",
             borderRadius: 22,
-            boxShadow: "0 4px 16px rgba(40,160,160,0.18)",
+            boxShadow: "0 8px 22px rgba(15,23,42,0.25)",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
               <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 500, letterSpacing: 0.5 }}>COMUNICAZIONE</div>
@@ -123,7 +123,7 @@ export default function MessaggiPanel() {
             </div>
 
             {/* Tab switch coerente con agenda */}
-            <div style={{ display: "flex", gap: 4, marginTop: 12, background: "rgba(0,0,0,0.15)", borderRadius: 12, padding: 3 }}>
+            <div style={{ display: "flex", gap: 4, marginTop: 12, background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: 3 }}>
               {[
                 { id:"chat", l:"Chat", ico:ICO.messageCircle, count:unread },
                 { id:"email", l:"Email", ico:ICO.mail, count:gmailMessages.filter(m => m.unread).length },
@@ -161,7 +161,7 @@ export default function MessaggiPanel() {
           <div style={{ padding:"10px 14px 8px" }}>
             <div style={{
               display:"flex", alignItems:"center", gap:8, padding:"11px 14px",
-              background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
+              background:"#FFFFFF",
               borderRadius:13,
               boxShadow:"0 6px 16px rgba(30,58,95,0.15), inset 0 1px 1px rgba(255,255,255,0.8)",
               border:"1px solid rgba(148,163,184,0.5)",
@@ -182,7 +182,7 @@ export default function MessaggiPanel() {
               const unr = f.id === "tutti" ? unread : msgs.filter(m => m.canale === f.id && !m.read).length;
               const sel = msgFilter === f.id;
               return (
-                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding:"8px 14px", borderRadius:18, border: sel ? "none" : "1px solid #C8E4E4", background: sel ? `linear-gradient(145deg, ${f.c}, ${f.c}CC)` : "linear-gradient(155deg, #FFFFFF, #F5FBFB)", fontSize:11, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#475A75", display:"flex", alignItems:"center", gap:5, boxShadow: sel ? `0 4px 10px ${f.c}40, inset 0 1px 1px rgba(255,255,255,0.2)` : "0 2px 6px rgba(30,58,95,0.12)", letterSpacing:"0.2px" }}>
+                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding:"8px 14px", borderRadius:18, border: sel ? "none" : "1px solid #CBD5E1", background: sel ? `linear-gradient(145deg, ${f.c}, ${f.c}CC)` : "#FFFFFF", fontSize:11, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#475A75", display:"flex", alignItems:"center", gap:5, boxShadow: sel ? `0 4px 10px ${f.c}40, inset 0 1px 1px rgba(255,255,255,0.2)` : "0 3px 8px rgba(15,23,42,0.10)", letterSpacing:"0.2px" }}>
                   {f.ico && <Ico d={f.ico} s={12} c={sel ? "white" : "#475A75"} />}{f.l}
                   {unr > 0 && <span style={{ width:16, height:16, borderRadius:"50%", background: sel ? "rgba(255,255,255,0.3)" : f.c, color:"white", fontSize:9, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center" }}>{unr}</span>}
                 </div>
@@ -193,9 +193,9 @@ export default function MessaggiPanel() {
             {filteredMsgs.length === 0 ? (
               <div style={{ padding:30, textAlign:"center", color:"#475A75", fontSize:13, fontWeight:700 }}>Nessun messaggio</div>
             ) : (
-              <div style={{ background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(30,58,95,0.15)", border:"1px solid rgba(148,163,184,0.5)" }}>
+              <div style={{ background:"#FFFFFF", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(15,23,42,0.12)", border:"1px solid #CBD5E1" }}>
                 {filteredMsgs.map(m => (
-                  <div key={m.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"13px 14px", borderBottom:"0.5px solid #F0EFEC", cursor:"pointer", background: m.read ? "transparent" : "rgba(40,160,160,0.05)" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
+                  <div key={m.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"13px 14px", borderBottom:"0.5px solid #F0EFEC", cursor:"pointer", background: m.read ? "transparent" : "#DBE6F1" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
                     <div style={{ width:44, height:44, borderRadius:12, background: chBg[m.canale] || "#F1F5F9", border:`2px solid ${chCol[m.canale] || "#CBD5E1"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:900, color: chCol[m.canale] || "#1E3A5F", flexShrink:0, position:"relative", boxShadow:"0 2px 6px rgba(0,0,0,0.1)" }}>
                       {m.from.charAt(0).toUpperCase()}
                       <div style={{ position:"absolute", bottom:-2, right:-2, background:"white", borderRadius:"50%", padding:1 }}>{chIco[m.canale]}</div>
@@ -764,7 +764,7 @@ Grazie per il suo messaggio.
             );})}
           </div>
           <div style={{ padding:"0 14px" }}>
-            <div style={{ background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(30,58,95,0.15)", border:"1px solid rgba(148,163,184,0.5)" }}>
+            <div style={{ background:"#FFFFFF", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(15,23,42,0.12)", border:"1px solid #CBD5E1" }}>
               {filteredContatti.length === 0 ? (
                 <div style={{ padding:30, textAlign:"center", color:"#475A75", fontSize:13, fontWeight:700 }}>Nessun contatto trovato</div>
               ) : filteredContatti.map(c => {
