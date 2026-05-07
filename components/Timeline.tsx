@@ -1,9 +1,12 @@
 "use client";
 // @ts-nocheck
 //
-// MASTRO Suite · Componente Timeline UNIVERSALE
-// Si usa in qualsiasi modulo: <Timeline modulo="commessa" entitaId={cm.id} />
-// Carica eventi da timeline_universale e renderizza con autore + cosa fatto + documenti
+// MASTRO Suite · Componente Timeline UNIVERSALE v2
+// - Cross-reference: un evento puo' apparire in PIU' timeline (commessa+cliente+fattura)
+// - Azioni inline contestuali per tipo evento
+// - Filtri specifici per modulo
+//
+// Uso: <Timeline modulo="cliente" entitaId={cliente.id} aziendaId={azId} />
 //
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -18,22 +21,199 @@ interface TimelineEvento {
   stato: string | null;
   documenti: any[];
   metadata: any;
+  riferimenti: any;
   quando: string;
 }
 
+type ModuloTimeline = "commessa" | "cliente" | "fornitore" | "squadra" | "operatore" | "fattura" | "ordine" | "vano" | "preventivo" | "montaggio" | "altro";
+
 interface TimelineProps {
-  modulo: "commessa" | "cliente" | "fornitore" | "squadra" | "operatore" | "fattura" | "ordine" | "vano" | "preventivo" | "montaggio" | "altro";
+  modulo: ModuloTimeline;
   entitaId: string;
   aziendaId?: string;
   maxHeight?: number;
   titolo?: string;
+  // Callback opzionali per azioni inline
+  onChiamata?: (telefono: string) => void;
+  onWhatsApp?: (telefono: string, msg?: string) => void;
+  onEmail?: (email: string, oggetto?: string) => void;
+  onAprivanoId?: (vanoId: string) => void;
+  onApriCommessaId?: (commessaId: string) => void;
 }
 
-export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titolo = "Cronologia" }: TimelineProps) {
+// ═══ AZIONI INLINE PER TIPO EVENTO ═══
+const AZIONI_PER_TIPO: Record<string, Array<{ id: string; label: string; icon: string; primary?: boolean }>> = {
+  // Cliente / contatti
+  chiamata: [
+    { id: "richiama", label: "Richiama", icon: "phone", primary: true },
+    { id: "whatsapp", label: "WhatsApp", icon: "msg" },
+    { id: "task", label: "Crea task", icon: "check" },
+    { id: "trascrivi", label: "Trascrivi", icon: "doc" },
+  ],
+  recensione: [
+    { id: "rispondi", label: "Rispondi", icon: "msg", primary: true },
+    { id: "condividi", label: "Condividi", icon: "share" },
+    { id: "caso_studio", label: "Caso studio", icon: "doc" },
+  ],
+  // Pagamenti
+  pagamento_ricevuto: [
+    { id: "ricevuta", label: "Genera ricevuta", icon: "doc", primary: true },
+    { id: "conferma", label: "Conferma cliente", icon: "msg" },
+    { id: "registra", label: "Marca registrato", icon: "check" },
+  ],
+  pagamento_emesso: [
+    { id: "carica_conf", label: "Carica conferma", icon: "upload", primary: true },
+    { id: "comunica", label: "Comunica fornitore", icon: "msg" },
+  ],
+  // Documenti
+  preventivo_inviato: [
+    { id: "sollecita", label: "Sollecita", icon: "msg", primary: true },
+    { id: "v_nuova", label: "Crea v.nuova", icon: "doc" },
+    { id: "firma", label: "Marca firmato", icon: "check" },
+    { id: "scarica", label: "Scarica PDF", icon: "download" },
+  ],
+  firma: [
+    { id: "scarica", label: "Scarica PDF firmato", icon: "download", primary: true },
+    { id: "ringraziamento", label: "Invia ringraziamento", icon: "msg" },
+    { id: "crea_ordine", label: "Crea ordine", icon: "check" },
+  ],
+  documento: [
+    { id: "apri", label: "Apri", icon: "eye", primary: true },
+    { id: "scarica", label: "Scarica", icon: "download" },
+    { id: "inoltra", label: "Inoltra", icon: "share" },
+  ],
+  // Vani
+  vano_creato: [
+    { id: "apri_vano", label: "Apri vano", icon: "eye", primary: true },
+    { id: "modifica", label: "Modifica", icon: "edit" },
+    { id: "scheda", label: "Scheda PDF", icon: "doc" },
+  ],
+  vano_completato: [
+    { id: "apri_vano", label: "Apri vano", icon: "eye", primary: true },
+    { id: "modifica", label: "Modifica", icon: "edit" },
+    { id: "scheda", label: "Genera scheda PDF", icon: "doc" },
+    { id: "scarica", label: "Scarica tutto", icon: "download" },
+  ],
+  // Fornitore
+  ordine_emesso: [
+    { id: "sollecita", label: "Sollecita", icon: "msg", primary: true },
+    { id: "consegnato", label: "Marca consegnato", icon: "check" },
+    { id: "ddt", label: "Genera DDT", icon: "doc" },
+    { id: "modifica", label: "Modifica ordine", icon: "edit" },
+  ],
+  contestazione: [
+    { id: "sollecita", label: "Sollecita risposta", icon: "msg", primary: true },
+    { id: "lettera", label: "Genera lettera", icon: "doc" },
+    { id: "risolto", label: "Marca risolto", icon: "check" },
+    { id: "cambia_forn", label: "Valuta cambio fornitore", icon: "share" },
+  ],
+  ritardo_consegna: [
+    { id: "sollecita", label: "Sollecita", icon: "msg", primary: true },
+    { id: "penale", label: "Applica penale", icon: "doc" },
+    { id: "scorecard", label: "Scorecard fornitore", icon: "eye" },
+  ],
+  consegna: [
+    { id: "ddt", label: "Vedi DDT", icon: "eye", primary: true },
+    { id: "ricezione", label: "Conferma ricezione", icon: "check" },
+  ],
+  // Generici
+  commessa_creata: [
+    { id: "apri", label: "Apri commessa", icon: "eye", primary: true },
+  ],
+  foto: [
+    { id: "salva", label: "Salva al rilievo", icon: "check", primary: true },
+    { id: "scarica", label: "Scarica zip", icon: "download" },
+    { id: "condividi", label: "Condividi link", icon: "share" },
+  ],
+  altro: [
+    { id: "modifica", label: "Modifica", icon: "edit" },
+  ],
+};
+
+// ═══ FILTRI SPECIFICI PER MODULO ═══
+const FILTRI_PER_MODULO: Record<ModuloTimeline, Array<{ id: string; label: string; matchTipo: (t: string) => boolean }>> = {
+  commessa: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+    { id: "vani", label: "Vani", matchTipo: (t) => t.startsWith("vano_") },
+    { id: "foto", label: "Foto", matchTipo: (t) => t === "foto" },
+    { id: "chiamate", label: "Chiamate", matchTipo: (t) => t === "chiamata" },
+    { id: "documenti", label: "Documenti", matchTipo: (t) => t === "documento" || t === "preventivo_inviato" || t === "firma" },
+  ],
+  cliente: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+    { id: "commesse", label: "Commesse", matchTipo: (t) => t === "commessa_creata" || t === "commessa_chiusa" },
+    { id: "pagamenti", label: "Pagamenti", matchTipo: (t) => t.startsWith("pagamento_") },
+    { id: "chiamate", label: "Chiamate", matchTipo: (t) => t === "chiamata" },
+    { id: "documenti", label: "Documenti", matchTipo: (t) => t === "documento" || t === "preventivo_inviato" || t === "firma" },
+    { id: "recensioni", label: "Recensioni", matchTipo: (t) => t === "recensione" },
+  ],
+  fornitore: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+    { id: "ordini", label: "Ordini", matchTipo: (t) => t === "ordine_emesso" },
+    { id: "consegne", label: "Consegne", matchTipo: (t) => t === "consegna" || t === "ritardo_consegna" },
+    { id: "pagamenti", label: "Pagamenti", matchTipo: (t) => t === "pagamento_emesso" },
+    { id: "contestazioni", label: "Contestazioni", matchTipo: (t) => t === "contestazione" || t === "ritardo_consegna" },
+    { id: "ddt", label: "DDT", matchTipo: (t) => t === "consegna" },
+  ],
+  squadra: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+    { id: "montaggi", label: "Montaggi", matchTipo: (t) => t === "montaggio" || t.startsWith("montaggio_") },
+    { id: "foto", label: "Foto cantiere", matchTipo: (t) => t === "foto" },
+    { id: "presenze", label: "Presenze", matchTipo: (t) => t === "presenza" || t === "assenza" },
+  ],
+  operatore: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+    { id: "lavori", label: "Lavori", matchTipo: (t) => t === "lavoro_completato" || t === "lavoro_iniziato" },
+    { id: "ore", label: "Ore", matchTipo: (t) => t === "ora_lavoro" || t === "presenza" },
+    { id: "performance", label: "Performance", matchTipo: (t) => t === "kpi" || t === "valutazione" },
+  ],
+  fattura: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+    { id: "modifiche", label: "Modifiche", matchTipo: (t) => t === "fattura_modificata" },
+    { id: "pagamenti", label: "Pagamenti", matchTipo: (t) => t.startsWith("pagamento_") },
+    { id: "solleciti", label: "Solleciti", matchTipo: (t) => t === "sollecito" },
+  ],
+  ordine: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+  ],
+  vano: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+  ],
+  preventivo: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+  ],
+  montaggio: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+  ],
+  altro: [
+    { id: "tutti", label: "Tutti", matchTipo: () => true },
+  ],
+};
+
+// ═══ ICONE INLINE ═══
+const IconSvg = ({ id }: { id: string }) => {
+  const icons: Record<string, JSX.Element> = {
+    phone: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81"/></svg>,
+    msg: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+    check: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>,
+    doc: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+    download: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>,
+    upload: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>,
+    eye: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+    edit: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>,
+    share: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/></svg>,
+  };
+  return icons[id] || icons.check;
+};
+
+export default function Timeline({
+  modulo, entitaId, aziendaId, maxHeight, titolo = "Cronologia",
+  onChiamata, onWhatsApp, onEmail, onAprivanoId, onApriCommessaId,
+}: TimelineProps) {
   const [eventi, setEventi] = useState<TimelineEvento[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("tutti");
-  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!entitaId) return;
@@ -41,11 +221,17 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
 
     const load = async () => {
       setLoading(true);
+
+      // ═══ QUERY CROSS-REFERENCE ═══
+      // Cerca eventi che:
+      // - hanno modulo+entita_id corrispondenti, OPPURE
+      // - hanno riferimenti contenente la chiave del modulo (es. cliente_id=X)
+      const refKey = `${modulo}_id`; // es. "cliente_id", "commessa_id"
+
       let query = supabase
         .from("timeline_universale")
         .select("*")
-        .eq("modulo", modulo)
-        .eq("entita_id", entitaId)
+        .or(`and(modulo.eq.${modulo},entita_id.eq.${entitaId}),riferimenti->>${refKey}.eq.${entitaId}`)
         .order("quando", { ascending: false });
 
       if (aziendaId) {
@@ -67,21 +253,18 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
     return () => { cancelled = true; };
   }, [modulo, entitaId, aziendaId]);
 
-  // Conteggi per filtri
-  const counts = {
-    tutti: eventi.length,
-    vani: eventi.filter(e => e.tipo.startsWith("vano_")).length,
-    foto: eventi.filter(e => e.tipo === "foto").length,
-    chiamate: eventi.filter(e => e.tipo === "chiamata").length,
-    documenti: eventi.filter(e => e.tipo === "documento").length,
-  };
+  // Filtri specifici per modulo
+  const filtri = FILTRI_PER_MODULO[modulo] || FILTRI_PER_MODULO.altro;
+  const filtroAttivo = filtri.find(f => f.id === filter) || filtri[0];
+
+  // Conta eventi per filtro
+  const counts: Record<string, number> = {};
+  filtri.forEach(f => {
+    counts[f.id] = eventi.filter(e => f.matchTipo(e.tipo)).length;
+  });
 
   // Filtra
-  const eventiFiltrati = eventi.filter(e => {
-    if (filter === "tutti") return true;
-    if (filter === "vani") return e.tipo.startsWith("vano_");
-    return e.tipo === filter.replace(/e$/, ""); // "chiamate" -> "chiamata"
-  });
+  const eventiFiltrati = eventi.filter(e => filtroAttivo.matchTipo(e.tipo));
 
   // Helper: ora relativa
   const oraRelativa = (iso: string) => {
@@ -122,6 +305,39 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
   const iniz = (nome: string | null) => {
     if (!nome) return "?";
     return nome.split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase() || "?";
+  };
+
+  // Handler azione inline
+  const handleAzione = (azioneId: string, evento: TimelineEvento) => {
+    const meta = evento.metadata || {};
+    const rif = evento.riferimenti || {};
+
+    // Routing azioni base
+    switch (azioneId) {
+      case "richiama":
+        if (meta.telefono && onChiamata) onChiamata(meta.telefono);
+        else if (meta.telefono) window.open(`tel:${meta.telefono}`);
+        break;
+      case "whatsapp":
+        if (meta.telefono && onWhatsApp) onWhatsApp(meta.telefono, meta.testo_msg);
+        else if (meta.telefono) window.open(`https://wa.me/${meta.telefono.replace(/\D/g,"")}`, "_blank");
+        break;
+      case "apri_vano":
+        if (meta.vano_id && onAprivanoId) onAprivanoId(meta.vano_id);
+        break;
+      case "apri":
+        if (rif.commessa_id && onApriCommessaId) onApriCommessaId(rif.commessa_id);
+        break;
+      case "scarica":
+      case "scarica_pdf":
+        const doc = (evento.documenti || [])[0];
+        if (doc && doc.url && doc.url !== "#") window.open(doc.url, "_blank");
+        break;
+      default:
+        // Azioni custom: marca come fatto via update metadata
+        console.log(`[Timeline] azione "${azioneId}" su evento`, evento.id);
+        break;
+    }
   };
 
   if (loading) {
@@ -172,13 +388,7 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
 
       {/* FILTRI PILL */}
       <div style={{ display: "flex", gap: 4, padding: "8px 12px", borderBottom: "1px solid #E2E8F0", background: "#F8FAFC", overflowX: "auto" as any }}>
-        {[
-          { id: "tutti", l: "Tutti", n: counts.tutti },
-          { id: "vani", l: "Vani", n: counts.vani },
-          { id: "foto", l: "Foto", n: counts.foto },
-          { id: "chiamate", l: "Chiamate", n: counts.chiamate },
-          { id: "documenti", l: "Documenti", n: counts.documenti },
-        ].map((f) => (
+        {filtri.map((f) => (
           <div key={f.id} onClick={() => setFilter(f.id)} style={{
             background: filter === f.id ? "#1E3A5F" : "#FFF",
             border: filter === f.id ? "1px solid #1E3A5F" : "1px solid #CBD5E1",
@@ -189,7 +399,7 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
             whiteSpace: "nowrap" as any,
             flexShrink: 0,
             cursor: "pointer",
-          }}>{f.l} · {f.n}</div>
+          }}>{f.label} · {counts[f.id] || 0}</div>
         ))}
       </div>
 
@@ -214,12 +424,26 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
           }} />
         )}
 
-        {eventiFiltrati.map((ev, idx) => {
-          const isExpanded = expandedIdx === idx;
+        {eventiFiltrati.map((ev) => {
+          const isExpanded = expandedId === ev.id;
           const autorIniz = iniz(ev.autore_nome);
+          const azioniDisponibili = AZIONI_PER_TIPO[ev.tipo] || AZIONI_PER_TIPO.altro;
+
+          // Cross-ref label (mostra a quale altro modulo appartiene se non e' del modulo corrente)
+          const crossRefLabel: string | null = (() => {
+            if (!ev.riferimenti) return null;
+            const rif = ev.riferimenti;
+            // Se l'evento e' di un modulo diverso ma riferito a noi
+            if (ev.modulo !== modulo && rif[`${modulo}_id`] === entitaId) {
+              if (rif.commessa_code) return `da Commessa ${rif.commessa_code}`;
+              if (rif.fattura_code) return `da Fattura ${rif.fattura_code}`;
+              if (rif.ordine_code) return `da Ordine ${rif.ordine_code}`;
+            }
+            return null;
+          })();
 
           return (
-            <div key={ev.id} onClick={() => setExpandedIdx(isExpanded ? null : idx)} style={{
+            <div key={ev.id} onClick={() => setExpandedId(isExpanded ? null : ev.id)} style={{
               position: "relative" as any,
               paddingLeft: 28,
               marginBottom: 9,
@@ -248,6 +472,15 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: "#0A1628", flex: 1 }}>
                     {ev.titolo}
+                    {crossRefLabel && (
+                      <span style={{
+                        marginLeft: 6,
+                        fontSize: 9, fontWeight: 700,
+                        background: "#DBE6F1", color: "#1E3A5F",
+                        padding: "1px 6px", borderRadius: 4,
+                        letterSpacing: "0.2px",
+                      }}>{crossRefLabel}</span>
+                    )}
                   </div>
                   <div style={{ fontSize: 9.5, color: "#94A3B8", fontWeight: 700, flexShrink: 0 }}>
                     {oraRelativa(ev.quando)}
@@ -362,7 +595,7 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
                       </div>
                     )}
 
-                    {/* Misure (se metadata.misure presente) */}
+                    {/* Misure */}
                     {ev.metadata && ev.metadata.misure && typeof ev.metadata.misure === "object" && (
                       <div style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 9, fontWeight: 800, color: "#475A75", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 5, display: "flex", alignItems: "center", gap: 5 }}>
@@ -379,6 +612,32 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
                         </div>
                       </div>
                     )}
+
+                    {/* ═══ AZIONI INLINE ═══ */}
+                    {azioniDisponibili.length > 0 && (
+                      <div style={{ display: "flex", gap: 5, marginTop: 9, flexWrap: "wrap" as any }}>
+                        {azioniDisponibili.map(az => (
+                          <button
+                            key={az.id}
+                            onClick={(e) => { e.stopPropagation(); handleAzione(az.id, ev); }}
+                            style={{
+                              background: az.primary ? "#1E3A5F" : "#FFF",
+                              color: az.primary ? "#FFF" : "#1E3A5F",
+                              border: "1px solid #1E3A5F",
+                              borderRadius: 8,
+                              padding: "6px 10px",
+                              fontSize: 10, fontWeight: 800,
+                              display: "inline-flex", alignItems: "center", gap: 4,
+                              cursor: "pointer",
+                              fontFamily: "inherit",
+                            }}
+                          >
+                            <IconSvg id={az.icon} />
+                            {az.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -390,9 +649,7 @@ export default function Timeline({ modulo, entitaId, aziendaId, maxHeight, titol
   );
 }
 
-// Helper: aggiungere un evento alla timeline da qualsiasi modulo
-// import { aggiungiEvento } from "@/components/Timeline";
-// aggiungiEvento({ modulo: "commessa", entitaId: cm.id, aziendaId, tipo: "vano_completato", titolo: "...", ... });
+// ═══ HELPER: aggiungi evento (con riferimenti incrociati) ═══
 export async function aggiungiEvento(params: {
   modulo: string;
   entitaId: string;
@@ -406,6 +663,7 @@ export async function aggiungiEvento(params: {
   stato?: "completato" | "in_corso" | "urgente" | "warning" | "info";
   documenti?: any[];
   metadata?: any;
+  riferimenti?: any;  // Cross-reference: { commessa_id, cliente_id, fornitore_id, fattura_id, ... }
 }): Promise<{ ok: boolean; id?: string; error?: any }> {
   const { error, data } = await supabase
     .from("timeline_universale")
@@ -422,6 +680,7 @@ export async function aggiungiEvento(params: {
       stato: params.stato || null,
       documenti: params.documenti || [],
       metadata: params.metadata || {},
+      riferimenti: params.riferimenti || {},
       quando: new Date().toISOString(),
     })
     .select("id")
