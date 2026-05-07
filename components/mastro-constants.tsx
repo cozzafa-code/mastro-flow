@@ -106,9 +106,9 @@ export const THEMES = {
     name: "Chiaro", emoji: "sun",
     bg: "#F8FAFC", bg2: "#F1F5F9", card: "#FFFFFF", card2: "#F8FAFC",
     bdr: "#E2E8F0", bdrL: "#F1F5F9", text: "#0F172A", sub: "#64748B", sub2: "#94A3B8",
-    pri: "#28A0A0",
-    acc: "#28A0A0", accD: "#1F7A7A", accLt: "rgba(40,160,160,0.08)", accBg: "linear-gradient(135deg,#28A0A0,#1F7A7A)",
-    grn: "#28A0A0", grnLt: "rgba(40,160,160,0.08)",
+    pri: "#1E3A5F",
+    acc: "#1E3A5F", accD: "#0F1B2D", accLt: "rgba(30,58,95,0.10)", accBg: "linear-gradient(135deg,#1E3A5F,#0F1B2D)",
+    grn: "#065F46", grnLt: "rgba(6,95,70,0.08)",
     red: "#DC4444", redLt: "rgba(220,68,68,0.08)",
     orange: "#E8A020", orangeLt: "rgba(232,160,32,0.08)",
     blue: "#3B7FE0", blueLt: "rgba(59,127,224,0.08)",
@@ -162,16 +162,16 @@ export const THEMES = {
     bdr: "#F0EFEC", bdrL: "#F7F7F5",
     // Testi
     text: "#1A1A18", sub: "#8A8A82", sub2: "#B0B0A8",
-    // Primary teal
-    pri: "#28A0A0",
-    acc: "#28A0A0", accD: "#1D7A7A", accLt: "rgba(40,160,160,0.08)", accBg: "#28A0A0",
+    // Primary navy 50/20
+    pri: "#1E3A5F",
+    acc: "#1E3A5F", accD: "#0F1B2D", accLt: "rgba(30,58,95,0.10)", accBg: "#1E3A5F",
     // Semantici
-    grn: "#0F6E56", grnLt: "rgba(15,110,86,0.08)",
-    red: "#E24B4A", redLt: "rgba(226,75,74,0.08)",
-    orange: "#C4875A", orangeLt: "rgba(196,135,90,0.08)",
-    blue: "#3572A5", blueLt: "rgba(53,114,165,0.08)",
+    grn: "#065F46", grnLt: "rgba(6,95,70,0.08)",
+    red: "#991B1B", redLt: "rgba(153,27,27,0.08)",
+    orange: "#92400E", orangeLt: "rgba(146,64,14,0.08)",
+    blue: "#2D5A87", blueLt: "rgba(45,90,135,0.08)",
     purple: "#7B6BA5", purpleLt: "rgba(123,107,165,0.08)",
-    cyan: "#28A0A0", cyanLt: "rgba(40,160,160,0.08)",
+    cyan: "#2D5A87", cyanLt: "rgba(45,90,135,0.08)",
     // Card shadow — morbide, no 3D
     cardSh: "0 2px 8px rgba(0,0,0,0.04)",
     cardShH: "0 4px 12px rgba(0,0,0,0.06)",
@@ -180,14 +180,14 @@ export const THEMES = {
     // Border radius
     r: 16, r2: 12,
     // Bottoni — ombre morbide
-    btnPrimaryBg: "#28A0A0",
-    btnPrimarySh: "0 2px 8px rgba(40,160,160,0.3)",
+    btnPrimaryBg: "#1E3A5F",
+    btnPrimarySh: "0 2px 8px rgba(15,23,42,0.3)",
     btnSecondaryBg: "#FFFFFF",
     btnSecondarySh: "0 2px 8px rgba(0,0,0,0.04)",
     // Pipeline fasi — colori approvati
     pipelineColors: {
-      sopralluogo: "#28A0A0",
-      preventivo:  "#1A7070",
+      sopralluogo: "#1E3A5F",
+      preventivo:  "#92400E",
       ordine:      "#1060A0",
       montaggio:   "#806020",
       fattura:     "#6B4FB0",
@@ -195,8 +195,8 @@ export const THEMES = {
     },
     // Avatar operatori
     avatarColors: {
-      FC: "#28A0A0", // Fabio Cozza — titolare
-      MV: "#1A7878", // Marco Vito — montatore
+      FC: "#1E3A5F", // Fabio Cozza — titolare
+      MV: "#2D5A87", // Marco Vito — montatore
       PG: "#1060A0", // Paolo Greco — tecnico misure
       AB: "#806020", // Antonio Bruno — magazziniere
     },
