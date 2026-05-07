@@ -399,7 +399,11 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const logoInputRef = useRef(null);
   const [aiChat, setAiChat] = useState(false);
   useEffect(() => {
-    const openAI = () => setAiChat(true);
+    const openAI = () => {
+      try { setTab && setTab("messaggi"); } catch {}
+      try { setMsgSubTab && setMsgSubTab("ai"); } catch {}
+      setAiChat(true);
+    };
     window.addEventListener("mastro:open-ai", openAI);
     window.addEventListener("mastro:open-ai-live", openAI);
     (window as any).__mastroOpenAI = openAI;
