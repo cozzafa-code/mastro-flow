@@ -7,24 +7,24 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { IconCheck, IconClock } from './HomeIcons'
 
 export const T = {
-  bg: '#EEF8F8',
+  bg: '#94A3B8',           // body grigio acciaio medio
   card: '#FFFFFF',
-  bdr: '#C8E4E4',
-  text: '#0F2A2A',
-  muted: '#6B8585',
-  acc: '#0F766E',
-  accDeep: '#0B5F58',
-  numTeal: '#0F6E56',
-  numAmber: '#854F0B',
-  numRed: '#A32D2D',
-  numBlue: '#185FA5',
-  tealSoft: '#E1F5EE',
-  amberSoft: '#FAEEDA',
-  redSoft: '#FCEBEB',
-  blueSoft: '#E6F1FB',
-  graySoft: '#F1EFE8',
-  shadow: '0 1px 2px rgba(15,118,110,0.04), 0 4px 12px rgba(15,118,110,0.06)',
-  shadowLg: '0 4px 20px rgba(15,118,110,0.08)',
+  bdr: '#94A3B8',          // bordi grigio definito
+  text: '#0A1628',         // testi forti
+  muted: '#475A75',        // testi secondari
+  acc: '#1E3A5F',          // accent navy opaco 50/20
+  accDeep: '#0F1B2D',      // navy header top
+  numTeal: '#065F46',      // verde scuro (success)
+  numAmber: '#92400E',     // arancio scuro (warning)
+  numRed: '#991B1B',       // rosso scuro (danger)
+  numBlue: '#1E3A5F',      // blu navy (info)
+  tealSoft: '#ECFDF5',
+  amberSoft: '#FEF3C7',
+  redSoft: '#FEE2E2',
+  blueSoft: '#DBE6F1',
+  graySoft: '#F1F5F9',
+  shadow: '0 2px 8px rgba(15,23,42,0.18)',
+  shadowLg: '0 4px 16px rgba(15,23,42,0.22)',
 }
 
 export const numStyle = (size: number, color: string): React.CSSProperties => ({
