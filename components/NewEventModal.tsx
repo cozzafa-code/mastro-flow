@@ -1,22 +1,32 @@
 "use client";
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
-   NewEventModal — 3 step: Quando / Chi / Dove
-   fliwoX design · header + footer sticky · no muro unico
+   NewEventModal — Mockup Navy Approvato
+   Single-screen sezionato (no wizard step):
+   TIPO → COSA → QUANDO → CLIENTE → COMMESSA → DOVE → CHI → NOTIFICHE → ALLEGATI
    ═══════════════════════════════════════════════════════════════ */
 
-// PALETTE NAVY 50/20 (mantengo i nomi TEAL_* per minimizzare diff col resto del file)
-const TEAL = "#1E3A5F";          // navy primario
-const TEAL_DARK = "#0F1B2D";     // navy scuro
-const TEAL_BRIGHT = "#2D5A87";   // navy chiaro
-const DARK = "#0A1628";
-const SUB = "#475A75";
-const LIGHT = "#DBE6F1";         // navy soft (era teal soft)
-const BORDER = "#CBD5E1";
-const AMBER = "#92400E";
-const RED = "#991B1B";
+const TH = {
+  navy: "#1E3A5F",
+  navyDark: "#0F1B2D",
+  navyLight: "#2D5A87",
+  navySoft: "#93B0CF",
+  navyMuted: "#475A75",
+  ink: "#0A1628",
+  sub: "#475A75",
+  subLight: "#94A3B8",
+  border: "#CBD5E1",
+  borderSoft: "#E2E8F0",
+  bgPill: "#DBE6F1",
+  bgPage: "#F1F5F9",
+  white: "#FFFFFF",
+  ambra: "#92400E",
+  ambraBg: "#FEF3C7",
+  red: "#991B1B",
+  green: "#065F46",
+};
 
 interface Props {
   newEvent: any;
@@ -33,481 +43,614 @@ interface Props {
 export default function NewEventModal({
   newEvent, setNewEvent, selDate, cantieri, contatti, team, TIPI_EVENTO, addEvent, onClose
 }: Props) {
-  const [step, setStep] = useState(1);
-  const isTask = newEvent.tipo === "task";
+  const [showSearchCliente, setShowSearchCliente] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showRipetiMenu, setShowRipetiMenu] = useState(false);
 
-  // Auto-suggerisci titolo all'apertura se vuoto
-  useEffect(() => {
-    if (!newEvent.text || !newEvent.text.trim()) {
-      const allTipi = [{ id: "task", l: "Task" }, ...TIPI_EVENTO];
-      const match = allTipi.find((t: any) => t.id === newEvent.tipo);
-      if (match) setNewEvent((prev: any) => ({ ...prev, text: match.l }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Tipo principale: evento / task / task_cm
+  const tipoMacro = newEvent.tipoMacro || "evento";
+  const setTipoMacro = (v: string) => setNewEvent((p: any) => ({ ...p, tipoMacro: v }));
 
-  const input = {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 11,
-    border: `1.5px solid ${BORDER}`,
-    background: "#F7FBFB",
-    fontSize: 14,
-    color: DARK,
-    outline: "none",
-    fontFamily: "inherit",
-    boxSizing: "border-box" as any,
+  // Data formattata
+  const dataLabel = useMemo(() => {
+    if (!selDate) return "—";
+    return selDate.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })
+      .replace(/^./, c => c.toUpperCase());
+  }, [selDate]);
+
+  // Tipo evento (sopralluogo, misure, ecc.)
+  const tipoEvento = newEvent.tipo || "sopralluogo";
+  const setTipoEvento = (v: string) => setNewEvent((p: any) => ({ ...p, tipo: v }));
+
+  // Cliente selezionato
+  const clienteSel = newEvent.cliente || null;
+
+  // Commesse suggerite per cliente
+  const commesseSuggerite = useMemo(() => {
+    if (!clienteSel) return [];
+    return (cantieri || []).filter(cm =>
+      cm.cliente && (cm.cliente + " " + (cm.cognome || "")).toLowerCase().includes((clienteSel.nome || "").toLowerCase())
+    ).slice(0, 3);
+  }, [clienteSel, cantieri]);
+
+  // Filtra contatti per ricerca
+  const filteredContatti = useMemo(() => {
+    if (!searchTerm.trim()) return (contatti || []).slice(0, 8);
+    const q = searchTerm.toLowerCase();
+    return (contatti || []).filter(c =>
+      (c.nome || "").toLowerCase().includes(q) ||
+      (c.cognome || "").toLowerCase().includes(q) ||
+      (c.telefono || "").includes(q)
+    ).slice(0, 8);
+  }, [searchTerm, contatti]);
+
+  // Squadra selezionata
+  const squadraSel = newEvent.squadra || [];
+  const toggleMembro = (id: string) => {
+    setNewEvent((p: any) => {
+      const cur = p.squadra || [];
+      return { ...p, squadra: cur.includes(id) ? cur.filter((x: string) => x !== id) : [...cur, id] };
+    });
   };
 
-  const label = {
-    fontSize: 11,
-    fontWeight: 900,
-    color: SUB,
-    marginBottom: 7,
-    display: "block",
-    letterSpacing: "0.6px",
-    textTransform: "uppercase" as any,
+  // Notifiche
+  const notifs = newEvent.notifiche || ["1h"];
+  const toggleNotif = (v: string) => {
+    setNewEvent((p: any) => {
+      const cur = p.notifiche || [];
+      return { ...p, notifiche: cur.includes(v) ? cur.filter((x: string) => x !== v) : [...cur, v] };
+    });
   };
 
-  const stepsMeta = [
-    { n: 1, label: "Quando" },
-    { n: 2, label: "Chi" },
-    { n: 3, label: "Dove" },
+  // Tipi evento preset (mockup)
+  const TIPI_PRESET = [
+    { id: "sopralluogo", l: "Sopralluogo", icon: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" },
+    { id: "misure", l: "Misure", icon: "M21 6H3M21 12H3M21 18H3" },
+    { id: "posa", l: "Posa", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" },
+    { id: "riunione", l: "Riunione", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" },
   ];
 
-  // Validazione minima per avanzare
-  const canNext = step === 1 ? !!newEvent.text && !!(newEvent.date || selDate) : true;
-
-  const setField = (k: string, v: any) => setNewEvent((ev: any) => ({ ...ev, [k]: v }));
+  // Durate preset
+  const DURATE = [
+    { id: "30m", l: "30m" },
+    { id: "1h", l: "1h" },
+    { id: "1h30m", l: "1h30m" },
+    { id: "2h", l: "2h" },
+    { id: "mezza", l: "Mezza gg" },
+  ];
+  const durata = newEvent.durata || "1h";
 
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, zIndex: 300,
-      background: "rgba(13,31,31,0.55)",
-      backdropFilter: "blur(6px)",
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0,
+      background: "rgba(15,23,42,0.5)",
+      zIndex: 1200,
       display: "flex", alignItems: "flex-end", justifyContent: "center",
-      fontFamily: "'Inter', -apple-system, sans-serif",
     }}>
-      <div style={{
+      <div onClick={e => e.stopPropagation()} style={{
+        background: TH.white,
         width: "100%", maxWidth: 500,
-        background: "#FFFFFF",
-        borderRadius: "28px 28px 0 0",
         maxHeight: "92vh",
-        display: "flex", flexDirection: "column" as any,
-        boxShadow: "0 -6px 40px rgba(0,0,0,0.25)",
+        borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        display: "flex", flexDirection: "column",
+        overflow: "hidden",
       }}>
-        {/* ═══ HEADER STICKY ═══ */}
-        <div style={{
-          padding: "14px 20px 0",
-          flexShrink: 0,
-          borderBottom: `1px solid ${BORDER}`,
-        }}>
-          <div style={{ width: 44, height: 5, borderRadius: 3, background: BORDER, margin: "0 auto 14px" }} />
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        {/* ═══ HEADER NAVY ═══ */}
+        <div style={{
+          background: `linear-gradient(160deg, ${TH.navy} 0%, ${TH.navyDark} 100%)`,
+          padding: "calc(env(safe-area-inset-top, 0px) + 14px) 18px 18px",
+          color: TH.white,
+          position: "relative",
+        }}>
+          <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.3)", borderRadius: 2, margin: "0 auto 12px" }} />
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: DARK, letterSpacing: "-0.3px" }}>
-                {isTask ? "Nuovo task" : "Nuovo evento"}
-              </div>
-              <div style={{ fontSize: 12, color: SUB, marginTop: 2, fontWeight: 500 }}>
-                Passo {step} di 3 · {stepsMeta[step - 1].label}
-              </div>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: TH.navySoft, textTransform: "uppercase" }}>Calendario · Crea</div>
+              <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4, lineHeight: 1.1, marginTop: 3 }}>Nuovo Item</div>
+              <div style={{ fontSize: 12, color: "#B5C8DD", marginTop: 4, fontWeight: 600, textTransform: "capitalize" }}>{dataLabel}</div>
             </div>
             <button onClick={onClose} style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: LIGHT, border: "none", cursor: "pointer",
+              width: 32, height: 32, borderRadius: 9,
+              background: "rgba(255,255,255,0.18)",
+              border: "1px solid rgba(255,255,255,0.25)",
+              color: TH.white,
               display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", padding: 0,
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-          </div>
-
-          {/* Progress bar step */}
-          <div style={{ display: "flex", gap: 5, marginBottom: 14 }}>
-            {stepsMeta.map(s => (
-              <div key={s.n} style={{
-                flex: 1, height: 4, borderRadius: 2,
-                background: s.n <= step
-                  ? `linear-gradient(145deg, ${TEAL_BRIGHT}, ${TEAL_DARK})`
-                  : BORDER,
-                boxShadow: s.n === step ? `0 0 8px ${TEAL}80` : "none",
-                transition: "all 0.2s",
-              }} />
-            ))}
           </div>
         </div>
 
-        {/* ═══ BODY SCROLLABLE ═══ */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
+        {/* ═══ BODY SCROLLABILE ═══ */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 12px" }}>
 
-          {/* ─── STEP 1: QUANDO ─── */}
-          {step === 1 && (
-            <>
-              <div style={{ marginBottom: 16 }}>
-                <label style={label as any}>Titolo</label>
-                <input
-                  style={input}
-                  placeholder="es. Sopralluogo, consegna materiale..."
-                  value={newEvent.text || ""}
-                  onChange={e => setField("text", e.target.value)}
-                  autoFocus
-                />
+          {/* TIPO MACRO */}
+          <div style={{ fontSize: 9.5, fontWeight: 800, color: TH.sub, letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 8 }}>Tipo</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 14 }}>
+            {[
+              { id: "evento", l: "EVENTO", icon: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></> },
+              { id: "task", l: "TASK", icon: <><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></> },
+              { id: "task_cm", l: "TASK CM", icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></> },
+            ].map(t => {
+              const sel = tipoMacro === t.id;
+              return (
+                <button key={t.id} onClick={() => setTipoMacro(t.id)} style={{
+                  border: `2px solid ${sel ? TH.navy : TH.border}`,
+                  background: sel ? TH.bgPill : TH.white,
+                  color: sel ? TH.navy : TH.sub,
+                  borderRadius: 12, padding: "12px 6px",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                  cursor: "pointer", fontFamily: "inherit",
+                  WebkitTapHighlightColor: "transparent",
+                  touchAction: "manipulation",
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">{t.icon}</svg>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.3 }}>{t.l}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* SEZIONE: COSA */}
+          <Section icon={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></>} title="Cosa" required>
+            <div style={{ marginBottom: 8 }}>
+              <Label>Tipo evento</Label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                {TIPI_PRESET.map(t => {
+                  const sel = tipoEvento === t.id;
+                  return (
+                    <button key={t.id} onClick={() => setTipoEvento(t.id)} style={{
+                      background: sel ? TH.bgPill : TH.white,
+                      border: `1.5px solid ${sel ? TH.navy : TH.border}`,
+                      color: sel ? TH.navy : TH.sub,
+                      borderRadius: 999, padding: "7px 12px",
+                      fontSize: 11.5, fontWeight: 700,
+                      cursor: "pointer", fontFamily: "inherit",
+                      WebkitTapHighlightColor: "transparent",
+                      touchAction: "manipulation",
+                    }}>{t.l}</button>
+                  );
+                })}
               </div>
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <Label>Titolo</Label>
+              <input style={inputStyle} placeholder="Es. Misure cliente Cozza"
+                value={newEvent.titolo || ""}
+                onChange={e => setNewEvent((p: any) => ({ ...p, titolo: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Note <span style={{ color: TH.subLight, fontWeight: 600, fontSize: 9, textTransform: "none" }}>(opzionale)</span></Label>
+              <textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
+                placeholder="Note aggiuntive..."
+                value={newEvent.note || ""}
+                onChange={e => setNewEvent((p: any) => ({ ...p, note: e.target.value }))} />
+            </div>
+          </Section>
 
-              <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <label style={label as any}>Data</label>
-                  <input
-                    style={input}
-                    type="date"
-                    value={newEvent.date || selDate.toISOString().split("T")[0]}
-                    onChange={e => setField("date", e.target.value)}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={label as any}>Ora</label>
-                  <input
-                    style={input}
-                    type="time"
-                    value={newEvent.time || ""}
-                    onChange={e => setField("time", e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 8 }}>
-                <label style={label as any}>Tipo</label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {[{ id: "task", l: "Task", c: AMBER }, ...TIPI_EVENTO].map(t => {
-                    const sel = newEvent.tipo === t.id;
-                    return (
-                      <div key={t.id} onClick={() => {
-                        const tipiLabels = [{ id: "task", l: "Task" }, ...TIPI_EVENTO].map((x: any) => x.l);
-                        const cur = (newEvent.text || "").trim();
-                        const isAutoFilled = cur === "" || tipiLabels.includes(cur);
-                        setNewEvent((prev: any) => ({
-                          ...prev,
-                          tipo: t.id,
-                          text: isAutoFilled ? t.l : prev.text,
-                        }));
-                      }} style={{
-                        padding: "9px 14px",
-                        borderRadius: 11,
-                        border: `1.5px solid ${sel ? (t.c || TEAL) : BORDER}`,
-                        background: sel ? (t.c || TEAL) + "18" : "transparent",
-                        fontSize: 12, fontWeight: 800,
-                        color: sel ? (t.c || TEAL_DARK) : SUB,
-                        cursor: "pointer",
-                        whiteSpace: "nowrap" as any,
-                      }}>{t.l}</div>
-                    );
-                  })}
+          {/* SEZIONE: QUANDO */}
+          <Section icon={<rect x="3" y="4" width="18" height="18" rx="2"/>} title="Quando" required>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+              <div>
+                <Label>Data</Label>
+                <div style={{ ...inputStyle, display: "flex", alignItems: "center", gap: 6, padding: "10px 12px", background: TH.bgPage }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TH.navy} strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+                  <span style={{ textTransform: "capitalize" }}>{dataLabel}</span>
                 </div>
               </div>
+              <div>
+                <Label>Inizio</Label>
+                <input type="time" style={inputStyle} value={newEvent.oraInizio || "08:30"}
+                  onChange={e => setNewEvent((p: any) => ({ ...p, oraInizio: e.target.value }))} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <Label>Durata stimata</Label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                {DURATE.map(d => {
+                  const sel = durata === d.id;
+                  return (
+                    <button key={d.id} onClick={() => setNewEvent((p: any) => ({ ...p, durata: d.id }))} style={{
+                      background: sel ? TH.navy : TH.white,
+                      border: `1.5px solid ${sel ? TH.navy : TH.border}`,
+                      color: sel ? TH.white : TH.sub,
+                      borderRadius: 999, padding: "7px 14px",
+                      fontSize: 11.5, fontWeight: 700,
+                      cursor: "pointer", fontFamily: "inherit",
+                      WebkitTapHighlightColor: "transparent",
+                      touchAction: "manipulation",
+                    }}>{d.l}</button>
+                  );
+                })}
+              </div>
+            </div>
+            <button onClick={() => setShowRipetiMenu(!showRipetiMenu)} style={{
+              width: "100%",
+              background: TH.bgPage, border: `1px solid ${TH.borderSoft}`,
+              borderRadius: 9, padding: "9px 12px",
+              display: "flex", alignItems: "center", gap: 8,
+              cursor: "pointer", fontFamily: "inherit",
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+            }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 8,
+                background: TH.bgPill, color: TH.navy,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              </div>
+              <div style={{ flex: 1, fontSize: 12, fontWeight: 700, color: TH.ink, textAlign: "left" }}>Ripeti</div>
+              <div style={{ fontSize: 11, color: TH.sub, fontWeight: 700 }}>{newEvent.ripeti || "Mai"} ›</div>
+            </button>
+          </Section>
 
-              {/* Priorità task inline */}
-              {isTask && (
-                <div style={{ marginTop: 16 }}>
-                  <label style={label as any}>Priorità</label>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {[
-                      { id: "alta", l: "Alta", c: RED },
-                      { id: "media", l: "Media", c: AMBER },
-                      { id: "bassa", l: "Bassa", c: "#8E8E93" }
-                    ].map(p => {
-                      const sel = (newEvent._taskPriority || "media") === p.id;
-                      return (
-                        <div key={p.id} onClick={() => setField("_taskPriority", p.id)} style={{
-                          flex: 1, padding: "10px 4px", borderRadius: 11,
-                          border: `1.5px solid ${sel ? p.c : BORDER}`,
-                          background: sel ? p.c + "15" : "transparent",
-                          textAlign: "center" as any,
-                          fontSize: 12, fontWeight: 800,
-                          color: sel ? p.c : SUB,
-                          cursor: "pointer",
-                        }}>{p.l}</div>
-                      );
-                    })}
+          {/* SEZIONE: CLIENTE */}
+          <Section icon={<><circle cx="12" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></>} title="Cliente" optional>
+            {clienteSel ? (
+              <div style={{
+                background: TH.bgPill, border: `1.5px solid ${TH.navy}`,
+                borderRadius: 12, padding: 10,
+                display: "flex", alignItems: "center", gap: 10,
+              }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 10,
+                  background: TH.navy, color: TH.white,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 800, flexShrink: 0,
+                }}>
+                  {((clienteSel.nome || "").charAt(0) + (clienteSel.cognome || "").charAt(0)).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: TH.ink, textTransform: "uppercase" }}>
+                    {clienteSel.nome} {clienteSel.cognome}
                   </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ─── STEP 2: CHI ─── */}
-          {step === 2 && (
-            <>
-              {!isTask && (
-                <div style={{ marginBottom: 16 }}>
-                  <label style={label as any}>Cliente</label>
-                  <select
-                    style={input}
-                    value={newEvent.persona || ""}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val === "__new__") {
-                        setNewEvent((ev: any) => ({ ...ev, persona: "", _newCliente: true }));
-                      } else {
-                        const ct = contatti.find(c => c.nome === val);
-                        setNewEvent((ev: any) => ({
-                          ...ev,
-                          persona: val,
-                          addr: ct?.indirizzo || ev.addr,
-                          text: ev.text || ("Appuntamento " + val),
-                          _newCliente: false,
-                        }));
-                      }
-                    }}
-                  >
-                    <option value="">— Seleziona cliente —</option>
-                    {contatti.filter(ct => ct.tipo === "cliente").map(ct => (
-                      <option key={ct.id || ct.nome} value={ct.nome}>
-                        {ct.nome}{ct.cognome ? " " + ct.cognome : ""}
-                      </option>
-                    ))}
-                    <option value="__new__">+ Nuovo cliente...</option>
-                  </select>
-
-                  {newEvent._newCliente && (
-                    <div style={{
-                      background: LIGHT, borderRadius: 12,
-                      padding: 14, marginTop: 10,
-                      border: `1px solid ${BORDER}`,
-                    }}>
-                      <div style={{ fontSize: 11, fontWeight: 900, color: TEAL_DARK, marginBottom: 10, letterSpacing: "0.4px", textTransform: "uppercase" as any }}>
-                        Nuovo cliente
-                      </div>
-                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                        <input
-                          style={{ ...input, flex: 1 }}
-                          placeholder="Nome"
-                          value={newEvent._nomeCliente || ""}
-                          onChange={e => setField("_nomeCliente", e.target.value)}
-                        />
-                        <input
-                          style={{ ...input, flex: 1 }}
-                          placeholder="Cognome"
-                          value={newEvent._cognomeCliente || ""}
-                          onChange={e => setField("_cognomeCliente", e.target.value)}
-                        />
-                      </div>
-                      <input
-                        style={{ ...input, marginBottom: 8 }}
-                        placeholder="Telefono"
-                        value={newEvent._telCliente || ""}
-                        onChange={e => setField("_telCliente", e.target.value)}
-                      />
-                      <input
-                        style={input}
-                        placeholder="Indirizzo"
-                        value={newEvent._addrCliente || ""}
-                        onChange={e => {
-                          const v = e.target.value;
-                          setNewEvent((ev: any) => ({ ...ev, _addrCliente: v, addr: v }));
-                        }}
-                      />
-                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                        <input
-                          style={{ ...input, flex: 1 }}
-                          type="email"
-                          placeholder="Email"
-                          value={newEvent._emailCliente || ""}
-                          onChange={e => setField("_emailCliente", e.target.value)}
-                        />
-                        <input
-                          style={{ ...input, flex: 1 }}
-                          placeholder="Codice fiscale"
-                          value={newEvent._cfCliente || ""}
-                          onChange={e => setField("_cfCliente", e.target.value.toUpperCase())}
-                        />
-                      </div>
-                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                        <input
-                          style={{ ...input, flex: 2 }}
-                          placeholder="Città"
-                          value={newEvent._cittaCliente || ""}
-                          onChange={e => setField("_cittaCliente", e.target.value)}
-                        />
-                        <input
-                          style={{ ...input, flex: 1 }}
-                          placeholder="CAP"
-                          value={newEvent._capCliente || ""}
-                          onChange={e => setField("_capCliente", e.target.value)}
-                        />
-                      </div>
+                  {clienteSel.telefono && (
+                    <div style={{ fontSize: 11, color: TH.sub, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                      {clienteSel.telefono}
                     </div>
                   )}
                 </div>
-              )}
-
-              <div style={{ marginBottom: 16 }}>
-                <label style={label as any}>Collega a commessa</label>
-                <select
-                  style={input}
-                  value={newEvent.cm || ""}
-                  onChange={e => setField("cm", e.target.value)}
-                >
-                  <option value="">— Nessuna —</option>
-                  {cantieri.map(c => (
-                    <option key={c.id} value={c.code}>
-                      {c.code} · {c.cliente}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={label as any}>Assegna a persona</label>
-                <select
-                  style={input}
-                  value={isTask ? newEvent.persona || "" : newEvent.persona || ""}
-                  onChange={e => setField("persona", e.target.value)}
-                >
-                  <option value="">— Nessuno —</option>
-                  {(isTask
-                    ? [...contatti.filter(ct => ct.tipo === "cliente"), ...team]
-                    : team
-                  ).map(m => (
-                    <option key={m.id} value={m.nome}>
-                      {m.nome}{m.ruolo ? " — " + m.ruolo : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {isTask && (
-                <div style={{ marginTop: 16 }}>
-                  <label style={label as any}>Note</label>
-                  <input
-                    style={input}
-                    placeholder="Dettagli, materiale da portare..."
-                    value={newEvent._taskMeta || ""}
-                    onChange={e => setField("_taskMeta", e.target.value)}
-                  />
+                <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                  {clienteSel.telefono && (
+                    <button onClick={() => window.open(`tel:${clienteSel.telefono}`)} style={iconBtnStyle} title="Chiama">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </button>
+                  )}
+                  <button onClick={() => setShowSearchCliente(true)} style={iconBtnStyle} title="Cambia">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
                 </div>
-              )}
-            </>
-          )}
+              </div>
+            ) : (
+              <button onClick={() => setShowSearchCliente(true)} style={{
+                width: "100%",
+                background: TH.bgPill, border: `1.5px dashed ${TH.navy}`,
+                borderRadius: 10, padding: "12px",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                fontSize: 12, fontWeight: 800, color: TH.navy,
+                cursor: "pointer", fontFamily: "inherit",
+                WebkitTapHighlightColor: "transparent",
+                touchAction: "manipulation",
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Cerca o aggiungi cliente
+              </button>
+            )}
+          </Section>
 
-          {/* ─── STEP 3: DOVE ─── */}
-          {step === 3 && (
-            <>
-              {!isTask ? (
-                <>
-                  <div style={{ marginBottom: 18 }}>
-                    <label style={label as any}>Indirizzo</label>
-                    <input
-                      style={input}
-                      placeholder="Via Roma 12, Cosenza..."
-                      value={newEvent.addr || ""}
-                      onChange={e => setField("addr", e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={label as any}>Reminder al cliente</label>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {[
-                        { id: "", l: "Nessuno" },
-                        { id: "24h", l: "24h prima" },
-                        { id: "1h", l: "1h prima" },
-                        { id: "giorno", l: "Il giorno" },
-                      ].map(r => {
-                        const sel = (newEvent.reminder || "") === r.id;
-                        return (
-                          <div key={r.id} onClick={() => setField("reminder", r.id)} style={{
-                            flex: 1, padding: "10px 4px", borderRadius: 11,
-                            textAlign: "center" as any,
-                            fontSize: 11, fontWeight: 800,
-                            cursor: "pointer",
-                            border: `1.5px solid ${sel ? TEAL : BORDER}`,
-                            background: sel ? LIGHT : "transparent",
-                            color: sel ? TEAL_DARK : SUB,
-                          }}>{r.l}</div>
-                        );
-                      })}
+          {/* SEZIONE: COMMESSA (se cliente e ci sono commesse) */}
+          {clienteSel && commesseSuggerite.length > 0 && (
+            <Section icon={<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>} title="Commessa" optional>
+              {(newEvent.cmId ? commesseSuggerite.filter(c => c.id === newEvent.cmId) : commesseSuggerite).slice(0, 3).map(cm => {
+                const sel = newEvent.cmId === cm.id;
+                return (
+                  <button key={cm.id} onClick={() => setNewEvent((p: any) => ({ ...p, cmId: sel ? null : cm.id, commessaCode: sel ? null : cm.code, indirizzo: sel ? p.indirizzo : cm.indirizzo }))}
+                    style={{
+                      width: "100%",
+                      background: sel ? TH.bgPill : TH.white,
+                      border: `1.5px solid ${sel ? TH.navy : TH.borderSoft}`,
+                      borderRadius: 10, padding: "10px 12px",
+                      marginBottom: 5,
+                      display: "flex", alignItems: "center", gap: 10,
+                      cursor: "pointer", fontFamily: "inherit",
+                      textAlign: "left",
+                      WebkitTapHighlightColor: "transparent",
+                      touchAction: "manipulation",
+                    }}>
+                    <div style={{
+                      background: TH.navy, color: TH.white,
+                      padding: "3px 8px", borderRadius: 6,
+                      fontSize: 11, fontWeight: 800,
+                      fontFamily: "JetBrains Mono, monospace", letterSpacing: 0.3,
+                      flexShrink: 0,
+                    }}>{cm.code}</div>
+                    <div style={{ flex: 1, fontSize: 11.5, color: TH.sub, fontWeight: 600 }}>
+                      <div style={{ color: TH.ink, fontWeight: 700 }}>{cm.fase || "—"} · {(cm.rilievi?.[0]?.vani?.length || 0)} vani</div>
+                      <div style={{ fontSize: 10, color: TH.subLight, marginTop: 2 }}>{cm.indirizzo}</div>
                     </div>
-                    {newEvent.reminder && (
-                      <div style={{
-                        marginTop: 10, fontSize: 11, color: TEAL_DARK,
-                        padding: "10px 12px", background: LIGHT,
-                        borderRadius: 10, fontWeight: 600, lineHeight: 1.5,
-                      }}>
-                        MASTRO ti avviserà di inviare il reminder — lo farai con 1 click dal banner in agenda.
-                      </div>
+                    {sel && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TH.navy} strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                     )}
-                  </div>
-                </>
-              ) : (
-                <div style={{
-                  textAlign: "center" as any,
-                  padding: "40px 20px", color: SUB, fontSize: 13,
+                  </button>
+                );
+              })}
+            </Section>
+          )}
+
+          {/* SEZIONE: DOVE */}
+          <Section icon={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>} title="Dove" optional>
+            <div style={{ marginBottom: 8 }}>
+              <Label>Indirizzo</Label>
+              <input style={inputStyle} placeholder="Via, città"
+                value={newEvent.indirizzo || ""}
+                onChange={e => setNewEvent((p: any) => ({ ...p, indirizzo: e.target.value }))} />
+            </div>
+            {newEvent.indirizzo && (
+              <div style={{ display: "flex", gap: 5 }}>
+                <button onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(newEvent.indirizzo)}`, "_blank")} style={chipBtnStyle}>📍 Apri mappa</button>
+                <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(newEvent.indirizzo)}`, "_blank")} style={chipBtnStyle}>🧭 Naviga</button>
+              </div>
+            )}
+          </Section>
+
+          {/* SEZIONE: CHI */}
+          {(team || []).length > 0 && (
+            <Section icon={<><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></>} title="Chi" optional sub="(squadra)">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                {(team || []).slice(0, 8).map((m: any) => {
+                  const sel = squadraSel.includes(m.id);
+                  const initials = (m.nome || "M").charAt(0).toUpperCase();
+                  return (
+                    <button key={m.id} onClick={() => toggleMembro(m.id)} style={{
+                      background: sel ? TH.navy : TH.white,
+                      border: `1.5px solid ${sel ? TH.navy : TH.border}`,
+                      color: sel ? TH.white : TH.sub,
+                      borderRadius: 999, padding: "7px 12px",
+                      fontSize: 11.5, fontWeight: 800,
+                      cursor: "pointer", fontFamily: "inherit",
+                      letterSpacing: 0.3, textTransform: "uppercase",
+                      WebkitTapHighlightColor: "transparent",
+                      touchAction: "manipulation",
+                    }}>{m.nome}</button>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {/* SEZIONE: NOTIFICHE */}
+          <Section icon={<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>} title="Notifiche" optional>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {[
+                { id: "1h", l: "1 ora prima" },
+                { id: "15m", l: "15 min prima" },
+                { id: "inizio", l: "All'inizio" },
+              ].map(n => {
+                const sel = notifs.includes(n.id);
+                return (
+                  <button key={n.id} onClick={() => toggleNotif(n.id)} style={{
+                    background: sel ? TH.bgPill : TH.white,
+                    border: `1.5px solid ${sel ? TH.navy : TH.border}`,
+                    color: sel ? TH.navy : TH.sub,
+                    borderRadius: 999, padding: "7px 12px",
+                    fontSize: 11.5, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "inherit",
+                    display: "flex", alignItems: "center", gap: 5,
+                    WebkitTapHighlightColor: "transparent",
+                    touchAction: "manipulation",
+                  }}>
+                    {sel && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                    {n.l}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+
+          {/* SEZIONE: ALLEGATI */}
+          <Section icon={<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>} title="Allegati" optional>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+              {[
+                { l: "FOTO", icon: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></> },
+                { l: "FILE", icon: <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/> },
+                { l: "VOCE", icon: <><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/></> },
+              ].map(a => (
+                <button key={a.l} style={{
+                  background: TH.bgPage, border: `1px dashed ${TH.border}`,
+                  borderRadius: 10, padding: "12px",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                  cursor: "pointer", fontFamily: "inherit",
+                  color: TH.sub,
+                  WebkitTapHighlightColor: "transparent",
+                  touchAction: "manipulation",
                 }}>
-                  Tutto pronto! Premi <b>Crea task</b> per salvare.
-                </div>
-              )}
-            </>
-          )}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">{a.icon}</svg>
+                  <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5 }}>{a.l}</div>
+                </button>
+              ))}
+            </div>
+          </Section>
+
         </div>
 
-        {/* ═══ FOOTER STICKY ═══ */}
+        {/* ═══ FOOTER STICKY: ANNULLA + CREA ═══ */}
         <div style={{
-          flexShrink: 0,
-          padding: "14px 20px calc(14px + env(safe-area-inset-bottom, 0px))",
-          borderTop: `1px solid ${BORDER}`,
-          background: "#FFFFFF",
-          display: "flex", gap: 10,
+          padding: "12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px)",
+          borderTop: `1px solid ${TH.borderSoft}`,
+          display: "flex", gap: 8,
+          background: TH.white,
         }}>
-          {step > 1 && (
-            <button
-              onClick={() => setStep(step - 1)}
-              style={{
-                flex: 1, padding: 14, borderRadius: 13,
-                border: `1.5px solid ${BORDER}`,
-                background: "#FFFFFF",
-                fontSize: 14, fontWeight: 800, color: SUB,
-                cursor: "pointer", fontFamily: "inherit",
-              }}
-            >Indietro</button>
-          )}
-
-          {step < 3 ? (
-            <button
-              onClick={() => canNext && setStep(step + 1)}
-              disabled={!canNext}
-              style={{
-                flex: 2, padding: 14, borderRadius: 13,
-                border: "none",
-                background: canNext
-                  ? `linear-gradient(145deg, ${TEAL_BRIGHT} 0%, ${TEAL} 50%, ${TEAL_DARK} 100%)`
-                  : "#CCCCCC",
-                color: "#fff", fontSize: 15, fontWeight: 900,
-                cursor: canNext ? "pointer" : "default",
-                fontFamily: "inherit", letterSpacing: "0.3px",
-                boxShadow: canNext ? `0 6px 14px ${TEAL}40, inset 0 1px 2px rgba(255,255,255,0.3)` : "none",
-                textShadow: "0 1px 2px rgba(0,0,0,0.15)",
-              }}
-            >Avanti</button>
-          ) : (
-            <button
-              onClick={addEvent}
-              style={{
-                flex: 2, padding: 14, borderRadius: 13,
-                border: "none",
-                background: `linear-gradient(145deg, ${TEAL_BRIGHT} 0%, ${TEAL} 50%, ${TEAL_DARK} 100%)`,
-                color: "#fff", fontSize: 15, fontWeight: 900,
-                cursor: "pointer", fontFamily: "inherit",
-                letterSpacing: "0.3px",
-                boxShadow: `0 6px 14px ${TEAL}50, inset 0 1px 2px rgba(255,255,255,0.3)`,
-                textShadow: "0 1px 2px rgba(0,0,0,0.15)",
-              }}
-            >{isTask ? "Crea task" : "Crea evento"}</button>
-          )}
+          <button onClick={onClose} style={{
+            flex: 1, padding: 13, borderRadius: 10,
+            background: TH.bgPage, color: TH.sub,
+            border: `1px solid ${TH.border}`,
+            fontSize: 13, fontWeight: 800,
+            cursor: "pointer", fontFamily: "inherit",
+            WebkitTapHighlightColor: "transparent",
+            touchAction: "manipulation",
+          }}>Annulla</button>
+          <button onClick={addEvent} disabled={!newEvent.titolo?.trim()} style={{
+            flex: 2, padding: 13, borderRadius: 10,
+            background: newEvent.titolo?.trim() ? `linear-gradient(135deg, ${TH.navy} 0%, ${TH.navyDark} 100%)` : "#CBD5E1",
+            color: TH.white, border: "none",
+            fontSize: 13, fontWeight: 800,
+            cursor: newEvent.titolo?.trim() ? "pointer" : "not-allowed",
+            fontFamily: "inherit",
+            boxShadow: newEvent.titolo?.trim() ? "0 4px 12px rgba(15,27,45,0.3)" : "none",
+            WebkitTapHighlightColor: "transparent",
+            touchAction: "manipulation",
+          }}>
+            Crea {tipoMacro === "task" ? "Task" : tipoMacro === "task_cm" ? "Task Commessa" : "Evento"}
+          </button>
         </div>
+
+        {/* ═══ MODAL SEARCH CLIENTE ═══ */}
+        {showSearchCliente && (
+          <div onClick={() => setShowSearchCliente(false)} style={{
+            position: "absolute", inset: 0,
+            background: "rgba(15,23,42,0.55)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+            zIndex: 10,
+          }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: TH.white,
+              width: "100%", maxHeight: "75%",
+              borderTopLeftRadius: 20, borderTopRightRadius: 20,
+              display: "flex", flexDirection: "column",
+              overflow: "hidden",
+            }}>
+              <div style={{ padding: "14px 16px 8px", borderBottom: `1px solid ${TH.borderSoft}` }}>
+                <div style={{ width: 36, height: 4, background: TH.border, borderRadius: 2, margin: "0 auto 10px" }} />
+                <div style={{ fontSize: 16, fontWeight: 800, color: TH.ink, marginBottom: 8 }}>Cerca cliente</div>
+                <div style={{ position: "relative" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TH.subLight} strokeWidth="2.5" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input autoFocus style={{ ...inputStyle, paddingLeft: 36 }} placeholder="Nome, cognome o telefono..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)} />
+                </div>
+              </div>
+              <div style={{ flex: 1, overflowY: "auto", padding: "8px 16px 16px" }}>
+                <button onClick={() => {
+                  // TODO: aprire modal "Nuovo Cliente"
+                  setShowSearchCliente(false);
+                }} style={{
+                  width: "100%",
+                  background: TH.bgPill, border: `1.5px dashed ${TH.navy}`,
+                  borderRadius: 10, padding: "10px",
+                  display: "flex", alignItems: "center", gap: 8,
+                  marginBottom: 10,
+                  cursor: "pointer", fontFamily: "inherit",
+                  WebkitTapHighlightColor: "transparent",
+                  touchAction: "manipulation",
+                }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    background: TH.navy, color: TH.white,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </div>
+                  <div style={{ flex: 1, textAlign: "left" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: TH.navy }}>Crea nuovo cliente</div>
+                    <div style={{ fontSize: 10, color: TH.sub }}>Aggiungilo alla rubrica</div>
+                  </div>
+                </button>
+
+                {filteredContatti.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: 20, fontSize: 12, color: TH.sub }}>Nessun cliente trovato</div>
+                ) : (
+                  filteredContatti.map((c: any) => (
+                    <button key={c.id} onClick={() => {
+                      setNewEvent((p: any) => ({ ...p, cliente: c, indirizzo: p.indirizzo || c.indirizzo || "" }));
+                      setShowSearchCliente(false);
+                      setSearchTerm("");
+                    }} style={{
+                      width: "100%",
+                      background: TH.white, border: `1px solid ${TH.borderSoft}`,
+                      borderRadius: 10, padding: 10,
+                      marginBottom: 5,
+                      display: "flex", alignItems: "center", gap: 10,
+                      cursor: "pointer", fontFamily: "inherit",
+                      textAlign: "left",
+                      WebkitTapHighlightColor: "transparent",
+                      touchAction: "manipulation",
+                    }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 9,
+                        background: TH.navy, color: TH.white,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 12, fontWeight: 800, flexShrink: 0,
+                      }}>{((c.nome || "").charAt(0) + (c.cognome || "").charAt(0)).toUpperCase()}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: TH.ink, textTransform: "uppercase" }}>{c.nome} {c.cognome}</div>
+                        {c.telefono && <div style={{ fontSize: 10.5, color: TH.sub, marginTop: 2 }}>{c.telefono}</div>}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
+
+// ─── COMPONENTI HELPER ───────────────────────────────────────
+function Section({ icon, title, required, optional, sub, children }: any) {
+  return (
+    <div style={{
+      background: "#F8FAFC",
+      border: `1px solid ${TH.borderSoft}`,
+      borderRadius: 12, padding: 12,
+      marginBottom: 10,
+    }}>
+      <div style={{ fontSize: 9.5, fontWeight: 800, color: TH.navy, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">{icon}</svg>
+        {title}
+        {required && <span style={{ color: TH.red }}>*</span>}
+        {optional && <span style={{ color: TH.subLight, fontWeight: 600, textTransform: "none", letterSpacing: 0, fontSize: 9 }}>{sub || "(opzionale)"}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Label({ children }: any) {
+  return <div style={{ fontSize: 9.5, fontWeight: 800, color: TH.sub, letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 4 }}>{children}</div>;
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", boxSizing: "border-box" as any,
+  background: TH.white, border: `1.5px solid ${TH.border}`,
+  borderRadius: 9, padding: "10px 12px",
+  fontSize: 13, fontFamily: "inherit",
+  color: TH.ink, fontWeight: 600,
+};
+
+const iconBtnStyle: React.CSSProperties = {
+  width: 32, height: 32, borderRadius: 9,
+  background: TH.white, border: `1px solid ${TH.border}`,
+  color: TH.navy,
+  display: "flex", alignItems: "center", justifyContent: "center",
+  cursor: "pointer", fontFamily: "inherit", padding: 0,
+  WebkitTapHighlightColor: "transparent",
+  touchAction: "manipulation",
+};
+
+const chipBtnStyle: React.CSSProperties = {
+  flex: 1, background: TH.bgPill, border: `1px solid ${TH.navy}40`,
+  borderRadius: 8, padding: "8px 12px",
+  fontSize: 11, fontWeight: 700, color: TH.navy,
+  cursor: "pointer", fontFamily: "inherit",
+  WebkitTapHighlightColor: "transparent",
+  touchAction: "manipulation",
+};
