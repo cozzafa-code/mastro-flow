@@ -320,7 +320,6 @@ function Header({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
         <div style={{ fontWeight: 600, fontSize: 18, letterSpacing: 0.3 }}>fliwoX</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <DayBadge palette={palette} />
           <button
             onClick={onToggleEdit}
             style={{
