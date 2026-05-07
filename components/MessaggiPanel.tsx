@@ -38,6 +38,82 @@ export default function MessaggiPanel() {
     aiInbox, cantieri, contatti, fornitori, gmailLoading, gmailMessages, gmailNextPage, gmailReply, gmailSearch, gmailSelected, gmailSending, gmailStatus, msgFilter, msgSearch, msgSubTab, msgs, rubricaFilter, rubricaSearch, selectedAiMsg, setAiInbox, setComposeMsg, setContatti, setGmailMessages, setGmailReply, setGmailSearch, setGmailSelected, setGmailStatus, setMailBody, setMsgFilter, setMsgSearch, setMsgSubTab, setMsgs, setNewCM, setNewEvent, setNewTask, setRubricaFilter, setRubricaSearch, setSelectedAiMsg, setSelectedCM, setSelectedMsg, setShowCompose, setShowMailModal, setShowModal, setShowNewEvent, setTab, team, gmailFetchMessages, gmailSendReply, gmailMatchCommessa,
   } = useMastro();
 
+    // ═══ SEED MESSAGGI DEMO (solo se DB vuoto) ═══
+    React.useEffect(() => {
+      if (msgs.length === 0 && msgSubTab === "chat") {
+        setMsgs([
+          {
+            id: "demo-1",
+            from: "Mario Rossi",
+            preview: "Buongiorno, vorrei un preventivo per 4 finestre PVC",
+            time: "14:32",
+            canale: "whatsapp",
+            cm: "S-0001",
+            read: false,
+            urgente: true,
+            priorita: "alta",
+            giorniDaInvio: 0,
+          },
+          {
+            id: "demo-2",
+            from: "Roberto Mancini",
+            preview: "Buongiorno, è possibile spostare il montaggio di una settimana? Ho un imprevisto familiare",
+            time: "07:45",
+            canale: "whatsapp",
+            cm: "S-0009",
+            read: false,
+            unreadCount: 2,
+          },
+          {
+            id: "demo-3",
+            from: "Anna Bianchi",
+            preview: "Ho mandato 8 foto del sopralluogo. Aspetto vostro feedback per le misure",
+            time: "ieri",
+            canale: "email",
+            cm: "S-0002",
+            read: false,
+            allegati: 8,
+            unreadCount: 1,
+          },
+          {
+            id: "demo-4",
+            from: "Vincenzo Pinto",
+            preview: "Ok perfetto, confermato per venerdì 15 alle 9 in cantiere",
+            time: "ieri",
+            canale: "whatsapp",
+            cm: "S-0007",
+            read: false,
+          },
+          {
+            id: "demo-5",
+            from: "Studio Legale Russo",
+            preview: "In allegato la documentazione richiesta per il bando.",
+            time: "lun",
+            canale: "email",
+            read: true,
+          },
+          {
+            id: "demo-6",
+            from: "Luigi Esposito",
+            preview: "Grazie per la disponibilità, vi farò sapere appena ho deciso",
+            time: "ven scorso",
+            canale: "sms",
+            read: true,
+          },
+          {
+            id: "demo-7",
+            from: "Mario Rossi",
+            preview: "Perfetto, aspetto allora il preventivo via mail",
+            time: "30 apr",
+            canale: "whatsapp",
+            cm: "S-0001",
+            read: true,
+          },
+        ]);
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [msgSubTab]);
+
     // === EMAIL FOLDERS ===
     const [emailCartelle, setEmailCartelle] = React.useState<any[]>(() => {
       try { const v = localStorage.getItem("mastro:emailCartelle"); return v ? JSON.parse(v) : [
@@ -158,20 +234,6 @@ export default function MessaggiPanel() {
         </div>
         {/* == CHAT TAB == */}
         {msgSubTab === "chat" && (<>
-          {/* === MARKER VERIFICA DEPLOY === */}
-          <div style={{
-            background: "#FF0000",
-            color: "#FFF",
-            padding: "20px",
-            textAlign: "center",
-            fontSize: 24,
-            fontWeight: 900,
-            letterSpacing: 2,
-            margin: "10px 14px",
-            borderRadius: 12,
-          }}>
-            MASTRO TALK V2 ATTIVO
-          </div>
           {/* ═══ INSIGHTS COMPATTI (max 3) ═══ */}
           {(() => {
             const insights: any[] = [];
