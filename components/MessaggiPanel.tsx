@@ -158,6 +158,20 @@ export default function MessaggiPanel() {
         </div>
         {/* == CHAT TAB == */}
         {msgSubTab === "chat" && (<>
+          {/* === MARKER VERIFICA DEPLOY === */}
+          <div style={{
+            background: "#FF0000",
+            color: "#FFF",
+            padding: "20px",
+            textAlign: "center",
+            fontSize: 24,
+            fontWeight: 900,
+            letterSpacing: 2,
+            margin: "10px 14px",
+            borderRadius: 12,
+          }}>
+            MASTRO TALK V2 ATTIVO
+          </div>
           {/* ═══ INSIGHTS COMPATTI (max 3) ═══ */}
           {(() => {
             const insights: any[] = [];
