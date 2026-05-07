@@ -35,6 +35,7 @@ interface Props {
 const IC = {
   home: <><path d="M3 9l11-6 11 6v13l-11 6L3 22V9z"/><path d="M14 3v19M3 9l11 6 11-6"/></>,
   agenda: <><rect x="3" y="4" width="22" height="20" rx="2"/><line x1="3" y1="10" x2="25" y2="10"/><line x1="9" y1="4" x2="9" y2="10"/><line x1="19" y1="4" x2="19" y2="10"/></>,
+  ai: <><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></>,
   commesse: <><rect x="5" y="3" width="18" height="22" rx="2"/><line x1="9" y1="13" x2="19" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></>,
   talk: <><path d="M4 6h16a2 2 0 012 2v9a2 2 0 01-2 2H4L2 22V8a2 2 0 012-2z"/><line x1="8" y1="12" x2="16" y2="12"/></>,
   altro: <><circle cx="7" cy="14" r="2"/><circle cx="14" cy="14" r="2"/><circle cx="21" cy="14" r="2"/></>,
@@ -317,6 +318,21 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
   const nearest = menuSide ? getNearestVoice(menuSide, touchX, touchY, voices) : null;
 
   const getActions = () => [
+    { label: "MASTRO AI", hint: "Assistente intelligente", icon: IC.ai,
+      onClick: () => {
+        try {
+          window.dispatchEvent(new CustomEvent("mastro:open-ai"));
+          (window as any).__mastroOpenAI?.();
+        } catch {}
+        setActionSheet(false);
+      },
+      onLongPress: () => {
+        try {
+          window.dispatchEvent(new CustomEvent("mastro:open-ai-live"));
+          (window as any).__mastroOpenAILive?.();
+        } catch {}
+        setActionSheet(false);
+      } },
     { label: "Nuova commessa", hint: "Tieni premuto: veloce", icon: IC.folder,
       onClick: () => { onNuovaCommessa?.(); setActionSheet(false); },
       onLongPress: () => { onQuickCommessa?.(); setActionSheet(false); } },
