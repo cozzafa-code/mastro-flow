@@ -914,13 +914,17 @@ export default function CommessePanel() {
 
       {/* ═══ HERO TEAL fliwoX ═══ */}
       <div style={{
-        background: "linear-gradient(145deg, #2D5A87 0%, #1E3A5F 50%, #0F1B2D 100%)",
-        borderRadius: 22,
-        padding: "14px 16px 16px",
+        background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
+        padding: "16px 18px 24px",
         position: "relative" as any,
         overflow: "hidden" as any,
-        boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
-        marginBottom: 14,
+        boxShadow: "0 8px 22px rgba(15,23,42,0.25)",
+        marginLeft: -12,
+        marginRight: -12,
+        marginTop: -8,
+        marginBottom: 16,
       }}>
         <div style={{ position: "absolute", top: -40, right: -30, width: 130, height: 130, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius: "22px 22px 0 0", pointerEvents: "none" }} />
