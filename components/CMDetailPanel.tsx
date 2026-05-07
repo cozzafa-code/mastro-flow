@@ -55,7 +55,7 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
           position: "absolute" as any,
           left: 36, top: 20, bottom: 20,
           width: 2,
-          background: "linear-gradient(180deg, rgba(127,119,221,0.25), rgba(29,158,117,0.25), rgba(239,159,39,0.25), rgba(55,138,221,0.25), rgba(212,83,126,0.25))",
+          background: "#CBD5E1",
           borderRadius: 1,
           pointerEvents: "none" as any,
           zIndex: 0,
@@ -114,7 +114,7 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, color: "#0F2525", lineHeight: 1.3, fontWeight: 700 }}>
                       <strong style={{ color: ev.dark, fontWeight: 900 }}>{l.chi}</strong>{" "}
-                      <span style={{ fontWeight: 600, color: "#5A7878" }}>{l.cosa}</span>
+                      <span style={{ fontWeight: 600, color: "#475A75" }}>{l.cosa}</span>
                     </div>
                     <div style={{ fontSize: 10, color: "#8FA8A8", fontWeight: 600, marginTop: 2, letterSpacing: "0.2px" }}>{l.quando}</div>
                   </div>
@@ -142,7 +142,7 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
                     }}>{ev.icon} {tipo}</div>
 
                     {op && (
-                      <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 600, marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, color: "#475A75", fontWeight: 600, marginBottom: 8 }}>
                         Operatore: <strong style={{ color: "#0F2525" }}>{op.nome} {op.cognome || ""}</strong>
                         {op.ruolo && <span style={{ opacity: 0.7 }}> · {op.ruolo}</span>}
                       </div>
@@ -1120,16 +1120,16 @@ export default function CMDetailPanel() {
           }}
         />
       )}
-      <div style={{ minHeight: "100vh", background: "#E8F0F0", paddingBottom: 100 }}>
+      <div style={{ minHeight: "100vh", background: "#94A3B8", paddingBottom: 100 }}>
         {_accettatoBanner}{_modificheCard}{_contattaCard}
         {/* ============ HEADER TEAL ============ */}
         <div style={{
-          background: "linear-gradient(135deg, #2FB2A8 0%, #28A0A0 45%, #1E8080 100%)",
+          background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
           padding: "22px 18px 26px",
           color: "#fff",
           position: "relative",
           borderRadius: "0 0 26px 26px",
-          boxShadow: "0 4px 20px rgba(40,160,160,0.2)",
+          boxShadow: "0 8px 22px rgba(15,23,42,0.28)",
         }}>
           <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.15), transparent 65%)", pointerEvents: "none" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
@@ -1170,31 +1170,31 @@ export default function CMDetailPanel() {
 
           {/* MINI STEPPER 8 puntini (dinamico v73) */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#5A7878", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Passo 2/8" : "Passo 1/8"}</div>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#475A75", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Passo 2/8" : "Passo 1/8"}</div>
             <div style={{ display: "flex", gap: 3, flex: 1 }}>
               {rilievoCompletoV73 ? (
                 <>
-                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #3ABDBD, #28A0A0)", boxShadow: "0 0 4px rgba(40,160,160,0.4)" }} />
-                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", boxShadow: "0 0 6px rgba(29,158,117,0.5)" }} />
-                  {[1,2,3,4,5,6].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
+                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
+                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
+                  {[1,2,3,4,5,6].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(15,27,45,0.15)" }} />))}
                 </>
               ) : (
                 <>
-                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
-                  {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
+                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
+                  {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(15,27,45,0.15)" }} />))}
                 </>
               )}
             </div>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: rilievoCompletoV73 ? "#1D9E75" : "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Preventivo" : "Rilievo"}</div>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#1E3A5F", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Preventivo" : "Rilievo"}</div>
           </div>
 
           {/* v73 · BIG ACTION condizionale: VIOLA se rilievo in corso, VERDE se completo */}
           {!rilievoCompletoV73 && (
           <div style={{
             borderRadius: 26, padding: "22px 20px 20px",
-            background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
+            background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
             color: "#fff",
-            boxShadow: "0 18px 40px rgba(0,0,0,0.18), 0 6px 12px rgba(0,0,0,0.1)",
+            boxShadow: "0 14px 32px rgba(15,27,45,0.28)",
             position: "relative", overflow: "hidden",
             display: "flex", flexDirection: "column",
           }}>
@@ -1263,7 +1263,7 @@ export default function CMDetailPanel() {
             {/* BIG BTN */}
             <button onClick={onClickBtnV70} style={{
               marginTop: 18, width: "100%", padding: 17,
-              background: "#fff", color: "#3C3489",
+              background: "#fff", color: "#0F1B2D",
               border: "none", borderRadius: 18,
               fontSize: 15, fontWeight: 900, letterSpacing: "0.4px",
               cursor: "pointer", fontFamily: "inherit",
@@ -1271,9 +1271,9 @@ export default function CMDetailPanel() {
               boxShadow: "0 6px 18px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
               position: "relative",
             }}>
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               {btnV70}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
           </div>
           )}
@@ -1282,9 +1282,9 @@ export default function CMDetailPanel() {
           {rilievoCompletoV73 && (
           <div style={{
             borderRadius: 26, padding: "22px 20px 20px",
-            background: "linear-gradient(155deg, #6BD9B0 0%, #1D9E75 55%, #0F8060 100%)",
+            background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
             color: "#fff",
-            boxShadow: "0 18px 40px rgba(29,158,117,0.35), 0 6px 12px rgba(29,158,117,0.2)",
+            boxShadow: "0 14px 32px rgba(15,27,45,0.28)",
             position: "relative", overflow: "hidden",
             display: "flex", flexDirection: "column",
           }}>
@@ -1703,19 +1703,19 @@ export default function CMDetailPanel() {
                     {/* MENU 4 CENTRI */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
             {[
-              { id: "cliente", label: "Cliente", color: "#1D9E75", tintFrom: "rgba(93,202,165,0.22)", tintTo: "rgba(29,158,117,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
-              { id: "allegati", label: "Allegati", color: "#7F77DD", tintFrom: "rgba(175,169,236,0.22)", tintTo: "rgba(127,119,221,0.12)", badge: allegatiTotV70, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> },
-              { id: "note", label: "Note", color: "#EF9F27", tintFrom: "rgba(250,199,117,0.25)", tintTo: "rgba(239,159,39,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
-              { id: "azioni", label: "Azioni", color: "#378ADD", tintFrom: "rgba(133,183,235,0.22)", tintTo: "rgba(55,138,221,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/><path d="M1 12h6m6 0h6"/></svg> },
+              { id: "cliente", label: "Cliente", color: "#1E3A5F", tintFrom: "rgba(219,230,241,0.6)", tintTo: "rgba(181,200,221,0.3)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+              { id: "allegati", label: "Allegati", color: "#1E3A5F", tintFrom: "rgba(219,230,241,0.6)", tintTo: "rgba(181,200,221,0.3)", badge: allegatiTotV70, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> },
+              { id: "note", label: "Note", color: "#1E3A5F", tintFrom: "rgba(219,230,241,0.6)", tintTo: "rgba(181,200,221,0.3)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
+              { id: "azioni", label: "Azioni", color: "#1E3A5F", tintFrom: "rgba(219,230,241,0.6)", tintTo: "rgba(181,200,221,0.3)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/><path d="M1 12h6m6 0h6"/></svg> },
             ].map((m) => (
               <div key={m.id} onClick={() => setCentroApertoV70((v) => v === m.id ? null : m.id)} style={{
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                 padding: "14px 6px",
                 background: centroApertoV70 === m.id ? `linear-gradient(145deg, ${m.tintFrom}, ${m.tintTo})` : "#fff",
-                border: centroApertoV70 === m.id ? `1.5px solid ${m.color}66` : "1px solid rgba(200,228,228,0.4)",
+                border: centroApertoV70 === m.id ? `1.5px solid ${m.color}` : "1px solid #CBD5E1",
                 borderRadius: 16,
                 cursor: "pointer",
-                boxShadow: centroApertoV70 === m.id ? `0 6px 14px ${m.color}22` : "0 3px 8px rgba(13,31,31,0.04)",
+                boxShadow: centroApertoV70 === m.id ? `0 6px 14px ${m.color}25` : "0 3px 8px rgba(15,23,42,0.06)",
                 position: "relative",
                 transition: "all 0.15s",
               }}>
@@ -1784,10 +1784,10 @@ export default function CMDetailPanel() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 15, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.2px" }}>{cV70.cliente || "Cliente"}</div>
-                    <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 700, marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: "#475A75", fontWeight: 700, marginTop: 2 }}>
                       {[cV70.telefono, cV70.email].filter(Boolean).join(" · ") || "Nessun contatto"}
                     </div>
-                    {cV70.indirizzo && <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>{cV70.indirizzo}</div>}
+                    {cV70.indirizzo && <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 2 }}>{cV70.indirizzo}</div>}
                   </div>
                 </div>
 
@@ -1804,7 +1804,7 @@ export default function CMDetailPanel() {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Diario del cantiere</div>
-                      <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>{diarioList.length} {diarioList.length === 1 ? "voce" : "voci"}</div>
+                      <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 2 }}>{diarioList.length} {diarioList.length === 1 ? "voce" : "voci"}</div>
                     </div>
                     <div onClick={() => { setDiarioFormOpenV74(v => !v); setDiarioTestoV74(""); setDiarioChiV74("IO"); setDiarioTagV74("NOTA"); }} style={{
                       display: "flex", alignItems: "center", gap: 5,
@@ -1881,7 +1881,7 @@ export default function CMDetailPanel() {
                           flex: 1, padding: "9px 10px", borderRadius: 10, cursor: "pointer",
                           background: "#fff", border: "1px solid rgba(200,228,228,0.5)",
                           textAlign: "center" as any, fontSize: 11, fontWeight: 800,
-                          color: "#5A7878", letterSpacing: "0.3px",
+                          color: "#475A75", letterSpacing: "0.3px",
                         }}>Annulla</div>
                         <div onClick={() => {
                           const testo = diarioTestoV74.trim();
@@ -1909,7 +1909,7 @@ export default function CMDetailPanel() {
 
                   {/* Lista voci */}
                   {diarioList.length === 0 ? (
-                    <div style={{ padding: "22px 12px", background: "rgba(200,228,228,0.15)", borderRadius: 12, fontSize: 11.5, color: "#5A7878", fontWeight: 600, textAlign: "center" as any, lineHeight: 1.5 }}>
+                    <div style={{ padding: "22px 12px", background: "rgba(200,228,228,0.15)", borderRadius: 12, fontSize: 11.5, color: "#475A75", fontWeight: 600, textAlign: "center" as any, lineHeight: 1.5 }}>
                       Nessuna voce ancora.<br/>Tocca <strong>+ SCRIVI</strong> per aggiungere la prima conversazione col cliente.
                     </div>
                   ) : (
@@ -1982,7 +1982,7 @@ export default function CMDetailPanel() {
                       {a.k === "file" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525" }}>{a.l}</div>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: "#5A7878", marginTop: 2 }}>{a.n} salvati</div>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: "#475A75", marginTop: 2 }}>{a.n} salvati</div>
                   </div>
                 ))}
               </div>
@@ -1992,13 +1992,13 @@ export default function CMDetailPanel() {
           {centroApertoV70 === "note" && (
             <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.05)" }}>
               <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525", marginBottom: 4 }}>Appunti del lavoro</div>
-              <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 600, marginBottom: 10 }}>Tutte le note tecniche di questa commessa</div>
+              <div style={{ fontSize: 11, color: "#475A75", fontWeight: 600, marginBottom: 10 }}>Tutte le note tecniche di questa commessa</div>
               {(cV70.note && cV70.note.trim()) ? (
                 <div style={{ padding: "10px 12px", background: "rgba(250,199,117,0.1)", border: "1px solid rgba(239,159,39,0.22)", borderRadius: 10, fontSize: 12.5, color: "#0F2525", lineHeight: 1.4 }}>
                   {cV70.note}
                 </div>
               ) : (
-                <div style={{ padding: "14px 12px", background: "rgba(200,228,228,0.25)", borderRadius: 10, fontSize: 12, color: "#5A7878", fontWeight: 600, textAlign: "center" as any }}>
+                <div style={{ padding: "14px 12px", background: "rgba(200,228,228,0.25)", borderRadius: 10, fontSize: 12, color: "#475A75", fontWeight: 600, textAlign: "center" as any }}>
                   Nessuna nota ancora. Scrivi dal centro Allegati &gt; Nota.
                 </div>
               )}
@@ -2017,7 +2017,7 @@ export default function CMDetailPanel() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Riepilogo rilievo</div>
-                    <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Vedi scheda completa</div>
+                    <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 1 }}>Vedi scheda completa</div>
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
@@ -2032,7 +2032,7 @@ export default function CMDetailPanel() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta PDF</div>
-                    <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Scheda tecnica per officina</div>
+                    <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 1 }}>Scheda tecnica per officina</div>
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
@@ -2084,7 +2084,7 @@ export default function CMDetailPanel() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta CSV</div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Tabella vani per Excel / Google Sheets</div>
+                  <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 1 }}>Tabella vani per Excel / Google Sheets</div>
                 </div>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#639922" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
               </div>
@@ -2115,7 +2115,7 @@ export default function CMDetailPanel() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta JSON</div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Backup completo commessa (sviluppatori)</div>
+                  <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 1 }}>Backup completo commessa (sviluppatori)</div>
                 </div>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
               </div>
@@ -2175,7 +2175,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta HTML</div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Report leggibile da browser</div>
+                  <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 1 }}>Report leggibile da browser</div>
                 </div>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4537E" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
               </div>
@@ -2194,7 +2194,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Segnala problema</div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Imprevisto, materiale mancante</div>
+                  <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 1 }}>Imprevisto, materiale mancante</div>
                 </div>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF9F27" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
               </div>
@@ -2230,19 +2230,19 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 width: 34, height: 34, borderRadius: 10,
                 background: "linear-gradient(145deg, rgba(127,119,221,0.18), rgba(29,158,117,0.12))",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#3C3489",
+                color: "#0F1B2D",
                 boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
               }}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Cronologia</div>
-                <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>
+                <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginTop: 2 }}>
                   {logV70.length > 0 ? `${logV70.length} eventi · ultima ${logV70[logV70.length - 1]?.quando || "Adesso"}` : "1 evento · ultima Adesso"}
                 </div>
               </div>
               <div style={{
-                fontSize: 10, fontWeight: 900, color: "#3C3489",
+                fontSize: 10, fontWeight: 900, color: "#0F1B2D",
                 background: "linear-gradient(145deg, rgba(175,169,236,0.28), rgba(127,119,221,0.15))",
                 padding: "4px 10px", borderRadius: 50, letterSpacing: "0.3px",
                 border: "1px solid rgba(127,119,221,0.22)",
@@ -2282,7 +2282,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     </div>
                     <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
                       <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
-                        <strong style={{ color: "#3C3489", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
+                        <strong style={{ color: "#0F1B2D", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
                       </div>
                       <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>{ev.quando || ""}</div>
                     </div>
@@ -2650,7 +2650,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
           {/* v81 · STEPPER 8 puntini */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 18px 0" }}>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#5A7878", letterSpacing: "0.5px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 2/8</div>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#475A75", letterSpacing: "0.5px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 2/8</div>
             <div style={{ display: "flex", gap: 3, flex: 1 }}>
               <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #3ABDBD, #28A0A0)", boxShadow: "0 0 5px rgba(40,160,160,0.5)" }} />
               <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", boxShadow: "0 0 7px rgba(29,158,117,0.6)" }} />
@@ -2965,7 +2965,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
                 <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
                   <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", marginBottom: 5, letterSpacing: "-0.1px" }}>L'immobile è abitazione principale del cliente?</div>
-                  <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Decide l'aliquota: 50% (prima casa) o 36% (seconda/affitto/azienda)</div>
+                  <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Decide l'aliquota: 50% (prima casa) o 36% (seconda/affitto/azienda)</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {[
                       { k: "prima", big: "Prima casa", sub: "Residenza del cliente · detrazione 50%" },
@@ -2986,7 +2986,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             </div>
                           )}
                           <div style={{ fontSize: 15, fontWeight: 900, color: on ? "#04342C" : "#0F2525", letterSpacing: "-0.3px", lineHeight: 1.1 }}>{o.big}</div>
-                          <div style={{ fontSize: 9.5, color: "#5A7878", fontWeight: 700, marginTop: 4, lineHeight: 1.35 }}>{o.sub}</div>
+                          <div style={{ fontSize: 9.5, color: "#475A75", fontWeight: 700, marginTop: 4, lineHeight: 1.35 }}>{o.sub}</div>
                         </div>
                       );
                     })}
@@ -3003,7 +3003,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
                 <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
                   <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", marginBottom: 5, letterSpacing: "-0.1px" }}>Quale detrazione applichi?</div>
-                  <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Ogni bonus ha documenti diversi. Ti guido io, passo-passo.</div>
+                  <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Ogni bonus ha documenti diversi. Ti guido io, passo-passo.</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                     {[
                       { k: "50", icoBg: "linear-gradient(145deg, #5DCAA5, #1D9E75)", nome: "Bonus Casa", perc: "50%", percBg: "rgba(29,158,117,0.14)", percCol: "#04342C", desc: "Ristrutturazione edilizia · art. 16-bis DPR 917/86 · scelta più comune, più semplice", stats: "MAX € 96.000 · 10 ANNI · NO LIMITI Uw" },
@@ -3032,8 +3032,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                               {b.nome}
                               <span style={{ fontSize: 10, fontWeight: 900, padding: "2px 8px", borderRadius: 50, letterSpacing: "0.3px", background: b.percBg, color: b.percCol }}>{b.perc}</span>
                             </div>
-                            <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginTop: 3, lineHeight: 1.4 }}>{b.desc}</div>
-                            {b.stats && <div style={{ fontSize: 9, color: "#5A7878", fontWeight: 800, letterSpacing: "0.3px", marginTop: 6 }}>{b.stats}</div>}
+                            <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginTop: 3, lineHeight: 1.4 }}>{b.desc}</div>
+                            {b.stats && <div style={{ fontSize: 9, color: "#475A75", fontWeight: 800, letterSpacing: "0.3px", marginTop: 6 }}>{b.stats}</div>}
                           </div>
                           {on && (
                             <div style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(145deg, #5DCAA5, #1D9E75)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 5px rgba(29,158,117,0.4)" }}>
@@ -3078,7 +3078,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Trasmittanza Uw</div>
-                          <div style={{ fontSize: 9.5, color: "#5A7878", fontWeight: 700, marginTop: 2 }}>Richiesta per Ecobonus · DM 6 agosto 2020</div>
+                          <div style={{ fontSize: 9.5, color: "#475A75", fontWeight: 700, marginTop: 2 }}>Richiesta per Ecobonus · DM 6 agosto 2020</div>
                         </div>
                       </div>
                       <div style={{ fontSize: 9.5, fontWeight: 800, color: "#4A6E6E", letterSpacing: "0.6px", marginBottom: 5 }}>ZONA CLIMATICA</div>
@@ -3125,13 +3125,13 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Checklist {bonusLblV77[bonusV77]}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <div style={{ width: 60, height: 6, background: "rgba(200,228,228,0.5)", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ width: 60, height: 6, background: "rgba(15,27,45,0.15)", borderRadius: 3, overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${pctDone}%`, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", borderRadius: 3, boxShadow: "0 0 6px rgba(29,158,117,0.4)" }} />
                       </div>
                       <div style={{ fontSize: 10, fontWeight: 900, color: "#1D9E75", letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Conservare tutto per 10 anni · L'Agenzia delle Entrate può chiederli fino al {new Date().getFullYear() + 10}</div>
+                  <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Conservare tutto per 10 anni · L'Agenzia delle Entrate può chiederli fino al {new Date().getFullYear() + 10}</div>
 
                   {checklistV77.map((d: any) => {
                     const isDone = !!checkSaved[d.id];
@@ -3155,7 +3155,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             {d.obblig && <span style={{ display: "inline-block", background: "rgba(226,75,74,0.12)", color: "#8B1A1A", fontSize: 8.5, fontWeight: 900, padding: "1px 6px", borderRadius: 4, letterSpacing: "0.3px", marginLeft: 5, verticalAlign: 1 }}>OBBLIG</span>}
                             {d.consigl && <span style={{ display: "inline-block", background: "rgba(239,159,39,0.12)", color: "#854F0B", fontSize: 8.5, fontWeight: 900, padding: "1px 6px", borderRadius: 4, letterSpacing: "0.3px", marginLeft: 5, verticalAlign: 1 }}>CONSIGL</span>}
                           </div>
-                          <div style={{ fontSize: 9.5, color: "#5A7878", fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{d.sub}</div>
+                          <div style={{ fontSize: 9.5, color: "#475A75", fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{d.sub}</div>
                         </div>
                         <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                           <div onClick={() => { try { (fotoInputRef as any).current?.click(); } catch (e) {} }} style={{
@@ -3223,7 +3223,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 </div>
 
                 <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
-                  <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Testi già preparati, con dati commessa pre-compilati. Tap per inviare su WhatsApp.</div>
+                  <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Testi già preparati, con dati commessa pre-compilati. Tap per inviare su WhatsApp.</div>
 
                   {templates.map((tpl: any) => (
                     <div key={tpl.id} onClick={() => {
@@ -3240,7 +3240,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>{tpl.nome}</div>
-                        <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{tpl.sub}</div>
+                        <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{tpl.sub}</div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 11px", background: "linear-gradient(145deg, rgba(37,211,102,0.14), rgba(27,160,80,0.05))", border: "1px solid rgba(37,211,102,0.3)", color: "#1BA050", borderRadius: 50, fontSize: 9.5, fontWeight: 900, letterSpacing: "0.3px", flexShrink: 0 }}>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="#1BA050"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5z"/></svg>
@@ -4498,8 +4498,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                   <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 2px" }}>
                                     <div style={{ fontSize: 9.5, fontWeight: 900, color: T.sub, letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 1/8</div>
                                     <div style={{ display: "flex", gap: 3, flex: 1 }}>
-                                      <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
-                                      {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
+                                      <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
+                                      {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(15,27,45,0.15)" }} />))}
                                     </div>
                                     <div style={{ fontSize: 9.5, fontWeight: 900, color: "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Rilievo</div>
                                   </div>
@@ -4611,7 +4611,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                       }
                                     }} style={{
                                       marginTop: 14, width: "100%", padding: 15,
-                                      background: "#fff", color: "#3C3489",
+                                      background: "#fff", color: "#0F1B2D",
                                       border: "none", borderRadius: 14,
                                       fontSize: 13.5, fontWeight: 900, letterSpacing: "0.4px",
                                       cursor: "pointer", fontFamily: "inherit",
@@ -4619,9 +4619,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                       boxShadow: "0 6px 16px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
                                       position: "relative",
                                     }}>
-                                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                       {nextActionBtnV66}
-                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                     </button>
                                   </div>
 
@@ -4836,7 +4836,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                             width: 34, height: 34, borderRadius: 10,
                                             background: "linear-gradient(145deg, rgba(127,119,221,0.18), rgba(29,158,117,0.12))",
                                             display: "flex", alignItems: "center", justifyContent: "center",
-                                            color: "#3C3489",
+                                            color: "#0F1B2D",
                                             boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
                                           }}>
                                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -4848,7 +4848,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                             </div>
                                           </div>
                                           <div style={{
-                                            fontSize: 10, fontWeight: 900, color: "#3C3489",
+                                            fontSize: 10, fontWeight: 900, color: "#0F1B2D",
                                             background: "linear-gradient(145deg, rgba(175,169,236,0.28), rgba(127,119,221,0.15))",
                                             padding: "4px 10px", borderRadius: 50, letterSpacing: "0.3px",
                                             border: "1px solid rgba(127,119,221,0.22)",
@@ -4888,7 +4888,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                                 </div>
                                                 <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
                                                   <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
-                                                    <strong style={{ color: "#3C3489", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
+                                                    <strong style={{ color: "#0F1B2D", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
                                                   </div>
                                                   <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>{ev.quando || ""}</div>
                                                 </div>
@@ -4906,7 +4906,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                                 </div>
                                                 <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
                                                   <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
-                                                    <strong style={{ color: "#3C3489", fontWeight: 900 }}>Tu</strong> · creato la commessa
+                                                    <strong style={{ color: "#0F1B2D", fontWeight: 900 }}>Tu</strong> · creato la commessa
                                                   </div>
                                                   <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>Adesso</div>
                                                 </div>
@@ -4977,8 +4977,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 2px" }}>
                               <div style={{ fontSize: 9.5, fontWeight: 900, color: T.sub, letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 1/8</div>
                               <div style={{ display: "flex", gap: 3, flex: 1 }}>
-                                <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
-                                {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
+                                <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
+                                {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(15,27,45,0.15)" }} />))}
                               </div>
                               <div style={{ fontSize: 9.5, fontWeight: 900, color: "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Rilievo</div>
                             </div>
@@ -5045,7 +5045,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                 setShowNuovoRilievoModal(true);
                               }} style={{
                                 marginTop: 14, width: "100%", padding: 15,
-                                background: "#fff", color: "#3C3489",
+                                background: "#fff", color: "#0F1B2D",
                                 border: "none", borderRadius: 14,
                                 fontSize: 13.5, fontWeight: 900, letterSpacing: "0.4px",
                                 cursor: "pointer", fontFamily: "inherit",
@@ -5053,9 +5053,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                 boxShadow: "0 6px 16px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
                                 position: "relative",
                               }}>
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                 CREA RILIEVO
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                               </button>
                             </div>
                           </div>
@@ -6293,7 +6293,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <I d={ICO.lock} s={18} c="#5856d6" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 900, color: "#3C3489", letterSpacing: "0.2px" }}>Rilievo storico R{r?.n} · sola lettura</div>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: "#0F1B2D", letterSpacing: "0.2px" }}>Rilievo storico R{r?.n} · sola lettura</div>
                   <div style={{ fontSize: 10, fontWeight: 600, color: "#5856d6aa", marginTop: 2 }}>Solo R{lastRilievo?.n} (più recente) è modificabile</div>
                 </div>
                 <div onClick={() => { if (lastRilievo) setSelectedRilievo(lastRilievo); }} style={{
