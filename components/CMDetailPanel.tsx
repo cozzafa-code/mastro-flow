@@ -1474,6 +1474,158 @@ export default function CMDetailPanel() {
           </div>
           )}
 
+          {/* ════════════════════════════════════════════════════════════════
+              [v51] ZONA 4 - SEZIONE RILIEVI accumulativa
+              Bottone +CREA NUOVO RILIEVO sempre visibile
+              R1 R2 R3 ... in ordine inverso (ultimo in alto)
+              Tap su rilievo apre il dettaglio
+              ════════════════════════════════════════════════════════════════ */}
+          {(() => {
+            const rilieviZ4: any[] = (cV70 as any)?.rilievi || [];
+            const totRZ4 = rilieviZ4.length;
+            const colorZ4 = (tipo: string | undefined) => {
+              const t = (tipo || "").toLowerCase();
+              if (t.includes("definit")) return { bg: "#D1FAE5", fg: "#065F46", lbl: "Definitivo" };
+              if (t.includes("verif")) return { bg: "#DBEAFE", fg: "#1E40AF", lbl: "Verificato" };
+              if (t.includes("rived")) return { bg: "#FEE2E2", fg: "#991B1B", lbl: "Da rivedere" };
+              if (t.includes("modif")) return { bg: "#FED7AA", fg: "#9A3412", lbl: "Modifica" };
+              return { bg: "#FEF3C7", fg: "#92400E", lbl: "Provvisorio" };
+            };
+            return (
+              <div style={{ marginTop: 4 }}>
+                {/* Header sezione */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px", marginBottom: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <span style={{
+                      background: "#1E3A5F", color: "#fff",
+                      fontSize: 10, fontWeight: 800,
+                      padding: "3px 8px", borderRadius: 6,
+                      fontVariantNumeric: "tabular-nums" as any,
+                      minWidth: 22, textAlign: "center" as const,
+                    }}>{totRZ4}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 800, color: "#0F1B2D",
+                      letterSpacing: "1px", textTransform: "uppercase" as any,
+                    }}>Rilievi</span>
+                  </div>
+                </div>
+
+                {/* Bottone +CREA NUOVO RILIEVO sempre visibile */}
+                <button
+                  onClick={() => {
+                    setNuovoRilievoTipo("provvisorio");
+                    setNuovoRilievoRilevatore("");
+                    setNuovoRilievoComplesso(false);
+                    setNuovoRilievoNote("");
+                    setShowNuovoRilievoModal(true);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "13px 14px",
+                    borderRadius: 12,
+                    border: "1.5px dashed #1E3A5F",
+                    background: "#fff",
+                    color: "#1E3A5F",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.5px",
+                    textTransform: "uppercase" as any,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 7,
+                    marginBottom: totRZ4 > 0 ? 8 : 0,
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Crea nuovo rilievo
+                </button>
+
+                {/* Lista rilievi (ordine inverso: ultimo in alto) */}
+                {totRZ4 > 0 && [...rilieviZ4].reverse().map((rZ4: any, idxZ4: number) => {
+                  const colZ4 = colorZ4(rZ4.tipo);
+                  const isUltimoZ4 = idxZ4 === 0;
+                  const numZ4 = rZ4.numero || rZ4.n || (totRZ4 - idxZ4);
+                  const vaniNumZ4 = (rZ4.vani || []).length;
+                  const vaniOkZ4 = (rZ4.vani || []).filter((v: any) => {
+                    const m = v.misure || {};
+                    const cnt = Object.values(m).filter((x: any) => Number(x) > 0).length;
+                    return cnt >= 6;
+                  }).length;
+                  const dataZ4 = rZ4.data ? new Date(rZ4.data).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "—";
+                  const oraZ4 = rZ4.ora || "";
+                  const nomeRilZ4 = rZ4.nome || rZ4.note || "";
+                  return (
+                    <div
+                      key={rZ4.id || idxZ4}
+                      onClick={() => { setSelectedRilievo(rZ4); }}
+                      style={{
+                        background: "#fff",
+                        border: `1px solid ${isUltimoZ4 ? "#1E3A5F" : "#E2E8F0"}`,
+                        borderRadius: 12,
+                        padding: "11px 12px",
+                        marginBottom: 6,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 11,
+                        cursor: "pointer",
+                        boxShadow: isUltimoZ4 ? "0 2px 8px rgba(30,58,95,0.10)" : "0 1px 2px rgba(15,27,45,0.04)",
+                      }}
+                    >
+                      <div style={{
+                        width: 38, height: 38, borderRadius: 10,
+                        background: colZ4.bg, color: colZ4.fg,
+                        display: "flex", flexDirection: "column",
+                        alignItems: "center", justifyContent: "center",
+                        flexShrink: 0,
+                        border: `1.5px solid ${colZ4.fg}30`,
+                      }}>
+                        <div style={{ fontSize: 12, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.3px" }}>R{numZ4}</div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#0F1B2D", lineHeight: 1.2, letterSpacing: "-0.1px", marginBottom: 2, whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {nomeRilZ4 || `Rilievo ${dataZ4}`}
+                        </div>
+                        <div style={{ fontSize: 10, color: "#475569", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" as const }}>
+                          <span>{dataZ4}{oraZ4 ? ` · ${oraZ4}` : ""}</span>
+                          <span style={{ width: 3, height: 3, background: "#94A3B8", borderRadius: "50%", display: "inline-block" }} />
+                          <span style={{
+                            fontSize: 9, fontWeight: 700,
+                            padding: "2px 6px", borderRadius: 4,
+                            background: colZ4.bg, color: colZ4.fg,
+                            letterSpacing: "0.3px", textTransform: "uppercase" as any,
+                          }}>{colZ4.lbl}</span>
+                          {isUltimoZ4 && totRZ4 > 1 && (
+                            <span style={{
+                              fontSize: 9, fontWeight: 700,
+                              padding: "2px 6px", borderRadius: 4,
+                              background: "#1E3A5F", color: "#fff",
+                              letterSpacing: "0.3px", textTransform: "uppercase" as any,
+                            }}>Ultimo</span>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: "#1E3A5F", lineHeight: 1, fontVariantNumeric: "tabular-nums" as any }}>
+                          {vaniOkZ4}/{vaniNumZ4 || "—"}
+                        </div>
+                        <div style={{ fontSize: 9, color: "#475569", marginTop: 2, fontWeight: 600, letterSpacing: "0.3px", textTransform: "uppercase" as any }}>vani</div>
+                      </div>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {/* v29 · PANNELLO GESTIONE PREVENTIVI */}
           {(() => {
             const c29 = cV70 as any;
