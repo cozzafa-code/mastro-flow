@@ -4112,6 +4112,36 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             );
           })()}
 
+          {/* [v51] STORICO DRAWER dentro prevWorkspace branch */}
+          {showStoricoPreventivi && (
+            <div style={{
+              position: "fixed", inset: 0, zIndex: 9700,
+              background: "rgba(15,27,45,0.4)",
+              backdropFilter: "blur(2px)",
+            }} onClick={() => setShowStoricoPreventivi(null)}>
+              <div onClick={(e) => e.stopPropagation()} style={{
+                position: "absolute", top: 0, right: 0, bottom: 0,
+                width: "min(100%, 540px)",
+                background: "#F7F7F5",
+                boxShadow: "-20px 0 40px rgba(15,27,45,0.25)",
+                overflowY: "auto",
+                animation: "mastroSlideInRight 0.28s ease-out",
+              }}>
+                <StoricoPreventiviPanel
+                  commessaId={showStoricoPreventivi.commessaId}
+                  numero={showStoricoPreventivi.numero}
+                  aziendaId={(c as any)?.azienda_id || (c as any)?.aziendaId || ""}
+                  commessaCode={(c as any)?.code || ""}
+                  clienteNome={`${(c as any)?.cliente || ""} ${(c as any)?.cognome || ""}`.trim()}
+                  onClose={() => setShowStoricoPreventivi(null)}
+                  onApriPdf={(pid, url) => { if (url) window.open(url, "_blank"); }}
+                  onInviaLink={(pid) => { console.log("[storico] invia link", pid); }}
+                  onApriEdit={(pid) => { setShowStoricoPreventivi(null); }}
+                />
+              </div>
+            </div>
+          )}
+
         </div>
       );
     }
