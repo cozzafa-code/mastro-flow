@@ -156,49 +156,38 @@ export const THEMES = {
   // ═══════════════════════════════════════════════
   fliwox: {
     name: "fliwoX", emoji: "layers",
-    // Sfondo pulito — Sistema Operativo v2
-    bg: "#E4F2F2", bg2: "#D8EEEE", card: "#FFFFFF", card2: "#F7F7F5",
-    // Border sottili
+    bg: "#EEF1F5", bg2: "#E2E8F0", card: "#FFFFFF", card2: "#F7F7F5",
     bdr: "#F0EFEC", bdrL: "#F7F7F5",
-    // Testi
     text: "#1A1A18", sub: "#8A8A82", sub2: "#B0B0A8",
-    // Primary navy 50/20
     pri: "#1E3A5F",
-    acc: "#1E3A5F", accD: "#0F1B2D", accLt: "rgba(30,58,95,0.10)", accBg: "#1E3A5F",
-    // Semantici
-    grn: "#065F46", grnLt: "rgba(6,95,70,0.08)",
-    red: "#991B1B", redLt: "rgba(153,27,27,0.08)",
-    orange: "#92400E", orangeLt: "rgba(146,64,14,0.08)",
-    blue: "#2D5A87", blueLt: "rgba(45,90,135,0.08)",
+    acc: "#1E3A5F", accD: "#0F1B2D", accLt: "rgba(30,58,95,0.08)", accBg: "#1E3A5F",
+    grn: "#0F6E56", grnLt: "rgba(15,110,86,0.08)",
+    red: "#E24B4A", redLt: "rgba(226,75,74,0.08)",
+    orange: "#C4875A", orangeLt: "rgba(196,135,90,0.08)",
+    blue: "#3572A5", blueLt: "rgba(53,114,165,0.08)",
     purple: "#7B6BA5", purpleLt: "rgba(123,107,165,0.08)",
-    cyan: "#2D5A87", cyanLt: "rgba(45,90,135,0.08)",
-    // Card shadow — morbide, no 3D
+    cyan: "#475A75", cyanLt: "rgba(71,90,117,0.08)",
     cardSh: "0 2px 8px rgba(0,0,0,0.04)",
     cardShH: "0 4px 12px rgba(0,0,0,0.06)",
-    // Topbar
-    topbar: "#0D1F1F",
-    // Border radius
+    topbar: "#0A1628",
     r: 16, r2: 12,
-    // Bottoni — ombre morbide
     btnPrimaryBg: "#1E3A5F",
-    btnPrimarySh: "0 2px 8px rgba(15,23,42,0.3)",
+    btnPrimarySh: "0 2px 8px rgba(30,58,95,0.3)",
     btnSecondaryBg: "#FFFFFF",
     btnSecondarySh: "0 2px 8px rgba(0,0,0,0.04)",
-    // Pipeline fasi — colori approvati
     pipelineColors: {
       sopralluogo: "#1E3A5F",
-      preventivo:  "#92400E",
+      preventivo:  "#2D5A87",
       ordine:      "#1060A0",
       montaggio:   "#806020",
       fattura:     "#6B4FB0",
-      da_fare:     "#D0E8E8",
+      da_fare:     "#D6E0EE",
     },
-    // Avatar operatori
     avatarColors: {
-      FC: "#1E3A5F", // Fabio Cozza — titolare
-      MV: "#2D5A87", // Marco Vito — montatore
-      PG: "#1060A0", // Paolo Greco — tecnico misure
-      AB: "#806020", // Antonio Bruno — magazziniere
+      FC: "#1E3A5F",
+      MV: "#2D5A87",
+      PG: "#1060A0",
+      AB: "#806020",
     },
   },
 };
