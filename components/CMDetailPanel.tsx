@@ -26,6 +26,7 @@ import GuidaIvaDetrazioni from "./GuidaIvaDetrazioni";
 import TabFiscale from "./TabFiscale";
 import DisegnoTecnico from "./DisegnoTecnico";
 import Timeline from "./Timeline";
+import TimelineDrawer from "./TimelineDrawer";
 // @cadDraw state added below
 
 // ═══ v58 · Cronologia app-nell-app ═══
@@ -475,6 +476,8 @@ export default function CMDetailPanel() {
     const [fascicoliStorico, setFascicoliStorico] = useState<any[]>([]);
     // Modal "Crea nuovo rilievo" dentro Centro Comando
     const [showNuovoRilievoModal, setShowNuovoRilievoModal] = useState(false);
+    // [v51] Drawer Timeline sempre accessibile dal Centro Comando
+    const [showTimelineDrawer, setShowTimelineDrawer] = useState(false);
     const [nuovoRilievoComplesso, setNuovoRilievoComplesso] = useState(false);
     const [showAggiungiVanoModal, setShowAggiungiVanoModal] = useState(false);
     const [nvL1, setNvL1] = useState("");
@@ -2225,6 +2228,19 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
         </div>
       </div>
+
+      {/* [v51] TIMELINE DRAWER - sempre montato, slide-from-right quando aperto */}
+      <TimelineDrawer
+        open={showTimelineDrawer}
+        onClose={() => setShowTimelineDrawer(false)}
+        modulo="commessa"
+        entitaId={(selectedCM as any)?.id || ""}
+        aziendaId={(selectedCM as any)?.azienda_id || (selectedCM as any)?.aziendaId || undefined}
+        titolo={`Storia · ${(selectedCM as any)?.code || "commessa"}`}
+        onChiamata={(tel) => { if (tel) window.location.href = `tel:${tel}`; }}
+        onWhatsApp={(tel, msg) => { if (tel) window.open(`https://wa.me/${tel.replace(/\D/g,'')}${msg ? `?text=${encodeURIComponent(msg)}` : ''}`); }}
+        onEmail={(em, ogg) => { if (em) window.location.href = `mailto:${em}${ogg ? `?subject=${encodeURIComponent(ogg)}` : ''}`; }}
+      />
 
       {/* v71 · MODAL NUOVO RILIEVO */}
       {showNuovoRilievoModal && (
@@ -4112,6 +4128,33 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <div style={{ fontSize: 9, color: "rgba(255,255,255,0.8)", fontWeight: 600, marginTop: 2 }}>{vaniMisurati.length}/{vaniList.length} vani</div>
                 </div>
               )}
+              {/* [v51] BOTTONE STORIA - sempre accessibile in qualunque fase */}
+              <button
+                onClick={() => setShowTimelineDrawer(true)}
+                aria-label="Apri storia commessa"
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: "rgba(255,255,255,0.18)",
+                  border: "1px solid rgba(255,255,255,0.28)",
+                  color: "#fff",
+                  padding: "7px 10px",
+                  borderRadius: 10,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.4px",
+                  textTransform: "uppercase" as const,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  fontFamily: "inherit",
+                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Storia
+              </button>
             </div>
 
           </div>
