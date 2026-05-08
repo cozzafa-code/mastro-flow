@@ -284,7 +284,7 @@ export default function CMDetailPanel() {
     const cm = selectedCM;
     console.log("[autosync] effect fired. cm?", !!cm, "code?", cm?.code, "id type:", typeof cm?.id);
     if (!cm || !cm.code) return;
-    const key = JSON.stringify({ id: cm.id, fase: cm.fase, tot: cm.totalePreventivo, sc: cm.scontoPerc, detr: cm.detrazione, iva: cm.ivaPerc, sent: cm.preventivoInviato, rilievi: (cm.rilievi || []).map((r: any) => ({ id: r.id, vani: (r.vani || []).map((v: any) => ({ id: v.id, misure: v.misure, sistema: v.sistema, tipo: v.tipo, foto: Object.keys(v.foto || {}).length, note: v.note })) })) });
+    const key = JSON.stringify(cm);
     if (key === _syncedKeyRef.current) return;
     _syncedKeyRef.current = key;
 
@@ -303,7 +303,7 @@ export default function CMDetailPanel() {
       } catch (err) { console.warn('[autosync] fail:', err); }
     }, 800);
     return () => { if (_syncTimerRef.current) clearTimeout(_syncTimerRef.current); };
-  }, [selectedCM?.id, selectedCM?.fase, selectedCM?.totalePreventivo, selectedCM?.scontoPerc, selectedCM?.detrazione, selectedCM?.ivaPerc, selectedCM?.preventivoInviato, selectedCM?.rilievi]);
+  }, [selectedCM]);
 
 
 
