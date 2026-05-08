@@ -1,21 +1,27 @@
 // ════════════════════════════════════════════════════════════
-// PREVENTIVO FISCALE V10 · WRAPPER ORCHESTRATORE
+// PREVENTIVO FISCALE V10 · WRAPPER PERSISTENTE
 // ════════════════════════════════════════════════════════════
-// Replica il mockup approvato: 3 schermate con progress bar 8/8
-// Schermata 1 (passo 2/8): Step 1+2 Destinazione + Bonus + Checklist
-// Schermata 2 (passo 4/8): Step 3+4+5 IVA + Causale + Messaggi + ENEA  
-// Schermata 3 (passo 8/8): Step 6+7+8 Pagamento + RDP + Totale + Invia
+// Replica mockup approvato + persistenza completa su DB:
+// - usePreventivoState carica/salva bonus, IVA, destinazione, pagamento
+// - Log automatico timeline_universale
+// - Mark inviato chiamato al click "Invia WhatsApp"
+// - Uw zona climatica obbligatoria per Ecobonus (DM 6/8/2020)
+// - is_showroom letto da aziende.is_showroom
+
 "use client";
-import { useState, useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import Step12_DestinazioneBonus from "./Step12_DestinazioneBonus";
 import Step345_IvaCausaleEnea from "./Step345_IvaCausaleEnea";
 import Step678_PagamentoRDPInvio from "./Step678_PagamentoRDPInvio";
+import { useState } from "react";
+import { usePreventivoState } from "@/hooks/usePreventivoState";
 import { type BonusKey, type IVAKey } from "@/lib/preventivo-checklist-templates";
 
 type Vano = {
   tipo?: string;
   larghezza_mm?: number;
   altezza_mm?: number;
+  uw?: number | string;
   note?: string;
 };
 
@@ -32,32 +38,34 @@ type Props = {
   vani: Vano[];
   prezzo_base_eur: number;
   costo_reale_eur?: number;
-  is_showroom?: boolean;
-  initial_bonus?: BonusKey | null;
-  initial_iva?: IVAKey | null;
-  initial_destinazione?: "prima" | "seconda" | null;
-  onBonusChange?: (b: BonusKey) => void;
-  onIvaChange?: (i: IVAKey) => void;
-  onDestinazioneChange?: (d: "prima" | "seconda") => void;
-  onPrezzoFinaleUpdate?: (prezzo: number, marginePct: number) => void;
 };
 
 type StepUI = "step12" | "step345" | "step678";
 
+const UW_LIMITE: Record<string, number> = {
+  "AB": 3.00, "C": 2.20, "D": 1.80, "E": 1.40, "F": 1.10,
+};
+
 export default function PreventivoFiscaleV10({
   azienda_id, azienda_nome, azienda_piva, commessa_id, commessa_codice,
   cliente_nome, cliente_cf, cliente_telefono, citta, vani,
-  prezzo_base_eur, costo_reale_eur = 0, is_showroom = false,
-  initial_bonus = "bonus_casa", initial_iva = "iva_10", initial_destinazione = "prima",
-  onBonusChange, onIvaChange, onDestinazioneChange,
+  prezzo_base_eur, costo_reale_eur = 0,
 }: Props) {
 
-  const [stepUI, setStepUI] = useState<StepUI>("step12");
-  const [destinazione, setDestinazione] = useState<"prima" | "seconda">(initial_destinazione ?? "prima");
-  const [bonus, setBonus] = useState<BonusKey>(initial_bonus ?? "bonus_casa");
-  const [iva, setIva] = useState<IVAKey>(initial_iva ?? "iva_10");
+  const { state, loading, saving, patch, logEvento, markInviato } = usePreventivoState({
+    commessa_id,
+    azienda_id,
+  });
 
-  // ─── CALCOLI FISCALI ───────────────────────────────────────
+  const [stepUI, setStepUI] = useState<StepUI>("step12");
+
+  // Valori di stato (nullables → default safe per il rendering)
+  const bonus: BonusKey = state.bonus_scelto ?? "bonus_casa";
+  const iva: IVAKey = state.iva_scelta ?? "iva_10";
+  const destinazione = state.destinazione_immobile ?? "prima";
+  const zona = state.zona_climatica ?? "E";
+
+  // ─── CALCOLI FISCALI ────────────────────────────────────
   const ivaPct = iva === "iva_4" ? 4 : iva === "iva_10" ? 10 : 22;
 
   const aliquota = useMemo(() => {
@@ -72,7 +80,26 @@ export default function PreventivoFiscaleV10({
   const costoNetto = prezzo_base_eur - recupero;
   const perAnno = recupero / 10;
 
-  // ─── CAUSALE ────────────────────────────────────────────────
+  // Uw del primo vano (primo numero parsabile)
+  const uwProd = useMemo(() => {
+    const v0 = vani?.[0];
+    const raw = v0?.uw;
+    if (typeof raw === "number") return raw;
+    const parsed = parseFloat(String(raw ?? "1.1"));
+    return isNaN(parsed) ? 1.1 : parsed;
+  }, [vani]);
+
+  const uwOk = uwProd <= (UW_LIMITE[zona] ?? 1.4);
+
+  // Aggiorna uw_conforme su DB quando cambia
+  useEffect(() => {
+    if (loading) return;
+    if (bonus === "ecobonus" && state.uw_conforme !== uwOk) {
+      patch({ uw_conforme: uwOk });
+    }
+  }, [bonus, uwOk, loading]); // eslint-disable-line
+
+  // ─── CAUSALE BONIFICO ──────────────────────────────────────
   const causale = useMemo(() => {
     const azNome = (azienda_nome || "DITTA").toUpperCase();
     const azPiva = azienda_piva || "P.IVA";
@@ -91,38 +118,59 @@ export default function PreventivoFiscaleV10({
     return "";
   }, [bonus, azienda_nome, azienda_piva, cliente_nome, cliente_cf]);
 
-  // ─── HANDLERS ───────────────────────────────────────────────
+  // ─── HANDLERS PERSISTENTI ─────────────────────────────────
   function handleDest(d: "prima" | "seconda") {
-    setDestinazione(d);
-    onDestinazioneChange?.(d);
+    patch({ destinazione_immobile: d });
+    logEvento("preventivo_dest_change", `Destinazione: ${d === "prima" ? "Prima casa" : "Seconda casa"}`, undefined, { destinazione: d });
   }
   function handleBonus(b: BonusKey) {
-    setBonus(b);
-    onBonusChange?.(b);
+    patch({ bonus_scelto: b });
+    logEvento("preventivo_bonus_change", `Bonus selezionato: ${b}`, undefined, { bonus: b });
   }
   function handleIva(i: IVAKey) {
-    setIva(i);
-    onIvaChange?.(i);
+    patch({ iva_scelta: i });
+    logEvento("preventivo_iva_change", `IVA: ${i}`, undefined, { iva: i });
+  }
+  function handleZona(z: string) {
+    patch({ zona_climatica: z as any });
+    logEvento("preventivo_zona_change", `Zona climatica: ${z}`, undefined, { zona: z });
+  }
+  function handlePagamento(field: "pagamento_rate" | "pagamento_metodo" | "tempi_consegna" | "garanzia", v: string) {
+    patch({ [field]: v } as any);
+  }
+  async function handleInviaWhatsApp() {
+    await markInviato("whatsapp");
   }
 
   // ─── PROGRESS BAR ───────────────────────────────────────────
   const passoNum = stepUI === "step12" ? 2 : stepUI === "step345" ? 4 : 8;
   const passoLabel = stepUI === "step12" ? "Bonus" : stepUI === "step345" ? "Causale" : "Invio";
-  const doneCount = stepUI === "step12" ? 1 : stepUI === "step345" ? 3 : 7;
 
   const fmtPrezzo = prezzo_base_eur.toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  // ─── LOADING SPLASH ─────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{ background: "#F7F7F5", padding: 24, borderRadius: 14, textAlign: "center", color: "#94A3B8", fontSize: 12 }}>
+        Caricamento preventivo…
+      </div>
+    );
+  }
+
+  // ─── INVIATO BANNER ─────────────────────────────────────────
+  const giaInviato = !!state.preventivo_inviato_at;
 
   return (
     <div style={{ background: "#F7F7F5", padding: 14, borderRadius: 14, minHeight: 600 }}>
 
-      {/* HEADER fisso (codice commessa · cliente · totale) */}
+      {/* HEADER */}
       <div style={{
         display: "flex", alignItems: "center", gap: 11,
         padding: "4px 4px 13px", borderBottom: "1px solid #E2E8F0", marginBottom: 12,
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: "#94A3B8", letterSpacing: 0.8, textTransform: "uppercase" }}>
-            {commessa_codice || "Commessa"} · Preventivo
+            {commessa_codice || "Commessa"} · Preventivo {saving && <span style={{ color: "#1E3A5F", marginLeft: 6 }}>· salvataggio…</span>}
           </div>
           <div style={{ fontSize: 17, fontWeight: 800, color: "#0F1B2D", letterSpacing: -0.4, lineHeight: 1.1, marginTop: 1 }}>
             {cliente_nome || "Cliente"}
@@ -138,11 +186,19 @@ export default function PreventivoFiscaleV10({
         </div>
       </div>
 
-      {/* PROGRESS bar 8/8 */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        marginBottom: 13, padding: "0 4px",
-      }}>
+      {/* INVIATO banner */}
+      {giaInviato && (
+        <div style={{
+          background: "#D1FAE5", border: "1px solid #065F46", borderRadius: 10,
+          padding: "8px 12px", marginBottom: 12, fontSize: 11, fontWeight: 700, color: "#065F46",
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          ✓ Preventivo già inviato {state.preventivo_inviato_canale ? `via ${state.preventivo_inviato_canale}` : ""} · {new Date(state.preventivo_inviato_at!).toLocaleDateString("it-IT")}
+        </div>
+      )}
+
+      {/* PROGRESS */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 13, padding: "0 4px" }}>
         <span style={{ fontSize: 9, fontWeight: 800, color: "#94A3B8", letterSpacing: 0.6, textTransform: "uppercase", whiteSpace: "nowrap" }}>
           Passo {passoNum}/8
         </span>
@@ -159,7 +215,7 @@ export default function PreventivoFiscaleV10({
         </span>
       </div>
 
-      {/* RENDER SCHERMATA CORRENTE */}
+      {/* SCHERMATE */}
       {stepUI === "step12" && (
         <Step12_DestinazioneBonus
           azienda_id={azienda_id}
@@ -185,7 +241,12 @@ export default function PreventivoFiscaleV10({
           causale={causale}
           recupero={recupero}
           perAnno={perAnno}
+          zona={zona}
+          uwProd={uwProd}
+          uwOk={uwOk}
           onIvaChange={handleIva}
+          onZonaChange={handleZona}
+          onLogMessaggio={(id, testo) => logEvento("preventivo_messaggio_inviato", `Inviato: ${id}`, testo.slice(0, 100), { tipo: id })}
           onBack={() => setStepUI("step12")}
           onNext={() => setStepUI("step678")}
         />
@@ -200,7 +261,7 @@ export default function PreventivoFiscaleV10({
           cliente_telefono={cliente_telefono}
           citta={citta}
           vani={vani}
-          is_showroom={is_showroom}
+          is_showroom={state.is_showroom}
           bonus={bonus}
           iva_pct={ivaPct}
           prezzo_base_eur={prezzo_base_eur}
@@ -210,6 +271,16 @@ export default function PreventivoFiscaleV10({
           recupero={recupero}
           perAnno={perAnno}
           costoNetto={costoNetto}
+          giaInviato={giaInviato}
+          rate={state.pagamento_rate}
+          metodo={state.pagamento_metodo}
+          tempi={state.tempi_consegna}
+          garanzia={state.garanzia}
+          onSetRate={(v) => handlePagamento("pagamento_rate", v)}
+          onSetMetodo={(v) => handlePagamento("pagamento_metodo", v)}
+          onSetTempi={(v) => handlePagamento("tempi_consegna", v)}
+          onSetGaranzia={(v) => handlePagamento("garanzia", v)}
+          onInviaWhatsApp={handleInviaWhatsApp}
           onBack={() => setStepUI("step345")}
         />
       )}

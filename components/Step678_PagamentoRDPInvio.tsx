@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════
-// STEP 6 + 7 + 8 · PAGAMENTO + RDP + INVIA
+// STEP 6 + 7 + 8 · PAGAMENTO + RDP + INVIA · PERSISTENTE
 // ════════════════════════════════════════════════════════════
 "use client";
 import { useState } from "react";
@@ -31,6 +31,16 @@ type Props = {
   recupero: number;
   perAnno: number;
   costoNetto: number;
+  giaInviato?: boolean;
+  rate: string | null;
+  metodo: string | null;
+  tempi: string | null;
+  garanzia: string | null;
+  onSetRate: (v: string) => void;
+  onSetMetodo: (v: string) => void;
+  onSetTempi: (v: string) => void;
+  onSetGaranzia: (v: string) => void;
+  onInviaWhatsApp: () => void | Promise<void>;
   onBack: () => void;
 };
 
@@ -49,25 +59,22 @@ export default function Step678_PagamentoRDPInvio({
   azienda_id, azienda_nome, commessa_id,
   cliente_nome, cliente_telefono, citta, vani, is_showroom,
   bonus, iva_pct, prezzo_base_eur, costo_reale_eur,
-  imponibile, ivaEuro, recupero, perAnno, costoNetto, onBack,
+  imponibile, ivaEuro, recupero, perAnno, costoNetto, giaInviato,
+  rate, metodo, tempi, garanzia,
+  onSetRate, onSetMetodo, onSetTempi, onSetGaranzia, onInviaWhatsApp, onBack,
 }: Props) {
 
-  const [rate, setRate] = useState("30_40_30");
-  const [metodo, setMetodo] = useState("Bonifico");
-  const [tempi, setTempi] = useState("45gg");
-  const [garanzia, setGaranzia] = useState("5 anni");
   const [costoRDP, setCostoRDP] = useState<number>(costo_reale_eur);
 
   const fmt = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtInt = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-  // margine reale
   const margineEur = prezzo_base_eur - costoRDP;
   const marginePct = costoRDP > 0 ? Math.round((margineEur / prezzo_base_eur) * 100) : 0;
   const margineColor = marginePct >= 25 ? "#065F46" : marginePct >= 15 ? "#92400E" : "#991B1B";
   const margineWidth = Math.min(100, Math.max(0, marginePct * 2));
 
-  function inviaWhatsApp() {
+  function handleInvia() {
     const tel = cliente_telefono?.replace(/\D/g, "") ?? "";
     const testo = [
       `Ciao ${cliente_nome}, ecco il riepilogo del preventivo:`,
@@ -76,11 +83,12 @@ export default function Step678_PagamentoRDPInvio({
       bonus !== "nessuna" ? `• Detrazione ${BONUS_META[bonus].label} ${BONUS_META[bonus].percentuale}: € ${fmt(recupero)} in 10 anni` : "",
       bonus !== "nessuna" ? `• Costo reale per te: € ${fmt(costoNetto)}` : "",
       ``,
-      `Pagamento: ${RATE_OPTIONS.find(r => r.id === rate)?.t} · ${metodo}`,
-      `Tempi: ${tempi} · Garanzia: ${garanzia}`,
+      rate ? `Pagamento: ${RATE_OPTIONS.find(r => r.id === rate)?.t ?? rate}${metodo ? " · " + metodo : ""}` : "",
+      tempi || garanzia ? `Tempi: ${tempi ?? "—"} · Garanzia: ${garanzia ?? "—"}` : "",
     ].filter(Boolean).join("\n");
     const url = tel ? `https://wa.me/${tel}?text=${encodeURIComponent(testo)}` : `https://wa.me/?text=${encodeURIComponent(testo)}`;
     if (typeof window !== "undefined") window.open(url, "_blank");
+    onInviaWhatsApp();
   }
 
   return (
@@ -106,14 +114,14 @@ export default function Step678_PagamentoRDPInvio({
         </div>
       </div>
 
-      {/* STEP 6 · PAGAMENTO */}
+      {/* STEP 6 PAGAMENTO */}
       <div>
         <H2 num="6" label="Pagamento & Tempi" />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
           {RATE_OPTIONS.map(r => {
             const sel = rate === r.id;
             return (
-              <div key={r.id} onClick={() => setRate(r.id)} style={{
+              <div key={r.id} onClick={() => onSetRate(r.id)} style={{
                 background: "#fff", border: sel ? "1.5px solid #1E3A5F" : "1.5px solid #E2E8F0",
                 borderRadius: 10, padding: "9px 11px", cursor: "pointer",
               }}>
@@ -124,7 +132,7 @@ export default function Step678_PagamentoRDPInvio({
           })}
         </div>
         <div style={{ marginTop: 5 }}>
-          <div onClick={() => alert("Personalizzazione rate - in arrivo")} style={{
+          <div onClick={() => alert("Personalizzazione rate · in arrivo")} style={{
             background: "#F8FAFC", border: "1.5px dashed #1E3A5F",
             borderRadius: 10, padding: "9px 11px", cursor: "pointer",
           }}>
@@ -141,7 +149,7 @@ export default function Step678_PagamentoRDPInvio({
         <H2 label="Metodo" />
         <div style={{ display: "flex", gap: 6, padding: "0 2px", flexWrap: "wrap" }}>
           {METODO_OPTIONS.map(m => (
-            <Chip key={m} label={m} sel={metodo === m} onClick={() => setMetodo(m)} />
+            <Chip key={m} label={m} sel={metodo === m} onClick={() => onSetMetodo(m)} />
           ))}
         </div>
       </div>
@@ -151,12 +159,12 @@ export default function Step678_PagamentoRDPInvio({
         <H2 label="Tempi · Garanzia" />
         <div style={{ display: "flex", gap: 6, padding: "0 2px", flexWrap: "wrap" }}>
           {TEMPI_OPTIONS.map(t => (
-            <Chip key={t} label={t} sel={tempi === t} onClick={() => setTempi(t)} />
+            <Chip key={t} label={t} sel={tempi === t} onClick={() => onSetTempi(t)} />
           ))}
         </div>
         <div style={{ display: "flex", gap: 6, padding: "0 2px", flexWrap: "wrap", marginTop: 5 }}>
           {GARANZIA_OPTIONS.map(g => (
-            <Chip key={g} label={g} sel={garanzia === g} onClick={() => setGaranzia(g)} />
+            <Chip key={g} label={g} sel={garanzia === g} onClick={() => onSetGaranzia(g)} />
           ))}
         </div>
       </div>
@@ -174,7 +182,7 @@ export default function Step678_PagamentoRDPInvio({
             </div>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#0F1B2D", letterSpacing: -0.3, marginTop: 1, display: "flex", alignItems: "baseline", gap: 6 }}>
               € {fmtInt(margineEur)}
-              <span style={{ fontSize: 11, color: margineColor, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>{marginePct}%</span>
+              <span style={{ fontSize: 11, color: margineColor, fontWeight: 900 }}>{marginePct}%</span>
             </div>
           </div>
           <div style={{ width: 55, height: 5, background: "#F1F5F9", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
@@ -183,7 +191,7 @@ export default function Step678_PagamentoRDPInvio({
         </div>
       </div>
 
-      {/* STEP 7 · RDP FORNITORE (showroom) */}
+      {/* STEP 7 RDP (showroom) */}
       {is_showroom && (
         <div>
           <div style={{
@@ -212,12 +220,10 @@ export default function Step678_PagamentoRDPInvio({
         </div>
       )}
 
-      {/* STEP 8 · TOTALE */}
+      {/* STEP 8 TOTALE */}
       <div>
         <H2 num="8" label="Riepilogo finale" />
-        <div style={{
-          background: "#0F1B2D", color: "#fff", borderRadius: 14, padding: 14,
-        }}>
+        <div style={{ background: "#0F1B2D", color: "#fff", borderRadius: 14, padding: 14 }}>
           <Riga lbl="Imponibile" val={`€ ${fmt(imponibile)}`} />
           <Riga lbl={`+ IVA ${iva_pct}%`} val={`€ ${fmt(ivaEuro)}`} />
           <RigaBig lbl="Totale" val={`€ ${fmt(prezzo_base_eur)}`} />
@@ -229,12 +235,8 @@ export default function Step678_PagamentoRDPInvio({
               <div style={{
                 fontSize: 9, fontWeight: 800, color: "#86EFAC",
                 letterSpacing: 0.6, textTransform: "uppercase",
-                display: "flex", alignItems: "center", gap: 5,
               }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" strokeWidth="2.5">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
-                Costo reale per il cliente
+                ★ Costo reale per il cliente
               </div>
               <div style={{
                 fontSize: 20, fontWeight: 900, color: "#fff",
@@ -251,22 +253,19 @@ export default function Step678_PagamentoRDPInvio({
         </div>
       </div>
 
-      {/* INVIA WhatsApp */}
-      <button onClick={inviaWhatsApp} style={{
-        width: "100%", padding: 14, background: "#065F46", color: "#fff",
-        border: "none", borderRadius: 13,
+      {/* INVIA */}
+      <button onClick={handleInvia} disabled={!!giaInviato} style={{
+        width: "100%", padding: 14,
+        background: giaInviato ? "#94A3B8" : "#065F46",
+        color: "#fff", border: "none", borderRadius: 13,
         fontSize: 13, fontWeight: 900, letterSpacing: 0.4, textTransform: "uppercase",
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        cursor: "pointer", marginTop: 6,
-        boxShadow: "0 3px 0 0 #064E3B",
+        cursor: giaInviato ? "not-allowed" : "pointer", marginTop: 6,
+        boxShadow: giaInviato ? "none" : "0 3px 0 0 #064E3B",
       }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
-        Invia su WhatsApp
+        {giaInviato ? "✓ Già inviato" : "📲 Invia su WhatsApp"}
       </button>
 
-      {/* Back */}
       <div style={{ display: "flex", gap: 8, padding: "0 2px 4px" }}>
         <button onClick={onBack} style={{
           background: "#fff", border: "1px solid #CBD5E1", color: "#0F1B2D",
@@ -295,7 +294,7 @@ function Chip({ label, sel, onClick }: { label: string; sel: boolean; onClick: (
       padding: "8px 13px", borderRadius: 9, fontSize: 11, fontWeight: 700,
       background: sel ? "#1E3A5F" : "#fff", color: sel ? "#fff" : "#475569",
       border: sel ? "1px solid #0F1B2D" : "1px solid #CBD5E1",
-      cursor: "pointer", fontVariantNumeric: "tabular-nums",
+      cursor: "pointer",
     }}>
       {label}
     </div>
