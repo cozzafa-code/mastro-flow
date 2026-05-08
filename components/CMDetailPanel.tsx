@@ -1229,257 +1229,233 @@ export default function CMDetailPanel() {
         {/* ============ BODY ============ */}
         <div style={{ padding: "16px 16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
 
-          {/* MINI STEPPER 8 puntini (dinamico v73) */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#475A75", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Passo 2/8" : "Passo 1/8"}</div>
-            <div style={{ display: "flex", gap: 3, flex: 1 }}>
-              {rilievoCompletoV73 ? (
-                <>
-                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
-                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
-                  {[1,2,3,4,5,6].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(15,27,45,0.15)" }} />))}
-                </>
-              ) : (
-                <>
-                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
-                  {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(15,27,45,0.15)" }} />))}
-                </>
-              )}
-            </div>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#1E3A5F", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Preventivo" : "Rilievo"}</div>
-          </div>
+          {/* ════════════════════════════════════════════════════════════
+              [v51] CENTRO COMANDO - MOCKUP 5 ZONE
+              Z2 Pipeline 8 pallini · Z3 Azione · Z4 Rilievi
+              ════════════════════════════════════════════════════════════ */}
 
-          {/* v73 · BIG ACTION condizionale: VIOLA se rilievo in corso, VERDE se completo */}
-          {!rilievoCompletoV73 && (
-          <div style={{
-            borderRadius: 26, padding: "22px 20px 20px",
-            background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
-            color: "#fff",
-            boxShadow: "0 14px 32px rgba(15,27,45,0.28)",
-            position: "relative", overflow: "hidden",
-            display: "flex", flexDirection: "column",
-          }}>
-            <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.24), transparent 65%)", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: -70, left: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" }} />
+          {/* ═══ Z2 PIPELINE 8 PALLINI ═══ */}
+          {(() => {
+            const cZ = cV70 as any;
+            const rilieviZ: any[] = cZ?.rilievi || [];
+            const haRZ = rilieviZ.length > 0;
+            const vaniRZ: any[] = (rCurV70?.vani) || [];
+            const vaniOkRZ = vaniRZ.filter((v: any) => Object.values(v.misure || {}).filter((x: any) => Number(x) > 0).length >= 6).length;
+            const misureCompleteZ = haRZ && vaniRZ.length > 0 && vaniOkRZ === vaniRZ.length;
+            const haPrevZ = !!cZ.preventivoInviato || !!cZ.preventivoInviatoAt;
+            const haFirmaZ = !!(cZ.firmaCliente || cZ.firma_cliente || cZ.firmaData || cZ.firma_data);
+            const haAccontoZ = !!(cZ.acconto_pagato || cZ.accontoPagato);
+            const haOrdineZ = !!cZ.ordineFornitoreInviato || (cZ.ordini_fornitore || []).length > 0;
+            const haProdZ = !!cZ.produzioneAvviata;
+            const haMontZ = !!cZ.montaggioCompletato;
+            const haCollZ = !!cZ.collaudoFirmato;
 
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
-              padding: "5px 12px", background: "rgba(255,255,255,0.22)",
-              borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px",
-              textTransform: "uppercase" as any, position: "relative",
-            }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.4 6.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
-              Prossima mossa
-            </div>
+            const stepsZ = [
+              { id: "cliente",    lab: "Cliente",  done: true },
+              { id: "misure",     lab: "Misure",   done: misureCompleteZ },
+              { id: "preventivo", lab: "Prev.",    done: haPrevZ },
+              { id: "firma",      lab: "Firma",    done: haFirmaZ },
+              { id: "ordine",     lab: "Ord.",     done: haOrdineZ },
+              { id: "produzione", lab: "Prod.",    done: haProdZ },
+              { id: "montaggio",  lab: "Mont.",    done: haMontZ },
+              { id: "collaudo",   lab: "Coll.",    done: haCollZ },
+            ];
+            const curIdxZ = stepsZ.findIndex(s => !s.done);
+            const faseAttivaZ = curIdxZ >= 0 ? stepsZ[curIdxZ] : stepsZ[stepsZ.length - 1];
 
-            <div style={{
-              fontSize: 24, fontWeight: 900, marginTop: 14,
-              letterSpacing: "-0.6px", lineHeight: 1.15, whiteSpace: "pre-line" as any,
-              textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
-            }}>{titoloV70}</div>
-
-            <div style={{
-              fontSize: 12.5, opacity: 0.94, marginTop: 8,
-              lineHeight: 1.4, fontWeight: 500, position: "relative",
-            }}>{descV70}</div>
-
-            {/* Pill tipo edificio */}
-            <div style={{
-              marginTop: 14, background: "rgba(255,255,255,0.18)",
-              borderRadius: 14, padding: "12px 14px",
-              display: "flex", alignItems: "center", gap: 12, position: "relative",
-            }}>
+            return (
               <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: "rgba(255,255,255,0.22)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0, boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)",
-              }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M10 22v-4h4v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/></svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Immobile</div>
-                <div style={{ fontSize: 14, fontWeight: 900, marginTop: 1, letterSpacing: "-0.1px" }}>{tEdifLabelV70}</div>
-                <div style={{ fontSize: 10.5, opacity: 0.88, marginTop: 2, fontWeight: 600 }}>{tEdifStructV70}</div>
-              </div>
-            </div>
-
-            {/* Meta tiles */}
-            <div style={{
-              marginTop: 14, display: "grid",
-              gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
-            }}>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Vani</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70}/{vaniV70.length || "—"}</div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{vaniV70.length === 0 ? "da creare" : (vaniCompletiV70 === vaniV70.length ? "tutti OK" : "in corso")}</div>
-              </div>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Misure</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70 * 8}/{(vaniV70.length * 8) || 8}</div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>per vano</div>
-              </div>
-            </div>
-
-            {/* BIG BTN */}
-            <button onClick={onClickBtnV70} style={{
-              marginTop: 18, width: "100%", padding: 17,
-              background: "#fff", color: "#0F1B2D",
-              border: "none", borderRadius: 18,
-              fontSize: 15, fontWeight: 900, letterSpacing: "0.4px",
-              cursor: "pointer", fontFamily: "inherit",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              boxShadow: "0 6px 18px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
-              position: "relative",
-            }}>
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              {btnV70}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </button>
-          </div>
-          )}
-
-          {/* v73 · BIG ACTION VERDE - 2 STRADE quando rilievo completo */}
-          {rilievoCompletoV73 && (
-          <div style={{
-            borderRadius: 26, padding: "22px 20px 20px",
-            background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
-            color: "#fff",
-            boxShadow: "0 14px 32px rgba(15,27,45,0.28)",
-            position: "relative", overflow: "hidden",
-            display: "flex", flexDirection: "column",
-          }}>
-            <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.24), transparent 65%)", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: -70, left: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" }} />
-
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
-              padding: "5px 12px", background: "rgba(255,255,255,0.22)",
-              borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px",
-              textTransform: "uppercase" as any, position: "relative",
-            }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Rilievo completo
-            </div>
-
-            <div style={{
-              fontSize: 24, fontWeight: 900, marginTop: 14,
-              letterSpacing: "-0.6px", lineHeight: 1.15, whiteSpace: "pre-line" as any,
-              textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
-            }}>Scegli come{"\n"}vuoi procedere</div>
-
-            <div style={{
-              fontSize: 12.5, opacity: 0.94, marginTop: 8,
-              lineHeight: 1.4, fontWeight: 500, position: "relative",
-            }}>Hai {vaniV70.length} {vaniV70.length === 1 ? "vano" : "vani"} con tutte le misure. Due strade per il preventivo:</div>
-
-            {/* STRADE */}
-            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
-              {/* STRADA 1 - Preventivo al volo (CONSIGLIATO) */}
-              <div onClick={(ev) => {
-                ev.stopPropagation();
-                console.log("[v79 click] Preventivo al volo triggered", { setPrevWorkspace: typeof setPrevWorkspace, setPrevTab: typeof setPrevTab });
-                try {
-                  setPrevWorkspace(true);
-                  setPrevTab("fiscale");
-                  setEditingVanoId(null);
-                  console.log("[v79 click] setState OK");
-                } catch (e) {
-                  console.error("[v79 click] ERROR", e);
-                  alert("Errore apertura preventivo: " + (e as any)?.message);
-                }
-              }} style={{
                 background: "#fff",
-                borderRadius: 16,
-                padding: 14,
-                cursor: "pointer",
-                position: "relative",
-                zIndex: 10,
-                display: "flex", alignItems: "center", gap: 12,
-                boxShadow: "0 8px 22px rgba(0,0,0,0.22), inset 0 -3px 0 rgba(4,52,44,0.06)",
+                border: "1px solid #E2E8F0",
+                borderRadius: 14,
+                padding: 12,
+                marginBottom: 0,
               }}>
                 <div style={{
-                  width: 46, height: 46, borderRadius: 13,
-                  background: "linear-gradient(145deg, #2D5A87, #1E3A5F)",
-                  boxShadow: "0 4px 10px rgba(30,58,95,0.30), inset 0 1px 1px rgba(255,255,255,0.3)",
-                  color: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  fontSize: 9, fontWeight: 700, color: "#475569",
+                  letterSpacing: "1.2px", textTransform: "uppercase" as any,
+                  marginBottom: 10,
+                }}>Pipeline</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0 }}>
+                  {stepsZ.map((s, i) => {
+                    const isCurr = i === curIdxZ;
+                    const isDone = s.done;
+                    const isLast = i === stepsZ.length - 1;
+                    return (
+                      <div key={s.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flex: 1, position: "relative" as const }}>
+                        <div style={{
+                          width: 22, height: 22, borderRadius: "50%",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 9, fontWeight: 700,
+                          flexShrink: 0, position: "relative" as const, zIndex: 1,
+                          background: isDone ? "#065F46" : isCurr ? "#1E3A5F" : "#E2E8F0",
+                          color: isDone || isCurr ? "#fff" : "#94A3B8",
+                          boxShadow: isCurr ? "0 0 0 3px rgba(30,58,95,0.18)" : "none",
+                        }}>
+                          {isDone ? "✓" : (i + 1)}
+                        </div>
+                        <div style={{
+                          fontSize: 8, fontWeight: 700,
+                          letterSpacing: "0.4px", textTransform: "uppercase" as any,
+                          lineHeight: 1, textAlign: "center" as const,
+                          color: isCurr ? "#1E3A5F" : isDone ? "#065F46" : "#94A3B8",
+                        }}>{s.lab}</div>
+                        {!isLast && (
+                          <div style={{
+                            position: "absolute" as const,
+                            top: 11, right: "-50%", width: "100%", height: 2,
+                            background: isDone ? "#065F46" : "#E2E8F0",
+                            zIndex: 0,
+                          }} />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F1B2D", letterSpacing: "-0.1px" }}>Preventivo al volo</div>
-                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Hai già i prezzi, invia subito al cliente in 2 tap</div>
-                  <div style={{
-                    fontSize: 8.5, fontWeight: 900, color: "#0F1B2D",
-                    background: "linear-gradient(145deg, rgba(93,202,165,0.3), rgba(30,58,95,0.18))",
-                    padding: "3px 8px", borderRadius: 50,
-                    letterSpacing: "0.4px", display: "inline-block", marginTop: 6,
-                    border: "1px solid rgba(30,58,95,0.25)",
-                  }}>⚡ CONSIGLIATO</div>
-                </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
               </div>
+            );
+          })()}
 
-              {/* STRADA 2 - Chiudi rilievo e basta */}
-              <div onClick={() => {
-                // chiude il rilievo, lascia la commessa in fase sopralluogo, torna alla lista
-                try {
-                  setSelectedRilievo(null);
-                  setSelectedCM(null);
-                } catch (e) { console.warn("v73 chiudi rilievo", e); }
-              }} style={{
-                background: "rgba(255,255,255,0.95)",
-                borderRadius: 16,
+          {/* ═══ Z3 AZIONE FASE CORRENTE (dinamica per fase) ═══ */}
+          {(() => {
+            const cZ3 = cV70 as any;
+            const rZ3 = rCurV70;
+            const vaniRZ3: any[] = (rZ3?.vani) || [];
+            const vaniOkZ3 = vaniRZ3.filter((v: any) => Object.values(v.misure || {}).filter((x: any) => Number(x) > 0).length >= 6).length;
+            const totVZ3 = vaniRZ3.length;
+            const misureOkZ3 = totVZ3 > 0 && vaniOkZ3 === totVZ3;
+            const haPrevZ3 = !!cZ3.preventivoInviato || !!cZ3.preventivoInviatoAt;
+            const haFirmaZ3 = !!(cZ3.firmaCliente || cZ3.firma_cliente);
+            const rilieviZ3: any[] = cZ3?.rilievi || [];
+
+            // Determino fase corrente
+            let eyebrow = "Fase corrente · Cliente";
+            let titolo = "Inserisci dati cliente";
+            let desc = "Compila i dati per procedere al rilievo.";
+            let tags: { lbl: string; bg: string; fg: string }[] = [];
+            let primaryLbl = "Compila scheda";
+            let primaryAction = onClickBtnV70;
+
+            if (rilieviZ3.length === 0) {
+              eyebrow = "Fase corrente · Misure";
+              titolo = "Crea il primo sopralluogo";
+              desc = "Vai in cantiere e fai il rilievo delle misure.";
+              tags = [{ lbl: tEdifLabelV70, bg: "#DBEAFE", fg: "#1E40AF" }];
+              primaryLbl = "Crea rilievo";
+              primaryAction = onClickBtnV70;
+            } else if (!misureOkZ3 && !haPrevZ3) {
+              eyebrow = "Fase corrente · Misure";
+              titolo = totVZ3 === 0 ? "Aggiungi il primo vano" : "Completa le misure";
+              desc = totVZ3 === 0
+                ? `R${rZ3?.numero || rZ3?.n || 1} creato. Aggiungi i vani da misurare.`
+                : `${vaniOkZ3}/${totVZ3} vani con misure complete. Continua il rilievo.`;
+              tags = [
+                { lbl: `R${rZ3?.numero || rZ3?.n || 1}`, bg: "#FEF3C7", fg: "#92400E" },
+                { lbl: `${vaniOkZ3}/${totVZ3} vani`, bg: "#F1F5F9", fg: "#475569" },
+              ];
+              primaryLbl = btnV70 || "Apri rilievo";
+              primaryAction = onClickBtnV70;
+            } else if (misureOkZ3 && !haPrevZ3) {
+              eyebrow = "Fase corrente · Preventivo";
+              titolo = "Genera il preventivo";
+              desc = `${totVZ3} ${totVZ3 === 1 ? "vano" : "vani"} con tutte le misure. Stima ${stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "in calcolo"}.`;
+              tags = [
+                { lbl: "Misure OK", bg: "#D1FAE5", fg: "#065F46" },
+                { lbl: stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "—", bg: "#DBEAFE", fg: "#1E40AF" },
+              ];
+              primaryLbl = "Genera preventivo";
+              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); setEditingVanoId(null); } catch (e) { console.warn(e); } };
+            } else if (haPrevZ3 && !haFirmaZ3) {
+              eyebrow = "Fase corrente · Firma cliente";
+              titolo = "In attesa firma";
+              desc = "Preventivo inviato. Sollecita o reinvia il link al cliente.";
+              tags = [{ lbl: "Pending firma", bg: "#FEF3C7", fg: "#92400E" }];
+              primaryLbl = "Gestisci preventivo";
+              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+            } else if (haFirmaZ3) {
+              eyebrow = "Fase corrente · Ordine";
+              titolo = "Procedi con l'ordine";
+              desc = "Preventivo firmato. Crea ordini fornitori.";
+              tags = [{ lbl: "Firmato", bg: "#D1FAE5", fg: "#065F46" }];
+              primaryLbl = "Apri preventivo";
+              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+            }
+
+            return (
+              <div style={{
+                background: "#fff",
+                border: "2px solid #1E3A5F",
+                borderRadius: 14,
                 padding: 14,
-                cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 12,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                border: "2px solid transparent",
+                position: "relative" as const,
               }}>
                 <div style={{
-                  width: 46, height: 46, borderRadius: 13,
-                  background: "linear-gradient(145deg, rgba(93,202,165,0.2), rgba(30,58,95,0.1))",
-                  boxShadow: "inset 0 1px 2px rgba(255,255,255,0.5)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F1B2D", letterSpacing: "-0.1px" }}>Chiudi rilievo e basta</div>
-                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Salva il rilievo, il preventivo lo fai dopo in azienda con calma</div>
-                </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
+                  position: "absolute" as const,
+                  top: -8, left: 14,
+                  background: "#1E3A5F", color: "#fff",
+                  fontSize: 9, fontWeight: 700,
+                  padding: "2px 8px", borderRadius: 4,
+                  letterSpacing: "1px",
+                }}>AZIONE</div>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, color: "#1E3A5F",
+                  letterSpacing: "1px", textTransform: "uppercase" as any,
+                  marginTop: 4, marginBottom: 6,
+                }}>{eyebrow}</div>
+                <div style={{
+                  fontSize: 16, fontWeight: 700, color: "#0F1B2D",
+                  letterSpacing: "-0.3px", lineHeight: 1.25,
+                  marginBottom: 6,
+                }}>{titolo}</div>
+                <div style={{
+                  fontSize: 12, color: "#475569",
+                  lineHeight: 1.5, fontWeight: 500,
+                  marginBottom: 12,
+                }}>{desc}</div>
+                {tags.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6, marginBottom: 12 }}>
+                    {tags.map((t, i) => (
+                      <span key={i} style={{
+                        fontSize: 10, fontWeight: 700,
+                        padding: "4px 8px", borderRadius: 6,
+                        background: t.bg, color: t.fg,
+                        letterSpacing: "0.4px",
+                      }}>{t.lbl}</span>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={primaryAction}
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    border: "none",
+                    background: "#1E3A5F",
+                    color: "#fff",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.4px",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    boxShadow: "0 3px 0 0 #0F1B2D",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
+                  {primaryLbl}
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </button>
               </div>
-            </div>
+            );
+          })()}
 
-            {/* Meta tiles */}
-            <div style={{
-              marginTop: 14, display: "grid",
-              gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
-            }}>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Vani pronti</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70}/{vaniV70.length}</div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>tutte misure OK</div>
-              </div>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Stima lavoro</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "—"}</div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{stimaLavoroV73 > 0 ? "da verificare" : "non calcolata"}</div>
-              </div>
-            </div>
-          </div>
-          )}
-
-          {/* ════════════════════════════════════════════════════════════════
-              [v51] ZONA 4 - SEZIONE RILIEVI accumulativa
-              Bottone +CREA NUOVO RILIEVO sempre visibile
-              R1 R2 R3 ... in ordine inverso (ultimo in alto)
-              Tap su rilievo apre il dettaglio
-              ════════════════════════════════════════════════════════════════ */}
+          {/* ═══ Z4 SEZIONE RILIEVI - +CREA NUOVO RILIEVO sempre visibile + lista accumulata ═══ */}
           {(() => {
             const rilieviZ4: any[] = (cV70 as any)?.rilievi || [];
             const totRZ4 = rilieviZ4.length;
@@ -1492,7 +1468,7 @@ export default function CMDetailPanel() {
               return { bg: "#FEF3C7", fg: "#92400E", lbl: "Provvisorio" };
             };
             return (
-              <div style={{ marginTop: 4 }}>
+              <div>
                 {/* Header sezione */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px", marginBottom: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -1510,7 +1486,7 @@ export default function CMDetailPanel() {
                   </div>
                 </div>
 
-                {/* Bottone +CREA NUOVO RILIEVO sempre visibile */}
+                {/* +CREA NUOVO RILIEVO sempre visibile */}
                 <button
                   onClick={() => {
                     setNuovoRilievoTipo("provvisorio");
@@ -1546,17 +1522,13 @@ export default function CMDetailPanel() {
                   Crea nuovo rilievo
                 </button>
 
-                {/* Lista rilievi (ordine inverso: ultimo in alto) */}
+                {/* Lista accumulata in ordine inverso */}
                 {totRZ4 > 0 && [...rilieviZ4].reverse().map((rZ4: any, idxZ4: number) => {
                   const colZ4 = colorZ4(rZ4.tipo);
                   const isUltimoZ4 = idxZ4 === 0;
                   const numZ4 = rZ4.numero || rZ4.n || (totRZ4 - idxZ4);
                   const vaniNumZ4 = (rZ4.vani || []).length;
-                  const vaniOkZ4 = (rZ4.vani || []).filter((v: any) => {
-                    const m = v.misure || {};
-                    const cnt = Object.values(m).filter((x: any) => Number(x) > 0).length;
-                    return cnt >= 6;
-                  }).length;
+                  const vaniOkZ4_ = (rZ4.vani || []).filter((v: any) => Object.values(v.misure || {}).filter((x: any) => Number(x) > 0).length >= 6).length;
                   const dataZ4 = rZ4.data ? new Date(rZ4.data).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "—";
                   const oraZ4 = rZ4.ora || "";
                   const nomeRilZ4 = rZ4.nome || rZ4.note || "";
@@ -1612,7 +1584,7 @@ export default function CMDetailPanel() {
                       </div>
                       <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 800, color: "#1E3A5F", lineHeight: 1, fontVariantNumeric: "tabular-nums" as any }}>
-                          {vaniOkZ4}/{vaniNumZ4 || "—"}
+                          {vaniOkZ4_}/{vaniNumZ4 || "—"}
                         </div>
                         <div style={{ fontSize: 9, color: "#475569", marginTop: 2, fontWeight: 600, letterSpacing: "0.3px", textTransform: "uppercase" as any }}>vani</div>
                       </div>
