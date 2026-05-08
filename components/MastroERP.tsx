@@ -1,7 +1,7 @@
 "use client";
 import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
-import { logEvento, TIPI_EVENTO } from "@/lib/timeline-logger";
+import { logEvento, TIPI_EVENTO as TL_TIPI } from "@/lib/timeline-logger";
 // =======================================================
 // MASTRO ERP v2 - PARTE 1/5
 // Righe 1-1280: Costanti, Dati Demo (incluse visite/vaniList/euro/scadenza),
@@ -1216,7 +1216,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             modulo: "commessa",
             entitaId: cmDB.id,
             aziendaId: azId,
-            tipo: TIPI_EVENTO.COMMESSA_CREATA,
+            tipo: TL_TIPI.COMMESSA_CREATA,
             titolo: "Commessa " + code + " creata",
             descrizione: newCM.cliente + (newCM.indirizzo ? " - " + newCM.indirizzo : ""),
             autore_nome: aziendaInfo?.nome || "Fabio",
@@ -1238,7 +1238,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
               modulo: "commessa",
               entitaId: cmDB.id,
               aziendaId: azId,
-              tipo: TIPI_EVENTO.NOTA_AGGIUNTA,
+              tipo: TL_TIPI.NOTA_AGGIUNTA,
               titolo: "Rilievo R1 creato (Rilievo iniziale)",
               descrizione: "Rilievo bozza pronto per inserire vani e misure",
               autore_nome: aziendaInfo?.nome || "Fabio",
