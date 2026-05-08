@@ -41,7 +41,7 @@ import { MastroUpdateBanner } from "./MastroUpdateBanner";
 import SettingsPanel from "./SettingsPanel";
 import SettingsMobile from "./SettingsMobile";
 import PreventivoModal from "./PreventivoModal";
-import RilieviListPanel from "./RilieviListPanel";
+import RilieviVaniPanel from "./RilieviVaniPanel";
 import VanoDetailPanel from "./VanoDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
 import HomePanel from "./HomePanelMobileV2";
@@ -2097,7 +2097,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   // ============================================================
   // RENDER LISTA RILIEVI (livello intermedio: commessa > rilievi)
   // ============================================================
-  const renderRilieviList = () => <RilieviListPanel />;
+  const renderRilieviList = () => <RilieviVaniPanel onOpenVano={(vanoId, rilievoId) => { const ril = (selectedCM?.rilievi || []).find((r) => r.id === rilievoId); const vano = (ril?.vani || []).find((v) => v.id === vanoId); if (vano && ril) { setSelectedRilievo(ril); setSelectedVano(vano); } }} />;
 
   // Card compatta per vista lista
 
