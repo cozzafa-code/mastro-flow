@@ -1190,7 +1190,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     if (!v.valid) { setFormErrors(v.errors); toast(v.errors[0], "error"); return; }
     setFormErrors([]);
     if (!canDo("commessa")) return;
-    const code = "S-" + String(cantieri.length + 1).padStart(4, "0");
+    const maxNum = Math.max(0, ...cantieri.map((cm: any) => parseInt(String(cm.code || "S-0").replace(/[^0-9]/g, "")) || 0));
+    const code = "S-" + String(maxNum + 1).padStart(4, "0");
     const _ctMatch = contatti?.find((ct:any) => ct.id === newCM.clienteId || ((ct.nome||"").toLowerCase()+(ct.cognome?" "+ct.cognome:"").toLowerCase()).trim() === ([newCM.cliente,newCM.cognome].filter(Boolean).join(" ").toLowerCase()));
 
     // FIX: fallback su UUID Walter Cozza se aziendaInfo non popolato
