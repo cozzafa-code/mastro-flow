@@ -704,6 +704,51 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     setSquadreDB, setMontaggiDB,
   });
 
+  // [v51-home-fix] Fallback diretto Supabase per popolare Home anche senza userId UUID
+  // Tabelle reali del DB (verificate): commesse, tasks, team, montaggi, ordini_fornitore, events, contatti
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const aziendaId = await getAziendaId();
+        if (!aziendaId || cancelled) return;
+        const [
+          rCommesse, rTasks, rTeam, rMontaggi, rOrdini, rEvents, rContatti
+        ] = await Promise.all([
+          supabase.from('commesse').select('*').eq('azienda_id', aziendaId),
+          supabase.from('tasks').select('*').eq('azienda_id', aziendaId),
+          supabase.from('team').select('*').eq('azienda_id', aziendaId),
+          supabase.from('montaggi').select('*').eq('azienda_id', aziendaId),
+          supabase.from('ordini_fornitore').select('*').eq('azienda_id', aziendaId),
+          supabase.from('events').select('*').eq('azienda_id', aziendaId),
+          supabase.from('contatti').select('*').eq('azienda_id', aziendaId),
+        ]);
+        if (cancelled) return;
+        // Le commesse vengono usate come "cantieri" nel codice legacy
+        if (rCommesse.data && rCommesse.data.length) setCantieri(rCommesse.data as any[]);
+        if (rTasks.data && rTasks.data.length) setTasks(rTasks.data as any[]);
+        if (rTeam.data && rTeam.data.length) setTeam(rTeam.data as any[]);
+        if (rMontaggi.data && rMontaggi.data.length) setMontaggiDB(rMontaggi.data as any[]);
+        if (rOrdini.data && rOrdini.data.length) setOrdiniFornDB(rOrdini.data as any[]);
+        if (rEvents.data && rEvents.data.length) setEvents(rEvents.data as any[]);
+        if (rContatti.data && rContatti.data.length) setContatti(rContatti.data as any[]);
+        console.log('[v51-home-fix] DB load:', {
+          commesse: rCommesse.data?.length || 0,
+          tasks: rTasks.data?.length || 0,
+          team: rTeam.data?.length || 0,
+          montaggi: rMontaggi.data?.length || 0,
+          ordini: rOrdini.data?.length || 0,
+          events: rEvents.data?.length || 0,
+          contatti: rContatti.data?.length || 0,
+          aziendaId,
+        });
+      } catch (err) {
+        console.warn('[v51-home-fix] fetch fallito:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Persist + cloud sync effects
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "cantieri", cantieri), [cantieri]);
   useVaniSync(cantieri, userId, isUuid);
