@@ -34,6 +34,39 @@ export default function HomePanelMobileV2(props: any) {
   const [order, setOrder] = useState<string[]>(DEFAULT_ORDER)
   const [expanded, setExpanded] = useState<string[]>(['oggi-operativo'])
 
+  // ═══ PERSISTENZA: carica da localStorage al mount ═══
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const savedOrder = localStorage.getItem('mastro_home_order')
+      if (savedOrder) {
+        const parsed = JSON.parse(savedOrder)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Garantisce che tutti i widget DEFAULT siano presenti (per nuovi widget aggiunti dopo)
+          const merged = [...parsed, ...DEFAULT_ORDER.filter(id => !parsed.includes(id))]
+          setOrder(merged)
+        }
+      }
+      const savedExp = localStorage.getItem('mastro_home_expanded')
+      if (savedExp) {
+        const parsedExp = JSON.parse(savedExp)
+        if (Array.isArray(parsedExp)) setExpanded(parsedExp)
+      }
+    } catch (e) { console.warn('[home] errore caricamento preferenze:', e) }
+  }, [])
+
+  // Salva ordine quando cambia
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try { localStorage.setItem('mastro_home_order', JSON.stringify(order)) } catch {}
+  }, [order])
+
+  // Salva expanded quando cambia
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try { localStorage.setItem('mastro_home_expanded', JSON.stringify(expanded)) } catch {}
+  }, [expanded])
+
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const goto = (tab: string) => {
     if (ctx?.setTab) ctx.setTab(tab)
@@ -111,11 +144,24 @@ export default function HomePanelMobileV2(props: any) {
       if (!ds) return
       ds.placeholder.parentNode?.insertBefore(ds.el, ds.placeholder)
       ds.placeholder.remove()
-      ds.el.style.cssText = ''
+
+      // FIX: rimuovo solo gli style che HO IMPOSTATO (non cssText) cosi React mantiene il controllo
+      ds.el.style.position = ''
+      ds.el.style.zIndex = ''
+      ds.el.style.width = ''
+      ds.el.style.left = ''
+      ds.el.style.top = ''
+      ds.el.style.pointerEvents = ''
+      ds.el.style.opacity = ''
+      ds.el.style.transform = ''
+      ds.el.style.boxShadow = ''
 
       const newOrder = Array.from(container.querySelectorAll<HTMLElement>('[data-card-id]'))
         .map(c => c.dataset.cardId!)
         .filter(Boolean)
+
+      // FIX: aggiorno state DOPO aver pulito DOM, e restoro l'ordine via React (non via DOM hack)
+      // Il DOM tornera in linea con state alla prossima render
       setOrder(newOrder)
 
       document.body.style.userSelect = ''
