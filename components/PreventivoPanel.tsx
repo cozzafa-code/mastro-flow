@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from "@/lib/supabase";
 const DS = {
-  teal: '#28A0A0', tealDark: '#156060', ink: '#0D1F1F',
+  teal: '#1E3A5F', tealDark: '#0F1B2D', ink: '#0A1628',
   light: '#EEF8F8', border: '#C8E4E4', white: '#FFFFFF',
   green: '#1A9E73', red: '#DC4444', amber: '#D08008',
   bg: '#E8F4F4', sub: '#6B8A8A',
@@ -18,15 +18,15 @@ const Ico = ({ d, s = 20, c = DS.ink }: { d: string; s?: number; c?: string }) =
 
 const CAT_LABELS: Record<string, { label: string; color: string }> = {
   serramento: { label: 'Serramenti', color: '#3B7FE0' },
-  controtelaio: { label: 'Controtelai', color: '#28A0A0' },
+  controtelaio: { label: 'Controtelai', color: '#1E3A5F' },
   lamiere: { label: 'Lamiere', color: '#D08008' },
   cassonetto: { label: 'Cassonetti', color: '#7C3AED' },
   persiana: { label: 'Persiane', color: '#1A9E73' },
   tapparella: { label: 'Tapparelle', color: '#6B8A8A' },
   zanzariera: { label: 'Zanzariere', color: '#DC4444' },
-  accessorio: { label: 'Accessori', color: '#0D1F1F' },
+  accessorio: { label: 'Accessori', color: '#0A1628' },
   manodopera: { label: 'Manodopera', color: '#D08008' },
-  nodo_posa: { label: 'Nodo Posa', color: '#0D1F1F' },
+  nodo_posa: { label: 'Nodo Posa', color: '#0A1628' },
   voce_libera: { label: 'Voci libere', color: '#6B8A8A' },
 };
 

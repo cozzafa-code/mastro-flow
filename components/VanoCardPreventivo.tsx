@@ -16,15 +16,15 @@ type Props = {
 };
 
 const T = {
-  darkBg: "#0D1F1F",
-  teal: "#28A0A0",
-  tealLight: "#9FE1CB",
-  tealBg: "#E1F5EE",
-  tealDark: "#0F6E56",
+  darkBg: "#0A1628",
+  teal: "#1E3A5F",
+  tealLight: "#B5D4F4",
+  tealBg: "#E6F1FB",
+  tealDark: "#0C447C",
   lightBg: "#EEF8F8",
   cardBg: "#FFFFFF",
   border: "#C8E4E4",
-  textDark: "#0D1F1F",
+  textDark: "#0A1628",
   textSub: "#6A8484",
   warn: "#ff9500",
   warnBg: "#FAEEDA",
@@ -58,7 +58,7 @@ export default function VanoCardPreventivo({
   const pill = (txt: string, type: "ctx" | "qty" | "acc" | "neutral" = "neutral") => {
     const colors = {
       ctx: { bg: T.tealBg, color: T.tealDark },
-      qty: { bg: T.tealLight, color: "#085041" },
+      qty: { bg: T.tealLight, color: "#042C53" },
       acc: { bg: T.warnBg, color: T.warnText },
       neutral: { bg: T.neutralBg, color: T.neutralText },
     }[type];

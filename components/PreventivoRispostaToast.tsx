@@ -22,9 +22,9 @@ const TOKENS = {
   inkSoft: "#555555",
   muted: "#888888",
   hairline: "#EAEAE6",
-  teal: "#28A0A0",
-  tealDark: "#0F5E55",
-  tealLight: "#E0F1EE",
+  teal: "#1E3A5F",
+  tealDark: "#0F1B2D",
+  tealLight: "#E6F1FB",
 
   green: "#28A268",
   greenLight: "#DDF5E6",
