@@ -25,7 +25,6 @@ import InterventoFlowPanel from "./InterventoFlowPanel";
 import PreventivoConfiguratoreTab from "./PreventivoConfiguratoreTab";
 import GuidaIvaDetrazioni from "./GuidaIvaDetrazioni";
 import TabFiscale from "./TabFiscale";
-import PreventivoFiscaleV10 from "./PreventivoFiscaleV10";
 import DisegnoTecnico from "./DisegnoTecnico";
 import Timeline from "./Timeline";
 import TimelineDrawer from "./TimelineDrawer";
@@ -3038,27 +3037,517 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           )}
 
           {/* v77 · TAB FISCALE GUIDATO (mockup v3) */}
-          {prevTab === "fiscale" && (
-              <PreventivoFiscaleV10
-                azienda_id={(cm as any)?.azienda_id ?? ""}
-                azienda_nome="Walter Cozza Serramenti"
-                commessa_id={cm.id}
-                cliente_nome={(cm as any)?.cliente?.nome ?? cm.titolo ?? ""}
-                cliente_telefono={(cm as any)?.cliente?.telefono}
-                citta={(cm as any)?.cliente?.citta ?? ""}
-                vani={((cm as any)?.vani ?? []).map((v: any) => ({
-                  tipo: v?.tipo ?? "Finestra",
-                  larghezza_mm: v?.larghezza_mm ?? 0,
-                  altezza_mm: v?.altezza_mm ?? 0,
-                  note: v?.note,
-                }))}
-                prezzo_base_eur={(cm as any)?.totale_eur ?? 0}
-                costo_reale_eur={0}
-                is_showroom={false}
-                initial_bonus={((cm as any)?.bonus_scelto as any) ?? null}
-                initial_iva={((cm as any)?.iva_scelta as any) ?? null}
-              />
-            )}
+          {prevTab === "fiscale" && (() => {
+            // ─── Setup variabili del pannello ───
+            const destV77 = fiscDestV77 || (c.destImmobile === "seconda" ? "seconda" : "prima");
+            const bonusV77 = c.detrazione || "50";  // "50" = Bonus Casa (default)
+            // Aliquota effettiva in base a destinazione
+            const aliquotaV77 = (() => {
+              if (bonusV77 === "nessuna") return 0;
+              if (bonusV77 === "75") return 75;
+              return destV77 === "prima" ? 50 : 36;
+            })();
+            // Subtotali
+            const subtotV77 = pwImponibile;
+            const recuperoV77 = subtotV77 * aliquotaV77 / 100;
+            const costoRealeV77 = pwTotale - recuperoV77;
+            const perAnnoV77 = recuperoV77 / 10;
+            const fmtV77 = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Uw limite per zona (DM 6 agosto 2020)
+            const uwLimit: any = { "AB": 3.00, "C": 2.20, "D": 1.80, "E": 1.40, "F": 1.10 };
+            const uwZonaLbl: any = { "AB": "A/B", "C": "C", "D": "D", "E": "E", "F": "F" };
+            // Uw prodotto (dal primo vano, se esiste)
+            const uwProd = (() => {
+              const firstSystem = pwVani[0]?.sistema || "";
+              const sysRec = sistemiDB.find((s: any) => (s.marca + " " + s.sistema) === firstSystem || s.sistema === firstSystem);
+              return parseFloat(sysRec?.uw || "1.1");
+            })();
+            const uwOk = uwProd <= uwLimit[fiscZonaV77];
+
+            // Checklist dinamica per bonus
+            const checklistV77 = (() => {
+              const base = [
+                { id: "fatt", name: "Fattura parlante", sub: "Descrizione chiara + riferimento normativo", obblig: true },
+                { id: "bon", name: "Ricevuta bonifico parlante", sub: "Causale con CF beneficiario + P.IVA fornitore", obblig: true },
+                { id: "sched", name: "Scheda tecnica infissi", sub: "Uw, marcatura CE, vetro · dal produttore", obblig: true },
+                { id: "ce", name: "Dichiarazione conformità CE", sub: "Prodotto serramenti · dal produttore", obblig: false },
+                { id: "cat", name: "Dati catastali immobile", sub: "Foglio, particella, subalterno", obblig: false },
+                { id: "cf", name: "Codice fiscale cliente", sub: "Copia tessera o documento identità", obblig: true },
+                { id: "foto_pre", name: "Foto PRIMA della sostituzione", sub: "Prova stato vecchi infissi", obblig: false, consigl: true },
+                { id: "foto_post", name: "Foto DOPO la posa", sub: "Prova installazione completata", obblig: false, consigl: true },
+              ];
+              if (bonusV77 === "65") {
+                // Ecobonus aggiunge
+                base.push({ id: "ape_ante", name: "APE ante operam", sub: "Attestato prestazione energetica pre-lavori", obblig: false, consigl: true } as any);
+                base.push({ id: "ape_post", name: "APE post operam", sub: "Attestato prestazione energetica post-lavori", obblig: false, consigl: true } as any);
+                base.push({ id: "ass", name: "Asseverazione tecnico", sub: "Firmata e timbrata · obbligatoria per Ecobonus", obblig: true } as any);
+              }
+              if (bonusV77 === "75") {
+                base.push({ id: "rel", name: "Relazione tecnica asseverata", sub: "Conformità norme abbattimento barriere", obblig: true } as any);
+              }
+              return base;
+            })();
+            const checkSaved = c.checklistDocs || {};
+            const nDone = checklistV77.filter((d: any) => checkSaved[d.id]).length;
+            const pctDone = Math.round((nDone / checklistV77.length) * 100);
+
+            // Causale bonifico pre-compilata
+            const causaleV77 = (() => {
+              const az = aziendaInfo || {};
+              const nomeDitta = (az.ragioneSociale || az.nome || "DITTA").toUpperCase();
+              const pivaDitta = az.piva || az.partitaIva || "P.IVA";
+              const nomeCli = (c.cliente || "CLIENTE").toUpperCase();
+              const cfCli = c.codiceFiscale || "CF CLIENTE";
+              if (bonusV77 === "65") {
+                return `Intervento di riqualificazione energetica ai sensi dell'art. 1, commi 344-347, Legge 296/2006 - Fattura n. [NUMERO] del [DATA] - Beneficiario detrazione: ${nomeCli} (CF: ${cfCli}) - Beneficiario pagamento: ${nomeDitta} (P.IVA: ${pivaDitta})`;
+              }
+              if (bonusV77 === "75") {
+                return `Intervento superamento barriere architettoniche art. 119-ter DL 34/2020 - Fattura n. [NUMERO] del [DATA] - Beneficiario detrazione: ${nomeCli} (CF: ${cfCli}) - Beneficiario pagamento: ${nomeDitta} (P.IVA: ${pivaDitta})`;
+              }
+              return `Lavori di ristrutturazione edilizia ai sensi dell'art. 16-bis del DPR 917/1986 - Fattura n. [NUMERO] del [DATA] - Beneficiario detrazione: ${nomeCli} (CF: ${cfCli}) - Beneficiario pagamento: ${nomeDitta} (P.IVA: ${pivaDitta})`;
+            })();
+
+            // Template messaggi
+            const tel = (c.telefono || "").replace(/\D/g, "");
+            const waUrl = (msg: string) => `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
+            const bonusLblV77: any = { "nessuna": "nessuna detrazione", "50": "Bonus Casa 50%", "65": "Ecobonus 50%", "75": "Barriere 75%" };
+            const templates = [
+              {
+                id: "checklist",
+                icon: "check",
+                color: "blue",
+                nome: "Checklist documenti richiesti",
+                sub: "Tutti i documenti che servono per il bonus",
+                msg: `Ciao ${c.cliente || ""}, per ottenere il ${bonusLblV77[bonusV77]} ti servono questi documenti da conservare per 10 anni:\n\n${checklistV77.filter((d: any) => d.obblig).map((d: any, i: number) => `${i + 1}. ${d.name}`).join("\n")}\n\nTi aggiorno appena abbiamo tutto. Grazie!`,
+              },
+              {
+                id: "bonifico",
+                icon: "euro",
+                color: "violet",
+                nome: "Istruzioni bonifico parlante",
+                sub: "Causale pronta + passi per home banking",
+                msg: `Ciao ${c.cliente || ""}, per non perdere la detrazione il bonifico DEVE essere \"parlante\". Nella tua home banking seleziona \"Bonifico per agevolazioni fiscali\" e copia ESATTAMENTE questa causale:\n\n${causaleV77}\n\nMi raccomando: importo esatto come in fattura. Conserva la ricevuta!`,
+              },
+              {
+                id: "recupero",
+                icon: "bolt",
+                color: "green",
+                nome: "Riepilogo detrazione recuperabile",
+                sub: "Quanto risparmia il cliente",
+                msg: `Ciao ${c.cliente || ""}, riepilogo economico del preventivo:\n\nTotale: € ${fmtV77(pwTotale)} IVA incl.\n${bonusLblV77[bonusV77]} recuperabile: € ${fmtV77(recuperoV77)} in 10 anni (€ ${fmtV77(perAnnoV77)}/anno)\nCosto reale per te: € ${fmtV77(costoRealeV77)}\n\nResto a disposizione per qualsiasi chiarimento.`,
+              },
+              {
+                id: "promemoria",
+                icon: "clock",
+                color: "amber",
+                nome: "Promemoria conservazione 10 anni",
+                sub: "Agenzia Entrate può controllare fino al 2036",
+                msg: `Ciao ${c.cliente || ""}, importante: l'Agenzia delle Entrate può richiedere i documenti del ${bonusLblV77[bonusV77]} fino a 10 anni dopo. Conserva in un unico luogo:\n\n- Fattura\n- Ricevuta bonifico parlante\n- Scheda tecnica infissi\n- Dichiarazione CE\n\nConsiglio: scansiona tutto e metti una copia in cloud. Gli scontrini termici sbiadiscono.`,
+              },
+              {
+                id: "conferma",
+                icon: "calendar",
+                color: "pink",
+                nome: "Conferma sopralluogo e data lavori",
+                sub: "Comunicazione inizio lavori",
+                msg: `Ciao ${c.cliente || ""}, confermo il sopralluogo e i dati del cantiere:\n\nIndirizzo: ${c.indirizzo || "[da confermare]"}\nCommessa: ${c.code}\n\nTi aggiorno a breve con la data definitiva dei lavori. Per qualsiasi modifica contattami.`,
+              },
+              {
+                id: "catastali",
+                icon: "user",
+                color: "slate",
+                nome: "Richiesta dati catastali",
+                sub: "Foglio, particella, subalterno",
+                msg: `Ciao ${c.cliente || ""}, per preparare la pratica mi servono i dati catastali dell'immobile. Li trovi sulla visura catastale o sull'atto di acquisto. Mi servono:\n\n- Foglio\n- Particella\n- Subalterno\n\nSe non li hai posso aiutarti a recuperarli. Grazie!`,
+              },
+            ];
+
+            const setCheckDoc = (docId: string, val: boolean) => {
+              const updated = { ...checkSaved, [docId]: val };
+              updCM("checklistDocs", updated);
+            };
+
+            const tplColor: any = {
+              blue: "linear-gradient(145deg, #85B7EB, #378ADD)",
+              violet: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
+              green: "linear-gradient(145deg, #2D5A87, #1E3A5F)",
+              amber: "linear-gradient(145deg, #FAC775, #EF9F27)",
+              pink: "linear-gradient(145deg, #ED93B1, #D4537E)",
+              slate: "linear-gradient(145deg, #8BA8A8, #5F7878)",
+            };
+
+            return (
+              <div style={{ padding: "0 12px 20px", display: "flex", flexDirection: "column", gap: 13 }}>
+
+                {/* ══════ SEZIONE 1: DESTINAZIONE IMMOBILE ══════ */}
+                <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  </div>
+                  Passo 1 &middot; Destinazione immobile
+                </div>
+
+                <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", marginBottom: 5, letterSpacing: "-0.1px" }}>L'immobile è abitazione principale del cliente?</div>
+                  <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Decide l'aliquota: 50% (prima casa) o 36% (seconda/affitto/azienda)</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {[
+                      { k: "prima", big: "Prima casa", sub: "Residenza del cliente · detrazione 50%" },
+                      { k: "seconda", big: "Seconda casa", sub: "Affitto, villeggiatura, aziendale · 36%" },
+                    ].map((o: any) => {
+                      const on = destV77 === o.k;
+                      return (
+                        <div key={o.k} onClick={() => { setFiscDestV77(o.k as any); updCM("destImmobile", o.k); }} style={{
+                          padding: "13px 11px 11px", borderRadius: 13, cursor: "pointer",
+                          border: on ? "1.5px solid #1E3A5F" : "1.5px solid rgba(200,228,228,0.5)",
+                          background: on ? "linear-gradient(145deg, rgba(93,202,165,0.1), rgba(30,58,95,0.04))" : "linear-gradient(145deg, #fff, #FAFCFC)",
+                          boxShadow: on ? "0 5px 14px rgba(30,58,95,0.18)" : "none",
+                          position: "relative",
+                        }}>
+                          {on && (
+                            <div style={{ position: "absolute", top: 8, right: 8, width: 16, height: 16, borderRadius: "50%", background: "linear-gradient(145deg, #2D5A87, #1E3A5F)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(30,58,95,0.4)" }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                          )}
+                          <div style={{ fontSize: 15, fontWeight: 900, color: on ? "#0F1B2D" : "#0F2525", letterSpacing: "-0.3px", lineHeight: 1.1 }}>{o.big}</div>
+                          <div style={{ fontSize: 9.5, color: "#475A75", fontWeight: 700, marginTop: 4, lineHeight: 1.35 }}>{o.sub}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ══════ SEZIONE 2: BONUS FISCALE ══════ */}
+                <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2L15.09 8.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+                  </div>
+                  Passo 2 &middot; Bonus fiscale
+                </div>
+
+                <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", marginBottom: 5, letterSpacing: "-0.1px" }}>Quale detrazione applichi?</div>
+                  <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Ogni bonus ha documenti diversi. Ti guido io, passo-passo.</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                    {[
+                      { k: "50", icoBg: "linear-gradient(145deg, #2D5A87, #1E3A5F)", nome: "Bonus Casa", perc: "50%", percBg: "rgba(30,58,95,0.14)", percCol: "#0F1B2D", desc: "Ristrutturazione edilizia · art. 16-bis DPR 917/86 · scelta più comune, più semplice", stats: "MAX € 96.000 · 10 ANNI · NO LIMITI Uw" },
+                      { k: "65", icoBg: "linear-gradient(145deg, #FAC775, #EF9F27)", nome: "Ecobonus", perc: "50%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Risparmio energetico · L. 296/2006 · richiede Uw compatibile + ENEA obbligatoria", stats: "DETRAZIONE MAX € 60.000 · ENEA SÌ" },
+                      { k: "75", icoBg: "linear-gradient(145deg, #AFA9EC, #7F77DD)", nome: "Barriere architettoniche", perc: "75%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Art. 119-ter DL 34/2020 · richiede relazione tecnica asseverata", stats: "SOLO CONDOMINI 2026" },
+                      { k: "nessuna", icoBg: "linear-gradient(145deg, #B8C5C5, #7A9090)", nome: "Nessuna detrazione", perc: "0%", percBg: "rgba(122,144,144,0.14)", percCol: "#3C4F4F", desc: "Cliente non vuole o non può · bonifico ordinario, nessuna pratica", stats: "" },
+                    ].map((b: any) => {
+                      const on = bonusV77 === b.k;
+                      return (
+                        <div key={b.k} onClick={() => updCM("detrazione", b.k)} style={{
+                          padding: "13px 14px", borderRadius: 15, cursor: "pointer",
+                          border: on ? "1.5px solid #1E3A5F" : "1.5px solid rgba(200,228,228,0.5)",
+                          background: on ? "linear-gradient(145deg, rgba(93,202,165,0.08), rgba(30,58,95,0.02))" : "#fff",
+                          display: "flex", gap: 12, alignItems: "flex-start",
+                          boxShadow: on ? "0 6px 16px rgba(30,58,95,0.15)" : "0 3px 8px rgba(13,31,31,0.04)",
+                          position: "relative",
+                        }}>
+                          <div style={{ width: 44, height: 44, borderRadius: 13, background: b.icoBg, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "inset 0 1px 2px rgba(255,255,255,0.35)" }}>
+                            {b.k === "50" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>}
+                            {b.k === "65" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>}
+                            {b.k === "75" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>}
+                            {b.k === "nessuna" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.2px", display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" as any }}>
+                              {b.nome}
+                              <span style={{ fontSize: 10, fontWeight: 900, padding: "2px 8px", borderRadius: 50, letterSpacing: "0.3px", background: b.percBg, color: b.percCol }}>{b.perc}</span>
+                            </div>
+                            <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginTop: 3, lineHeight: 1.4 }}>{b.desc}</div>
+                            {b.stats && <div style={{ fontSize: 9, color: "#475A75", fontWeight: 800, letterSpacing: "0.3px", marginTop: 6 }}>{b.stats}</div>}
+                          </div>
+                          {on && (
+                            <div style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(145deg, #2D5A87, #1E3A5F)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 5px rgba(30,58,95,0.4)" }}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ══════ BOX RECUPERO ══════ */}
+                {bonusV77 !== "nessuna" && recuperoV77 > 0 && (
+                  <div style={{ background: "linear-gradient(155deg, #FFF7E6 0%, #FFE8C2 100%)", border: "1.5px solid rgba(239,159,39,0.3)", borderRadius: 16, padding: "13px 14px", display: "flex", alignItems: "center", gap: 12, position: "relative", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", top: -30, right: -30, width: 100, height: 100, borderRadius: "50%", background: "radial-gradient(circle, rgba(250,199,117,0.4), transparent 65%)", pointerEvents: "none" as any }} />
+                    <div style={{ width: 42, height: 42, borderRadius: 13, background: "linear-gradient(145deg, #FAC775, #EF9F27)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 10px rgba(239,159,39,0.3), inset 0 1px 2px rgba(255,255,255,0.35)" }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <div style={{ flex: 1, position: "relative" }}>
+                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "1px", textTransform: "uppercase" as any, color: "#854F0B", opacity: 0.85 }}>IL CLIENTE RECUPERA IN 10 ANNI</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: "#854F0B", letterSpacing: "-0.5px", lineHeight: 1.1, marginTop: 2 }}>€ {fmtV77(recuperoV77)}</div>
+                      <div style={{ fontSize: 10, color: "#6A4810", fontWeight: 700, marginTop: 3, lineHeight: 1.35 }}>{aliquotaV77}% di € {fmtV77(subtotV77)} imponibile · € {fmtV77(perAnnoV77)}/anno per 10 anni</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ══════ WIDGET Uw (solo Ecobonus) ══════ */}
+                {bonusV77 === "65" && (
+                  <>
+                    <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
+                      <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                      </div>
+                      Requisiti tecnici
+                    </div>
+
+                    <div style={{ background: "#fff", borderRadius: 16, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 3px 10px rgba(13,31,31,0.04)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(145deg, rgba(55,138,221,0.2), rgba(55,138,221,0.08))", color: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M17.66 3.72l-5.29 8.05-3.62-1.57 1.57-3.62L18.38 1l-.72 2.72z"/></svg>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Trasmittanza Uw</div>
+                          <div style={{ fontSize: 9.5, color: "#475A75", fontWeight: 700, marginTop: 2 }}>Richiesta per Ecobonus · DM 6 agosto 2020</div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 9.5, fontWeight: 800, color: "#4A6E6E", letterSpacing: "0.6px", marginBottom: 5 }}>ZONA CLIMATICA</div>
+                      <div style={{ display: "flex", gap: 6, marginBottom: 11 }}>
+                        {(["AB", "C", "D", "E", "F"] as const).map(z => {
+                          const on = fiscZonaV77 === z;
+                          return (
+                            <div key={z} onClick={() => setFiscZonaV77(z)} style={{
+                              flex: 1, padding: "7px 4px", borderRadius: 8, textAlign: "center" as any,
+                              fontSize: 10.5, fontWeight: 900,
+                              color: on ? "#fff" : "#5A7878",
+                              background: on ? "linear-gradient(145deg, #85B7EB, #378ADD)" : "#F4F8F8",
+                              border: `1px solid ${on ? "#378ADD" : "rgba(200,228,228,0.4)"}`,
+                              cursor: "pointer",
+                              boxShadow: on ? "0 3px 8px rgba(55,138,221,0.3)" : "none",
+                            }}>{uwZonaLbl[z]}</div>
+                          );
+                        })}
+                      </div>
+                      <div style={{ padding: "11px 12px", background: uwOk ? "rgba(30,58,95,0.08)" : "rgba(226,75,74,0.08)", border: `1.5px solid ${uwOk ? "rgba(30,58,95,0.3)" : "rgba(226,75,74,0.3)"}`, borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 26, height: 26, borderRadius: 8, background: uwOk ? "linear-gradient(145deg, #2D5A87, #1E3A5F)" : "linear-gradient(145deg, #F09595, #E24B4A)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          {uwOk
+                            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
+                        </div>
+                        <div style={{ flex: 1, fontSize: 10.5, color: uwOk ? "#0F1B2D" : "#8B1A1A", fontWeight: 800, lineHeight: 1.4 }}>
+                          <strong>{pwVani[0]?.sistema || "Sistema"} · Uw {uwProd.toFixed(1)}</strong><br/>
+                          Richiesto ≤ {uwLimit[fiscZonaV77].toFixed(2)} per Zona {uwZonaLbl[fiscZonaV77]} · {uwOk ? "ampiamente conforme" : "NON CONFORME"}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* ══════ CHECKLIST DOCUMENTI ══════ */}
+                <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                  </div>
+                  Documenti da raccogliere <span style={{ background: "rgba(30,58,95,0.14)", color: "#1E3A5F", padding: "1px 7px", borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</span>
+                </div>
+
+                <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Checklist {bonusLblV77[bonusV77]}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <div style={{ width: 60, height: 6, background: "rgba(15,27,45,0.15)", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${pctDone}%`, background: "linear-gradient(90deg, #2D5A87, #1E3A5F)", borderRadius: 3, boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
+                      </div>
+                      <div style={{ fontSize: 10, fontWeight: 900, color: "#1E3A5F", letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Conservare tutto per 10 anni · L'Agenzia delle Entrate può chiederli fino al {new Date().getFullYear() + 10}</div>
+
+                  {checklistV77.map((d: any) => {
+                    const isDone = !!checkSaved[d.id];
+                    return (
+                      <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 0", borderBottom: "1px solid rgba(200,228,228,0.3)" }}>
+                        <div onClick={() => setCheckDoc(d.id, !isDone)} style={{
+                          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          border: isDone ? "1.5px solid #1E3A5F" : "1.5px solid rgba(200,228,228,0.6)",
+                          background: isDone ? "linear-gradient(145deg, #2D5A87, #1E3A5F)" : "#fff",
+                          cursor: "pointer",
+                          boxShadow: isDone ? "0 3px 7px rgba(30,58,95,0.3)" : "none",
+                        }}>
+                          {isDone
+                            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8D4D4" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/></svg>}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#0F2525", letterSpacing: "-0.05px" }}>
+                            {d.name}
+                            {d.obblig && <span style={{ display: "inline-block", background: "rgba(226,75,74,0.12)", color: "#8B1A1A", fontSize: 8.5, fontWeight: 900, padding: "1px 6px", borderRadius: 4, letterSpacing: "0.3px", marginLeft: 5, verticalAlign: 1 }}>OBBLIG</span>}
+                            {d.consigl && <span style={{ display: "inline-block", background: "rgba(239,159,39,0.12)", color: "#854F0B", fontSize: 8.5, fontWeight: 900, padding: "1px 6px", borderRadius: 4, letterSpacing: "0.3px", marginLeft: 5, verticalAlign: 1 }}>CONSIGL</span>}
+                          </div>
+                          <div style={{ fontSize: 9.5, color: "#475A75", fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{d.sub}</div>
+                        </div>
+                        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                          <div onClick={() => { try { (fotoInputRef as any).current?.click(); } catch (e) {} }} style={{
+                            width: 28, height: 28, borderRadius: 8,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            cursor: "pointer",
+                            background: isDone ? "rgba(30,58,95,0.1)" : "rgba(200,228,228,0.25)",
+                            color: isDone ? "#1E3A5F" : "#4A6E6E",
+                            border: `1px solid ${isDone ? "rgba(30,58,95,0.3)" : "rgba(200,228,228,0.4)"}`,
+                          }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                          </div>
+                          <div onClick={() => { try { (fileInputRef as any).current?.click(); } catch (e) {} }} style={{
+                            width: 28, height: 28, borderRadius: 8,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            cursor: "pointer",
+                            background: isDone ? "rgba(30,58,95,0.1)" : "rgba(200,228,228,0.25)",
+                            color: isDone ? "#1E3A5F" : "#4A6E6E",
+                            border: `1px solid ${isDone ? "rgba(30,58,95,0.3)" : "rgba(200,228,228,0.4)"}`,
+                          }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ══════ CAUSALE BONIFICO ══════ */}
+                {bonusV77 !== "nessuna" && (<>
+                  <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    </div>
+                    Causale bonifico parlante
+                  </div>
+
+                  <div style={{ background: "linear-gradient(155deg, #F7FAF9 0%, #EAF2F0 100%)", borderRadius: 16, padding: 14, border: "1px solid rgba(200,228,228,0.5)" }}>
+                    <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 800, lineHeight: 1.4 }}>Questa è la causale che il cliente deve copiare <strong>ESATTAMENTE</strong> nel bonifico, altrimenti rischia di perdere la detrazione.</div>
+                    <div style={{ background: "#0F2525", color: "#AEE9E9", padding: "12px 14px", borderRadius: 11, fontFamily: "SF Mono, Monaco, Consolas, monospace", fontSize: 10.5, lineHeight: 1.55, marginTop: 10, fontWeight: 500, letterSpacing: "0.1px" }}>{causaleV77}</div>
+                    <button onClick={() => {
+                      navigator.clipboard?.writeText(causaleV77).then(() => {
+                        setFiscCopied("causale"); setTimeout(() => setFiscCopied(null), 2500);
+                      }).catch(() => { setFiscCopied("causale"); setTimeout(() => setFiscCopied(null), 2500); });
+                    }} style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                      width: "100%", padding: 11,
+                      background: fiscCopied === "causale" ? "#1E3A5F" : "#0F2525",
+                      color: "#fff", borderRadius: 11, fontSize: 11.5, fontWeight: 900, marginTop: 10, cursor: "pointer", letterSpacing: "0.3px", border: "none", fontFamily: "inherit",
+                      boxShadow: "0 5px 12px rgba(15,37,37,0.25)",
+                    }}>
+                      {fiscCopied === "causale"
+                        ? <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg> COPIATO!</>
+                        : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> COPIA CAUSALE PER IL CLIENTE</>}
+                    </button>
+                  </div>
+                </>)}
+
+                {/* ══════ TEMPLATE MESSAGGI ══════ */}
+                <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </div>
+                  Messaggi pronti per il cliente
+                </div>
+
+                <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
+                  <div style={{ fontSize: 10.5, color: "#475A75", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Testi già preparati, con dati commessa pre-compilati. Tap per inviare su WhatsApp.</div>
+
+                  {templates.map((tpl: any) => (
+                    <div key={tpl.id} onClick={() => {
+                      if (!tel) { alert("Numero telefono cliente mancante"); return; }
+                      window.open(waUrl(tpl.msg), "_blank");
+                    }} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 0", borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer" }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 11, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: tplColor[tpl.color], boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)" }}>
+                        {tpl.icon === "check" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>}
+                        {tpl.icon === "euro" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>}
+                        {tpl.icon === "bolt" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
+                        {tpl.icon === "clock" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+                        {tpl.icon === "calendar" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>}
+                        {tpl.icon === "user" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>{tpl.nome}</div>
+                        <div style={{ fontSize: 10, color: "#475A75", fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{tpl.sub}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 11px", background: "linear-gradient(145deg, rgba(37,211,102,0.14), rgba(27,160,80,0.05))", border: "1px solid rgba(37,211,102,0.3)", color: "#1BA050", borderRadius: 50, fontSize: 9.5, fontWeight: 900, letterSpacing: "0.3px", flexShrink: 0 }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="#1BA050"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5z"/></svg>
+                        INVIA
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ══════ PRATICA ENEA ══════ */}
+                {bonusV77 !== "nessuna" && (<>
+                  <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(45,90,135,0.28), rgba(30,58,95,0.14))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/></svg>
+                    </div>
+                    Pratica ENEA
+                  </div>
+
+                  <div style={{ background: "linear-gradient(155deg, #0F1B2D 0%, #0F5555 100%)", borderRadius: 20, padding: 18, color: "#fff", boxShadow: "0 14px 32px rgba(15,68,68,0.3)", position: "relative", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", top: -40, right: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, rgba(95,208,208,0.25), transparent 65%)", pointerEvents: "none" as any }} />
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", background: "rgba(255,255,255,0.2)", borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px", textTransform: "uppercase" as any, position: "relative" }}>
+                      {bonusV77 === "65" ? "OBBLIGATORIA ENTRO 90 GG" : "NON OBBLIGATORIA PER " + bonusLblV77[bonusV77].toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: 18, fontWeight: 900, marginTop: 10, letterSpacing: "-0.4px", lineHeight: 1.15, position: "relative", textShadow: "0 2px 4px rgba(0,0,0,0.15)" }}>
+                      {bonusV77 === "65" ? "ENEA è obbligatoria" : "ENEA qui è consigliata, non dovuta"}
+                    </div>
+                    <div style={{ fontSize: 11.5, opacity: 0.9, marginTop: 6, fontWeight: 500, lineHeight: 1.4, position: "relative" }}>
+                      {bonusV77 === "65"
+                        ? "Per Ecobonus va inviata entro 90 giorni dalla fine lavori, pena decadenza della detrazione."
+                        : `Hai scelto ${bonusLblV77[bonusV77]}. Prepariamo comunque la scheda: se cambi idea, è pronta.`}
+                    </div>
+                    <button style={{ marginTop: 14, width: "100%", padding: 14, background: "#fff", color: "#0F5555", border: "none", borderRadius: 14, fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, letterSpacing: "0.3px", boxShadow: "0 6px 14px rgba(0,0,0,0.2), inset 0 -2px 0 rgba(15,85,85,0.08)", position: "relative" }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F5555" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      PREPARA SCHEDA ENEA PDF
+                    </button>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, padding: "10px 11px", background: "rgba(0,0,0,0.25)", borderRadius: 10, position: "relative" }}>
+                      <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      </div>
+                      <div style={{ fontSize: 10, lineHeight: 1.4, fontWeight: 600, opacity: 0.92 }}>Il cliente carica la pratica su <strong>bonusfiscali.enea.it</strong> solo con SPID o CIE. Nessun documento va caricato, solo la scheda descrittiva.</div>
+                    </div>
+                  </div>
+                </>)}
+
+                {/* ══════ TOTALE + COSTO REALE ══════ */}
+                <div style={{ background: "linear-gradient(155deg, #8FE5C5 0%, #1E3A5F 55%, #0F7A58 100%)", borderRadius: 24, padding: 18, color: "#fff", boxShadow: "0 18px 40px rgba(15,122,88,0.35)", position: "relative", overflow: "hidden" }}>
+                  <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%)", pointerEvents: "none" as any }} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 11, position: "relative" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, fontWeight: 700 }}><span>Imponibile</span> <span>€ {fmtV77(subtotV77)}</span></div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600, opacity: 0.75 }}><span>+ IVA {pwIvaDefault}%</span> <span>€ {fmtV77(pwIvaCalc)}</span></div>
+                    <div style={{ height: 1, background: "rgba(255,255,255,0.22)", margin: "4px 0" }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", position: "relative", paddingTop: 4 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: "0.5px", textTransform: "uppercase" as any, opacity: 0.92 }}>Totale IVA incl.</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.9px", textShadow: "0 2px 6px rgba(0,0,0,0.18)" }}>€ {fmtV77(pwTotale)}</div>
+                  </div>
+                  {bonusV77 !== "nessuna" && recuperoV77 > 0 && (
+                    <div style={{ marginTop: 11, padding: "11px 13px", background: "rgba(255,255,255,0.2)", borderRadius: 13, position: "relative", display: "flex", gap: 10, alignItems: "center" }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 9.5, fontWeight: 900, opacity: 0.88, letterSpacing: "0.3px", textTransform: "uppercase" as any }}>Costo reale per il cliente</div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, opacity: 0.9, marginTop: 2, lineHeight: 1.3 }}><strong style={{ fontWeight: 900, fontSize: 14.5 }}>€ {fmtV77(costoRealeV77)}</strong> dopo bonus {aliquotaV77}% in 10 anni</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* NAV BOTTOM */}
+                <div style={{ display: "flex", gap: 8, padding: "10px 0 8px" }}>
+                  <button onClick={() => setPrevTab("sopralluogo")} style={{ padding: 14, borderRadius: 12, background: "#fff", color: "#4A6E6E", border: "1px solid rgba(200,228,228,0.5)", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", minWidth: 90 }}>
+                    Indietro
+                  </button>
+                  <button onClick={() => setPrevTab("condizioni")} style={{ flex: 1, padding: 14, borderRadius: 12, background: "linear-gradient(145deg, #1E3A5F, #0F7A58)", color: "#fff", border: "none", fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 14px rgba(15,122,88,0.3), inset 0 -2px 0 rgba(0,0,0,0.08)", letterSpacing: "0.3px" }}>
+                    Prossimo: Condizioni →
+                  </button>
+                </div>
+
+              </div>
+            );
+          })()}
 
           {/*  TAB CONDIZIONI (pagamento · consegna · garanzia)  */}
           {prevTab === "condizioni" && (
