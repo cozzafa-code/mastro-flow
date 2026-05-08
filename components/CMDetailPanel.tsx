@@ -1541,7 +1541,7 @@ export default function CMDetailPanel() {
                   return (
                     <div
                       key={rZ4.id || idxZ4}
-                      onClick={() => { setShowRilieviPanel(rZ4); }}
+                      onClick={() => { console.log("[CLICK R1]", rZ4); const primoVano = (rZ4.vani || [])[0]; console.log("[primoVano]", primoVano); if (primoVano) { setSelectedRilievo(rZ4); console.log("[setSelectedRilievo OK]"); if (typeof setSelectedVano === "function") { setSelectedVano(primoVano); console.log("[setSelectedVano OK]"); } setCmSubTab && setCmSubTab("sopralluoghi"); console.log("[setCmSubTab sopralluoghi OK]"); } else { setSelectedRilievo(rZ4); setCmSubTab && setCmSubTab("sopralluoghi"); } }}
                       style={{
                         background: "#fff",
                         border: `1px solid ${isUltimoZ4 ? "#1E3A5F" : "#E2E8F0"}`,
