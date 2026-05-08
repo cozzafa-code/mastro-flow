@@ -1148,7 +1148,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     const code = "S-" + String(cantieri.length + 1).padStart(4, "0");
     const _ctMatch = contatti?.find((ct:any) => ct.id === newCM.clienteId || ((ct.nome||"").toLowerCase()+(ct.cognome?" "+ct.cognome:"").toLowerCase()).trim() === ([newCM.cliente,newCM.cognome].filter(Boolean).join(" ").toLowerCase()));
 
-    const azId = aziendaInfo?.id || aziendaInfo?.azienda_id;
+    // FIX: fallback su UUID Walter Cozza se aziendaInfo non popolato
+    const azId = aziendaInfo?.id || aziendaInfo?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29";
     const oggi = new Date().toISOString().split("T")[0];
 
     // 1) Insert commessa su Supabase
