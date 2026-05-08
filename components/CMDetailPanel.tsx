@@ -1,4 +1,5 @@
 "use client";
+import RilieviVaniPanel from "./RilieviVaniPanel";
 // @ts-nocheck
 // 
 // MASTRO ERP · CMDetailPanel
@@ -1538,7 +1539,7 @@ export default function CMDetailPanel() {
                   return (
                     <div
                       key={rZ4.id || idxZ4}
-                      onClick={() => { setSelectedRilievo(rZ4); }}
+                      onClick={() => { setSelectedRilievo(null); setCmSubTab("visite"); }}
                       style={{
                         background: "#fff",
                         border: `1px solid ${isUltimoZ4 ? "#1E3A5F" : "#E2E8F0"}`,
@@ -6393,80 +6394,16 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
         )}
 
         {/* == TAB VISITE (timeline sopralluoghi) == */}
-        {cmSubTab === "visite" && (
-          <div style={{ padding: "12px 16px" }}>
-            {/* Stato misure globale */}
-            <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 14, textAlign: "center", fontSize: 12, fontWeight: 700,
-              background: c.firmaCliente ? "#1E3A5F12" : "#ff950012",
-              color: c.firmaCliente ? "#1E3A5F" : "#ff9500",
-              border: `1px solid ${c.firmaCliente ? "#1E3A5F30" : "#ff950030"}`,
-            }}>
-              {c.firmaCliente
-                ? "✓ Misure definitive · cliente ha firmato"
-                : `+ Misure indicative · ${(c.rilievi||[]).length} ${(c.rilievi||[]).length === 1 ? "visita" : "visite"} effettuate`}
-            </div>
-
-            {/* Bottone nuovo rilievo in tab Visite */}
-            {!c.firmaCliente && (
-              <button onClick={() => {
-                setNuovoRilievoTipo("provvisorio");
-                setNuovoRilievoRilevatore("");
-                setNuovoRilievoNote("");
-                setShowNuovoRilievoModal(true);
-              }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
-                + NUOVO RILIEVO
-              </button>
-            )}
-
-            {/* Timeline visite */}
-            {(c.rilievi||[]).length === 0 ? (
-              <div style={{ textAlign: "center", padding: "28px 16px", color: T.sub }}>
-                <div style={{ fontSize: 36, marginBottom: 10 }}><I d={ICO.ruler} /></div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>Nessuna visita ancora</div>
-                <div style={{ fontSize: 12 }}>Crea il primo rilievo dal Centro Comando</div>
-              </div>
-            ) : [...(c.rilievi||[])].reverse().map((ril, idx) => {
-              const isLast = idx === 0;
-              const nVani = (ril.vani||[]).length;
-              const nMisurati = (ril.vani||[]).filter(v => Object.values(v.misure||{}).filter(x=>(x as number)>0).length >= 6).length;
-              const tipoCol = ril.tipo === "modifica" ? "#ff9500" : isLast ? T.acc : T.blue;
-              const isSelected = r?.id === ril.id;
-              return (
-                <div key={ril.id} onClick={() => { setSelectedRilievo(ril); setCmSubTab("sopralluoghi"); }}
-                  style={{ display: "flex", gap: 12, marginBottom: 14, cursor: "pointer", padding: "10px 12px", borderRadius: 12,
-                    background: isSelected ? `${tipoCol}10` : T.card,
-                    border: `1.5px solid ${isSelected ? tipoCol : T.bdr}`,
-                  }}>
-                  {/* Timeline line */}
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 36 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: `${tipoCol}15`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: `1.5px solid ${tipoCol}30`, flexShrink: 0 }}>
-                      <div style={{ fontSize: 9, fontWeight: 800, color: tipoCol }}>R{ril.n}</div>
-                      <div style={{ fontSize: 12 }}>{ril.tipo === "modifica" ? "🔧" : "📐"}</div>
-                    </div>
-                    {idx < (c.rilievi||[]).length - 1 && <div style={{ width: 2, flex: 1, background: T.bdr, marginTop: 4, minHeight: 8 }} />}
-                  </div>
-                  {/* Content */}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
-                        {ril.data ? new Date(ril.data + "T12:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" }) : "·"}
-                      </span>
-                      {ril.ora && <span style={{ fontSize: 11, color: T.sub }}>ore {ril.ora}</span>}
-                      {isLast && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4, background: tipoCol, color: "#fff" }}>ATTUALE</span>}
-                      {ril.tipo === "modifica" && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4, background: "#ff9500", color: "#fff" }}>MODIFICA</span>}
-                    </div>
-                    <div style={{ fontSize: 11, color: T.sub }}>
-                      {ril.rilevatore || "·"} · {nVani} vani · {nMisurati === nVani && nVani > 0 ? "✓ tutte le misure" : `${nMisurati}/${nVani} misurati`}
-                    </div>
-                    {ril.motivoModifica && <div style={{ fontSize: 11, color: "#ff9500", marginTop: 2 }}><I d={ICO.wrench} /> {ril.motivoModifica}</div>}
-                    {ril.note && <div style={{ fontSize: 11, color: T.sub, marginTop: 2, fontStyle: "italic" }}>"{ril.note}"</div>}
-                    {ril._ereditatiCount > 0 && <div style={{ fontSize: 10, color: "#1E3A5F", marginTop: 2 }}><I d={ICO.clipboard} /> {ril._ereditatiCount} vani ereditati da R{ril.n - 1}</div>}
-                  </div>
-                  <span style={{ color: T.sub, fontSize: 14, alignSelf: "center" }}>📷</span>
-                </div>
-              );
-            })}
-          </div>
+        {cmSubTab === "visite" && !selectedRilievo && (
+          <RilieviVaniPanel onOpenVano={(vanoId, rilievoId) => {
+            const ril = (c.rilievi || []).find((rr: any) => rr.id === rilievoId);
+            const vano = (ril?.vani || []).find((vv: any) => vv.id === vanoId);
+            if (ril && vano) {
+              setSelectedRilievo(ril);
+              setCmSubTab("sopralluoghi");
+              if (typeof setSelectedVano === "function") setSelectedVano(vano);
+            }
+          }} />
         )}
 
         {/* == TAB VANI (lista vani del rilievo) == */}
