@@ -610,6 +610,34 @@ export default function CMDetailPanel() {
               <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1 }}>{fmtEurV23(totaleV23)}</div>
               <div style={{ fontSize: 10, opacity: 0.85, marginTop: 3 }}>totale</div>
             </div>
+            {/* [v51] BOTTONE STORIA - sempre accessibile in fase preventivo */}
+            <button
+              onClick={() => setShowTimelineDrawer(true)}
+              aria-label="Apri storia commessa"
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                background: "rgba(255,255,255,0.22)",
+                border: "1px solid rgba(255,255,255,0.28)",
+                color: "#fff",
+                padding: "7px 11px",
+                borderRadius: 10,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: "0.5px",
+                textTransform: "uppercase" as any,
+                cursor: "pointer",
+                flexShrink: 0,
+                fontFamily: "inherit",
+                marginLeft: 8,
+                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.25)",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Storia
+            </button>
           </div>
 
           {/* PROGRESS BAR PASSO */}
@@ -1166,6 +1194,35 @@ export default function CMDetailPanel() {
                 {vaniCompletiV70}/{vaniV70.length} vani
               </div>
             </div>
+            {/* [v51] BOTTONE STORIA - sempre accessibile */}
+            <button
+              onClick={() => setShowTimelineDrawer(true)}
+              aria-label="Apri storia commessa"
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                background: "rgba(255,255,255,0.22)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.28)",
+                color: "#fff",
+                padding: "7px 11px",
+                borderRadius: 10,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: "0.5px",
+                textTransform: "uppercase" as any,
+                cursor: "pointer",
+                flexShrink: 0,
+                fontFamily: "inherit",
+                marginLeft: 8,
+                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.1)",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Storia
+            </button>
           </div>
         </div>
 
