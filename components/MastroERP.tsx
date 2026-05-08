@@ -1,5 +1,4 @@
 "use client";
-import DraggableFAB from "@/components/DraggableFAB";
 import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
 // =======================================================
@@ -398,7 +397,26 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   });
   const logoInputRef = useRef(null);
   const [aiChat, setAiChat] = useState(false);
-  // bridge AI gestito da DraggableFAB tramite window.__mastroOpenAI
+  const [aiLiveMode, setAiLiveMode] = useState(false);
+
+  // ═══ MASTRO AI · listener globali ═══
+  // TAP su MASTRO AI in GestureNav -> apre chat scritta
+  // LONG-PRESS su MASTRO AI -> apre chat con vocale attivo
+  React.useEffect(() => {
+    const openAI = () => { setAiLiveMode(false); setAiChat(true); };
+    const openAILive = () => { setAiLiveMode(true); setAiChat(true); };
+    (window as any).__mastroOpenAI = openAI;
+    (window as any).__mastroOpenAILive = openAILive;
+    window.addEventListener("mastro:open-ai", openAI);
+    window.addEventListener("mastro:open-ai-live", openAILive);
+    return () => {
+      window.removeEventListener("mastro:open-ai", openAI);
+      window.removeEventListener("mastro:open-ai-live", openAILive);
+      try { delete (window as any).__mastroOpenAI; } catch {}
+      try { delete (window as any).__mastroOpenAILive; } catch {}
+    };
+  }, []);
+
   const [aiInput, setAiInput] = useState("");
   const [aiMsgs, setAiMsgs] = useState([{ role: "ai", text: "Ciao Fabio! Sono MASTRO AI. Chiedimi qualsiasi cosa sulle tue commesse, task o misure." }]);
   
@@ -4539,7 +4557,75 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             </div>
           );
         })()}
-        {/* DraggableFAB disabled for GestureNav swipe system */}
+        {/* ═══ MASTRO AI · MODAL FULLSCREEN ═══ */}
+        {aiChat && (
+          <div
+            onClick={(e) => { if (e.target === e.currentTarget) setAiChat(false); }}
+            style={{
+              position: "fixed", inset: 0,
+              background: "rgba(0,0,0,0.55)",
+              zIndex: 9000,
+              display: "flex", alignItems: "flex-end", justifyContent: "center",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "#FFF",
+                width: "100%", maxWidth: 480,
+                height: "92vh",
+                borderRadius: "20px 20px 0 0",
+                overflow: "hidden",
+                display: "flex", flexDirection: "column" as any,
+                boxShadow: "0 -10px 40px rgba(0,0,0,0.3)",
+              }}
+            >
+              {/* Header navy */}
+              <div style={{
+                padding: "14px 18px",
+                background: "linear-gradient(160deg, #1E3A5F, #0F1B2D)",
+                color: "#FFF",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                flexShrink: 0,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: "rgba(255,255,255,0.18)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFF" stroke="none">
+                      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, opacity: 0.85 }}>
+                      MASTRO AI {aiLiveMode ? "· LIVE" : ""}
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 800, marginTop: 1 }}>
+                      Come posso aiutarti?
+                    </div>
+                  </div>
+                </div>
+                <div
+                  onClick={() => setAiChat(false)}
+                  style={{
+                    width: 34, height: 34, borderRadius: 10,
+                    background: "rgba(255,255,255,0.15)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", fontSize: 18, color: "#FFF",
+                    fontWeight: 600,
+                  }}
+                >✕</div>
+              </div>
+
+              {/* Body: AssistentePanel */}
+              <div style={{ flex: 1, overflowY: "auto" as any, background: "#F8FAFC" }}>
+                <AssistentePanel />
+              </div>
+            </div>
+          </div>
+        )}
 {/* MESSAGE DETAIL OVERLAY */}
         {selectedMsg && (<div style={{ position: "fixed", inset: 0, background: T.bg, zIndex: 100 }}><div onClick={() => { setSelectedMsg(null); setReplyText(""); }} style={{ padding: 16, cursor: "pointer", fontWeight: 700, color: T.acc }}>← Chiudi</div></div>)}
 
