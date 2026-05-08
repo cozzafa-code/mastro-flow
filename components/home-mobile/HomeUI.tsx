@@ -1,5 +1,5 @@
 // components/home-mobile/HomeUI.tsx
-// UI primitives + design tokens fliwoX. v2.
+// UI primitives + design tokens fliwoX. v3 con Chip + SwipeTrack.
 
 'use client'
 
@@ -48,7 +48,6 @@ export const btnBaseStyle: React.CSSProperties = {
 
 // ============================================================
 // HOME STATE CONTEXT — opt-in per expand/collapse cards
-// Se V2 non monta <HomeStateProvider>, le card restano sempre aperte (comportamento attuale)
 // ============================================================
 type HomeStateCtx = {
   isExpanded: (id: string) => boolean
@@ -77,7 +76,6 @@ const HomeStateContext = createContext<HomeStateCtx>({
   triggerDragStart: () => {},
 })
 
-// Hook export per consumer esterni
 export function useHomeState() {
   return useContext(HomeStateContext)
 }
@@ -266,9 +264,6 @@ export function CardHeader({
   )
 }
 
-// Wrapper interno: nasconde i figli quando la card e collassata
-// I widget esistenti devono essere wrappati con <CardBody cardId={...}> per attivare collapse
-// Senza CardBody, il body resta sempre visibile (comportamento attuale)
 export function CardBody({
   children, cardId,
 }: {
@@ -412,5 +407,169 @@ export function IconBtn({ children, onClick }: { children: React.ReactNode; onCl
       background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>{children}</button>
+  )
+}
+
+// ============================================================
+// CHIP — pillola tempo / stato in alto a destra di una swipe-card
+// Variante v3: badge informativo per ogni item (tempo, durata, stato)
+// ============================================================
+export function Chip({
+  text, kind = 'neutral',
+}: {
+  text: string
+  kind?: 'neutral' | 'live' | 'warn' | 'alert' | 'info' | 'ok'
+}) {
+  const palette =
+    kind === 'alert' ? { bg: T.redSoft, fg: T.numRed, bdr: '#FCA5A5' } :
+    kind === 'warn'  ? { bg: T.amberSoft, fg: T.numAmber, bdr: '#FCD34D' } :
+    kind === 'live'  ? { bg: T.tealSoft, fg: T.numTeal, bdr: '#6EE7B7' } :
+    kind === 'ok'    ? { bg: T.tealSoft, fg: T.numTeal, bdr: '#6EE7B7' } :
+    kind === 'info'  ? { bg: T.blueSoft, fg: T.numBlue, bdr: '#93B0CF' } :
+                       { bg: '#FFF', fg: T.text, bdr: T.bdr }
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: palette.bg, color: palette.fg,
+      border: `1px solid ${palette.bdr}`,
+      fontSize: 10, fontWeight: 600, padding: '4px 9px',
+      borderRadius: 999, letterSpacing: 0.3, lineHeight: 1.2,
+      WebkitFontSmoothing: 'antialiased' as const,
+      whiteSpace: 'nowrap' as const,
+    }}>
+      <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <circle cx={12} cy={12} r={10}/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      {text}
+    </span>
+  )
+}
+
+// ============================================================
+// SWIPE TRACK — carosello orizzontale con scroll-snap + dots
+// Mostra 1 card alla volta con peek prev/next per dare hint di altri item
+// ============================================================
+export function SwipeTrack({
+  items, renderItem, emptyText, showDots = true,
+}: {
+  items: any[]
+  renderItem: (item: any, index: number) => React.ReactNode
+  emptyText?: string
+  showDots?: boolean
+}) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [activeIdx, setActiveIdx] = useState(0)
+
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    let raf: number | null = null
+    const handler = () => {
+      if (raf !== null) return
+      raf = requestAnimationFrame(() => {
+        raf = null
+        const cardW = el.clientWidth - 36 // peek 36px
+        const idx = Math.round(el.scrollLeft / Math.max(1, cardW + 10))
+        setActiveIdx(Math.min(items.length - 1, Math.max(0, idx)))
+      })
+    }
+    el.addEventListener('scroll', handler, { passive: true })
+    return () => {
+      el.removeEventListener('scroll', handler)
+      if (raf !== null) cancelAnimationFrame(raf)
+    }
+  }, [items.length])
+
+  const goTo = (i: number) => {
+    const el = trackRef.current
+    if (!el) return
+    const cardW = el.clientWidth - 36
+    el.scrollTo({ left: i * (cardW + 10), behavior: 'smooth' })
+  }
+
+  if (!items || items.length === 0) {
+    return (
+      <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
+        {emptyText ?? 'Nessun elemento'}
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div
+        ref={trackRef}
+        style={{
+          display: 'flex', overflowX: 'auto',
+          scrollSnapType: 'x mandatory' as const,
+          WebkitOverflowScrolling: 'touch' as const,
+          gap: 10, paddingBottom: 4,
+          scrollbarWidth: 'none' as const,
+        }}
+        className="mastro-swipe-track"
+      >
+        {items.map((item, i) => (
+          <div
+            key={i}
+            style={{
+              flex: `0 0 calc(100% - 36px)`,
+              scrollSnapAlign: 'start' as const,
+            }}
+          >
+            {renderItem(item, i)}
+          </div>
+        ))}
+      </div>
+      {showDots && items.length > 1 && (
+        <div style={{
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          gap: 6, paddingTop: 10,
+        }}>
+          {items.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              aria-label={`Vai alla card ${i + 1}`}
+              style={{
+                width: i === activeIdx ? 18 : 6, height: 6,
+                borderRadius: i === activeIdx ? 3 : '50%',
+                background: i === activeIdx ? T.acc : '#CBD5E1',
+                border: 'none', padding: 0, cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            />
+          ))}
+          <span style={{
+            marginLeft: 8, fontSize: 10, color: T.muted, fontWeight: 600,
+            letterSpacing: 0.4, fontVariantNumeric: 'tabular-nums' as const,
+          }}>
+            {String(activeIdx + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// SwipeCard — wrapper standard per ogni item dentro SwipeTrack
+// background grigio chiaro, padding, posizione relative per chip
+// ============================================================
+export function SwipeCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      background: '#F8FAFC',
+      border: `1px solid ${T.graySoft}`,
+      borderRadius: 14,
+      padding: 14,
+      display: 'flex',
+      flexDirection: 'column' as const,
+      minHeight: 180,
+      position: 'relative' as const,
+      WebkitFontSmoothing: 'antialiased' as const,
+    }}>
+      {children}
+    </div>
   )
 }

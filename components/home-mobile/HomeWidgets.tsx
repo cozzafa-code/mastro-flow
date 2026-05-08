@@ -1,5 +1,5 @@
 // components/home-mobile/HomeWidgets.tsx
-// 10 widget operativi con navigazioni cablate.
+// 10 widget operativi con navigazioni cablate. v3 swipe + chip.
 
 'use client'
 
@@ -7,6 +7,7 @@ import React, { useState } from 'react'
 import {
   T, btnBaseStyle, numStyle, Card, CardHeader, Kpi, Importo,
   Pill, PillStatus, Avatar, BtnPrimary, BtnSecondary, BtnFull,
+  Chip, SwipeTrack, SwipeCard,
 } from './HomeUI'
 import {
   IconAlert, IconBell, IconTask, IconFolder, IconPin,
@@ -17,6 +18,66 @@ import type {
   Operatore, OperatoreFermo, OrdineProduzione, Problema, SoldiVeloce,
 } from '../../hooks/useHomeMobile'
 import { iniziali, caricoColor } from './homeUtils'
+
+// ───────── helpers di stile interni ─────────
+
+const titleStyle: React.CSSProperties = {
+  fontSize: 16, fontWeight: 600, color: T.text,
+  letterSpacing: '-0.2px', lineHeight: 1.3,
+  marginBottom: 6, paddingRight: 90,
+  WebkitFontSmoothing: 'antialiased',
+}
+
+const metaStyle: React.CSSProperties = {
+  fontSize: 12, color: T.muted, fontWeight: 400,
+  marginBottom: 10, lineHeight: 1.5,
+}
+
+const descStyle: React.CSSProperties = {
+  fontSize: 13, color: T.text, lineHeight: 1.55, fontWeight: 400,
+  background: '#FFF', border: `1px solid ${T.graySoft}`,
+  borderRadius: 8, padding: '11px 13px', margin: '8px 0',
+}
+
+const rowStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'flex-start', gap: 10,
+  fontSize: 12, color: T.muted, fontWeight: 400,
+  margin: '5px 0', lineHeight: 1.4,
+}
+
+const rowLabStyle: React.CSSProperties = {
+  fontSize: 9, fontWeight: 700, color: T.muted,
+  letterSpacing: 1, textTransform: 'uppercase' as const,
+  minWidth: 64, paddingTop: 1,
+}
+
+const rowValStyle: React.CSSProperties = {
+  flex: 1, minWidth: 0, color: T.text,
+}
+
+const actionsStyle: React.CSSProperties = {
+  display: 'flex', flexWrap: 'wrap' as const, alignItems: 'center', gap: 14,
+  marginTop: 'auto', paddingTop: 12,
+  borderTop: `1px solid ${T.graySoft}`,
+}
+
+const actStyle = (variant: 'primary' | 'muted' | 'alert' | 'warn' = 'primary'): React.CSSProperties => {
+  const color =
+    variant === 'muted' ? T.muted :
+    variant === 'alert' ? T.numRed :
+    variant === 'warn' ? T.numAmber : T.acc
+  return {
+    background: 'none', border: 'none', padding: 0,
+    fontSize: 12, fontWeight: variant === 'muted' ? 500 : 600,
+    color, cursor: 'pointer',
+    display: 'inline-flex' as const, alignItems: 'center', gap: 4,
+    fontFamily: 'inherit', letterSpacing: 0.2,
+  }
+}
+
+const arrowStyle: React.CSSProperties = {
+  fontSize: 14, lineHeight: 1, fontWeight: 700,
+}
 
 // ───────── 1. OGGI OPERATIVO ─────────
 
@@ -33,25 +94,27 @@ export function CardOggiOperativo({
         <Kpi value={task} label="task" />
         <Kpi value={problemi} label="problema" statusColor={problemi > 0 ? T.numRed : undefined} />
       </div>
-      {attivita.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {attivita.map(a => (
-            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ ...numStyle(13, T.text), minWidth: 44, fontWeight: 700 }}>{a.ora}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.titolo}</div>
-                <div style={{ fontSize: 11, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.indirizzo}</div>
-              </div>
-              <BtnPrimary label={a.azione_primaria} onClick={onVedi} />
-              <BtnSecondary label={a.azione_secondaria} onClick={onVedi} />
+      <SwipeTrack
+        items={attivita}
+        emptyText="Nessuna attivita pianificata oggi"
+        renderItem={(a: AttivitaOggi) => (
+          <SwipeCard>
+            <div style={{ position: 'absolute', top: 14, right: 14 }}>
+              <Chip text={`${a.ora} · oggi`} kind={a.azione_secondaria === 'COMPLETA' ? 'live' : 'neutral'} />
             </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
-          Nessuna attivita pianificata oggi
-        </div>
-      )}
+            <div style={titleStyle}>{a.titolo}</div>
+            <div style={metaStyle}>{a.indirizzo || '—'}</div>
+            <div style={actionsStyle}>
+              <button onClick={onVedi} style={actStyle('primary')}>
+                {a.azione_primaria === 'CHIAMA' ? 'Chiama' : 'Apri'} <span style={arrowStyle}>›</span>
+              </button>
+              <button onClick={onVedi} style={actStyle('muted')}>
+                {a.azione_secondaria === 'COMPLETA' ? 'Completa' : a.azione_secondaria === 'SPOSTA' ? 'Sposta' : 'Fatto'}
+              </button>
+            </div>
+          </SwipeCard>
+        )}
+      />
       <BtnFull label="VAI A TUTTE LE ATTIVITA" onClick={onVedi} />
     </Card>
   )
@@ -65,58 +128,76 @@ export function CardTeamLive({
   return (
     <Card>
       <CardHeader index={2} title="TEAM LIVE" link="vedi tutto" indexBg={T.acc} onLink={onApri} />
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         <Pill bg={T.tealSoft} fg={T.numTeal} dot={T.numTeal} text={`${attivi} attivi`} />
         {problemi > 0 && <Pill bg={T.redSoft} fg={T.numRed} dot={T.numRed} text={`${problemi} problema`} />}
       </div>
-      {operatori.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {operatori.map(o => <RigaOperatore key={o.id} o={o} onApri={onApri} />)}
-        </div>
-      ) : (
-        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
-          Nessun operatore attivo
-        </div>
-      )}
+      <SwipeTrack
+        items={operatori}
+        emptyText="Nessun operatore attivo"
+        renderItem={(o: Operatore) => <RigaOperatore o={o} onApri={onApri} />}
+      />
       <BtnFull label="APRI TEAM COMPLETO" onClick={onApri} />
     </Card>
   )
 }
 
 function RigaOperatore({ o, onApri }: { o: Operatore; onApri?: () => void }) {
-  const palette =
-    o.stato === 'attivo' ? { bg: '#F8FCFC', bdr: '#E6F0EC', tempoCol: T.numTeal, attCol: T.muted } :
-    o.stato === 'pausa' ? { bg: T.amberSoft, bdr: '#F4DDB8', tempoCol: T.numAmber, attCol: T.numAmber } :
-    o.stato === 'problema' ? { bg: T.redSoft, bdr: '#F5C8C8', tempoCol: T.numRed, attCol: T.numRed } :
-    { bg: T.blueSoft, bdr: '#C8DCEF', tempoCol: T.numBlue, attCol: T.numBlue }
+  const chipKind: 'live' | 'warn' | 'alert' | 'info' =
+    o.stato === 'pausa' ? 'warn' :
+    o.stato === 'problema' ? 'alert' :
+    o.stato === 'viaggio' ? 'info' : 'live'
 
-  const azione =
-    o.stato === 'pausa' ? { label: 'ASSEGNA', bg: T.acc, fg: '#FFF', bdr: 'none' } :
-    o.stato === 'problema' ? { label: 'RISOLVI', bg: T.numRed, fg: '#FFF', bdr: 'none' } :
-    o.stato === 'viaggio' ? { label: 'MAPPA', bg: '#FFF', fg: T.numBlue, bdr: `1px solid ${palette.bdr}` } :
-    null
+  const chipText =
+    o.stato === 'pausa' ? `Pausa · ${o.tempo}` :
+    o.stato === 'problema' ? `Problema · ${o.tempo}` :
+    o.stato === 'viaggio' ? `Viaggio · ${o.tempo}` :
+    `Live · ${o.tempo}`
+
+  const dotBg =
+    o.stato === 'pausa' ? '#F59E0B' :
+    o.stato === 'problema' ? '#EF4444' :
+    o.stato === 'viaggio' ? '#3B82F6' : '#10B981'
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8, borderRadius: 10, background: palette.bg, border: `1px solid ${palette.bdr}` }}>
-      <Avatar text={iniziali(o.nome)} bg={T.acc} size={36} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{o.nome}</div>
-        <div style={{ fontSize: 11, color: palette.attCol, fontWeight: 500 }}>
-          {o.stato === 'pausa' ? `Pausa da ${o.tempo}` :
-           o.stato === 'problema' ? `${o.attivita} - ${o.tempo}` :
-           o.stato === 'viaggio' ? `In viaggio - arrivo ${o.tempo}` :
-           o.attivita}
+    <SwipeCard>
+      <div style={{ position: 'absolute', top: 14, right: 14 }}>
+        <Chip text={chipText} kind={chipKind} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, paddingRight: 100 }}>
+        <div style={{ position: 'relative' }}>
+          <Avatar text={iniziali(o.nome)} bg={T.acc} size={42} />
+          <span style={{
+            position: 'absolute', bottom: -1, right: -2,
+            width: 11, height: 11, borderRadius: '50%',
+            background: dotBg, border: '2px solid #F8FAFC',
+          }}/>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: T.text, lineHeight: 1.2, letterSpacing: '-0.2px' }}>{o.nome}</div>
+          <div style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginTop: 2 }}>{o.attivita || 'Operatore'}</div>
         </div>
       </div>
-      {azione ? (
-        <button onClick={onApri} style={{ background: azione.bg, color: azione.fg, border: azione.bdr, borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>{azione.label}</button>
-      ) : (
-        <div onClick={onApri} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, cursor: 'pointer' }}>
-          <span style={{ ...numStyle(13, palette.tempoCol), fontWeight: 700 }}>{o.tempo}</span>
-          <span style={{ fontSize: 9, color: T.muted }}>tap › azioni</span>
+      <div style={rowStyle}>
+        <span style={rowLabStyle}>Tempo</span>
+        <div style={rowValStyle}>{o.tempo || '—'}</div>
+      </div>
+      {o.telefono && (
+        <div style={rowStyle}>
+          <span style={rowLabStyle}>Telefono</span>
+          <div style={rowValStyle}>{o.telefono}</div>
         </div>
       )}
-    </div>
+      <div style={actionsStyle}>
+        <button onClick={onApri} style={actStyle('primary')}>Apri scheda <span style={arrowStyle}>›</span></button>
+        {o.telefono && (
+          <button onClick={() => window.open('tel:' + o.telefono)} style={actStyle('muted')}>Chiama</button>
+        )}
+        {o.stato === 'pausa' && (
+          <button onClick={onApri} style={actStyle('warn')}>Sollecita</button>
+        )}
+      </div>
+    </SwipeCard>
   )
 }
 
@@ -128,30 +209,38 @@ export function CardCommesseCritiche({
   return (
     <Card>
       <CardHeader index={3} title="COMMESSE CRITICHE" link="vedi tutte" indexBg={T.numRed} onLink={() => onApri && onApri('')} />
-      {commesse.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {commesse.map(c => {
-            const palette =
-              c.livello === 'ritardo' ? { bg: T.redSoft, dot: T.numRed, label: T.numRed } :
-              c.livello === 'problema' ? { bg: T.amberSoft, dot: T.numAmber, label: T.numAmber } :
-              { bg: '#FEF9C3', dot: '#854F0B', label: '#854F0B' }
-            return (
-              <div key={c.id} style={{ background: palette.bg, borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: palette.dot, flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{c.titolo}</div>
-                  <div style={{ fontSize: 11, color: palette.label, fontWeight: 500 }}>{c.motivo}</div>
-                </div>
-                <BtnPrimary label={c.azione} onClick={() => onApri && onApri(c.id)} />
+      <SwipeTrack
+        items={commesse}
+        emptyText="Nessuna commessa critica"
+        renderItem={(c: CommessaCritica) => {
+          const kind: 'alert' | 'warn' = c.livello === 'ritardo' ? 'alert' : 'warn'
+          const azioneLabel =
+            c.azione === 'RISOLVI' ? 'Risolvi' :
+            c.azione === 'SBLOCCA' ? 'Sblocca' : 'Gestisci'
+          const azioneVar: 'alert' | 'warn' | 'primary' =
+            c.azione === 'RISOLVI' ? 'alert' :
+            c.azione === 'GESTISCI' ? 'warn' : 'primary'
+          return (
+            <SwipeCard>
+              <div style={{ position: 'absolute', top: 14, right: 14 }}>
+                <Chip text={c.motivo} kind={kind} />
               </div>
-            )
-          })}
-        </div>
-      ) : (
-        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
-          Nessuna commessa critica
-        </div>
-      )}
+              <div style={titleStyle}>{c.titolo}</div>
+              <div style={metaStyle}><b style={{ color: T.text, fontWeight: 600 }}>{c.cliente}</b></div>
+              <div style={rowStyle}>
+                <span style={rowLabStyle}>Stato</span>
+                <div style={rowValStyle}>{c.motivo}</div>
+              </div>
+              <div style={actionsStyle}>
+                <button onClick={() => onApri && onApri(c.id)} style={actStyle(azioneVar)}>
+                  {azioneLabel} <span style={arrowStyle}>›</span>
+                </button>
+                <button onClick={() => onApri && onApri(c.id)} style={actStyle('muted')}>Apri commessa</button>
+              </div>
+            </SwipeCard>
+          )
+        }}
+      />
     </Card>
   )
 }
@@ -164,26 +253,33 @@ export function CardProblemi({
   return (
     <Card>
       <CardHeader index={4} title="PROBLEMI" link="vedi tutti" indexBg={T.numRed} onLink={onApri} />
-      {problemi.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {problemi.map(p => (
-            <div key={p.id} style={{ background: T.redSoft, borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 24, height: 24, borderRadius: 6, background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <IconAlert color={T.numRed} size={14} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{p.titolo}</div>
-                <div style={{ fontSize: 11, color: T.muted }}>{p.contesto}</div>
-              </div>
-              <BtnPrimary label={p.azione} onClick={onApri} />
+      <SwipeTrack
+        items={problemi}
+        emptyText="Nessun problema aperto"
+        renderItem={(p: Problema) => (
+          <SwipeCard>
+            <div style={{ position: 'absolute', top: 14, right: 14 }}>
+              <Chip text="Aperto" kind="alert" />
             </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
-          Nessun problema aperto
-        </div>
-      )}
+            <div style={titleStyle}>{p.titolo}</div>
+            <div style={metaStyle}>
+              {p.contesto && <>Cliente <b style={{ color: T.text, fontWeight: 600 }}>{p.contesto}</b></>}
+            </div>
+            {p.contesto && (
+              <div style={rowStyle}>
+                <span style={rowLabStyle}>Contesto</span>
+                <div style={rowValStyle}>{p.contesto}</div>
+              </div>
+            )}
+            <div style={actionsStyle}>
+              <button onClick={onApri} style={actStyle('alert')}>
+                {p.azione === 'ASSEGNA' ? 'Assegna' : p.azione === 'APRI' ? 'Apri' : 'Risolvi'} <span style={arrowStyle}>›</span>
+              </button>
+              <button onClick={onApri} style={actStyle('muted')}>Vedi dettagli</button>
+            </div>
+          </SwipeCard>
+        )}
+      />
     </Card>
   )
 }
@@ -202,13 +298,27 @@ export function CardAgendaLive({
     <Card>
       <CardHeader index={5} title="AGENDA LIVE" link="vedi agenda" indexBg={T.acc} onLink={onApri} />
       <StripGiorni giorni={giorni} selezionato={selezionato} onSelect={setSelezionato} />
-      {eventiGiorno.length > 0 ? (
-        <ListaEventi eventi={eventiGiorno} onApri={onApri} />
-      ) : (
-        <div style={{ padding: '20px 8px', textAlign: 'center', color: T.muted, fontSize: 12 }}>
-          Nessun evento in questo giorno
-        </div>
-      )}
+      <SwipeTrack
+        items={eventiGiorno}
+        emptyText="Nessun evento in questo giorno"
+        renderItem={(e: EventoAgenda) => (
+          <SwipeCard>
+            <div style={{ position: 'absolute', top: 14, right: 14 }}>
+              <Chip text={e.ora} kind="neutral" />
+            </div>
+            <div style={titleStyle}>{e.titolo}</div>
+            <div style={metaStyle}>
+              {e.cliente && <b style={{ color: T.text, fontWeight: 600 }}>{e.cliente}</b>}
+              {e.cliente && e.indirizzo && ' · '}
+              {e.indirizzo}
+            </div>
+            <div style={actionsStyle}>
+              <button onClick={onApri} style={actStyle('primary')}>Vai <span style={arrowStyle}>›</span></button>
+              <button onClick={onApri} style={actStyle('muted')}>Sposta</button>
+            </div>
+          </SwipeCard>
+        )}
+      />
       <BtnFull label="VAI ALL AGENDA COMPLETA" onClick={onApri} />
     </Card>
   )
@@ -218,7 +328,7 @@ function StripGiorni({
   giorni, selezionato, onSelect,
 }: { giorni: GiornoAgenda[]; selezionato: string; onSelect: (d: string) => void }) {
   return (
-    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 12, scrollbarWidth: 'none' }}>
+    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 12, scrollbarWidth: 'none' as const }}>
       {giorni.map(g => {
         const sel = g.data === selezionato
         const evCol = g.count >= 4 ? T.numAmber : g.count > 0 ? T.numTeal : T.muted
@@ -231,7 +341,7 @@ function StripGiorni({
               background: sel ? T.acc : '#FFF',
               border: `1px solid ${sel ? T.acc : T.bdr}`,
               cursor: 'pointer',
-              boxShadow: sel ? '0 2px 8px rgba(15,118,110,0.25)' : 'none',
+              boxShadow: sel ? '0 2px 8px rgba(30,58,95,0.25)' : 'none',
               flexShrink: 0,
             }}
           >
@@ -243,34 +353,6 @@ function StripGiorni({
           </button>
         )
       })}
-    </div>
-  )
-}
-
-function ListaEventi({ eventi, onApri }: { eventi: EventoAgenda[]; onApri?: () => void }) {
-  return (
-    <div style={{ position: 'relative', paddingLeft: 20 }}>
-      <div style={{ position: 'absolute', left: 4, top: 8, bottom: 8, width: 2, background: T.bdr }} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {eventi.map(e => (
-          <div key={e.id} style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', left: -20, top: 4, width: 10, height: 10, borderRadius: '50%', background: T.acc, border: `2px solid ${T.bg}` }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ ...numStyle(13, T.text), fontWeight: 700, minWidth: 44 }}>{e.ora}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{e.titolo}</div>
-                <div style={{ fontSize: 11, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {e.cliente}{e.indirizzo ? ' · ' + e.indirizzo : ''}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <BtnPrimary label="VAI" small onClick={onApri} />
-                <BtnSecondary label="SPOSTA" small onClick={onApri} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
@@ -287,60 +369,54 @@ export function CardProduzione({
         <Kpi value={inCorso} label="in corso" statusColor={T.numTeal} icon="check" />
         <Kpi value={fermi} label="fermo" statusColor={fermi > 0 ? T.numRed : undefined} icon="clock" />
       </div>
-      {ordini.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {ordini.map(o => <RigaOrdine key={o.id} o={o} onApri={onApri} />)}
-        </div>
-      ) : (
-        <div style={{ padding: '14px 8px', fontSize: 12, color: T.muted, textAlign: 'center' }}>
-          Nessun ordine in produzione
-        </div>
-      )}
+      <SwipeTrack
+        items={ordini}
+        emptyText="Nessun ordine in produzione"
+        renderItem={(o: OrdineProduzione) => <RigaOrdine o={o} onApri={onApri} />}
+      />
       <BtnFull label="VAI ALLA PRODUZIONE" onClick={onApri} />
     </Card>
   )
 }
 
 function RigaOrdine({ o, onApri }: { o: OrdineProduzione; onApri?: () => void }) {
-  if (o.stato === 'FERMO') {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: T.redSoft, border: '1px solid #F5C8C8' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Ordine {o.codice}</div>
-          <div style={{ fontSize: 11, color: T.muted }}>{o.descrizione}</div>
-        </div>
-        <PillStatus text="FERMO" kind="danger" />
-        <button onClick={onApri} style={{ background: T.numRed, color: '#FFF', border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>SBLOCCA</button>
-      </div>
-    )
-  }
-  if (o.stato === 'IN_ATTESA') {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: T.amberSoft, border: '1px solid #F4DDB8' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Ordine {o.codice}</div>
-          <div style={{ fontSize: 11, color: T.muted }}>{o.descrizione}</div>
-        </div>
-        <PillStatus text="IN ATTESA" kind="warn" />
-        <button onClick={onApri} style={{ background: '#FFF', color: T.numAmber, border: '1px solid #F4DDB8', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>VERIFICA</button>
-      </div>
-    )
-  }
+  const chipKind: 'live' | 'warn' | 'alert' =
+    o.stato === 'FERMO' ? 'alert' :
+    o.stato === 'IN_ATTESA' ? 'warn' : 'live'
+  const chipText =
+    o.stato === 'FERMO' ? 'Fermo' :
+    o.stato === 'IN_ATTESA' ? 'In attesa' : 'In lavorazione'
+  const azioneVar: 'alert' | 'warn' | 'primary' =
+    o.stato === 'FERMO' ? 'alert' :
+    o.stato === 'IN_ATTESA' ? 'warn' : 'primary'
+  const azioneLabel =
+    o.stato === 'FERMO' ? 'Sblocca' :
+    o.stato === 'IN_ATTESA' ? 'Verifica' : 'Apri'
   const p = o.percentuale ?? 0
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: T.tealSoft, border: '1px solid #C5E5D9' }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Ordine {o.codice}</div>
-          <span style={{ ...numStyle(10, T.numTeal), fontWeight: 700 }}>{p}%</span>
-        </div>
-        <div style={{ fontSize: 11, color: T.muted, marginBottom: 4 }}>{o.descrizione}</div>
-        <div style={{ height: 3, background: '#C5E5D9', borderRadius: 2, overflow: 'hidden' }}>
-          <div style={{ width: `${p}%`, height: '100%', background: T.numTeal }} />
-        </div>
+    <SwipeCard>
+      <div style={{ position: 'absolute', top: 14, right: 14 }}>
+        <Chip text={chipText} kind={chipKind} />
       </div>
-      <button onClick={onApri} style={{ background: '#FFF', color: T.numTeal, border: '1px solid #C5E5D9', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 600, height: 30, cursor: 'pointer' }}>TRACCIA</button>
-    </div>
+      <div style={titleStyle}>Ordine {o.codice}</div>
+      <div style={metaStyle}>{o.descrizione}</div>
+      {o.stato === 'IN_LAVORAZIONE' && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ ...numStyle(11, T.numTeal), fontWeight: 700 }}>{p}%</span>
+            <div style={{ flex: 1, height: 3, background: T.graySoft, borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ width: `${p}%`, height: '100%', background: T.numTeal }} />
+            </div>
+          </div>
+        </>
+      )}
+      <div style={actionsStyle}>
+        <button onClick={onApri} style={actStyle(azioneVar)}>
+          {azioneLabel} <span style={arrowStyle}>›</span>
+        </button>
+        <button onClick={onApri} style={actStyle('muted')}>Dettagli</button>
+      </div>
+    </SwipeCard>
   )
 }
 
