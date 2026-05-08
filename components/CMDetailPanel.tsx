@@ -27,6 +27,7 @@ import TabFiscale from "./TabFiscale";
 import DisegnoTecnico from "./DisegnoTecnico";
 import Timeline from "./Timeline";
 import TimelineDrawer from "./TimelineDrawer";
+import StoricoPreventiviPanel from "./StoricoPreventiviPanel";
 // @cadDraw state added below
 
 // ═══ v58 · Cronologia app-nell-app ═══
@@ -478,6 +479,8 @@ export default function CMDetailPanel() {
     const [showNuovoRilievoModal, setShowNuovoRilievoModal] = useState(false);
     // [v51] Drawer Timeline sempre accessibile dal Centro Comando
     const [showTimelineDrawer, setShowTimelineDrawer] = useState(false);
+    // [v51] Storico preventivi (overlay con tutte le versioni)
+    const [showStoricoPreventivi, setShowStoricoPreventivi] = useState<{ commessaId: string; numero: number } | null>(null);
     const [nuovoRilievoComplesso, setNuovoRilievoComplesso] = useState(false);
     const [showAggiungiVanoModal, setShowAggiungiVanoModal] = useState(false);
     const [nvL1, setNvL1] = useState("");
@@ -1686,8 +1689,8 @@ export default function CMDetailPanel() {
                 marginTop: 0,
               }}>
                 {/* Header pannello */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 8 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 9, color: "#1E3A5F", fontWeight: 900, letterSpacing: 1.2 }}>{haFirmato29 ? "📋 GESTIONE CONFERMA D'ORDINE" : "📋 GESTIONE PREVENTIVI"}</div>
                     <div style={{ fontSize: 13, color: "#0D1F1F", fontWeight: 800, marginTop: 2 }}>
                       {haFirmato29
@@ -1695,11 +1698,39 @@ export default function CMDetailPanel() {
                         : <>{tuttiRilievi29.length} {tuttiRilievi29.length === 1 ? "versione" : "versioni"} · totale {fmtEur29(totale29)}</>}
                     </div>
                   </div>
+                  {/* [v51] Bottone STORICO - apre pannello versioni preventivo */}
+                  <button
+                    onClick={() => setShowStoricoPreventivi({ commessaId: c29.id, numero: c29.numeroPreventivo || 1 })}
+                    style={{
+                      background: "#fff",
+                      border: "1.5px solid #1E3A5F",
+                      color: "#1E3A5F",
+                      padding: "6px 11px",
+                      borderRadius: 8,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      letterSpacing: "0.5px",
+                      textTransform: "uppercase",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 8v4l3 3"/>
+                      <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    Storico
+                  </button>
                   <div style={{
                     background: badge29.bg, color: "#fff",
                     padding: "4px 10px", borderRadius: 50,
                     fontSize: 9, fontWeight: 900, letterSpacing: 0.6,
                     display: "flex", alignItems: "center", gap: 4,
+                    flexShrink: 0,
                   }}>
                     <span style={{ fontSize: 10 }}>{badge29.icon}</span>
                     {badge29.txt}
@@ -2422,6 +2453,39 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
         onWhatsApp={(tel, msg) => { if (tel) window.open(`https://wa.me/${tel.replace(/\D/g,'')}${msg ? `?text=${encodeURIComponent(msg)}` : ''}`); }}
         onEmail={(em, ogg) => { if (em) window.location.href = `mailto:${em}${ogg ? `?subject=${encodeURIComponent(ogg)}` : ''}`; }}
       />
+
+      {/* [v51] STORICO PREVENTIVI - overlay con versioni, diff, modifiche */}
+      {showStoricoPreventivi && selectedCM && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9700,
+          background: "rgba(15,27,45,0.4)",
+          backdropFilter: "blur(2px)",
+        }} onClick={() => setShowStoricoPreventivi(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            position: "absolute", top: 0, right: 0, bottom: 0,
+            width: "min(100%, 540px)",
+            background: "#F7F7F5",
+            boxShadow: "-20px 0 40px rgba(15,27,45,0.25)",
+            overflowY: "auto",
+            animation: "mastroSlideInRight 0.28s ease-out",
+          }}>
+            <StoricoPreventiviPanel
+              commessaId={showStoricoPreventivi.commessaId}
+              numero={showStoricoPreventivi.numero}
+              aziendaId={(selectedCM as any)?.azienda_id || (selectedCM as any)?.aziendaId || ""}
+              commessaCode={(selectedCM as any)?.code || ""}
+              clienteNome={`${(selectedCM as any)?.cliente || ""} ${(selectedCM as any)?.cognome || ""}`.trim()}
+              onClose={() => setShowStoricoPreventivi(null)}
+              onApriPdf={(pid, url) => { if (url) window.open(url, "_blank"); }}
+              onInviaLink={(pid) => { console.log("[storico] invia link", pid); }}
+              onApriEdit={(pid) => {
+                setShowStoricoPreventivi(null);
+                try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); }
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* v71 · MODAL NUOVO RILIEVO */}
       {showNuovoRilievoModal && (
