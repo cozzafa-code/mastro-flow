@@ -3060,6 +3060,2802 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               />
             )}
 
+          {/*  TAB CONDIZIONI (pagamento · consegna · garanzia)  */}
+          {prevTab === "condizioni" && (
+            <div style={{ padding: "0 12px 20px" }}>
+              {/* CARD PAGAMENTO */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(30,58,95,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(30,58,95,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.euro} s={14} c="#1E3A5F" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Modalit+ di pagamento</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
+                  {[
+                    { id: "30-70", l: "30% + 70%", d: "Acconto 30% · saldo a consegna" },
+                    { id: "50-50", l: "50% + 50%", d: "Acconto 50% · saldo a consegna" },
+                    { id: "30-40-30", l: "30+40+30", d: "Acconto · produzione · saldo" },
+                    { id: "unico", l: "Pagamento unico", d: "100% a consegna" },
+                  ].map(p => (
+                    <div key={p.id} onClick={() => updCM("condPagamento", p.id)} style={{
+                      padding: "10px 10px", borderRadius: 10, cursor: "pointer",
+                      background: c.condPagamento === p.id ? `${T.acc}15` : T.card,
+                      border: `1.5px solid ${c.condPagamento === p.id ? T.acc : T.bdr}`,
+                    }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: c.condPagamento === p.id ? T.acc : T.text }}>{p.l}</div>
+                      <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>{p.d}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 4 }}>METODO</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as any }}>
+                    {["Bonifico", "Assegno", "Contanti", "POS"].map(m => (
+                      <div key={m} onClick={() => updCM("metodoPag", m)} style={{
+                        padding: "7px 12px", borderRadius: 20, cursor: "pointer",
+                        background: c.metodoPag === m ? T.acc : T.card,
+                        border: `1.5px solid ${c.metodoPag === m ? T.acc : T.bdr}`,
+                        color: c.metodoPag === m ? "#fff" : T.text,
+                        fontSize: 11, fontWeight: 700,
+                      }}>{m}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD CONSEGNA */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(30,58,95,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(123,107,165,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.package} s={14} c="#7B6BA5" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Tempi di consegna</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                  {["30gg", "45gg", "60gg", "90gg"].map(t => (
+                    <div key={t} onClick={() => updCM("tempiConsegna", t)} style={{
+                      padding: "12px 4px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: c.tempiConsegna === t ? "#7B6BA5" : T.card,
+                      border: `1.5px solid ${c.tempiConsegna === t ? "#7B6BA5" : T.bdr}`,
+                      color: c.tempiConsegna === t ? "#fff" : T.text,
+                      fontSize: 13, fontWeight: 800,
+                    }}>{t}</div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CARD GARANZIA */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(30,58,95,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(16,185,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.shieldCheck} s={14} c="#10B981" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Garanzia</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                  {["2 anni", "5 anni", "10 anni", "15 anni"].map(g => (
+                    <div key={g} onClick={() => updCM("garanzia", g)} style={{
+                      padding: "12px 4px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: c.garanzia === g ? "#10B981" : T.card,
+                      border: `1.5px solid ${c.garanzia === g ? "#10B981" : T.bdr}`,
+                      color: c.garanzia === g ? "#fff" : T.text,
+                      fontSize: 12, fontWeight: 800,
+                    }}>{g}</div>
+                  ))}
+                </div>
+              </div>
+
+              {/* NOTE */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, boxShadow: "0 2px 10px rgba(30,58,95,0.06)" }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, letterSpacing: "0.5px", marginBottom: 6 }}>NOTE PREVENTIVO (visibili al cliente)</div>
+                <textarea value={c.notePreventivo || ""} onChange={e => updCM("notePreventivo", e.target.value)} placeholder="Es. Prezzo comprensivo di posa in opera standard. Lavori supplementari da concordare." style={{ width: "100%", minHeight: 80, padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 12, fontFamily: "inherit", resize: "vertical" as any, boxSizing: "border-box" as any }} />
+              </div>
+              <div style={{ marginTop: 24, padding: "16px 0", display: "flex", gap: 8 }}>
+                <button onClick={() => setPrevTab("fiscale")} style={{ padding: 18, borderRadius: 12, background: "#fff", color: "#6A8484", border: "1px solid #C8E4E4", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minWidth: 90 }}>
+                  Indietro
+                </button>
+                <button onClick={() => setPrevTab("riepilogo")} style={{ flex: 1, padding: 18, borderRadius: 12, background: "#1E3A5F", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(30,58,95,0.25)" }}>
+                  Prossimo: Vedi riepilogo
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/*  TAB RIEPILOGO  */}
+          {prevTab === "riepilogo" && (
+            <div style={{ padding: "0 12px 20px", background: "#EEF8F8", minHeight: "100%" }}>
+              <div style={{ background: "linear-gradient(135deg, #0D1F1F 0%, #143636 100%)", borderRadius: 14, padding: 18, marginBottom: 10, color: "#fff" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div><div style={{ fontSize: 10, color: "#ffffff60" }}>PREVENTIVO</div><div style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>€{pwFmt(pwTotale)}</div></div>
+                  {pwDetrObj && pwDetrObj.perc > 0 && (<div style={{ background: "#1E3A5F30", borderRadius: 8, padding: "6px 10px", textAlign: "right" as any, border: "1px solid #1E3A5F60" }}><div style={{ fontSize: 9, color: "#ffffffa0", fontWeight: 700 }}>{pwDetrObj.l}</div><div style={{ fontSize: 14, fontWeight: 900, color: "#7FE5E5" }}>−€{pwFmt(pwDetraibile)}</div></div>)}
+                </div>
+                <div style={{ fontSize: 10, color: "#ffffff60", marginTop: 6 }}>{c.code} · {c.cliente} · {pwVani.length} vani · {pwVani.reduce((s, v) => s + (v.pezzi || 1), 0)}pz</div>
+              </div>
+
+              <div style={{ fontSize: 11, fontWeight: 800, marginBottom: 6 }}>INFISSI</div>
+              {pwVani.map(v => {
+                const pv = calcolaVanoPrezzo(v, c) * (v.pezzi || 1);
+                const lv = v.misure?.lCentro || v.larghezza || v.l || 0;
+                const hv = v.misure?.hCentro || v.altezza || v.h || 0;
+                const ac = v.accessori || {};
+                return (
+                  <div key={v.id} style={{ padding: "8px 0", borderBottom: `1px solid ${T.bdr}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                      <span style={{ fontWeight: 700 }}>{v.nome || "Vano"}{v.parentId ? " <I d={ICO.refreshCw} />" : ""}</span>
+                      <span style={{ fontWeight: 800, color: T.acc }}>€{pwFmt(pv)}</span>
+                    </div>
+                    <div style={{ fontSize: 9, color: T.sub }}>{v.tipo} · {lv}{hv} · {v.pezzi || 1}pz · {v.colore || "B."} · {v.vetro || "Std"}{v.controtelaio && v.controtelaio !== "Nessuno" ? ` · CT: ${v.controtelaio}` : ""}{ac.tapparella?.attivo ? ` · Tapp. ${ac.tapparella.tipo || ""}` : ""}{ac.persiana?.attivo ? ` · Pers. ${ac.persiana.tipo || ""}` : ""}{ac.zanzariera?.attivo ? ` · Zanz. ${ac.zanzariera.tipo || ""}` : ""}{v.coprifilo ? ` · CF: ${v.coprifilo}` : ""}{v.soglia ? ` · Soglia: ${v.soglia}` : ""}</div>
+                  </div>
+                );
+              })}
+
+              {pwVociLibere.length > 0 && (<><div style={{ fontSize: 11, fontWeight: 800, marginTop: 12, marginBottom: 6 }}>LAVORI</div>
+                {pwVociLibere.map((vl, i) => (<div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${T.bdr}`, fontSize: 11 }}><span>{vl.desc} <span style={{ color: T.sub, fontSize: 9 }}>{vl.qta || 1}</span></span><span style={{ fontWeight: 700 }}>€{pwFmt((vl.importo || 0) * (vl.qta || 1))}</span></div>))}</>)}
+
+              <div style={{ background: T.card, borderRadius: 12, padding: 14, marginTop: 14, border: `1px solid ${T.bdr}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.sub }}>Subtotale</span><span>€{pwFmt(pwSubtot)}</span></div>
+                {pwSconto > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.grn }}>Sconto {pwSconto}%</span><span style={{ color: T.grn, fontWeight: 700 }}>-€{pwFmt(pwScontoVal)}</span></div>}
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.sub }}>Imponibile</span><span style={{ fontWeight: 700 }}>€{pwFmt(pwImponibile)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 6 }}><span style={{ color: T.sub }}>IVA {pwIvaDefault}%</span><span>€{pwFmt(pwIvaCalc)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", borderTop: `2px solid ${T.acc}`, paddingTop: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 900 }}>TOTALE</span>
+                  <span style={{ fontSize: 22, fontWeight: 900, color: T.acc }}>€{pwFmt(pwTotale)}</span>
+                </div>
+                {pwDetrObj && pwDetrObj.perc > 0 && (<>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "8px 10px", background: "#1E3A5F10", borderRadius: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#1E3A5F" }}><I d={ICO.building} /> {pwDetrObj.l}</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: "#1E3A5F" }}>-€{pwFmt(pwDetraibile)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700 }}>Costo effettivo</span>
+                    <span style={{ fontSize: 16, fontWeight: 900 }}>€{pwFmt(pwTotale - pwDetraibile)}</span>
+                  </div>
+                </>)}
+              </div>
+
+              {c.notePreventivo && (
+                <div style={{ marginTop: 12, padding: 12, background: T.bg, borderRadius: 10, fontSize: 10, color: T.sub, lineHeight: 1.8 }}>
+                  <div style={{ fontWeight: 700, color: T.text, marginBottom: 4 }}>NOTE</div>
+                  <div style={{ whiteSpace: "pre-wrap" as any }}>{c.notePreventivo}</div>
+                </div>
+              )}
+
+              {/* SCHEDE COMMERCIALI */}
+              <div style={{ marginTop: 14, background: T.card, borderRadius: 12, padding: 14, border: `1px solid ${T.bdr}` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#1E3A5F", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE COMMERCIALI</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div onClick={() => alert("Scheda tecnica in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Scheda tecnica</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Tutti i vani in 1 PDF</div>
+                  </div>
+                  <div onClick={() => alert("Simulazione fiscale in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Simulazione fiscale</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Risparmio detrazione</div>
+                  </div>
+                  <div onClick={() => alert("Tempi e garanzie in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Tempi e garanzie</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Consegna + posa + gar.</div>
+                  </div>
+                  <div onClick={() => alert("Condizioni in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Condizioni</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Pagamento e accordi</div>
+                  </div>
+                </div>
+              </div>
+              {/* SCHEDE TECNICHE */}
+              <div style={{ marginTop: 10, background: T.card, borderRadius: 12, padding: 14, border: `1px solid ${T.bdr}` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#1E3A5F", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE TECNICHE DETTAGLIATE</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div onClick={() => alert("Trasmittanze in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Trasmittanze</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Uw / Ug / Uf per vano</div>
+                  </div>
+                  <div onClick={() => alert("Profilo in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Profilo</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Sezioni e camere</div>
+                  </div>
+                  <div onClick={() => alert("Vetro in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Vetro</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Stratigrafia e gas</div>
+                  </div>
+                  <div onClick={() => alert("Disegni in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Disegni tecnici</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>CAD per ogni vano</div>
+                  </div>
+                  <div onClick={() => alert("Accessori in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Accessori</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Tapp./zanz./pers.</div>
+                  </div>
+                  <div onClick={() => alert("Certificazioni in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Certificazioni</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>CE acustico/termico</div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: 16, display: "flex", gap: 8, marginBottom: 8 }}>
+                <button disabled={!!pdfBusy} onClick={async () => {
+                  if (pdfBusy) return;
+                  setPdfBusy("pdf");
+                  try {
+                    await Promise.race([
+                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }),
+                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout (20s)")), 20000)),
+                    ]);
+                  } catch(err: any) {
+                    console.error("[PDF]", err);
+                    alert("Errore generazione PDF: " + (err?.message || err));
+                  } finally {
+                    setPdfBusy(null);
+                  }
+                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "pdf" ? "#1E3A5F18" : "#fff", color: "#1E3A5F", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "pdf" ? 0.5 : 1 }}>{pdfBusy === "pdf" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid #1E3A5F", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.fileText} /> PDF</>}</button>
+                <button disabled={!!pdfBusy} onClick={async () => {
+                  if (pdfBusy) return;
+                  setPdfBusy("anteprima");
+                  try {
+                    await Promise.race([
+                      generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }),
+                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout (20s)")), 20000)),
+                    ]);
+                  } catch(err: any) {
+                    console.error("[Anteprima]", err);
+                    alert("Errore Anteprima: " + (err?.message || err));
+                  } finally {
+                    setPdfBusy(null);
+                  }
+                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "anteprima" ? "#1E3A5F18" : T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "anteprima" ? 0.5 : 1 }}>{pdfBusy === "anteprima" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid " + T.sub, borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.eye} /> Anteprima</>}</button>
+              </div>
+              <button disabled={!!pdfBusy} onClick={async () => {
+                if (pdfBusy) return;
+                setPdfBusy("invia");
+                try {
+                  // ─── 1. CREA LINK PUBBLICO (retry 3x, 15s ciascuno) ───
+                  let linkPubblico = "";
+                  let linkError: any = null;
+                  // v17: snapshot arricchito con tutti i dettagli vani per pagina cliente intera
+                  const _vaniSrc = ((typeof getVaniAttivi === "function" ? getVaniAttivi(c) : (c.vani || [])) || []);
+                  const _imponibile = (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0;
+                  const _ivaPerc = Number(c.ivaPerc) || Number(aziendaInfo?.ivaDefault) || 10;
+                  const snapshot = {
+                    cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
+                    cliente_indirizzo: c.indirizzo || "",
+                    cliente_telefono: c.telefono || "",
+                    cliente_email: c.email || "",
+                    data_preventivo: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" }),
+                    totale: _imponibile,
+                    imponibile: _imponibile,
+                    iva_perc: _ivaPerc,
+                    iva: (_imponibile * _ivaPerc) / 100,
+                    totale_finale: _imponibile + (_imponibile * _ivaPerc) / 100,
+                    vani: _vaniSrc.map((v: any, i: number) => {
+                      const subtot = (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0;
+                      let righe: any[] = [];
+                      try {
+                        righe = (typeof buildVanoRighe === "function") ? buildVanoRighe(v) : [];
+                      } catch(e) { console.warn("[snapshot] buildVanoRighe fail vano", i, e); }
+                      return {
+                        nome: v.nome || v.tipo || "Vano " + (i+1),
+                        tipo: v.tipo,
+                        misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
+                        pezzi: Number(v.pezzi) || 1,
+                        prezzo: subtot,
+                        righe: righe.map(r => ({ label: r.label, valore: r.valore, gruppo: r.gruppo, importante: !!r.importante })),
+                      };
+                    }),
+                    azienda: {
+                      ragione: aziendaInfo?.ragione || aziendaInfo?.nome || "",
+                      indirizzo: aziendaInfo?.indirizzo || "",
+                      telefono: aziendaInfo?.telefono || "",
+                      email: aziendaInfo?.email || "",
+                      piva: aziendaInfo?.piva || aziendaInfo?.partitaIva || "",
+                      logo: aziendaInfo?.logo || "",
+                    },
+                  };
+
+                  for (let attempt = 1; attempt <= 3 && !linkPubblico; attempt++) {
+                    try {
+                      const ctrl = new AbortController();
+                      const t = setTimeout(() => ctrl.abort(), 15000);
+                      const r = await fetch("/api/preventivo-link", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: (await getAziendaIdDB()) || aziendaInfo?.id }),
+                        signal: ctrl.signal,
+                      });
+                      clearTimeout(t);
+                      if (r.ok) {
+                        const d = await r.json();
+                        linkPubblico = window.location.origin + d.url;
+                      } else {
+                        linkError = "HTTP " + r.status;
+                      }
+                    } catch(e: any) {
+                      linkError = e?.message || e;
+                      console.warn("[link attempt " + attempt + " fail]", e);
+                      if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+                    }
+                  }
+
+                  if (!linkPubblico) {
+                    alert("Errore creazione link cliente: " + linkError + "\n\nRiprova tra qualche secondo.");
+                    return;
+                  }
+
+                  // ─── 2. GENERA PDF COME BLOB (per share + fallback) ───
+                  let pdfBlob: Blob | null = null;
+                  let pdfFilename = "preventivo_" + (c.code || "X") + ".pdf";
+                  try {
+                    const result = await Promise.race([
+                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }, { returnBlob: true }),
+                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout PDF (25s)")), 25000)),
+                    ]);
+                    if (result && typeof result === "object" && "blob" in result) {
+                      pdfBlob = (result as any).blob;
+                      pdfFilename = (result as any).filename;
+                    }
+                  } catch(e: any) {
+                    console.error("[PDF fail]", e);
+                    // PDF fallito ma link OK - vado avanti col solo link
+                  }
+
+                  // ─── 3. MARCA COMMESSA COME PREVENTIVO INVIATO (memoria + DB) ───
+                  try {
+                    const nowIso = new Date().toISOString();
+                    const today = nowIso.split("T")[0];
+                    setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, preventivoInviatoAt: nowIso, dataPreventivoInvio: today, fase: "preventivo" } : cm));
+                    setSelectedCM((prev: any) => prev ? ({ ...prev, preventivoInviato: true, preventivoInviatoAt: nowIso, dataPreventivoInvio: today, fase: "preventivo" }) : prev);
+                    // Persisti in DB - non bloccante: se fallisce, lo stato locale comunque vale
+                    const totaleNum = (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0;
+                    markPreventivoInviato(c.id, totaleNum, "preventivo")
+                      .then(ok => { if (!ok) console.warn("[DB] markPreventivoInviato non riuscito"); })
+                      .catch(err => console.warn("[DB] markPreventivoInviato error:", err));
+                  } catch(e) { console.error("[setCantieri fail]", e); }
+
+                  // ─── 4. INVIO UNIFICATO ───
+                  // Costruisci messaggio testuale con link
+                  const clienteNome = (c.cliente || "Cliente").split(" ")[0]; // primo nome
+                  const messaggio = "Ciao " + clienteNome + ", ecco il preventivo " + (c.code || "") + ".\n\nClicca qui per vederlo, accettarlo o richiedere modifiche:\n" + linkPubblico + "\n\nGrazie,\n" + (aziendaInfo?.ragione || aziendaInfo?.nome || "");
+
+                  // ─── v16: WhatsApp link diretto (no piu' navigator.share) ───
+                  // Carico PDF su Supabase Storage per avere URL pubblico cliccabile
+                  let pdfPublicUrl: string | null = null;
+                  if (pdfBlob) {
+                    try {
+                      // Estraggo token dal linkPubblico (e' tipo /p/abc123)
+                      const tokenMatch = linkPubblico.match(/\/p\/([^/?#]+)/);
+                      const token = tokenMatch ? tokenMatch[1] : "preventivo";
+                      pdfPublicUrl = await Promise.race([
+                        uploadPreventivoPdf(pdfBlob, token, c.code || "preventivo"),
+                        new Promise<null>((res) => setTimeout(() => res(null), 12000)),
+                      ]);
+                      if (!pdfPublicUrl) console.warn("[v16] upload PDF fallito o timeout - mando solo link accetta");
+                    } catch(e) { console.warn("[v16] upload PDF crash:", e); }
+                  }
+
+                  // Costruisco messaggio WhatsApp con 1 o 2 link
+                  const ragione = aziendaInfo?.ragione || aziendaInfo?.nome || "";
+                  let msgWA = "Ciao " + clienteNome + ",\n\nEcco il preventivo " + (c.code || "") + ".";
+                  if (pdfPublicUrl) {
+                    msgWA += "\n\nPDF: " + pdfPublicUrl;
+                  }
+                  msgWA += "\n\nPer accettare o richiedere modifiche:\n" + linkPubblico;
+                  if (ragione) msgWA += "\n\nGrazie,\n" + ragione;
+
+                  // Apro WhatsApp con messaggio precompilato
+                  const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
+                  let waUrl = "";
+                  if (tel) {
+                    // Se ha telefono: wa.me/<numero> apre chat diretta
+                    const numero = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
+                    waUrl = "https://wa.me/" + numero + "?text=" + encodeURIComponent(msgWA);
+                  } else {
+                    // Senza telefono: api.whatsapp.com chiede al cliente di scegliere il contatto
+                    waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msgWA);
+                  }
+                  window.open(waUrl, "_blank");
+
+                  setCcDone && setCcDone("Preventivo inviato");
+                  setTimeout(() => { setCcDone && setCcDone(null); setPrevWorkspace && setPrevWorkspace(false); }, 2000);
+                } finally {
+                  setPdfBusy(null);
+                }
+              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: pdfBusy === "invia" ? "#0D1F1F" : "linear-gradient(135deg, #0D1F1F 0%, #1E3A5F 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(30,58,95,0.25)", opacity: pdfBusy && pdfBusy !== "invia" ? 0.5 : 1 }}>{pdfBusy === "invia" ? <><span style={{ display: "inline-block", width: 14, height: 14, border: "2.5px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 8, verticalAlign: "middle" }} /> Generazione PDF e link...</> : <><I d={ICO.upload} /> INVIA PREVENTIVO AL CLIENTE {"->"}</>}</button>
+              <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Invia PDF via WhatsApp. La firma verrà richiesta solo dopo la conferma del cliente.</div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
+                <span onClick={() => { updCM("preventivoInviato", true); setCcDone("✓ Completato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000); }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>✓ Segna completato</span>
+              </div>
+
+              {/*  FASCICOLO GEOMETRA  */}
+              <div style={{ marginTop: 16, borderTop: `1px solid ${T.bdr}`, paddingTop: 14 }}>
+                <button
+                  onClick={async () => {
+                    setShowFascicoloModal(true);
+                    setFascicoloStep("idle");
+                    setFascicoloLink(null);
+                    const storico = await getFascicoliCommessa(c.id);
+                    setFascicoliStorico(storico);
+                  }}
+                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1.5px solid #1E3A5F", background: "#fff", color: "#0D1F1F", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                >
+                  <span style={{ fontSize: 16 }}><I d={ICO.ruler} /></span> Documenti tecnici commessa
+                </button>
+                <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF tecnico Uw · Link cliente firma · Excel pratica ENEA</div>
+              </div>
+              {/* Avanti dopo invio · solo se non ancora confermato */}
+              {c.preventivoInviato && faseIndex(c.fase) < faseIndex("conferma") && (() => {
+                const accettato = rispostaCliente?.risposta === "accettato";
+                return (
+                  <div style={{ marginTop: 8 }}>
+                    {accettato && (
+                      <div style={{ background: "linear-gradient(135deg, #DDF5E6 0%, #C8EBD3 100%)", border: "1px solid #28A268", borderRadius: 12, padding: "10px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ fontSize: 22 }}>✓</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#0E5E33", letterSpacing: 0.3 }}>CLIENTE HA ACCETTATO</div>
+                          <div style={{ fontSize: 10, color: "#0E5E33", opacity: 0.85, marginTop: 1 }}>{rispostaCliente?.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT") : ""}{rispostaCliente?.risposta_ip ? " · IP " + rispostaCliente.risposta_ip : ""}</div>
+                        </div>
+                      </div>
+                    )}
+                    <button onClick={() => { setFaseTo(c.id, "conferma"); setPrevWorkspace(false); setCcDone(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: accettato ? "linear-gradient(135deg, #28A268 0%, #1F8050 100%)" : T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: accettato ? "0 4px 14px rgba(40,162,104,0.35)" : undefined, animation: accettato ? "mastropulse 1.6s infinite" : undefined }}><I d={ICO.edit} /> {accettato ? "→ CREA CONFERMA D’ORDINE" : "€+ AVANTI → Conferma ordine"}</button>
+                  </div>
+                );
+              })()}
+              {ccDone && <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#1E3A5F18", border: "1px solid #1E3A5F40", fontSize: 12, fontWeight: 700, color: "#1E3A5F", textAlign: "center" }}>{ccDone}</div>}
+            </div>
+          )}
+
+          {/*  TAB IMPORTA (da competitor / documento)  */}
+          {prevTab === "cad" && (
+            <div style={{ padding: 16 }}>
+              <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: 20, textAlign: "center" }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>✓+</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: T.text, marginBottom: 6 }}>Disegnatore tecnico</div>
+                <div style={{ fontSize: 12, color: T.sub, marginBottom: 16, lineHeight: 1.6 }}>
+                  Disegna profili, telai, forme libere direttamente sul tablet.<br/>
+                  Ogni linea diventa un profilo serramentistico con quote automatiche.
+                </div>
+                <button
+                  onClick={() => setShowCadDraw(true)}
+                  style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                  ✓+ Apri disegnatore
+                </button>
+                {c.cadData && (
+                  <div style={{ marginTop: 12, padding: "10px 14px", background: "#1E3A5F12", borderRadius: 10, border: "1px solid #1E3A5F30" }}>
+                    <div style={{ fontSize: 11, color: "#1E3A5F", fontWeight: 700 }}>
+                      ✓ {c.cadData.oggetti?.length || 0} elementi disegnati
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {prevTab === "importa" && (
+            <div style={{ padding: "0 12px 20px" }}>
+              <div style={{ padding: 16, background: `${T.blue}08`, borderRadius: 12, marginBottom: 12, border: `1px solid ${T.blue}20` }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.blue, marginBottom: 4 }}><I d={ICO.download} /> Importa preventivo competitor</div>
+                <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.6 }}>Scansiona o carica il preventivo di un competitor. MASTRO rilever+ automaticamente misure, colori, tipologie, coprifili e creer+ un preventivo da rivedere.</div>
+              </div>
+
+              {/* Upload options */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div style={{ flex: 1, padding: 20, background: T.card, borderRadius: 12, border: `2px dashed ${T.blue}40`, textAlign: "center", cursor: "pointer" }}>
+                  <div style={{ fontSize: 32, marginBottom: 6 }}><I d={ICO.camera} /></div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.blue }}>Scatta foto</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Inquadra il preventivo</div>
+                </div>
+                <div style={{ flex: 1, padding: 20, background: T.card, borderRadius: 12, border: `2px dashed ${T.acc}40`, textAlign: "center", cursor: "pointer" }}>
+                  <div style={{ fontSize: 32, marginBottom: 6 }}><I d={ICO.fileText} /></div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.acc }}>Carica file</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>PDF, Word, immagine</div>
+                </div>
+              </div>
+
+              {/* Esempio risultato AI */}
+              <div style={{ background: T.card, borderRadius: 12, padding: 14, border: `1px solid ${T.bdr}`, marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.purple, marginBottom: 8 }}><I d={ICO.cpu} /> Esempio: cosa rileva MASTRO</div>
+                <div style={{ fontSize: 10, color: T.sub, lineHeight: 1.8 }}>
+                  <div style={{ marginBottom: 6 }}>Dal documento competitor, MASTRO estrae:</div>
+                  {[
+                    { icon: "📐", t: "Misure", d: "Larghezza  altezza per ogni vano" },
+                    { icon: "🎵", t: "Colori", d: "Bianco, Antracite, Rovere, ecc." },
+                    { icon: "?", t: "Tipologie", d: "F2A, PF2A, Scorrevole, ecc." },
+                    { icon: "", t: "Controtelai", d: "Standard, Monoblocco" },
+                    { icon: "🏭", t: "Accessori", d: "Tapparelle, persiane, zanzariere" },
+                    { icon: "📦", t: "Complementi", d: "Coprifili, soglie, davanzali" },
+                    { icon: "€", t: "Prezzi competitor", d: "Per confronto (non importati)" },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+                      <span>{r.icon}</span>
+                      <span style={{ fontWeight: 700, color: T.text, width: 80 }}>{r.t}</span>
+                      <span style={{ color: T.sub }}>{r.d}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ padding: 12, background: `${T.grn}08`, borderRadius: 10, border: `1px solid ${T.grn}20`, fontSize: 11, color: T.grn, fontWeight: 600, textAlign: "center" }}>
+                <I d={ICO.sparkles} /> MASTRO crea il preventivo, tu rivedi solo sistema e prezzi
+              </div>
+            </div>
+          )}
+
+          </div>
+
+          {/* FAB · navigate sections · GRANDE con menu espandibile */}
+          {editingVanoId && prevTab === "preventivo" && (() => {
+            const secs = [
+              { id: "foto", ico: <I d={ICO.camera} />, label: "Foto" },
+              { id: "tipo", ico: <I d={ICO.fileText} />, label: "Tipo" },
+              { id: "misure", ico: <I d={ICO.ruler} />, label: "Misure" },
+              { id: "sistema", ico: <I d={ICO.building} />, label: "Sistema" },
+              { id: "ct", ico: <I d={ICO.square} />, label: "Controtelaio" },
+              { id: "acc", ico: <I d={ICO.home} />, label: "Accessori" },
+              { id: "prezzo", ico: <I d={ICO.euro} />, label: "Prezzo" },
+            ];
+            const fabOpen = fabSecOpen;
+            const setFabOpen = setFabSecOpen;
+            return (
+              <>
+                {/* Overlay quando aperto */}
+                {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 98, background: "rgba(0,0,0,0.15)" }} />}
+                <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+
+                <div style={{ position: "fixed", bottom: 84, right: 16, zIndex: 99, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                  {/* Menu espanso */}
+                  {fabOpen && secs.map((s, si) => (
+                    <div key={s.id} onClick={() => {
+                      document.getElementById(`pw-sec-${s.id}-${editingVanoId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      setFabOpen(false);
+                    }} style={{
+                      display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+                      animation: `fadeIn 0.15s ease ${si * 0.03}s both`,
+                    }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.65)", padding: "5px 10px", borderRadius: 8, backdropFilter: "blur(4px)" }}>{s.label}</span>
+                      <div style={{
+                        width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 20, background: T.card, border: `1.5px solid ${T.bdr}`, boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        cursor: "pointer",
+                      }}>{s.ico}</div>
+                    </div>
+                  ))}
+
+                  {/* FAB principale */}
+                  <div onClick={() => setFabOpen(!fabOpen)} style={{
+                    width: 56, height: 56, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", background: T.acc, boxShadow: "0 4px 20px rgba(208,128,8,0.35)",
+                    transition: "transform 0.2s", transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)",
+                  }}>
+                    <span style={{ fontSize: 26, color: "#fff", lineHeight: 1 }}>+</span>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+
+          {/* [v51] STORICO DRAWER dentro prevWorkspace branch */}
+          {showStoricoPreventivi && (
+            <div style={{
+              position: "fixed", inset: 0, zIndex: 9700,
+              background: "rgba(15,27,45,0.4)",
+              backdropFilter: "blur(2px)",
+            }} onClick={() => setShowStoricoPreventivi(null)}>
+              <div onClick={(e) => e.stopPropagation()} style={{
+                position: "absolute", top: 0, right: 0, bottom: 0,
+                width: "min(100%, 540px)",
+                background: "#F7F7F5",
+                boxShadow: "-20px 0 40px rgba(15,27,45,0.25)",
+                overflowY: "auto",
+                animation: "mastroSlideInRight 0.28s ease-out",
+              }}>
+                <StoricoPreventiviPanel
+                  commessaId={showStoricoPreventivi.commessaId}
+                  numero={showStoricoPreventivi.numero}
+                  aziendaId={(c as any)?.azienda_id || (c as any)?.aziendaId || ""}
+                  commessaCode={(c as any)?.code || ""}
+                  clienteNome={`${(c as any)?.cliente || ""} ${(c as any)?.cognome || ""}`.trim()}
+                  onClose={() => setShowStoricoPreventivi(null)}
+                  onApriPdf={(pid, url) => { if (url) window.open(url, "_blank"); }}
+                  onInviaLink={(pid) => { console.log("[storico] invia link", pid); }}
+                  onApriEdit={(pid) => { setShowStoricoPreventivi(null); }}
+                />
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    // Vani del rilievo corrente
+    const vaniList = r?.vani || [];
+    // Compatibilit+ wizard vecchio
+    const viste = []; // non più usato con nuova arch
+    const vaniM: number[] = [];
+    const vaniA = vaniList;
+    const tipoRil = r?.tipo || "rilievo";
+    const tipoColRil = tipoRil === "definitiva" ? T.grn : tipoRil === "modifica" ? T.orange : T.blue;
+    const tipoIcoRil = tipoRil === "definitiva" ? "checkCircle" : tipoRil === "modifica" ? "wrench" : "mapPin";
+    const tipoLblRil = tipoRil === "definitiva" ? "Misure Definitive" : tipoRil === "modifica" ? "Modifica" : "Rilievo Misure";
+
+    // Calcolo avanzamento misure
+    const vaniMisurati = vaniList.filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length >= 6);
+    const vaniBloccati = vaniList.filter(v => v.note?.startsWith("+ BLOCCATO"));
+    const vaniDaFare   = vaniList.filter(v => vaniMisurati.every(m => m.id !== v.id));
+    const progVani = vaniList.length > 0 ? Math.round(vaniMisurati.length / vaniList.length * 100) : 0;
+    const tutteMis = vaniMisurati.length === vaniList.length && vaniList.length > 0;
+
+    // == Wizard helpers (legacy) ==
+    function togV(id) { setNvVani(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]); }
+    function togB(id) {
+      setNvBlocchi(b => b[id]
+        ? (()=>{ const n = {...b}; delete n[id]; return n; })()
+        : { ...b, [id]: { motivo: "", note: "" } }
+      );
+    }
+    function sbF(id, f, v) { setNvBlocchi(b => ({ ...b, [id]: { ...b[id], [f]: v } })); }
+    function salvaVisita() {
+      const vaniBloccati = Object.entries(nvBlocchi).map(([id, b]) => ({
+        vanoId: parseInt(id), motivo: b.motivo || "Altro", note: b.note || ""
+      }));
+      const stato = nvTipo === "modifica" ? "modifica" :
+        nvVani.length === vaniA.length && vaniBloccati.length === 0 ? "completo" : "parziale";
+      const nuova = {
+        id: Date.now(), n: viste.length + 1,
+        data: nvData.data || new Date().toISOString().split("T")[0],
+        ora: nvData.ora || "", rilevatore: nvData.rilevatore || "",
+        tipo: nvTipo, motivoModifica: nvMotivoModifica,
+        stato, vaniMisurati: nvVani.map(Number), vaniBloccati, note: nvNote
+      };
+      setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, visite: [...(x.visite||[]), nuova] } : x));
+      setSelectedCM(prev => ({ ...prev, visite: [...(prev.visite||[]), nuova] }));
+      setNvView(false); setNvStep(1);
+      setNvData({ data: "", ora: "", rilevatore: "" });
+      setNvTipo("rilievo"); setNvMotivoModifica("");
+      setNvVani([]); setNvBlocchi({}); setNvNote("");
+    }
+
+    // == VISTA WIZARD ==
+    if (nvView) return (
+      <div style={{ paddingBottom: 80 }}>
+        {/* Header wizard */}
+        <div style={{ ...S.header }}>
+          <div onClick={() => { setNvView(false); setNvStep(1); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
+          <div style={{ flex: 1 }}>
+            <div style={S.headerTitle}>Nuova visita</div>
+            <div style={S.headerSub}>{c.code} · {c.cliente}</div>
+          </div>
+          <div style={{ fontSize: 11, color: T.sub }}>Step {nvStep}/5</div>
+        </div>
+        {/* Tab step */}
+        <div style={{ display: "flex", background: T.card, borderBottom: `1px solid ${T.bdr}` }}>
+          {["Tipo", "Dati", "Vani", "Blocchi", "Salva"].map((l, i) => (
+            <div key={i} onClick={() => i < nvStep && setNvStep(i+1)}
+              style={{ flex: 1, padding: "8px 4px", textAlign: "center", fontSize: 10, fontWeight: 600,
+                borderBottom: `2px solid ${nvStep===i+1 ? T.acc : "transparent"}`,
+                color: nvStep===i+1 ? T.acc : T.sub, cursor: i < nvStep ? "pointer" : "default" }}>
+              {l}
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: "16px" }}>
+          {/* STEP 1 · Tipo visita */}
+          {nvStep === 1 && <>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}><I d={ICO.tag} /> Tipo di visita</div>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 16 }}>Seleziona il tipo di sopralluogo</div>
+            {[
+              { k: "rilievo",    ico: <I d={ICO.ruler} />, label: "Rilievo misure",     desc: "Prima visita o misure di vani mancanti" },
+              { k: "definitiva", ico: "✓", label: "Misure definitive",  desc: "Conferma finale di tutte le misure" },
+              { k: "modifica",   ico: <I d={ICO.wrench} />, label: "Modifica cantiere",  desc: "Variazione, problema o sopralluogo post-vendita" },
+            ].map(t => (
+              <div key={t.k} onClick={() => setNvTipo(t.k)}
+                style={{ ...S.card, padding: "13px 14px", marginBottom: 10, cursor: "pointer",
+                  border: `1.5px solid ${nvTipo === t.k ? T.acc : T.bdr}`,
+                  background: nvTipo === t.k ? T.accLt : T.card,
+                  display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ fontSize: 24 }}>{t.ico}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: nvTipo === t.k ? T.acc : T.text }}>{t.label}</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{t.desc}</div>
+                </div>
+                <div style={{ width: 20, height: 20, borderRadius: "50%",
+                  border: `2px solid ${nvTipo === t.k ? T.acc : T.bdr}`,
+                  background: nvTipo === t.k ? T.acc : "transparent",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#fff", fontSize: 12 }}>{nvTipo === t.k ? "✓" : ""}</div>
+              </div>
+            ))}
+            {nvTipo === "modifica" && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, marginBottom: 5 }}>MOTIVO MODIFICA</div>
+                <input style={S.input} placeholder="Es: cliente ha cambiato idea su un vano, problema rilevato..." value={nvMotivoModifica} onChange={e => setNvMotivoModifica(e.target.value)} />
+              </div>
+            )}
+            <button onClick={() => setNvStep(2)} style={{ ...S.btn, marginTop: 12, width: "100%" }}>Avanti →</button>
+          </>}
+          {/* STEP 2 · Dati */}
+          {nvStep === 2 && <>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}><I d={ICO.clipboard} /> Dati della visita</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, marginBottom: 5 }}>DATA</div>
+                <input style={S.input} type="date" value={nvData.data} onChange={e => setNvData(d => ({...d, data: e.target.value}))} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, marginBottom: 5 }}>ORA</div>
+                <input style={S.input} type="time" value={nvData.ora} onChange={e => setNvData(d => ({...d, ora: e.target.value}))} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, marginBottom: 5 }}>RILEVATORE</div>
+                <input style={S.input} placeholder="Chi ha eseguito il rilievo..." value={nvData.rilevatore} onChange={e => setNvData(d => ({...d, rilevatore: e.target.value}))} />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+              <button onClick={() => setNvStep(1)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>← Indietro</button>
+              <button onClick={() => setNvStep(3)} style={{ ...S.btn, flex: 2 }}>Avanti →</button>
+            </div>
+          </>}
+          {/* STEP 2 · Vani misurati */}
+          {nvStep === 3 && <>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>✓ Vani misurati</div>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 14 }}>Seleziona i vani che hai misurato</div>
+            {vaniA.length === 0
+              ? <div style={{ textAlign: "center", padding: "20px", color: T.sub }}>Tutti gi+ misurati!</div>
+              : vaniA.map(v => (
+                <div key={v.id} onClick={() => togV(v.id)} style={{
+                  ...S.card, padding: "12px 14px", marginBottom: 8, cursor: "pointer",
+                  border: `1.5px solid ${nvVani.includes(v.id) ? T.grn : T.bdr}`,
+                  background: nvVani.includes(v.id) ? T.grnLt : T.card,
+                  display: "flex", alignItems: "center", justifyContent: "space-between"
+                }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{v.nome}</div>
+                    <div style={{ fontSize: 11, color: T.sub }}>~{v.mq}m²</div>
+                  </div>
+                  <div style={{ width: 24, height: 24, borderRadius: 6,
+                    border: `2px solid ${nvVani.includes(v.id) ? T.grn : T.bdr}`,
+                    background: nvVani.includes(v.id) ? T.grn : "transparent",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#fff", fontSize: 14 }}>
+                    {nvVani.includes(v.id) ? "✓" : ""}
+                  </div>
+                </div>
+              ))
+            }
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setNvStep(2)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>← Indietro</button>
+              <button onClick={() => setNvStep(4)} style={{ ...S.btn, flex: 2 }}>Avanti →</button>
+            </div>
+          </>}
+          {/* STEP 4 · Vani bloccati */}
+          {nvStep === 4 && <>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}><I d={ICO.alertTriangle} /> Vani non misurati</div>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 14 }}>Indica il motivo per ogni vano saltato</div>
+            {vaniA.filter(v => !nvVani.includes(v.id)).map(v => {
+              const hB = !!nvBlocchi[v.id];
+              return (
+                <div key={v.id} style={{ ...S.card, marginBottom: 10, overflow: "hidden", border: `1.5px solid ${hB ? T.red : T.bdr}` }}>
+                  <div onClick={() => togB(v.id)} style={{ padding: "11px 14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", background: hB ? T.redLt : T.card }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{v.nome}</div>
+                      <div style={{ fontSize: 11, color: T.sub }}>{hB ? "Indica motivo" : "Tocca per segnare bloccato"}</div>
+                    </div>
+                    <div style={{ width: 24, height: 24, borderRadius: 6, border: `2px solid ${hB ? T.red : T.bdr}`, background: hB ? T.red : "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14 }}>
+                      {hB ? "✓" : ""}
+                    </div>
+                  </div>
+                  {hB && (
+                    <div style={{ padding: "0 14px 12px", background: T.redLt }}>
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8, paddingTop: 8 }}>
+                        {MOTIVI_BLOCCO.map(m => (
+                          <div key={m} onClick={() => sbF(v.id, "motivo", m)} style={{
+                            padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600, cursor: "pointer",
+                            background: nvBlocchi[v.id]?.motivo === m ? T.red : T.card,
+                            border: `1.5px solid ${nvBlocchi[v.id]?.motivo === m ? T.red : T.bdr}`,
+                            color: nvBlocchi[v.id]?.motivo === m ? "#fff" : T.sub
+                          }}>{m}</div>
+                        ))}
+                      </div>
+                      <input style={S.input} placeholder="Note aggiuntive..." value={nvBlocchi[v.id]?.note || ""} onChange={e => sbF(v.id, "note", e.target.value)} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, marginBottom: 5 }}>NOTE GENERALI</div>
+              <textarea style={{ ...S.input, minHeight: 70, resize: "vertical" }} placeholder="Osservazioni sull'intera visita..." value={nvNote} onChange={e => setNvNote(e.target.value)} />
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button onClick={() => setNvStep(3)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>← Indietro</button>
+              <button onClick={() => setNvStep(5)} style={{ ...S.btn, flex: 2 }}>Avanti →</button>
+            </div>
+          </>}
+          {/* STEP 5 · Riepilogo */}
+          {nvStep === 5 && <>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}><I d={ICO.clipboard} /> Riepilogo</div>
+            <div style={{ ...S.card, padding: "12px 14px", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: T.sub }}><I d={ICO.calendar} /> {nvData.data ? new Date(nvData.data + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }) : "·"} · <I d={ICO.clock} /> {nvData.ora || "--:--"}</div>
+              <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}><I d={ICO.user} /> {nvData.rilevatore || "Non specificato"}</div>
+            </div>
+            {nvVani.length > 0 && (
+              <div style={{ ...S.card, padding: "12px 14px", marginBottom: 10, border: `1px solid ${T.grn}40` }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.grn, marginBottom: 7 }}>✓ Misurati</div>
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                  {nvVani.map(id => { const v = vaniA.find(x => x.id === id); return <span key={id} style={S.badge(T.grnLt, T.grn)}>{v?.nome}</span>; })}
+                </div>
+              </div>
+            )}
+            {Object.keys(nvBlocchi).length > 0 && (
+              <div style={{ ...S.card, padding: "12px 14px", marginBottom: 10, border: `1px solid ${T.red}40` }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.red, marginBottom: 7 }}><I d={ICO.alertTriangle} /> Bloccati</div>
+                {Object.entries(nvBlocchi).map(([id, b]) => {
+                  const v = vaniA.find(x => x.id === parseInt(id));
+                  return <div key={id} style={{ fontSize: 11, marginBottom: 4 }}><strong>{v?.nome}</strong>: {b.motivo || "·"}{b.note && ` · ${b.note}`}</div>;
+                })}
+              </div>
+            )}
+            {nvNote && <div style={{ ...S.card, padding: "12px 14px", marginBottom: 10, fontStyle: "italic", fontSize: 11, color: T.sub }}>"{nvNote}"</div>}
+            <div style={{ ...S.card, padding: "10px 14px", marginBottom: 10, background: T.accLt, border: `1px solid ${T.acc}30` }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>Tipo visita</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.acc }}>
+                {nvTipo === "rilievo" ? "📐 Rilievo misure" : nvTipo === "definitiva" ? "✓ Misure definitive" : "🔧 Modifica cantiere"}
+              </div>
+              {nvTipo === "modifica" && nvMotivoModifica && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{nvMotivoModifica}</div>}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setNvStep(4)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>← Modifica</button>
+              <button onClick={salvaVisita} style={{ ...S.btn, flex: 2, background: T.grn }}>✓ Salva visita</button>
+            </div>
+          </>}
+        </div>
+      </div>
+    );
+
+    // == VISTA RILIEVO CON VANI ==
+    return (
+      <div style={{ paddingBottom: 80 }}>
+        {/* HERO_TEAL_CM2_V2 - hero fliwoX + ripristino tutti gli elementi */}
+        <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2" }}>
+          <div style={{
+            background: "linear-gradient(145deg, #5FD0D0 0%, #1E3A5F 50%, #0F1B2D 100%)",
+            borderRadius: 22, padding: "34px 22px 70px",
+            position: "relative", overflow: "hidden",
+            boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
+            marginBottom: 10,
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -30, width: 130, height: 130, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius: "22px 22px 0 0", pointerEvents: "none" }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 2 }}>
+              <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); setSelectedCM(null); }} style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.25)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", flexShrink: 0,
+                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: "1px", textTransform: "uppercase" }}>{c.code}{r ? ` · ${tipoLblRil} R${r?.n}` : ""}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.4px", marginTop: 1, textShadow: "0 2px 4px rgba(0,0,0,0.2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {c.cliente} {c.cognome || ""}
+                </div>
+                {c.indirizzo && (
+                  <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.85)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {c.indirizzo}
+                  </div>
+                )}
+              </div>
+              {vaniList.length > 0 && (
+                <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", lineHeight: 1, textShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>{progVani}%</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.8)", fontWeight: 600, marginTop: 2 }}>{vaniMisurati.length}/{vaniList.length} vani</div>
+                </div>
+              )}
+              {/* [v51] BOTTONE STORIA - sempre accessibile in qualunque fase */}
+              <button
+                onClick={() => setShowTimelineDrawer(true)}
+                aria-label="Apri storia commessa"
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: "rgba(255,255,255,0.18)",
+                  border: "1px solid rgba(255,255,255,0.28)",
+                  color: "#fff",
+                  padding: "7px 10px",
+                  borderRadius: 10,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.4px",
+                  textTransform: "uppercase" as const,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  fontFamily: "inherit",
+                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Storia
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Contact actions - hide when selectedRilievo active (v67) */}
+        {!selectedRilievo && (
+        <div style={{ display: "flex", gap: 8, padding: "12px 16px" }}>
+          {[
+            { ico: ICO.phone, label: "Chiama",   col: T.grn,  act: () => window.location.href=`tel:${c.telefono || ""}` },
+            { ico: ICO.map,   label: "Naviga",   col: T.blue, act: () => window.open(`https://maps.google.com/?q=${encodeURIComponent(c.indirizzo || "")}`) },
+            { ico: ICO.send,  label: "WhatsApp", col: "#25d366", act: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Commessa ${c.code} - ${c.cliente}`)}`) },
+          ].map((a, i) => (
+            <div key={i} onClick={a.act} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "10px 0", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, cursor: "pointer" }}>
+              <Ico d={a.ico} s={18} c={a.col} />
+              <span style={{ fontSize: 10, fontWeight: 600, color: T.sub }}>{a.label}</span>
+            </div>
+          ))}
+        </div>
+        )}
+
+        {/* Banner rilievo info - modifica riparazione */}
+        {r?.motivoModifica && (
+          <div style={{ margin: "4px 12px 8px", padding: "8px 12px", background: T.orangeLt, borderRadius: 10, border: `1px solid ${T.orange}30`, fontSize: 12, color: T.orange, fontWeight: 600 }}>
+            <I d={ICO.wrench} /> <strong>Modifica:</strong> {r.motivoModifica}
+          </div>
+        )}
+
+        {/* Barra progresso vani */}
+        {vaniList.length > 0 && (
+          <div style={{ padding: "0 12px 8px" }}>
+            <div style={{ height: 5, background: T.bdr, borderRadius: 3, overflow: "hidden", marginBottom: 4 }}>
+              <div style={{ height: "100%", width: `${progVani}%`, background: progVani === 100 ? T.grn : tipoColRil, borderRadius: 3, transition: "width 0.3s" }} />
+            </div>
+            {vaniDaFare.filter(v => !v.note?.startsWith("+")).length > 0 && <div style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>Mancano misure: {vaniDaFare.filter(v => !v.note?.startsWith("+")).map(v => v.nome).join(", ")}</div>}
+            {tutteMis && <div style={{ fontSize: 11, color: T.grn, fontWeight: 700 }}>✓ Tutte le misure raccolte</div>}
+          </div>
+        )}
+
+        {/* Info badges: riparazione / nuova / sistema / salita / mezzo / piano / foro / telefono */}
+        <div style={{ padding: "0 12px 8px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.wrench} /> Riparazione</span>}
+          {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
+          {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
+          {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>{c.mezzoSalita}</span>}
+          {c.pianoEdificio && <span style={S.badge(T.blueLt, T.blue)}>Piano: {c.pianoEdificio}</span>}
+          {c.foroScale && <span style={S.badge(T.redLt, T.red)}>Foro: {c.foroScale}</span>}
+        </div>
+
+        {/* Note commessa */}
+        {c.note && (
+          <div style={{ padding: "0 12px", marginBottom: 6 }}>
+            <div style={{ padding: "8px 12px", borderRadius: 10, background: T.card, border: `1px solid ${T.bdr}`, fontSize: 12, color: T.sub, lineHeight: 1.4 }}>
+              <I d={ICO.fileText} /> {c.note}
+            </div>
+          </div>
+        )}
+
+        {/* Banner rilievo info */}
+        {r?.motivoModifica && (
+          <div style={{ margin: "4px 16px 0", padding: "8px 12px", background: T.orangeLt, borderRadius: 8, border: `1px solid ${T.orange}30`, fontSize: 12, color: T.orange }}>
+            <I d={ICO.wrench} /> <strong>Modifica:</strong> {r.motivoModifica}
+          </div>
+        )}
+
+        {/* Barra progresso vani */}
+        {vaniList.length > 0 && (
+          <div style={{ padding: "8px 16px" }}>
+            <div style={{ height: 5, background: T.bdr, borderRadius: 3, overflow: "hidden", marginBottom: 4 }}>
+              <div style={{ height: "100%", width: `${progVani}%`, background: progVani === 100 ? T.grn : tipoColRil, borderRadius: 3 }} />
+            </div>
+            {vaniDaFare.filter(v => !v.note?.startsWith("+")).length > 0 && <div style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>Mancano misure: {vaniDaFare.filter(v => !v.note?.startsWith("+")).map(v => v.nome).join(", ")}</div>}
+            {tutteMis && <div style={{ fontSize: 11, color: T.grn, fontWeight: 600 }}>✓ Tutte le misure raccolte</div>}
+          </div>
+        )}
+
+        {c.note && <div style={{ padding: "0 16px", marginBottom: 6 }}><div style={{ padding: "8px 12px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, fontSize: 12, color: T.sub, lineHeight: 1.4 }}><I d={ICO.fileText} /> {c.note}</div></div>}
+
+        {/* Stato lavoro inline · replaces old phase panels */}
+        {(() => {
+          const vaniCC = getVaniAttivi(c);
+          const rilieviCC = c.rilievi || [];
+          const vaniConPrezzoCC = vaniCC.filter(v => calcolaVanoPrezzo(v, c) > 0);
+          const totVaniCC = vaniCC.reduce((s, v) => s + calcolaVanoPrezzo(v, c), 0);
+          const totVociCC = (c.vociLibere || []).reduce((s, vl) => s + ((vl.importo || 0) * (vl.qta || 1)), 0);
+          const totPrevCC = totVaniCC + totVociCC;
+          const ivaPercCC = c.ivaPerc || 10;
+          const totIvaCC = totPrevCC * (1 + ivaPercCC / 100);
+          const hasFirmaCC = !!c.firmaCliente;
+          const fattCC = fattureDB.filter(f => f.cmId === c.id);
+          const hasFattCC = fattCC.some(f => f.tipo === "acconto" || f.tipo === "unica");
+          const ordCC = ordiniFornDB.filter(o => o.cmId === c.id);
+          const hasOrdCC = ordCC.length > 0;
+          const ordConfCC = ordCC.some(o => o.conferma?.ricevuta);
+          const confFirmCC = ordCC.some(o => o.conferma?.firmata);
+          const montCC = montaggiDB.filter(m => m.cmId === c.id);
+          const hasMontCC = montCC.length > 0;
+          const hasSaldoCC = fattCC.some(f => f.tipo === "saldo");
+          const saldoPagCC = fattCC.find(f => f.tipo === "saldo")?.pagata;
+          const unicaPagCC = fattCC.find(f => f.tipo === "unica")?.pagata;
+          const incassatoCC = fattCC.filter(f => f.pagata).reduce((s, f) => s + (f.importo || 0), 0);
+          const tuttoCC = (hasSaldoCC && saldoPagCC) || (fattCC.some(f => f.tipo === "unica") && unicaPagCC) || (c.fase === "chiusura" && incassatoCC >= totIvaCC) || (incassatoCC >= totIvaCC && fattCC.length > 0 && fattCC.every(f => f.pagata));
+          const fmtCC = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00";
+
+          const skipped = (id) => (c.skipLog || []).some(s => s.fase === id);
+          const stepsCC = [
+            { id: "sopralluogo", icon: "mapPin", l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
+            { id: "preventivo",  icon: "fileText", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
+            { id: "conferma",    icon: "edit",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
+            { id: "ordini",      icon: "package", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
+            { id: "produzione",  icon: "building", l: "Produzione", done: confFirmCC || skipped("produzione"),             skipped: skipped("produzione"),  desc: "Attesa materiali e lavorazione" },
+            { id: "posa",        icon: "wrench", l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
+            { id: "collaudo",    icon: "checkCircle", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
+            { id: "chiusura",    icon: "tag", l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
+          ];
+          const doneCC = stepsCC.filter(s => s.done).length;
+          const curIdxCC = stepsCC.findIndex(s => !s.done);
+          const curCC = curIdxCC >= 0 ? stepsCC[curIdxCC] : null;
+          const progCC = Math.round((doneCC / stepsCC.length) * 100);
+
+          return (
+            <div style={{ margin: "14px 16px 8px", padding: "18px 16px", background: "#fff", borderRadius: 16, border: "1px solid #E4F2F2", boxShadow: "0 2px 8px rgba(30,58,95,0.08)" }}>
+              {/* Stato lavoro header - hide when selectedRilievo (v67) */}
+              {!selectedRilievo && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(30,58,95,0.3)" }}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <span style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", letterSpacing: "-0.3px" }}>Stato lavoro</span>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#0F1B2D", background: "#fff", padding: "4px 11px", borderRadius: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.12)" }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
+              </div>
+              )}
+              {/* Progress dots con label - hide when selectedRilievo (v67) */}
+              {!selectedRilievo && (
+              <div style={{ display: "flex", gap: 0, marginBottom: 14, marginTop: 4, justifyContent: "space-between", alignItems: "flex-start", padding: 0, width: "100%" }}>
+                {stepsCC.map((s, i) => (
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 0, flex: "1 1 0", minWidth: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                        background: s.skipped ? "#ff9500" : s.done ? "#1E3A5F" : i === curIdxCC ? T.acc : "#F0EDE5",
+                        color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
+                        boxShadow: i === curIdxCC ? "0 2px 8px rgba(30,58,95,0.35)" : "none",
+                        border: i === curIdxCC ? "2px solid #fff" : s.done ? "2px solid #1E3A5F" : "2px solid transparent",
+                      }}>{s.skipped ? <I d={ICO.check} s={14} c="#fff" /> : s.done ? <I d={ICO.check} s={14} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={14} c={i === curIdxCC ? "#fff" : T.sub} />}</div>
+                      <div style={{ fontSize: 9, color: i === curIdxCC ? "#0D1F1F" : s.done ? "#0F6E56" : T.sub, fontWeight: i === curIdxCC ? 800 : 600, whiteSpace: "nowrap", maxWidth: 42, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center", marginTop: 4 }}>{s.l}</div>
+                    </div>
+                    {i < stepsCC.length - 1 && <div style={{ flex: 1, minWidth: 4, height: 2, background: s.done ? "#1E3A5F" : T.bdr, borderRadius: 2, marginBottom: 18, marginTop: 0 }} />}
+                  </div>
+                ))}
+              </div>
+              )}
+              {/* Mini-card Rilievo collassata — visibile quando fase > sopralluogo */}
+              {curIdxCC > 0 && rilieviCC.length > 0 && (
+                <div onClick={() => { setPrevWorkspace(true); setPrevTab("sopralluogo"); }} style={{
+                  background: "#fff", borderRadius: 14, border: "1px solid " + T.bdr,
+                  padding: "12px 14px", marginBottom: 10, cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 12,
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "#1E3A5F15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <I d={ICO.mapPin} s={14} c="#1E3A5F" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Rilievo</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "#1E3A5F", color: "#fff" }}>✓ FATTO</span>
+                    </div>
+                    <div style={{ fontSize: 10, color: T.sub }}>{rilieviCC.length} rilievi · {vaniCC.length} vani · tap per consultare</div>
+                  </div>
+                  <I d={ICO.chevronRight} s={14} c={T.sub} />
+                </div>
+              )}
+
+              {/* Current action - hide when selectedRilievo (v67) */}
+              {!selectedRilievo && curCC && (
+                <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: "14px 16px", boxShadow: "0 2px 12px rgba(30,58,95,0.08)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(30,58,95,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <IcoKey name={curCC.icon} s={16} c="#1E3A5F" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: "#0D1F1F" }}>{curCC.l}</span>
+                        <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: "#1E3A5F", color: "#fff", letterSpacing: "0.04em" }}>DA FARE</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{curCC.desc}</div>
+                    </div>
+                    {hasFattCC && (
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: tuttoCC ? "#1E3A5F20" : "#D0800820", color: tuttoCC ? "#1E3A5F" : "#D08008" }}>
+                        {tuttoCC ? "✓ Pagata" : <I d={ICO.fileText} />}
+                      </span>
+                    )}
+                  </div>
+                  {/* Success flash */}
+                  {ccDone && <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#1E3A5F18", border: "1px solid #1E3A5F40", fontSize: 12, fontWeight: 700, color: "#1E3A5F", textAlign: "center" }}>{ccDone}</div>}
+
+                  {/* Skipped steps log */}
+                  <PassaggiSaltati
+                    skipLog={c.skipLog || []}
+                    steps={stepsCC}
+                    onRiprendi={(si, faseId) => {
+                      setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, skipLog: (cm.skipLog || []).filter((_, i) => i !== si), fase: faseId } : cm));
+                      setSelectedCM((prev: any) => ({ ...prev, skipLog: (prev.skipLog || []).filter((_: any, i: number) => i !== si), fase: faseId }));
+                      setCcDone("Riaperto"); setTimeout(() => setCcDone(null), 2500);
+                    }}
+                  />
+
+                  {/*  SOPRALLUOGO · Lista rilievi + Crea nuovo  */}
+                  {curCC.id === "sopralluogo" && (
+                    <div>
+                      {/* Lista rilievi esistenti */}
+                      {rilieviCC.length > 0 && (
+                        <div style={{ marginBottom: 10 }}>
+                          {rilieviCC.map((ril, ri) => {
+                            const vaniDelRil = (ril.vani || []).length;
+                            const tipoR = ril.tipo || "provvisorio";
+                            const tipoMap: any = {
+                              provvisorio: { l: "Provvisorio", c: "#412402", bg: "#FAC775" },
+                              verificato:  { l: "Verificato",  c: "#0A2842", bg: "#9FC6F0" },
+                              definitivo:  { l: "Definitivo",  c: "#0F1B2D", bg: "#A5DCC6" },
+                              da_rivedere: { l: "Da rivedere", c: "#4B1515", bg: "#F7B5B5" },
+                              indicativa:  { l: "Provvisorio", c: "#412402", bg: "#FAC775" },
+                              personalizzato: { l: "Personalizzato", c: "#26215C", bg: "#B5B0E8" },
+                            };
+                            const tt = tipoMap[tipoR] || tipoMap.provvisorio;
+                            return (
+                              <React.Fragment key={ril.id}>
+                              <div onClick={(e) => {
+                                e.stopPropagation();
+                                console.log("[CLICK RILIEVO]", ril.id, "vani:", (ril.vani||[]).length);
+                                setSelectedRilievo(ril);
+                                setCmSubTab("sopralluoghi");
+                                // Scroll alla sezione vani dopo render
+                                setTimeout(() => {
+                                  const el = document.getElementById("cm-tab-vani") || document.querySelector('[data-tab="sopralluoghi"]');
+                                  if (el) (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+                                  else window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+                                }, 150);
+                              }} style={{
+                                background: tt.bg, border: "none", borderRadius: 12,
+                                padding: "12px 14px", marginBottom: 8, cursor: "pointer", boxShadow: `0 2px 8px ${tt.c}20`,
+                                display: "flex", alignItems: "center", gap: 10,
+                              }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.28)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12l4-4"/><path d="M16 8l2 2"/><path d="M8 12a4 4 0 1 1 4 4"/><circle cx="12" cy="12" r="1.5" fill="#fff"/></svg>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>R{ril.n || ri + 1}</span>
+                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 9px", borderRadius: 6, background: "#fff", color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.4px" }}>{tt.l}</span>
+                                  </div>
+                                  <div style={{ fontSize: 11, color: "#fff", opacity: 0.9, marginTop: 2, fontWeight: 600 }}>
+                                    {ril.data ? new Date(ril.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "·"}
+                                    {ril.rilevatore ? ` · ${ril.rilevatore}` : ""}
+                                    {` · ${vaniDelRil} ${vaniDelRil === 1 ? "vano" : "vani"}`}
+                                  </div>
+                                </div>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                              </div>
+
+                              {/* v66 · Dettaglio rilievo espanso · Design mockup v8 */}
+                              {selectedRilievo?.id === ril.id && (() => {
+                                // --- Tipo edificio: lettura identica a MODAL AGGIUNGI VANO COMPLESSO ---
+                                const tEdifV66 = (c as any).tipoEdificio || (c as any).tipo_edificio || "";
+                                const tEdifLabelV66 = (() => {
+                                  switch (tEdifV66) {
+                                    case "palazzo": return "Palazzo residenziale";
+                                    case "condominio": return "Condominio";
+                                    case "scuola": return "Scuola";
+                                    case "ospedale": return "Ospedale / Clinica";
+                                    case "ufficio": return "Ufficio / Direzionale";
+                                    case "hotel": return "Hotel / RSA";
+                                    case "centro_comm": return "Centro commerciale";
+                                    case "industriale": return "Capannone / Industriale";
+                                    case "personalizzato": return "Personalizzato";
+                                    default: return "Casa singola";
+                                  }
+                                })();
+                                const tEdifLabelsV66 = (() => {
+                                  switch (tEdifV66) {
+                                    case "palazzo": return { l1: "Scala", l2: "Piano", l3: "Interno" };
+                                    case "condominio": return { l1: "", l2: "Piano", l3: "Interno" };
+                                    case "scuola": return { l1: "Edificio/Plesso", l2: "Piano", l3: "Aula" };
+                                    case "ospedale": return { l1: "Padiglione", l2: "Piano", l3: "Reparto" };
+                                    case "ufficio": return { l1: "Edificio", l2: "Piano", l3: "Ufficio" };
+                                    case "hotel": return { l1: "Edificio", l2: "Piano", l3: "Camera" };
+                                    case "centro_comm": return { l1: "", l2: "Livello", l3: "Negozio" };
+                                    case "industriale": return { l1: "Corpo", l2: "", l3: "Settore" };
+                                    case "personalizzato": return { l1: (c as any).livello1Label || "Livello 1", l2: (c as any).livello2Label || "Livello 2", l3: (c as any).livello3Label || "Livello 3" };
+                                    default: return { l1: "Zona", l2: "Piano", l3: "Locale" };
+                                  }
+                                })();
+                                const tEdifStructV66 = [tEdifLabelsV66.l1, tEdifLabelsV66.l2, tEdifLabelsV66.l3].filter(Boolean).join(" · ");
+
+                                // --- KPI ---
+                                const vaniCountV66 = (ril.vani || []).length;
+                                const vaniCompletiV66 = (ril.vani || []).filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length >= 6).length;
+                                const fotoCountV66 = (ril.vani || []).reduce((a, v) => a + Object.keys(v.foto || {}).length, 0);
+
+                                // --- Titolo dinamico prossima azione ---
+                                const nextActionTitleV66 = vaniCountV66 === 0 ? "Aggiungi il primo vano" : (vaniCompletiV66 < vaniCountV66 ? "Completa le misure" : "Rilievo completo");
+                                const nextActionDescV66 = vaniCountV66 === 0 ? "Compila 8 misure per ogni vano. Inizia dal primo." : `${vaniCompletiV66}/${vaniCountV66} vani completi · continua il rilievo`;
+                                const nextActionBtnV66 = vaniCountV66 === 0 ? "AGGIUNGI PRIMO VANO" : "APRI RILIEVO";
+
+                                return (
+                                <div style={{
+                                  marginTop: 0, marginBottom: 10,
+                                  background: "transparent",
+                                  display: "flex", flexDirection: "column", gap: 12,
+                                }}>
+                                  {/* MINI STEPPER 8 puntini */}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 2px" }}>
+                                    <div style={{ fontSize: 9.5, fontWeight: 900, color: T.sub, letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 1/8</div>
+                                    <div style={{ display: "flex", gap: 3, flex: 1 }}>
+                                      <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
+                                      {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(15,27,45,0.15)" }} />))}
+                                    </div>
+                                    <div style={{ fontSize: 9.5, fontWeight: 900, color: "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Rilievo</div>
+                                  </div>
+
+                                  {/* BIG ACTION viola */}
+                                  <div style={{
+                                    borderRadius: 22, padding: "20px 18px 18px",
+                                    background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
+                                    color: "#fff",
+                                    boxShadow: "0 14px 32px rgba(30,58,95,0.35), 0 6px 12px rgba(30,58,95,0.2)",
+                                    position: "relative", overflow: "hidden",
+                                    display: "flex", flexDirection: "column",
+                                  }}>
+                                    {/* glow decorativi */}
+                                    <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%)", pointerEvents: "none" }} />
+                                    <div style={{ position: "absolute", bottom: -60, left: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)", pointerEvents: "none" }} />
+
+                                    {/* Tag */}
+                                    <div style={{
+                                      display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+                                      padding: "5px 11px", background: "rgba(255,255,255,0.22)",
+                                      borderRadius: 50, fontSize: 8.5, fontWeight: 900, letterSpacing: "1.1px",
+                                      textTransform: "uppercase" as any, position: "relative",
+                                    }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.4 6.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
+                                      Prossima mossa
+                                    </div>
+
+                                    {/* Titolo */}
+                                    <div style={{
+                                      fontSize: 22, fontWeight: 900, marginTop: 12,
+                                      letterSpacing: "-0.5px", lineHeight: 1.15,
+                                      textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
+                                    }}>{nextActionTitleV66}</div>
+
+                                    {/* Desc */}
+                                    <div style={{
+                                      fontSize: 11.5, opacity: 0.94, marginTop: 6,
+                                      lineHeight: 1.4, fontWeight: 500, position: "relative",
+                                    }}>{nextActionDescV66}</div>
+
+                                    {/* Pill tipo edificio */}
+                                    <div style={{
+                                      marginTop: 12, background: "rgba(255,255,255,0.18)",
+                                      borderRadius: 12, padding: "10px 12px",
+                                      display: "flex", alignItems: "center", gap: 10, position: "relative",
+                                    }}>
+                                      <div style={{
+                                        width: 36, height: 36, borderRadius: 11,
+                                        background: "rgba(255,255,255,0.22)",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        flexShrink: 0, boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)",
+                                      }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M10 22v-4h4v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/></svg>
+                                      </div>
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 8.5, fontWeight: 900, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Immobile</div>
+                                        <div style={{ fontSize: 13, fontWeight: 900, marginTop: 1, letterSpacing: "-0.1px" }}>{tEdifLabelV66}</div>
+                                        {tEdifStructV66 && <div style={{ fontSize: 10, opacity: 0.88, marginTop: 1, fontWeight: 600 }}>{tEdifStructV66}</div>}
+                                      </div>
+                                    </div>
+
+                                    {/* Meta tiles */}
+                                    <div style={{
+                                      marginTop: 12, display: "grid",
+                                      gridTemplateColumns: fotoCountV66 > 0 ? "1fr 1fr 1fr" : "1fr 1fr",
+                                      gap: 8, position: "relative",
+                                    }}>
+                                      <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 12, padding: "9px 11px" }}>
+                                        <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Vani</div>
+                                        <div style={{ fontSize: 17, fontWeight: 900, marginTop: 2, letterSpacing: "-0.3px" }}>{vaniCompletiV66}/{vaniCountV66 || "—"}</div>
+                                        <div style={{ fontSize: 9.5, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{vaniCountV66 === 0 ? "da configurare" : (vaniCompletiV66 === vaniCountV66 ? "tutti OK" : "in corso")}</div>
+                                      </div>
+                                      <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 12, padding: "9px 11px" }}>
+                                        <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Misure</div>
+                                        <div style={{ fontSize: 17, fontWeight: 900, marginTop: 2, letterSpacing: "-0.3px" }}>{vaniCompletiV66 * 8}/{vaniCountV66 * 8 || 8}</div>
+                                        <div style={{ fontSize: 9.5, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>per vano</div>
+                                      </div>
+                                      {fotoCountV66 > 0 && (
+                                        <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 12, padding: "9px 11px" }}>
+                                          <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Foto</div>
+                                          <div style={{ fontSize: 17, fontWeight: 900, marginTop: 2, letterSpacing: "-0.3px" }}>{fotoCountV66}</div>
+                                          <div style={{ fontSize: 9.5, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>totali</div>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* BIG BTN — onClick IDENTICO all'originale */}
+                                    <button onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedRilievo(ril);
+                                      if (ril.complesso && (ril.vani || []).length === 0) {
+                                        setNvL1(""); setNvL2(""); setNvL3(""); setNvStanza(""); setNvCustom([]);
+                                        setShowAggiungiVanoModal(true);
+                                        return;
+                                      }
+                                      const vaniR = ril.vani || [];
+                                      if (vaniR.length > 0) {
+                                        setSelectedVano(vaniR[0]);
+                                        setVanoStep(0);
+                                      } else {
+                                        const nuovoVano = { id: Date.now(), nome: "Vano 1", tipo: "", stanza: "", piano: "", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "", misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
+                                        const updR = { ...ril, vani: [...(ril.vani || []), nuovoVano] };
+                                        setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === ril.id ? updR : r2), aggiornato: "Oggi" } : cm));
+                                        setSelectedCM(prev => ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === ril.id ? updR : r2) }));
+                                        setSelectedRilievo(updR);
+                                        setSelectedVano(nuovoVano);
+                                        setVanoStep(0);
+                                      }
+                                    }} style={{
+                                      marginTop: 14, width: "100%", padding: 15,
+                                      background: "#fff", color: "#0F1B2D",
+                                      border: "none", borderRadius: 14,
+                                      fontSize: 13.5, fontWeight: 900, letterSpacing: "0.4px",
+                                      cursor: "pointer", fontFamily: "inherit",
+                                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                      boxShadow: "0 6px 16px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
+                                      position: "relative",
+                                    }}>
+                                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                      {nextActionBtnV66}
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                    </button>
+                                  </div>
+
+                                  {/* MENU 4 CENTRI */}
+                                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                                    {/* CLIENTE - placeholder v67 */}
+                                    <button onClick={(e) => { e.stopPropagation(); }} style={{
+                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                                      padding: "11px 4px", background: "#fff",
+                                      border: "1px solid rgba(200,228,228,0.4)", borderRadius: 13,
+                                      cursor: "pointer", fontFamily: "inherit",
+                                      boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
+                                    }}>
+                                      <div style={{ width: 30, height: 30, borderRadius: 9,
+                                        background: "linear-gradient(145deg, rgba(45,90,135,0.22), rgba(30,58,95,0.12))",
+                                        color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center",
+                                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
+                                      }}>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                      </div>
+                                      <span style={{ fontSize: 9.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>Cliente</span>
+                                    </button>
+
+                                    {/* ALLEGATI - per ora fotoInputRef (preserva onClick Foto) */}
+                                    <button onClick={(e) => { e.stopPropagation(); fotoInputRef.current?.click(); }} style={{
+                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                                      padding: "11px 4px", background: "#fff",
+                                      border: "1px solid rgba(200,228,228,0.4)", borderRadius: 13,
+                                      cursor: "pointer", fontFamily: "inherit",
+                                      boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
+                                    }}>
+                                      <div style={{ width: 30, height: 30, borderRadius: 9,
+                                        background: "linear-gradient(145deg, rgba(175,169,236,0.22), rgba(30,58,95,0.12))",
+                                        color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center",
+                                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
+                                      }}>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                      </div>
+                                      <span style={{ fontSize: 9.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>Allegati</span>
+                                      {fotoCountV66 > 0 && (
+                                        <div style={{ position: "absolute", top: 6, right: 8, fontSize: 9, fontWeight: 900, background: "linear-gradient(145deg, #E24B4A, #C53030)", color: "#fff", padding: "1px 6px", borderRadius: 50, boxShadow: "0 2px 4px rgba(226,75,74,0.3)", minWidth: 16, textAlign: "center" as any }}>{fotoCountV66}</div>
+                                      )}
+                                    </button>
+
+                                    {/* NOTE - placeholder v67 */}
+                                    <button onClick={(e) => { e.stopPropagation(); }} style={{
+                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                                      padding: "11px 4px", background: "#fff",
+                                      border: "1px solid rgba(200,228,228,0.4)", borderRadius: 13,
+                                      cursor: "pointer", fontFamily: "inherit",
+                                      boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
+                                    }}>
+                                      <div style={{ width: 30, height: 30, borderRadius: 9,
+                                        background: "linear-gradient(145deg, rgba(250,199,117,0.25), rgba(239,159,39,0.12))",
+                                        color: "#EF9F27", display: "flex", alignItems: "center", justifyContent: "center",
+                                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
+                                      }}>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                      </div>
+                                      <span style={{ fontSize: 9.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>Note</span>
+                                    </button>
+
+                                    {/* AZIONI - toggle mini menu con onClick originali */}
+                                    <button onClick={(e) => { e.stopPropagation(); setAzioniOpenV66(v => !v); }} style={{
+                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                                      padding: "11px 4px", background: "#fff",
+                                      border: "1px solid rgba(200,228,228,0.4)", borderRadius: 13,
+                                      cursor: "pointer", fontFamily: "inherit",
+                                      boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
+                                    }}>
+                                      <div style={{ width: 30, height: 30, borderRadius: 9,
+                                        background: "linear-gradient(145deg, rgba(133,183,235,0.22), rgba(55,138,221,0.12))",
+                                        color: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center",
+                                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
+                                      }}>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/><path d="M1 12h6m6 0h6"/></svg>
+                                      </div>
+                                      <span style={{ fontSize: 9.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>Azioni</span>
+                                    </button>
+                                  </div>
+
+                                  {/* AZIONI · pannello inline espandibile (mini menu temporaneo) */}
+                                  {azioniOpenV66 && (
+                                    <div style={{
+                                      background: "#fff", border: "1px solid rgba(200,228,228,0.4)",
+                                      borderRadius: 14, padding: 10,
+                                      boxShadow: "0 3px 10px rgba(13,31,31,0.06)",
+                                      display: "flex", flexDirection: "column", gap: 6,
+                                    }}>
+                                      {/* Riepilogo */}
+                                      <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(ril); setShowRiepilogo(true); setAzioniOpenV66(false); }} style={{
+                                        display: "flex", alignItems: "center", gap: 10,
+                                        padding: "10px 12px", background: "transparent",
+                                        border: "none", borderBottom: "1px solid rgba(200,228,228,0.3)",
+                                        cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left" as any,
+                                      }}>
+                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(55,138,221,0.15), rgba(55,138,221,0.08))", color: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Riepilogo rilievo</div>
+                                          <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 1 }}>Vedi scheda completa</div>
+                                        </div>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                      </button>
+
+                                      {/* PDF */}
+                                      <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(ril); exportPDF(); setAzioniOpenV66(false); }} style={{
+                                        display: "flex", alignItems: "center", gap: 10,
+                                        padding: "10px 12px", background: "transparent",
+                                        border: "none", borderBottom: "1px solid rgba(200,228,228,0.3)",
+                                        cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left" as any,
+                                      }}>
+                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(30,58,95,0.15), rgba(30,58,95,0.08))", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta PDF rilievo</div>
+                                          <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 1 }}>Scheda tecnica per officina</div>
+                                        </div>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                      </button>
+
+                                      {/* Duplica */}
+                                      <button onClick={(e) => {
+                                        e.stopPropagation();
+                                        const rilieviCor = selectedCM?.rilievi || [];
+                                        const nextN = rilieviCor.length + 1;
+                                        const vaniCopia = (ril.vani || []).map(v => ({
+                                          ...v,
+                                          id: Date.now() + Math.floor(Math.random()*1000) + (v.id || 0),
+                                          misure: { ...(v.misure || {}) },
+                                          foto: { ...(v.foto || {}) },
+                                          accessori: v.accessori ? {
+                                            tapparella: { ...(v.accessori.tapparella || { attivo: false }) },
+                                            persiana: { ...(v.accessori.persiana || { attivo: false }) },
+                                            zanzariera: { ...(v.accessori.zanzariera || { attivo: false }) },
+                                          } : { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } },
+                                        }));
+                                        const nuovoR = {
+                                          id: Date.now(),
+                                          n: nextN,
+                                          data: new Date().toISOString().split("T")[0],
+                                          tipo: "da_rivedere",
+                                          rilevatore: ril.rilevatore || "",
+                                          note: `Duplicato da R${ril.n || ""}`,
+                                          vani: vaniCopia,
+                                          duplicatoDa: ril.id,
+                                        };
+                                        setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: [...(cm.rilievi||[]), nuovoR], aggiornato: "Oggi" } : cm));
+                                        setSelectedCM(prev => prev ? ({ ...prev, rilievi: [...(prev.rilievi||[]), nuovoR] }) : prev);
+                                        setSelectedRilievo(nuovoR);
+                                        setAzioniOpenV66(false);
+                                      }} style={{
+                                        display: "flex", alignItems: "center", gap: 10,
+                                        padding: "10px 12px", background: "transparent",
+                                        border: "none", borderBottom: "1px solid rgba(200,228,228,0.3)",
+                                        cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left" as any,
+                                      }}>
+                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(30,58,95,0.15), rgba(30,58,95,0.08))", color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 -2 -2V4a2 2 0 0 1 2 -2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Duplica rilievo</div>
+                                          <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 1 }}>Crea R{((selectedCM?.rilievi||[]).length)+1} partendo da questo</div>
+                                        </div>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                      </button>
+
+                                      {/* Segnala problema */}
+                                      <button onClick={(e) => {
+                                        e.stopPropagation();
+                                        setProblemaForm({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
+                                        setShowProblemaModal(true);
+                                        setAzioniOpenV66(false);
+                                      }} style={{
+                                        display: "flex", alignItems: "center", gap: 10,
+                                        padding: "10px 12px", background: "transparent",
+                                        border: "none", cursor: "pointer", fontFamily: "inherit",
+                                        width: "100%", textAlign: "left" as any,
+                                      }}>
+                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(239,159,39,0.15), rgba(239,159,39,0.08))", color: "#EF9F27", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Segnala problema</div>
+                                          <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 1 }}>Imprevisto, materiale mancante</div>
+                                        </div>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF9F27" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {/* CRONOLOGIA accordion v67 - come mockup v8 */}
+                                  {(() => {
+                                    const storicoCron = (c.storico || []) as any[];
+                                    const lastEvt = storicoCron[storicoCron.length - 1];
+                                    const lastTxt = lastEvt ? (lastEvt.quando || "poco fa") : "Adesso";
+                                    return (
+                                      <div>
+                                        <div onClick={(e) => { e.stopPropagation(); setCronOpenV67(v => !v); }} style={{
+                                          background: "#fff",
+                                          border: "1px solid rgba(200,228,228,0.4)",
+                                          borderRadius: cronOpenV67 ? "14px 14px 0 0" : 14,
+                                          borderBottomColor: cronOpenV67 ? "transparent" : "rgba(200,228,228,0.4)",
+                                          padding: "12px 14px",
+                                          display: "flex", alignItems: "center", gap: 12,
+                                          cursor: "pointer",
+                                          boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
+                                        }}>
+                                          <div style={{
+                                            width: 34, height: 34, borderRadius: 10,
+                                            background: "linear-gradient(145deg, rgba(30,58,95,0.18), rgba(30,58,95,0.12))",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            color: "#0F1B2D",
+                                            boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
+                                          }}>
+                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                          </div>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Cronologia</div>
+                                            <div style={{ fontSize: 10.5, color: T.sub, fontWeight: 600, marginTop: 2 }}>
+                                              {storicoCron.length > 0 ? `${storicoCron.length} eventi · ultima ${lastTxt}` : "1 evento · ultima Adesso"}
+                                            </div>
+                                          </div>
+                                          <div style={{
+                                            fontSize: 10, fontWeight: 900, color: "#0F1B2D",
+                                            background: "linear-gradient(145deg, rgba(175,169,236,0.28), rgba(30,58,95,0.15))",
+                                            padding: "4px 10px", borderRadius: 50, letterSpacing: "0.3px",
+                                            border: "1px solid rgba(30,58,95,0.22)",
+                                          }}>{storicoCron.length || 1}</div>
+                                          <div style={{
+                                            width: 24, height: 24, borderRadius: 8,
+                                            background: "rgba(30,58,95,0.08)",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            color: "#0F1B2D",
+                                            transform: cronOpenV67 ? "rotate(180deg)" : "none",
+                                            transition: "transform 0.2s",
+                                          }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                          </div>
+                                        </div>
+                                        {cronOpenV67 && (
+                                          <div style={{
+                                            background: "#fff",
+                                            border: "1px solid rgba(200,228,228,0.4)",
+                                            borderTop: "1px dashed rgba(200,228,228,0.6)",
+                                            borderRadius: "0 0 14px 14px",
+                                            padding: "14px 12px 12px",
+                                            position: "relative",
+                                            boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
+                                          }}>
+                                            <div style={{ position: "absolute", left: 30, top: 22, bottom: 22, width: 2, background: "linear-gradient(180deg, #AFA9EC 0%, #2D5A87 50%, #FAC775 100%)", borderRadius: 1, opacity: 0.3 }} />
+                                            {storicoCron.length > 0 ? storicoCron.slice().reverse().map((ev, k) => (
+                                              <div key={k} style={{ display: "flex", gap: 12, padding: "7px 0", position: "relative" }}>
+                                                <div style={{
+                                                  width: 36, height: 36, borderRadius: 11,
+                                                  background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
+                                                  color: "#fff", flexShrink: 0,
+                                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                                  boxShadow: "0 3px 8px rgba(30,58,95,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
+                                                }}>
+                                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
+                                                </div>
+                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(30,58,95,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
+                                                  <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
+                                                    <strong style={{ color: "#0F1B2D", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
+                                                  </div>
+                                                  <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>{ev.quando || ""}</div>
+                                                </div>
+                                              </div>
+                                            )) : (
+                                              <div style={{ display: "flex", gap: 12, padding: "7px 0", position: "relative" }}>
+                                                <div style={{
+                                                  width: 36, height: 36, borderRadius: 11,
+                                                  background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
+                                                  color: "#fff", flexShrink: 0,
+                                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                                  boxShadow: "0 3px 8px rgba(30,58,95,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
+                                                }}>
+                                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
+                                                </div>
+                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(30,58,95,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
+                                                  <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
+                                                    <strong style={{ color: "#0F1B2D", fontWeight: 900 }}>Tu</strong> · creato la commessa
+                                                  </div>
+                                                  <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>Adesso</div>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+
+                                  {/* CHIUDI DETTAGLIO - invariato */}
+                                  <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(null); setAzioniOpenV66(false); }} style={{
+                                    padding: "11px", borderRadius: 10,
+                                    background: "linear-gradient(145deg, #3C3489 0%, #26215C 100%)",
+                                    color: "#fff", border: "none",
+                                    fontSize: 11, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6, letterSpacing: "0.4px",
+                                    boxShadow: "0 4px 12px rgba(60,52,137,0.4), inset 0 1px 1px rgba(255,255,255,0.2)",
+                                    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                                  }}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                                    CHIUDI DETTAGLIO
+                                  </button>
+                                </div>
+                                );
+                              })()}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* v68 · BIG ACTION VIOLA quando zero rilievi */}
+                      {!selectedRilievo && rilieviCC.length === 0 && (() => {
+                        const tEdifV68 = (c as any).tipoEdificio || (c as any).tipo_edificio || "";
+                        const tEdifLabelV68 = (() => {
+                          switch (tEdifV68) {
+                            case "palazzo": return "Palazzo residenziale";
+                            case "condominio": return "Condominio";
+                            case "scuola": return "Scuola";
+                            case "ospedale": return "Ospedale / Clinica";
+                            case "ufficio": return "Ufficio / Direzionale";
+                            case "hotel": return "Hotel / RSA";
+                            case "centro_comm": return "Centro commerciale";
+                            case "industriale": return "Capannone / Industriale";
+                            case "personalizzato": return "Personalizzato";
+                            default: return "Casa singola";
+                          }
+                        })();
+                        const tEdifStructV68 = (() => {
+                          switch (tEdifV68) {
+                            case "palazzo": return "Scala · Piano · Interno";
+                            case "condominio": return "Piano · Interno";
+                            case "scuola": return "Edificio/Plesso · Piano · Aula";
+                            case "ospedale": return "Padiglione · Piano · Reparto";
+                            case "ufficio": return "Edificio · Piano · Ufficio";
+                            case "hotel": return "Edificio · Piano · Camera";
+                            case "centro_comm": return "Livello · Negozio";
+                            case "industriale": return "Corpo · Settore";
+                            case "personalizzato": return [(c as any).livello1Label || "Livello 1", (c as any).livello2Label || "Livello 2", (c as any).livello3Label || "Livello 3"].join(" · ");
+                            default: return "Zona · Piano · Locale";
+                          }
+                        })();
+                        return (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 6 }}>
+                            {/* mini stepper 8 puntini */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 2px" }}>
+                              <div style={{ fontSize: 9.5, fontWeight: 900, color: T.sub, letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 1/8</div>
+                              <div style={{ display: "flex", gap: 3, flex: 1 }}>
+                                <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #1E3A5F, #0F1B2D)", boxShadow: "0 0 6px rgba(30,58,95,0.4)" }} />
+                                {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(15,27,45,0.15)" }} />))}
+                              </div>
+                              <div style={{ fontSize: 9.5, fontWeight: 900, color: "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Rilievo</div>
+                            </div>
+
+                            {/* big action viola */}
+                            <div style={{
+                              borderRadius: 22, padding: "20px 18px 18px",
+                              background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
+                              color: "#fff",
+                              boxShadow: "0 14px 32px rgba(30,58,95,0.35), 0 6px 12px rgba(30,58,95,0.2)",
+                              position: "relative", overflow: "hidden",
+                              display: "flex", flexDirection: "column",
+                            }}>
+                              <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%)", pointerEvents: "none" }} />
+                              <div style={{ position: "absolute", bottom: -60, left: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)", pointerEvents: "none" }} />
+
+                              <div style={{
+                                display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+                                padding: "5px 11px", background: "rgba(255,255,255,0.22)",
+                                borderRadius: 50, fontSize: 8.5, fontWeight: 900, letterSpacing: "1.1px",
+                                textTransform: "uppercase" as any, position: "relative",
+                              }}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.4 6.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
+                                Prima mossa
+                              </div>
+
+                              <div style={{
+                                fontSize: 22, fontWeight: 900, marginTop: 12,
+                                letterSpacing: "-0.5px", lineHeight: 1.15,
+                                textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
+                              }}>Crea il primo<br/>sopralluogo</div>
+
+                              <div style={{
+                                fontSize: 11.5, opacity: 0.94, marginTop: 6,
+                                lineHeight: 1.4, fontWeight: 500, position: "relative",
+                              }}>Vai in cantiere e fai il rilievo delle misure.</div>
+
+                              {/* Pill tipo edificio */}
+                              <div style={{
+                                marginTop: 12, background: "rgba(255,255,255,0.18)",
+                                borderRadius: 12, padding: "10px 12px",
+                                display: "flex", alignItems: "center", gap: 10, position: "relative",
+                              }}>
+                                <div style={{
+                                  width: 36, height: 36, borderRadius: 11,
+                                  background: "rgba(255,255,255,0.22)",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  flexShrink: 0, boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)",
+                                }}>
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M10 22v-4h4v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/></svg>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 8.5, fontWeight: 900, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Immobile</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, marginTop: 1, letterSpacing: "-0.1px" }}>{tEdifLabelV68}</div>
+                                  <div style={{ fontSize: 10, opacity: 0.88, marginTop: 1, fontWeight: 600 }}>{tEdifStructV68}</div>
+                                </div>
+                              </div>
+
+                              <button onClick={() => {
+                                setNuovoRilievoTipo("provvisorio");
+                                setNuovoRilievoRilevatore("");
+                                setNuovoRilievoComplesso(false);
+                                setNuovoRilievoNote("");
+                                setShowNuovoRilievoModal(true);
+                              }} style={{
+                                marginTop: 14, width: "100%", padding: 15,
+                                background: "#fff", color: "#0F1B2D",
+                                border: "none", borderRadius: 14,
+                                fontSize: 13.5, fontWeight: 900, letterSpacing: "0.4px",
+                                cursor: "pointer", fontFamily: "inherit",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                boxShadow: "0 6px 16px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
+                                position: "relative",
+                              }}>
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                CREA RILIEVO
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Bottone CREA NUOVO RILIEVO compatto - solo quando ci sono gia' rilievi ma nessuno selezionato */}
+                      {!selectedRilievo && rilieviCC.length > 0 && <button onClick={() => {
+                        setNuovoRilievoTipo("provvisorio");
+                        setNuovoRilievoRilevatore("");
+                        setNuovoRilievoComplesso(false);
+                        setNuovoRilievoNote("");
+                        setShowNuovoRilievoModal(true);
+                      }} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> CREA NUOVO RILIEVO
+                      </button>}
+
+                      {vaniCC.length > 0 && (
+                        <div style={{ fontSize: 12, color: "#1E3A5F", fontWeight: 700, textAlign: "center", marginTop: 8 }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
+                      )}
+                    </div>
+                  )}
+
+                  {/*  BIVIO SECONDARIO · CHIUDI RILIEVO (chiudi e vai / azioni extra)  */}
+                  {curCC.id === "preventivo" && c.preventivoModoScelto === "chiuso_bivio" && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: null } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: null }));
+                      }} style={{ fontSize: 11, color: T.sub, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        ← Torna alla scelta
+                      </div>
+
+                      <div style={{ fontSize: 11, color: T.sub, textAlign: "center" as any, marginBottom: 4 }}>Come vuoi chiudere il rilievo?</div>
+
+                      {/* OPZIONE A · CHIUDI E VAI */}
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "chiuso" } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "chiuso" }));
+                        setPrevWorkspace(false);
+                        setSelectedRilievo(null);
+                        setCmSubTab && setCmSubTab("rilievi");
+                        setSelectedCM(null);
+                        setCcDone("✓ Rilievo chiuso · vai al prossimo"); setTimeout(() => setCcDone(null), 2500);
+                      }} style={{
+                        padding: "16px 14px", borderRadius: 14, cursor: "pointer",
+                        background: "#fff", border: "2px solid " + T.bdr,
+                        display: "flex", alignItems: "center", gap: 12,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: T.grnLt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <I d={ICO.checkCircle} s={18} c={T.grn} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: "#0D1F1F", marginBottom: 2 }}>Chiudi e vai al prossimo</div>
+                          <div style={{ fontSize: 10, color: T.sub, lineHeight: 1.3 }}>Salva · il preventivo lo faccio dopo in azienda</div>
+                        </div>
+                        <I d={ICO.chevronRight} s={14} c={T.sub} />
+                      </div>
+
+                      {/* OPZIONE B · AZIONI EXTRA */}
+                      <div style={{
+                        padding: "14px 14px", borderRadius: 14,
+                        background: "#fff", border: "2px solid " + T.bdr,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 10, background: T.blueLt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <I d={ICO.send} s={18} c={T.blue} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 900, color: "#0D1F1F" }}>Azioni extra prima di chiudere</div>
+                            <div style={{ fontSize: 10, color: T.sub, marginTop: 1 }}>Stampa · invia · esporta per altro gestionale</div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                          {/* Stampa PDF */}
+                          <button onClick={() => {
+                            try { exportPDF && exportPDF(); } catch(e) { console.warn(e); }
+                            setCcDone("✓ PDF pronto"); setTimeout(() => setCcDone(null), 2500);
+                          }} style={{
+                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid " + T.bdr, background: T.card, cursor: "pointer", fontFamily: "inherit",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                          }}>
+                            <I d={ICO.fileText} s={18} c={T.text} />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: T.text }}>Stampa PDF</span>
+                          </button>
+
+                          {/* WhatsApp */}
+                          <button onClick={() => {
+                            const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
+                            const msg = `Ciao ${c.cliente || ""}, ti mando il riepilogo del rilievo fatto oggi.`;
+                            const wa = `https://wa.me/${tel.startsWith("+") ? tel.slice(1) : "39" + tel}?text=${encodeURIComponent(msg)}`;
+                            window.open(wa, "_blank");
+                            setCcDone("✓ WhatsApp aperto"); setTimeout(() => setCcDone(null), 2500);
+                          }} style={{
+                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #25d36630", background: "#25d36608", cursor: "pointer", fontFamily: "inherit",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                          }}>
+                            <I d={ICO.send} s={18} c="#25d366" />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: "#25d366" }}>WhatsApp</span>
+                          </button>
+
+                          {/* Export Excel gestionale */}
+                          <button onClick={() => {
+                            try { generaExcelFascicolo && generaExcelFascicolo(c, r); } catch(e) { console.warn(e); }
+                            setCcDone("✓ Excel pronto per gestionale"); setTimeout(() => setCcDone(null), 2500);
+                          }} style={{
+                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #1E3A5F30", background: "#1E3A5F08", cursor: "pointer", fontFamily: "inherit",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                          }}>
+                            <I d={ICO.clipboard} s={18} c={T.acc} />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: T.acc }}>Export gestionale</span>
+                          </button>
+
+                          {/* Invia a MASTRO Desktop */}
+                          <button onClick={() => {
+                            setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, inviatoDesktop: true, dataInvioDesktop: new Date().toISOString().split("T")[0] } : cm));
+                            setSelectedCM((prev: any) => ({ ...prev, inviatoDesktop: true }));
+                            setCcDone("✓ Rilievo in coda MASTRO Desktop"); setTimeout(() => setCcDone(null), 2500);
+                          }} style={{
+                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #3B7FE030", background: "#3B7FE008", cursor: "pointer", fontFamily: "inherit",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                          }}>
+                            <I d={ICO.monitor} s={18} c={T.blue} />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: T.blue }}>A MASTRO Desktop</span>
+                          </button>
+                        </div>
+
+                        <div style={{ fontSize: 10, color: T.sub, marginTop: 10, textAlign: "center" as any, fontStyle: "italic" as any }}>
+                          Quando hai fatto, torna indietro e premi "Chiudi e vai"
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/*  PREVENTIVO (CUORE · LINK A WORKSPACE)  */}
+                  {curCC.id === "preventivo" && !c.preventivoModoScelto && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 4, textAlign: "center" }}>Rilievo completato · Scegli cosa fare</div>
+
+                      {/* CARD 1 — CHIUDI RILIEVO (ora apre bivio secondario) */}
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "chiuso_bivio" } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "chiuso_bivio" }));
+                      }} style={{
+                        padding: "18px 16px", borderRadius: 14, cursor: "pointer",
+                        background: "#fff", border: "2px solid " + T.bdr,
+                        display: "flex", alignItems: "center", gap: 12,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#7B6BA515", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <I d={ICO.folder} s={20} c="#7B6BA5" />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 900, color: "#0D1F1F", marginBottom: 2 }}>Chiudi rilievo</div>
+                          <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.3 }}>Salva e vai al prossimo cliente · preventivo lo fai dopo in azienda</div>
+                        </div>
+                        <I d={ICO.chevronRight} s={16} c={T.sub} />
+                      </div>
+
+                      {/* CARD 2 — FAI PREVENTIVO */}
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "preventivo" } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "preventivo" }));
+                      }} style={{
+                        padding: "18px 16px", borderRadius: 14, cursor: "pointer",
+                        background: T.acc, border: "2px solid " + T.acc,
+                        display: "flex", alignItems: "center", gap: 12,
+                        boxShadow: "0 4px 14px rgba(30,58,95,0.3)",
+                      }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <I d={ICO.euro} s={20} c="#fff" />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", marginBottom: 2 }}>Preventivo al volo</div>
+                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.9)", lineHeight: 1.3 }}>Hai già i prezzi · invia subito al cliente</div>
+                        </div>
+                        <I d={ICO.chevronRight} s={16} c="#fff" />
+                      </div>
+                    </div>
+                  )}
+
+                  {curCC.id === "preventivo" && c.preventivoModoScelto === "preventivo" && (
+                    <div>
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: null } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: null }));
+                      }} style={{ fontSize: 11, color: T.sub, cursor: "pointer", marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        ← Torna alla scelta
+                      </div>
+                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>{vaniCC.length} vani · {vaniConPrezzoCC.length} con prezzo</div>
+                      
+                      {/* Totale rapido */}
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", background: `${T.acc}10`, borderRadius: 8, marginBottom: 10 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700 }}>Totale + IVA {ivaPercCC}%</span>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>€{fmtCC(totIvaCC)}</span>
+                      </div>
+
+                      {/* SHORTCUT FISCALE · IVA · Detrazione · Documenti da allegare */}
+                      {(() => {
+                        const DETRAZIONI_LBL: any = { nessuna: "Nessuna detr.", "50": "Ristrutt. 50%", "65": "Ecobonus 65%", "75": "Barriere 75%" };
+                        const ivaCur = c.ivaPerc || 10;
+                        const detrCur = c.detrazione || "nessuna";
+                        return (
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
+                            <div onClick={() => { setPrevWorkspace(true); setPrevTab("fiscale"); }} style={{
+                              padding: "10px 10px", borderRadius: 10, cursor: "pointer",
+                              background: "rgba(59,127,224,0.08)", border: "1.5px solid #3B7FE030",
+                              display: "flex", alignItems: "center", gap: 8,
+                            }}>
+                              <div style={{ width: 28, height: 28, borderRadius: 7, background: "#3B7FE015", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <I d={ICO.euro} s={13} c="#3B7FE0" />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 11, fontWeight: 800, color: "#3B7FE0" }}>Fiscale</div>
+                                <div style={{ fontSize: 9, color: T.sub }}>IVA {ivaCur}% · {DETRAZIONI_LBL[detrCur] || "—"}</div>
+                              </div>
+                            </div>
+                            <div onClick={() => { setPrevWorkspace(true); setPrevTab("condizioni"); }} style={{
+                              padding: "10px 10px", borderRadius: 10, cursor: "pointer",
+                              background: "rgba(123,107,165,0.08)", border: "1.5px solid #7B6BA530",
+                              display: "flex", alignItems: "center", gap: 8,
+                            }}>
+                              <div style={{ width: 28, height: 28, borderRadius: 7, background: "#7B6BA515", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <I d={ICO.fileText} s={13} c="#7B6BA5" />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 11, fontWeight: 800, color: "#7B6BA5" }}>Condizioni</div>
+                                <div style={{ fontSize: 9, color: T.sub }}>{c.condPagamento || "—"} · {c.tempiConsegna || "—"}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* BOTTONE PRINCIPALE */}
+                      <button onClick={() => { setPrevWorkspace(true); setPrevTab("sopralluogo"); setEditingVanoId(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.clipboard} /> APRI PREVENTIVO →</button>
+
+                      {/* BOTTONE INVIA DOCUMENTI AL CLIENTE */}
+                      {(() => {
+                        const detrCur = c.detrazione || "nessuna";
+                        if (detrCur === "nessuna") return null;
+                        const detrLbl: any = { "50": "Ristrutt. 50%", "65": "Ecobonus 65%", "75": "Barriere 75%" };
+                        const docMap: any = {
+                          "50": ["Bonifico parlante con causale specifica", "Fattura intestata al proprietario", "Comunicazione ENEA entro 90 gg fine lavori", "Codice fiscale proprietario"],
+                          "65": ["Bonifico parlante", "Fattura intestata beneficiario", "Scheda tecnica infisso con Uw", "Asseverazione tecnico (geometra/ingegnere/arch)", "Trasmissione ENEA entro 90 gg"],
+                          "75": ["Bonifico parlante", "Fattura con descrizione specifica intervento", "Eventuale CILA/SCIA al Comune"],
+                        };
+                        const docs = docMap[detrCur] || [];
+                        return (
+                          <button onClick={() => {
+                            const tel = c.telefono || "";
+                            const nome = c.cliente || "";
+                            const msg = `Ciao ${nome},\n\nPer poter usufruire della *${detrLbl[detrCur]}* sui tuoi nuovi infissi, servono questi documenti:\n\n${docs.map((d: string, i: number) => `${i+1}. ${d}`).join("\n")}\n\nTi invio anche il preventivo in PDF. Se hai domande sulla pratica fiscale, chiamami.\n\nGrazie!`;
+                            const cleanTel = tel.replace(/[^0-9+]/g, "");
+                            const wa = `https://wa.me/${cleanTel.startsWith("+") ? cleanTel.slice(1) : "39" + cleanTel}?text=${encodeURIComponent(msg)}`;
+                            window.open(wa, "_blank");
+                            setCcDone("✓ WhatsApp aperto con documenti");
+                            setTimeout(() => setCcDone(null), 3000);
+                          }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "1.5px solid #25d366", background: "#25d36610", color: "#25d366", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 6 }}>
+                            📋 Invia checklist documenti {detrLbl[detrCur]} via WhatsApp
+                          </button>
+                        );
+                      })()}
+
+                      <div style={{ textAlign: "center", marginTop: 2 }}>
+                        <span onClick={() => {
+                          setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
+                          setSelectedCM(prev => ({ ...prev, preventivoInviato: true }));
+                          setCcDone("✓ Completato"); setTimeout(() => setCcDone(null), 3000);
+                        }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Già inviato? Segna come completato</span>
+                      </div>
+
+                      {/* STATO POST-INVIO: attesa cliente */}
+                      {c.preventivoInviato && (
+                        <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#fff8e1", border: "1px solid #ffc107" }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: "#b8860b", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>In attesa risposta cliente</div>
+                          <div style={{ fontSize: 10, color: T.sub, marginBottom: 10 }}>
+                            Preventivo inviato{c.dataPreventivoInvio ? ` il ${new Date(c.dataPreventivoInvio).toLocaleDateString("it-IT")}` : ""}. Segna la risposta quando arriva.
+                          </div>
+                          {rispostaCliente && rispostaCliente.risposta && (
+                            <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: rispostaCliente.risposta === "accettato" ? "#D1FAE5" : rispostaCliente.risposta === "modifiche" ? "#FEF3C7" : "#DBEAFE", border: "1px solid " + (rispostaCliente.risposta === "accettato" ? "#10B981" : rispostaCliente.risposta === "modifiche" ? "#F59E0B" : "#3B82F6") }}>
+                              <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 }}>
+                                {rispostaCliente.risposta === "accettato" && "✓ Cliente ha accettato dal link!"}
+                                {rispostaCliente.risposta === "modifiche" && "↻ Cliente chiede modifiche dal link"}
+                                {rispostaCliente.risposta === "chiamare" && "📞 Cliente vuole essere chiamato"}
+                              </div>
+                              {rispostaCliente.risposta_nota && (
+                                <div style={{ fontSize: 11, color: T.text, fontStyle: "italic", marginBottom: 4 }}>
+                                  "{rispostaCliente.risposta_nota}"
+                                </div>
+                              )}
+                              <div style={{ fontSize: 9, color: T.sub }}>
+                                {rispostaCliente.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT") : ""}
+                              </div>
+                            </div>
+                          )}
+                          {rispostaCliente && !rispostaCliente.risposta && rispostaCliente.visualizzato && (
+                            <div style={{ marginBottom: 10, padding: 8, borderRadius: 8, background: "#F3F4F6", fontSize: 10, color: T.sub }}>
+                              👁 Cliente ha visualizzato il link{rispostaCliente.visualizzato_at ? " " + new Date(rispostaCliente.visualizzato_at).toLocaleString("it-IT") : ""} — sta decidendo
+                            </div>
+                          )}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                            <button onClick={() => {
+                              setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoAccettato: true, dataPreventivoAccett: new Date().toISOString().split("T")[0] } : cm));
+                              setSelectedCM((prev: any) => ({ ...prev, preventivoAccettato: true, dataPreventivoAccett: new Date().toISOString().split("T")[0] }));
+                              setFaseTo(c.id, "conferma");
+                              setCcDone("✓ Cliente accettato → Conferma"); setTimeout(() => setCcDone(null), 3000);
+                            }} style={{ padding: "12px 10px", borderRadius: 8, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                              ✓ Cliente OK
+                            </button>
+                            <button onClick={() => {
+                              const nota = prompt("Cosa vuole modificare il cliente?");
+                              if (nota === null) return;
+                              const revEntry = { motivo: nota || "Modifiche richieste", quando: new Date().toISOString() };
+                              setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: false, preventivoRevisioni: [...(cm.preventivoRevisioni || []), revEntry] } : cm));
+                              setSelectedCM((prev: any) => ({ ...prev, preventivoInviato: false, preventivoRevisioni: [...(prev.preventivoRevisioni || []), revEntry] }));
+                              setCcDone("Riaperto per modifiche"); setTimeout(() => setCcDone(null), 3000);
+                            }} style={{ padding: "12px 10px", borderRadius: 8, border: "1.5px solid #ff9500", background: "#fff", color: "#ff9500", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                              ↻ Richiede modifiche
+                            </button>
+                          </div>
+                          {(c.preventivoRevisioni && c.preventivoRevisioni.length > 0) && (
+                            <div style={{ marginTop: 10, padding: "6px 8px", background: "#fff", borderRadius: 6, fontSize: 10, color: T.sub }}>
+                              <strong>Revisioni ({c.preventivoRevisioni.length})</strong>: {c.preventivoRevisioni[c.preventivoRevisioni.length-1].motivo}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* CARD TAVOLA TECNICA */}
+                      {(() => {
+                        const vaniAttivi = (selectedRilievo?.vani || []).filter((v) => !!v.sistema && (v.misure?.lCentro || v.misure?.lAlto) && (v.misure?.hCentro || v.misure?.hSx));
+                        const canGenerate = vaniAttivi.length > 0;
+                        return (
+                          <div style={{ marginTop: 14, padding: 14, background: "#F4F9F9", borderRadius: 12, border: `1px solid ${T.bdr}` }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <div style={{ width: 32, height: 32, borderRadius: 8, background: canGenerate ? "linear-gradient(135deg, #2D7A6B, #1A9E73)" : "#C8D4D4", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+                                <I d={ICO.ruler} />
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Tavola Tecnica</div>
+                                <div style={{ fontSize: 10, color: T.sub }}>Vista frontale - Nodi - Specifiche - Trasmittanza Uw</div>
+                              </div>
+                              {canGenerate && <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 5, background: `${T.grn}15`, color: T.grn }}>{vaniAttivi.length} vani</span>}
+                            </div>
+                            {canGenerate ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                {vaniAttivi.map((v) => (
+                                  <button key={v.id} onClick={() => {
+                                    try {
+                                      const ctx = { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [],
+                                        cliente: c.cliente || c.nome || "", cognome: c.cognome || "",
+                                        commessaCode: c.code || c.id || "", commessaData: c.data || "" };
+                                      generaTavolaTecnica(v, ctx);
+                                    } catch(err) {
+                                      alert("Errore Tavola Tecnica: " + (err?.message || err));
+                                    }
+                                  }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: "#fff", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{v.nome || `Vano ${v.id}`}</div>
+                                      <div style={{ fontSize: 9, color: T.sub }}>{v.tipo || "-"} - {v.sistema || "-"} - {v.misure?.lCentro || v.misure?.lAlto || "?"}x{v.misure?.hCentro || v.misure?.hSx || "?"}mm</div>
+                                    </div>
+                                    <span style={{ fontSize: 11, color: T.acc, fontWeight: 800 }}>PDF</span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 11, color: T.sub, textAlign: "center", padding: "10px 4px", fontStyle: "italic" }}>Completa misure e sistema di almeno un vano per generare</div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/*  CONFERMA (firma + fattura acconto)  */}
+                  {curCC.id === "conferma" && (
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}>Totale: €{fmtCC(totIvaCC)} (IVA {ivaPercCC}% incl.)</div>
+                      {c.firmaCliente && (
+                        <div style={{ marginBottom: 10, padding: 12, borderRadius: 10, background: "#1E3A5F12", border: "1px solid #1E3A5F30" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontSize: 18 }}>✓</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 12, fontWeight: 800, color: "#1E3A5F" }}>Firma ricevuta</div>
+                              <div style={{ fontSize: 10, color: T.sub }}>{c.dataFirma ? new Date(c.dataFirma).toLocaleDateString("it-IT") : ""}</div>
+                            </div>
+                          </div>
+                          {c.firmaDocumento?.dataUrl && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button onClick={() => {
+                                if (!c.firmaDocumento?.dataUrl) return;
+                                const w = window.open("");
+                                w?.document.write(`<iframe src="${c.firmaDocumento.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
+                              }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #1E3A5F", background: "#fff", color: "#1E3A5F", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                                Vedi documento
+                              </button>
+                              <a href={c.firmaDocumento.dataUrl} download={c.firmaDocumento.nome || "documento_firmato.pdf"} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #1E3A5F", background: "#1E3A5F", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "center", textDecoration: "none", boxSizing: "border-box" as const }}>
+                                Scarica PDF
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {fattCC.length > 0 && (
+                        <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: "#fff", border: "1px solid " + T.bdr }}>
+                          <div style={{ fontSize: 10, fontWeight: 800, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Fatture emesse</div>
+                          {fattCC.map((f, i) => (
+                            <div key={f.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < fattCC.length - 1 ? "1px solid " + T.bdr : "none" }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: T.text }}>N° {f.numero}/{f.anno} · €{fmtCC(f.importo || 0)}</div>
+                                <div style={{ fontSize: 10, color: T.sub }}>{f.tipo} · {f.data}</div>
+                              </div>
+                              <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 5, background: f.pagata ? "#D1FAE5" : "#FEF3C7", color: f.pagata ? "#10B981" : "#D08008" }}>
+                                {f.pagata ? "Pagata" : "Da incassare"}
+                              </span>
+                            </div>
+                          ))}
+                          <button onClick={() => { if (typeof setTab === "function") setTab("contabilita"); }} style={{ marginTop: 8, width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid " + T.acc, background: "#fff", color: T.acc, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                            Apri contabilità →
+                          </button>
+                        </div>
+                      )}
+                      {firmaStep === 0 ? (
+                        <div>
+                          <button onClick={() => setShowModalFirma(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA {"->"}</button>
+                          <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 6 }}>Scarica PDF e invia link firma elettronica via WhatsApp</div>
+                          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                            <button onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #1E3A5F", background: "#1E3A5F12", color: "#1E3A5F", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> Solo PDF</button>
+                            <button onClick={() => setFirmaStep(1)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #1E3A5F", background: "#1E3A5F12", color: "#1E3A5F", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Già firmato? Carica</button>
+                          </div>
+                        </div>
+                      ) : !firmaFileUrl ? (
+                        <div>
+                          {/* Bottone link firma digitale */}
+                          <div style={{ marginBottom: 12 }}>
+                            <button onClick={async () => {
+                              try {
+                                const res = await fetch("/api/firma", { method: "POST", headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ action: "genera", data: { cmId: c.id, cmCode: c.code, cliente: `${c.cliente} ${c.cognome||""}`.trim(), importo: totIvaCC, descrizione: `Preventivo ${c.code} - ${vaniCC.length} vani` } }) });
+                                const d = await res.json();
+                                if (d.url) {
+                                  setFirmaToken(d.token);
+                                  const fullUrl = window.location.origin + d.url;
+                                  await navigator.clipboard.writeText(fullUrl).catch(() => {});
+                                  setFirmaLinkCopiato(true);
+                                  setTimeout(() => setFirmaLinkCopiato(false), 4000);
+                                  // Polling per verificare se cliente ha firmato
+                                  const poll = setInterval(async () => {
+                                    const r2 = await fetch("/api/firma", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "check", token: d.token }) });
+                                    const d2 = await r2.json();
+                                    if (d2.firmato) {
+                                      clearInterval(poll);
+                                      setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, firmaCliente: true, dataFirma: d2.firmaDataOra } : cm));
+                                      setSelectedCM(prev => ({ ...prev, firmaCliente: true }));
+                                      setCcDone("Firma ricevuta!");
+                                      setTimeout(() => setCcDone(null), 3000);
+                                    }
+                                  }, 5000);
+                                  setTimeout(() => clearInterval(poll), 10 * 60 * 1000); // max 10 min
+                                }
+                              } catch { setCcDone("Errore generazione link"); }
+                            }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}>
+                              Invia link firma al cliente
+                            </button>
+                            {firmaLinkCopiato && (
+                              <div style={{ background: "#F0FDF9", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: T.grn, fontWeight: 600, textAlign: "center" }}>
+                                Link copiato! Incollalo su WhatsApp al cliente
+                              </div>
+                            )}
+                            {firmaToken && !firmaLinkCopiato && (
+                              <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>
+                                In attesa della firma del cliente...
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 8 }}>oppure</div>
+                          <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>Carica il documento firmato dal cliente</div>
+                          <button onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/pdf,image/*"; inp.onchange = (ev: any) => { const f = ev.target.files?.[0]; if (!f) return; setFirmaFileName(f.name); const r = new FileReader(); r.onload = (e) => setFirmaFileUrl(e.target?.result as string); r.readAsDataURL(f); }; inp.click(); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: `2px dashed ${T.acc}`, background: `${T.acc}08`, color: T.acc, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.download} /> CARICA FIRMATO</button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ padding: 8, borderRadius: 8, background: "#1E3A5F12", marginBottom: 6, fontSize: 11, color: "#1E3A5F", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                            <I d={ICO.paperclip} />
+                            <span onClick={() => { if (firmaFileUrl) { const w = window.open(""); w?.document.write(`<iframe src="${firmaFileUrl}" style="width:100%;height:100vh;border:none"></iframe>`); } }} style={{ flex: 1, cursor: "pointer", textDecoration: "underline", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{firmaFileName}</span>
+                            <a href={firmaFileUrl || "#"} download={firmaFileName} style={{ fontSize: 10, color: "#1E3A5F", cursor: "pointer", textDecoration: "none", flexShrink: 0 }}>🔗</a>
+                            <span onClick={() => { setFirmaFileUrl(null); setFirmaFileName(""); }} style={{ cursor: "pointer", flexShrink: 0 }}>✓</span>
+                          </div>
+                          <button onClick={() => {
+                            const all = { id: Date.now(), tipo: "firma", nome: firmaFileName, dataUrl: firmaFileUrl };
+                            setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0], firmaDocumento: all, allegati: [...(cm.allegati || []), all] } : cm));
+                            setSelectedCM(prev => ({ ...prev, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0] }));
+                            setFirmaStep(0); setFirmaFileUrl(null); setFirmaFileName("");
+                            setCcDone("✓ Firma registrata!"); setTimeout(() => setCcDone(null), 3000);
+                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA FIRMA →</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/*  ORDINI  */}
+                  {curCC.id === "ordini" && (
+                    <div>
+                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>{vaniCC.length} vani · {c.sistema || "·"}</div>
+                      <div style={{ background: T.bg, borderRadius: 8, padding: 8, marginBottom: 8, maxHeight: 120, overflow: "auto" }}>
+                        {vaniCC.map((v, vi) => (
+                          <div key={vi} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: vi < vaniCC.length - 1 ? `1px solid ${T.bdr}` : "none" }}>
+                            <span style={{ color: T.text, fontWeight: 600 }}>{v.nome || v.tipo || `Vano ${vi + 1}`}</span>
+                            <span style={{ color: T.acc, fontWeight: 700 }}>{(v.larghezza || v.l || 0)}{(v.altezza || v.h || 0)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {!hasFattCC && (
+                        <div style={{ marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, color: T.sub, marginBottom: 4 }}>Fattura acconto (opzionale)</div>
+                          <div style={{ display: "flex", gap: 4, marginBottom: 6, flexWrap: "wrap" as any }}>
+                            {[30, 40, 50, 60, 100].map(p => (
+                              <div key={p} onClick={() => setFattPerc(p)} style={{ padding: "6px 10px", borderRadius: 8, cursor: "pointer", fontSize: 10, fontWeight: 800, background: fattPerc === p ? T.acc : T.card, color: fattPerc === p ? "#fff" : T.text, border: `1.5px solid ${fattPerc === p ? T.acc : T.bdr}` }}>
+                                {p === 100 ? "Unica" : p + "%"}
+                              </div>
+                            ))}
+                          </div>
+                          <button onClick={() => { setAccontoImporto(String(Math.round(totIvaCC * fattPerc / 100))); setShowAccontoModal(true); }} style={{ width: "100%", padding: 11, borderRadius: 8, border: `1px solid ${T.acc}`, background: `${T.acc}08`, color: T.acc, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.euro} /> Crea fattura €{fmtCC(Math.round(totIvaCC * fattPerc / 100))}</button>
+
+                          {/* · MODAL IMPORTO ACCONTO · */}
+                          {showAccontoModal && (
+                            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+                              <div style={{ background: T.card, borderRadius: 16, padding: 24, width: "100%", maxWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
+                                <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 4 }}>Fattura {fattPerc === 100 ? "unica" : "acconto"}</div>
+                                <div style={{ fontSize: 12, color: T.sub, marginBottom: 16 }}>Totale commessa IVA incl.: <strong>€{fmtCC(totIvaCC)}</strong></div>
+                                <div style={{ fontSize: 11, color: T.sub, marginBottom: 6, fontWeight: 600 }}>Importo da fatturare (€)</div>
+                                <input
+                                  type="number"
+                                  value={accontoImporto}
+                                  onChange={e => setAccontoImporto(e.target.value)}
+                                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${T.acc}`, fontSize: 18, fontWeight: 800, color: T.acc, background: T.bg, fontFamily: "inherit", marginBottom: 6, boxSizing: "border-box" as any, outline: "none" }}
+                                  autoFocus
+                                />
+                                <div style={{ fontSize: 10, color: T.sub, marginBottom: 16 }}>
+                                  {[30,40,50,60,100].map(p => (
+                                    <span key={p} onClick={() => setAccontoImporto(String(Math.round(totIvaCC * p / 100)))} style={{ marginRight: 6, cursor: "pointer", color: T.acc, fontWeight: 700, textDecoration: "underline" }}>
+                                      {p === 100 ? "Tutto" : p + "%"} (€{fmtCC(Math.round(totIvaCC * p / 100))})
+                                    </span>
+                                  ))}
+                                </div>
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  <button onClick={() => setShowAccontoModal(false)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                                  <button onClick={() => {
+                                    const imp = parseFloat(accontoImporto);
+                                    if (!imp || imp <= 0) return;
+                                    creaFattura(c, fattPerc === 100 ? "unica" : "acconto", imp);
+                                    setShowAccontoModal(false);
+                                    setCcDone("✓ Fattura creata!");
+                                    setTimeout(() => setCcDone(null), 3000);
+                                  }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CREA FATTURA €{fmtCC(parseFloat(accontoImporto) || 0)}</button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {ordCC.length > 0 && (
+                        <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: "#fff", border: "1px solid " + T.bdr }}>
+                          <div style={{ fontSize: 10, fontWeight: 800, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Ordini creati</div>
+                          {ordCC.map((o, i) => {
+                            const fornNome = typeof o.fornitore === "object" ? (o.fornitore?.nome || "Fornitore") : (o.fornitore || "Fornitore");
+                            return (
+                              <div key={o.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < ordCC.length - 1 ? "1px solid " + T.bdr : "none" }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: T.text }}>N {o.numero}/{o.anno} - {fornNome || "Da assegnare"}</div>
+                                  <div style={{ fontSize: 10, color: T.sub }}>{(o.righe?.length) || 0} voci - {o.dataOrdine}</div>
+                                </div>
+                                <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 5, background: o.conferma?.ricevuta ? "#D1FAE5" : "#FEF3C7", color: o.conferma?.ricevuta ? "#10B981" : "#D08008" }}>
+                                  {o.conferma?.ricevuta ? "Confermato" : "Inviato"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <button onClick={() => setShowOrdinePreview(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.package} /> CREA ORDINE FORNITORE →</button>
+
+                      {/* · MODAL ANTEPRIMA ORDINE FORNITORE · */}
+                      {showOrdinePreview && (() => {
+                        const prevVani = getVaniAttivi(c);
+                        const prevRighe = prevVani.map(v => {
+                          const tipLabel = TIPOLOGIE_RAPIDE.find((t: any) => t.code === v.tipo)?.label || v.tipo || "·";
+                          const m = v.misure || {};
+                          const lmm = m.lCentro || 0, hmm = m.hCentro || 0;
+                          const prezzo = calcolaVanoPrezzo(v, c);
+                          return {
+                            desc: `${tipLabel} · ${v.stanza || ""} ${v.piano || ""}`.trim(),
+                            misure: lmm > 0 && hmm > 0 ? `${lmm}x${hmm} mm` : "da definire",
+                            qta: v.pezzi || 1,
+                            prezzoUnit: Math.round(prezzo * 100) / 100,
+                            totale: Math.round(prezzo * (v.pezzi || 1) * 100) / 100,
+                            colore: v.coloreEst || "",
+                          };
+                        });
+                        const prevTot = prevRighe.reduce((s, r) => s + r.totale, 0);
+                        const ivaPercOrd = (c.ivaPerc || 22) / 100; const prevTotIva = Math.round(prevTot * (1 + ivaPercOrd) * 100) / 100;
+                        const fmtOrd = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2 }) : "0,00";
+                        return (
+                          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0" }}>
+                            <div style={{ background: T.card, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, maxHeight: "90vh", overflow: "auto", padding: 20, boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
+                              {/* Header */}
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                                <div>
+                                  <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>Anteprima Ordine Fornitore</div>
+                                  <div style={{ fontSize: 11, color: T.sub }}>Commessa {c.code} · {c.cliente}</div>
+                                </div>
+                                <div onClick={() => setShowOrdinePreview(false)} style={{ width: 32, height: 32, borderRadius: "50%", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: T.sub }}>✓</div>
+                              </div>
+
+                              {/* Info fornitore */}
+                              <div style={{ background: T.bg, borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                                <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, marginBottom: 4, textTransform: "uppercase" as any, letterSpacing: 0.5 }}>Fornitore</div>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{c.sistema?.split(" ")[0] || "·"}</div>
+                                <div style={{ fontSize: 11, color: T.sub }}>Sistema: {c.sistema || "non specificato"}</div>
+                              </div>
+
+                              {/* Righe ordine */}
+                              <div style={{ background: T.bg, borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                                <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" as any, letterSpacing: 0.5 }}>Righe ordine ({prevRighe.length} vani)</div>
+                                {prevRighe.length === 0 ? (
+                                  <div style={{ fontSize: 12, color: T.sub, textAlign: "center", padding: 8 }}>Nessun vano con misure</div>
+                                ) : prevRighe.map((r, ri) => (
+                                  <div key={ri} style={{ padding: "8px 0", borderBottom: ri < prevRighe.length - 1 ? `1px solid ${T.bdr}` : "none" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                      <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{r.desc || `Vano ${ri + 1}`}</div>
+                                        <div style={{ fontSize: 10, color: T.sub }}>
+                                          {r.misure} · Qta: {r.qta}{r.colore ? ` · ${r.colore}` : ""}
+                                        </div>
+                                      </div>
+                                      <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 8 }}>
+                                        <div style={{ fontSize: 12, fontWeight: 800, color: T.acc }}>€{fmtOrd(r.totale)}</div>
+                                        {r.qta > 1 && <div style={{ fontSize: 9, color: T.sub }}>€{fmtOrd(r.prezzoUnit)} cad.</div>}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Totali */}
+                              <div style={{ background: T.bg, borderRadius: 10, padding: 10, marginBottom: 16 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                                  <span style={{ color: T.sub }}>Imponibile</span>
+                                  <span style={{ fontWeight: 700, color: T.text }}>€{fmtOrd(prevTot)}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                                  <span style={{ color: T.sub }}>IVA {c.ivaPerc || 22}%</span>
+                                  <span style={{ fontWeight: 700, color: T.text }}>€{fmtOrd(Math.round((prevTotIva - prevTot) * 100) / 100)}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, borderTop: `1px solid ${T.bdr}`, paddingTop: 6, marginTop: 4 }}>
+                                  <span style={{ fontWeight: 700, color: T.text }}>Totale IVA incl.</span>
+                                  <span style={{ fontWeight: 900, color: T.acc }}>€{fmtOrd(prevTotIva)}</span>
+                                </div>
+                              </div>
+
+                              {/* Avviso se vani senza prezzo */}
+                              {prevRighe.some(r => r.prezzoUnit === 0) && (
+                                <div style={{ background: "#E8A02015", border: "1px solid #E8A02040", borderRadius: 8, padding: "8px 10px", marginBottom: 12, fontSize: 11, color: "#E8A020", fontWeight: 600 }}>
+                                  ⏹+ Alcuni vani non hanno prezzo · verranno inclusi come €0,00
+                                </div>
+                              )}
+
+                              {/* Note ordine */}
+                              <div style={{ marginBottom: 12 }}>
+                                <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, marginBottom: 4, textTransform: "uppercase" as any }}>Note per il fornitore</div>
+                                <textarea value={noteOrdine} onChange={e => setNoteOrdine(e.target.value)} placeholder="Consegna urgente, RAL, riferimento..." rows={2} style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.bg, color: T.text, fontSize: 11, resize: "none" as any, boxSizing: "border-box" as any, fontFamily: "inherit" }} />
+                              </div>
+                              {/* Bottoni */}
+                              <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
+                                <button onClick={async () => {
+                                  const ordini = await creaOrdiniSplitFornitori?.(c, noteOrdine || "");
+                                  setNoteOrdine("");
+                                  setSelectedCM((prev: any) => ({ ...prev }));
+                                  setShowOrdinePreview(false);
+                                  const n = ordini?.length || 0;
+                                  setCcDone(n > 1 ? `✓ ${n} ordini creati (uno per fornitore)` : "✓ Ordine creato!");
+                                  setTimeout(() => setCcDone(null), 4000);
+                                }} style={{ width: "100%", padding: 13, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                                  <I d={ICO.package} /> CREA ORDINI (split per fornitore)
+                                </button>
+                                <button onClick={() => {
+                                  creaOrdineFornitore(c, c.sistema?.split(" ")[0] || "", noteOrdine || ""); setNoteOrdine("");
+                                  setSelectedCM((prev: any) => ({ ...prev }));
+                                  setShowOrdinePreview(false);
+                                  setCcDone("✓ Ordine unico creato!");
+                                  setTimeout(() => setCcDone(null), 3000);
+                                }} style={{ width: "100%", padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                                  Crea ordine unico (vecchia modalità)
+                                </button>
+                                <button onClick={() => setShowOrdinePreview(false)} style={{ width: "100%", padding: 10, borderRadius: 10, border: `1px solid ${T.bdr}`, background: "transparent", color: T.sub, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/*  PRODUZIONE  */}
+                  {curCC.id === "produzione" && (
+                    <div>
+                      {ordCC.length > 0 && (
+                        <div style={{ background: T.bg, borderRadius: 8, padding: 8, marginBottom: 8 }}>
+                          {ordCC.map((o, oi) => (
+                            <div key={oi} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0" }}>
+                              <span style={{ fontWeight: 600 }}>{typeof o.fornitore === "object" ? (o.fornitore?.nome || "Fornitore") : (o.fornitore || "Fornitore")}</span>
+                              <span style={{ color: o.conferma?.ricevuta ? T.grn : T.orange, fontWeight: 700 }}>
+                                {o.conferma?.firmata ? "✓ Confermato" : o.conferma?.ricevuta ? "📋 Conferma ricevuta" : "📐 In attesa"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!ordConfCC ? (
+                        <button onClick={() => apriInboxDocumento(c.id, "conferma")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#af52de", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.download} /> CARICA CONFERMA FORNITORE →</button>
+                      ) : ccConfirm !== "conferma_ok" ? (
+                        <button onClick={() => setCcConfirm("conferma_ok")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ APPROVA E AVVIA PRODUZIONE →</button>
+                      ) : (
+                        <div style={{ background: "#1E3A5F12", borderRadius: 10, padding: 12, border: "1px solid #1E3A5F30" }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: "#1E3A5F", marginBottom: 4 }}>Confermi avvio produzione?</div>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                            <button onClick={() => { setOrdiniFornDB(prev => prev.map(o => o.cmId === c.id ? { ...o, conferma: { ...o.conferma, firmata: true } } : o)); setCcConfirm(null); setCcDone("✓ Produzione avviata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/*  POSA  */}
+                  {curCC.id === "posa" && (
+                    <div>
+                      {/* Montaggi gi+ pianificati */}
+                      {montCC.length > 0 && (
+                        <div style={{ marginBottom: 10 }}>
+                          {montCC.map((m, mi) => {
+                            const st = m.interventoStato || m.stato || "programmato";
+                            const isDone = ["completato","collaudo","chiuso"].includes(st);
+                            const sq = squadreDB.find(s => s.id === m.squadraId);
+                            return (
+                              <div key={mi} style={{ background: T.card, border: `1.5px solid ${isDone ? "#1E3A5F40" : T.bdr}`, borderRadius: 10, padding: "10px 12px", marginBottom: 6 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                  <div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: T.text }}>
+                                      {m.data ? new Date(m.data + "T12:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" }) : "Data da definire"} · {m.orario || ""}
+                                    </div>
+                                    <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>
+                                      {sq?.nome || "Squadra"} · {m.durata || `${m.giorni || 1}g`}
+                                    </div>
+                                  </div>
+                                  <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: isDone ? "#1E3A5F20" : "#F5A62320", color: isDone ? "#1E3A5F" : "#D08008", textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>
+                                    {st}
+                                  </span>
+                                </div>
+                                {!isDone && (
+                                  <button onClick={() => {
+                                    setMontaggiDB(prev => prev.map(x => x.id === m.id ? { ...x, stato: "completato", interventoStato: "completato", dataCompletamento: new Date().toISOString() } : x));
+                                    setCcDone("✓ Montaggio completato!"); setTimeout(() => setCcDone(null), 3000);
+                                  }} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                                    <I d={ICO.check} /> Montaggio completato
+                                  </button>
+                                )}
+                                {isDone && (
+                                  <div style={{ fontSize: 11, color: "#1E3A5F", fontWeight: 700, textAlign: "center", padding: "4px 0" }}>
+                                    ✓ Completato · vai al Collaudo
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {!montFormOpen ? (
+                        <div>
+                          <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>{vaniCC.length} vani · {c.indirizzo || "·"}</div>
+                          <button onClick={() => { setMontFormOpen(true); setMontGiorni(1); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: squadreDB[0]?.id || "", note: "" }); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.wrench} /> {montCC.length > 0 ? "AGGIUNGI MONTAGGIO →" : "PIANIFICA MONTAGGIO →"}</button>
+                        </div>
+                      ) : (
+                        <div style={{ background: T.bg, borderRadius: 10, padding: 10, border: `1px solid ${T.bdr}` }}>
+                          <input type="date" value={montFormData.data} onChange={e => { setMontFormData(p => ({ ...p, data: e.target.value })); setWorkWeekend(null); }} style={{ width: "100%", padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, marginBottom: 6 }} />
+
+                          {/* Mini calendario squadre · 3 settimane + anteprima */}
+                          {(() => {
+                            const selDate = montFormData.data ? new Date(montFormData.data + 'T12:00:00') : new Date();
+                            const todayISO = new Date().toISOString().split('T')[0];
+                            const baseDay = new Date(selDate);
+                            baseDay.setDate(baseDay.getDate() - (baseDay.getDay() === 0 ? 6 : baseDay.getDay() - 1));
+                            baseDay.setDate(baseDay.getDate() - 7);
+                            const WEEKS = 3;
+                            const allDays = Array.from({ length: WEEKS * 7 }, (_, i) => { const d = new Date(baseDay); d.setDate(d.getDate() + i); return d; });
+                            const fmtD = (d) => d.toISOString().split('T')[0];
+                            const dayN = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+                            const squads = squadreDB.length > 0 ? squadreDB : [{ id: 'default', nome: 'Squadra', colore: '#007aff' }];
+                            const previewDays = new Set();
+                            if (montFormData.data && montGiorni > 0) {
+                              let added = 0;
+                              const pStart = new Date(montFormData.data + 'T12:00:00');
+                              for (let i = 0; added < Math.ceil(montGiorni) && i < 30; i++) {
+                                const pd = new Date(pStart); pd.setDate(pd.getDate() + i);
+                                const dow = pd.getDay();
+                                if ((dow === 0 || dow === 6) && workWeekend !== true) continue;
+                                previewDays.add(fmtD(pd)); added++;
+                              }
+                            }
+                            const selSquadId = montFormData.squadraId || (squads.length === 1 ? squads[0].id : null);
+                            return (
+                              <div style={{ marginBottom: 8, borderRadius: 8, border: '1px solid ' + T.bdr, overflow: 'hidden', background: T.card }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px 0' }}>
+                                  <span onClick={() => { const p = new Date(baseDay); p.setDate(p.getDate() - 7); setMontFormData(prev => ({ ...prev, data: fmtD(p) })); }} style={{ cursor: 'pointer', fontSize: 14, fontWeight: 700, color: T.acc, padding: '4px 8px' }}>{"📅"}</span>
+                                  <span style={{ fontSize: 9, fontWeight: 800, color: T.sub, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                    Disponibilit+ squadre
+                                  </span>
+                                  <span onClick={() => { const n = new Date(baseDay); n.setDate(n.getDate() + 21); setMontFormData(prev => ({ ...prev, data: fmtD(n) })); }} style={{ cursor: 'pointer', fontSize: 14, fontWeight: 700, color: T.acc, padding: '4px 8px' }}>{"📷"}</span>
+                                </div>
+                                {Array.from({ length: WEEKS }, (_, wi) => {
+                                  const weekDays = allDays.slice(wi * 7, wi * 7 + 7);
+                                  const weekStart = weekDays[0];
+                                  return (
+                                    <div key={wi} style={{ borderTop: wi > 0 ? '1px solid ' + T.bdr + '50' : 'none', paddingTop: wi > 0 ? 2 : 0 }}>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', fontSize: 9, padding: '2px 4px 0' }}>
+                                        <div style={{ fontSize: 8, fontWeight: 600, color: T.sub + '80', padding: '1px 0' }}>
+                                          {weekStart.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}
+                                        </div>
+                                        {weekDays.map((d, i) => {
+                                          const iso = fmtD(d);
+                                          const isSel = iso === montFormData.data;
+                                          const isToday = iso === todayISO;
+                                          const isPast = iso < todayISO;
+                                          return (
+                                            <div key={i} onClick={() => !isPast && setMontFormData(p => ({ ...p, data: iso }))} style={{
+                                              textAlign: 'center', cursor: isPast ? 'default' : 'pointer', padding: '1px 0', borderRadius: 4,
+                                              background: isSel ? T.acc + '25' : isToday ? T.grn + '12' : 'transparent',
+                                              border: isSel ? '1.5px solid ' + T.acc : '1.5px solid transparent',
+                                              opacity: isPast ? 0.3 : 1,
+                                            }}>
+                                              {wi === 0 && <div style={{ fontSize: 8, fontWeight: 600, color: isSel ? T.acc : isToday ? T.grn : i >= 5 ? T.sub + '60' : T.sub }}>{dayN[i]}</div>}
+                                              <div style={{ fontSize: 10, fontWeight: isSel || isToday ? 800 : 500, color: isSel ? T.acc : isToday ? T.grn : T.text }}>{d.getDate()}</div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                      {squads.map((sq, si) => {
+                                        const sqC = sq.colore || '#007aff';
+                                        return (
+                                          <div key={sq.id} style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', fontSize: 7, padding: '0 4px' }}>
+                                            <div style={{ fontSize: 8, fontWeight: 700, color: sqC, padding: '1px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wi === 0 ? sq.nome : ''}</div>
+                                            {weekDays.map((d, di) => {
+                                              const iso = fmtD(d);
+                                              const dayM = (montaggiDB || []).filter(m => m.data === iso && (m.squadraId === sq.id || (!m.squadraId && squads.length === 1)));
+                                              const isPreview = previewDays.has(iso) && (selSquadId === sq.id);
+                                              const hasWork = dayM.length > 0;
+                                              const isConflict = hasWork && isPreview;
+                                              return (
+                                                <div key={di} onClick={() => { if (fmtD(d) >= todayISO) setMontFormData(p => ({ ...p, data: iso, squadraId: sq.id })); }} style={{
+                                                  textAlign: 'center', padding: '1px', cursor: 'pointer', borderRadius: 3, margin: '0 1px', minHeight: 13,
+                                                  background: isConflict ? '#ff3b3020' : isPreview ? T.acc + '18' : hasWork ? sqC + '10' : 'transparent',
+                                                  border: isPreview ? '1px dashed ' + (isConflict ? '#ff3b30' : T.acc) : '1px solid transparent',
+                                                }}>
+                                                  {hasWork ? dayM.map((m, mi) => (
+                                                    <div key={mi} style={{ fontSize: 7, fontWeight: 700, color: isConflict ? '#ff3b30' : sqC, lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                      {(m.cliente || '').split(' ')[0] || 'Occ'}
+                                                    </div>
+                                                  )) : isPreview ? (
+                                                    <div style={{ fontSize: 8, fontWeight: 800, color: T.acc }}>{"+"}</div>
+                                                  ) : null}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                })}
+                                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', padding: '3px 8px 5px', fontSize: 8, color: T.sub }}>
+                                  {previewDays.size > 0 && <span><span style={{ color: T.acc, fontWeight: 800 }}>{"+"}</span> Nuovo montaggio ({montGiorni}g)</span>}
+                                  {previewDays.size > 0 && Array.from(previewDays).some(pd => (montaggiDB || []).some(m => m.data === pd && (m.squadraId === selSquadId))) && <span style={{ color: '#ff3b30', fontWeight: 700 }}>{"+"} Sovrapposizione!</span>}
+                                  <span style={{ marginLeft: 'auto', cursor: 'pointer', color: T.acc, fontWeight: 700, fontSize: 9 }} onClick={() => setMontFormData(prev => ({ ...prev, data: todayISO }))}>Oggi</span>
+                                </div>
+                                {/* Banner weekend */}
+                                {(() => {
+                                  if (!montFormData.data || montGiorni <= 0) return null;
+                                  // Controlla se il range (senza weekend) attraversa un sab/dom
+                                  const pStart = new Date(montFormData.data + 'T12:00:00');
+                                  let hasWeekendInRange = false;
+                                  let added = 0;
+                                  for (let i = 0; added < Math.ceil(montGiorni) && i < 30; i++) {
+                                    const pd = new Date(pStart); pd.setDate(pd.getDate() + i);
+                                    const dow = pd.getDay();
+                                    if (dow === 0 || dow === 6) { hasWeekendInRange = true; break; }
+                                    added++;
+                                  }
+                                  // Oppure se la data di partenza  sab/dom
+                                  const startDow = pStart.getDay();
+                                  if (startDow === 6 || startDow === 0) hasWeekendInRange = true;
+                                  if (!hasWeekendInRange) { if (workWeekend !== null) setWorkWeekend(null); return null; }
+                                  if (workWeekend !== null) return null; // gi+ risposto
+                                  return (
+                                    <div style={{ margin: '4px 8px 6px', padding: '8px 10px', borderRadius: 8, background: '#FF9F0A18', border: '1px solid #FF9F0A60' }}>
+                                      <div style={{ fontSize: 11, fontWeight: 700, color: '#FF9F0A', marginBottom: 6 }}>📐 Il periodo include sabato/domenica. Lavori anche nel weekend?</div>
+                                      <div style={{ display: 'flex', gap: 6 }}>
+                                        <button onClick={() => setWorkWeekend(true)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: 'none', background: '#FF9F0A', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>✓ S, lavoro</button>
+                                        <button onClick={() => setWorkWeekend(false)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: '1px solid #FF9F0A60', background: 'transparent', color: '#FF9F0A', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>No, solo feriali</button>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            );
+                          })()}
+                          <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                            <select value={montFormData.orario} onChange={e => setMontFormData(p => ({ ...p, orario: e.target.value }))} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 12, fontFamily: "inherit" }}>
+                              {["06:00","07:00","07:30","08:00","08:30","09:00","10:00","14:00"].map(h => <option key={h} value={h}>{h}</option>)}
+                            </select>
+                            <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
+                              <button onClick={() => setMontGiorni(Math.max(0.5, montGiorni - 0.5))} style={{ width: 32, height: 38, border: `1px solid ${T.bdr}`, borderRadius: "8px 0 0 8px", background: T.card, fontSize: 16, cursor: "pointer" }}>✕</button>
+                              <div style={{ flex: 1, height: 38, display: "flex", alignItems: "center", justifyContent: "center", borderTop: `1px solid ${T.bdr}`, borderBottom: `1px solid ${T.bdr}`, fontSize: 14, fontWeight: 800 }}>{montGiorni === 0.5 ? "½" : montGiorni}g</div>
+                              <button onClick={() => setMontGiorni(montGiorni + 0.5)} style={{ width: 32, height: 38, border: `1px solid ${T.bdr}`, borderRadius: "0 8px 8px 0", background: T.card, fontSize: 16, cursor: "pointer" }}>+</button>
+                            </div>
+                          </div>
+                          {squadreDB.length > 0 && <div style={{ display: "flex", gap: 4, marginBottom: 6, flexWrap: "wrap" as any }}>{squadreDB.map(sq => (
+                            <div key={sq.id} onClick={() => setMontFormData(p => ({ ...p, squadraId: sq.id }))} style={{ padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700, background: montFormData.squadraId === sq.id ? T.acc : T.card, color: montFormData.squadraId === sq.id ? "#fff" : T.text, border: `1px solid ${montFormData.squadraId === sq.id ? T.acc : T.bdr}` }}>{sq.nome || sq.id}</div>
+                          ))}</div>}
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <button onClick={() => setMontFormOpen(false)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                            <button onClick={() => {
+                              if (!montFormData.data) { alert("Scegli una data"); return; }
+                              const nuovoM = { id: "m_" + Date.now(), cmId: c.id, cmCode: c.code, cliente: c.cliente, indirizzo: c.indirizzo || "", vani: vaniCC.length, data: montFormData.data, orario: montFormData.orario, durata: montGiorni + "g", giorni: montGiorni, squadraId: montFormData.squadraId, stato: "programmato", note: montFormData.note };
+                              setMontaggiDB(prev => [...prev, nuovoM]);
+                              setEvents(prev => [...prev, { id: "ev_m_" + Date.now(), date: montFormData.data, time: montFormData.orario, text: `🔧 Montaggio ${c.cliente} (${montGiorni}g)`, tipo: "montaggio", persona: c.cliente, cm: c.code, addr: c.indirizzo || "", done: false }]);
+                              setMontFormOpen(false);
+                              setCcDone("✓ Montaggio pianificato!"); setTimeout(() => setCcDone(null), 3000);
+                            }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/*  COLLAUDO  */}
+                  {curCC.id === "collaudo" && (
+                    <div>
+                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Verifica il montaggio, scatta foto finale e fai firmare il collaudo</div>
+                      <button onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, collaudoOk: true, dataCollaudo: new Date().toISOString().split("T")[0] } : cm));
+                        setSelectedCM(prev => ({ ...prev, collaudoOk: true, dataCollaudo: new Date().toISOString().split("T")[0] }));
+                        setCcDone("✓ Collaudo completato!"); setTimeout(() => setCcDone(null), 3000);
+                      }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#5856d6", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.search} /> SEGNA COLLAUDO OK →</button>
+                    </div>
+                  )}
+
+                  {/*  CHIUSURA  */}
+                  {curCC.id === "chiusura" && (() => {
+                    const saldoFatCC = fattCC.find(f => f.tipo === "saldo" || f.tipo === "unica");
+                    const saldoPagatoCC = saldoFatCC?.pagata;
+                    const restoCC = totIvaCC - incassatoCC;
+                    return (
+                    <div>
+                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>
+                        Incassato €{fmtCC(incassatoCC)} su €{fmtCC(totIvaCC)} {restoCC > 0 ? `· Resta €${fmtCC(restoCC)}` : "· ✓ Tutto incassato"}
+                      </div>
+                      {!saldoFatCC && restoCC > 0 && (
+                        ccConfirm !== "saldo" ? (
+                          <button onClick={() => setCcConfirm("saldo")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.euro} /> FATTURA SALDO €{fmtCC(restoCC)} →</button>
+                        ) : (
+                          <div style={{ background: T.acc + "10", borderRadius: 10, padding: 12, border: `1px solid ${T.acc}30` }}>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: T.acc, marginBottom: 4 }}>Fattura saldo €{fmtCC(restoCC)}</div>
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                              <button onClick={() => { creaFattura(c, restoCC === totIvaCC ? "unica" : "saldo"); setCcConfirm(null); setCcDone("✓ Fattura saldo creata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CREA FATTURA</button>
+                            </div>
+                          </div>
+                        )
+                      )}
+                      {saldoFatCC && !saldoPagatoCC && (
+                        ccConfirm !== "pagata" ? (
+                          <button onClick={() => setCcConfirm("pagata")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ SEGNA PAGATA €{fmtCC(restoCC)} →</button>
+                        ) : (
+                          <div style={{ background: "#1E3A5F12", borderRadius: 10, padding: 12, border: "1px solid #1E3A5F30" }}>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#1E3A5F", marginBottom: 4 }}>Conferma pagamento €{fmtCC(restoCC)}</div>
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                              <button onClick={() => {
+                                setFattureDB(prev => prev.map(f => f.cmId === c.id && !f.pagata ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: "Bonifico" } : f));
+                                setFaseTo(c.id, "chiusura");
+                                setCcConfirm(null); setCcDone("✓ Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000);
+                              }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO INCASSO</button>
+                            </div>
+                          </div>
+                        )
+                      )}
+                      {!saldoFatCC && restoCC <= 0 && (
+                        <button onClick={() => { setFaseTo(c.id, "chiusura"); setCcDone("✓ Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CHIUDI COMMESSA →</button>
+                      )}
+                    </div>
+                    );
+                  })()}
+
                   {/*  PULSANTE SALTA  */}
                   {curCC && !curCC.done && curCC.id !== "chiusura" && (
                     <div style={{ textAlign: "center", marginTop: 8 }}>
