@@ -98,7 +98,7 @@ function VanoBInput({ label, field, value, stepColor, textColor, subColor, bdrCo
   const isFilled = value > 0;
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 10, fontWeight: 900, color: isFilled ? "#28A0A0" : "#8A8A82", marginBottom: 5, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{label}</div>
+      <div style={{ fontSize: 10, fontWeight: 900, color: isFilled ? "#1E3A5F" : "#8A8A82", marginBottom: 5, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{label}</div>
       <div style={{ position: "relative" }}>
         <input
           type="number"
@@ -110,13 +110,13 @@ function VanoBInput({ label, field, value, stepColor, textColor, subColor, bdrCo
           style={{
             width: "100%", padding: "14px 16px", fontSize: 24, fontWeight: 900,
             fontFamily: "'JetBrains Mono',monospace", textAlign: "center" as const,
-            border: `2px solid ${isFilled ? "#28A0A0" : "#F0EFEC"}`,
+            border: `2px solid ${isFilled ? "#1E3A5F" : "#F0EFEC"}`,
             borderRadius: 14,
-            background: isFilled ? "rgba(40,160,160,0.06)" : "white",
+            background: isFilled ? "rgba(30,58,95,0.06)" : "white",
             color: isFilled ? "#0D1F1F" : "#8BBCBC",
             outline: "none", boxSizing: "border-box" as const,
             WebkitAppearance: "none" as const,
-            boxShadow: isFilled ? "0 2px 8px rgba(40,160,160,0.15)" : "0 2px 8px rgba(0,0,0,0.04)",
+            boxShadow: isFilled ? "0 2px 8px rgba(30,58,95,0.15)" : "0 2px 8px rgba(0,0,0,0.04)",
           }}
         />
         {isFilled && <span style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", fontSize: 12, fontWeight: 800, color: "#8A8A82", pointerEvents: "none" }}>mm</span>}
@@ -538,10 +538,10 @@ export default function VanoDetailPanel() {
         {/* HERO TEAL fliwoX */}
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2", position: "sticky", top: 0, zIndex: 20 }}>
           <div style={{
-            background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+            background: "linear-gradient(145deg, #2D5A87 0%, #1E3A5F 50%, #0F1B2D 100%)",
             borderRadius: 22, padding: "14px 16px 14px",
             position: "relative", overflow: "hidden",
-            boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
+            boxShadow: "0 10px 26px rgba(15,27,45,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
             marginBottom: 10,
           }}>
             <div style={{ position: "absolute", top: -40, right: -30, width: 130, height: 130, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents: "none" }} />
@@ -586,7 +586,7 @@ export default function VanoDetailPanel() {
                 return (
                   <div onClick={() => setShowStrumenti(true)} style={{
                     width: 36, height: 36, borderRadius: 11,
-                    background: "#fff", color: "#28A0A0",
+                    background: "#fff", color: "#1E3A5F",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     cursor: "pointer", flexShrink: 0, position: "relative",
                     fontSize: 15, fontWeight: 900,
@@ -624,9 +624,9 @@ export default function VanoDetailPanel() {
           {/* Main button */}
           <div onClick={vrActive ? vrStop : vrStart}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", borderRadius: 12,
-              background: vrActive ? "#DC4444" : "#28A0A0",
+              background: vrActive ? "#DC4444" : "#1E3A5F",
               border: "none", cursor: "pointer", justifyContent: "center",
-              boxShadow: vrActive ? "0 4px 0 #991B1B" : "0 4px 0 #1A7A7A",
+              boxShadow: vrActive ? "0 4px 0 #991B1B" : "0 4px 0 #0F1B2D",
               transition: "all 0.1s" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
               <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
@@ -1735,14 +1735,14 @@ export default function VanoDetailPanel() {
                 return (
                   <div key={sec.id} ref={el=>sectionRefs.current[sec.id]=el}
                     className={isFlashing?"m-flash":""}
-                    style={{marginBottom:6,borderRadius:14,border:`1.5px solid ${isOpen?"#28A0A0":isDone?"#1A9E73":hasFill?"rgba(26,158,115,0.4)":"#F0EFEC"}`,overflow:"hidden",transition:"border-color 0.3s",boxShadow:isOpen?"0 2px 8px rgba(40,160,160,0.15)":isDone?"0 2px 8px rgba(26,158,115,0.1)":"0 2px 8px rgba(0,0,0,0.04)"}}>
+                    style={{marginBottom:6,borderRadius:14,border:`1.5px solid ${isOpen?"#1E3A5F":isDone?"#1A9E73":hasFill?"rgba(26,158,115,0.4)":"#F0EFEC"}`,overflow:"hidden",transition:"border-color 0.3s",boxShadow:isOpen?"0 2px 8px rgba(30,58,95,0.15)":isDone?"0 2px 8px rgba(26,158,115,0.1)":"0 2px 8px rgba(0,0,0,0.04)"}}>
                     <div onClick={()=>setVanoInfoOpen(isOpen?null:sec.id)}
-                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",background:isFlashing?"rgba(26,158,115,0.08)":isOpen?"rgba(40,160,160,0.06)":"white",cursor:"pointer"}}>
+                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",background:isFlashing?"rgba(26,158,115,0.08)":isOpen?"rgba(30,58,95,0.06)":"white",cursor:"pointer"}}>
                       <div style={{display:"flex",alignItems:"center",gap:7}}>
                         {sec.iconSVG && <span style={{width:16,height:16,display:"inline-flex",alignItems:"center",justifyContent:"center",color:isOpen?T.acc:T.sub,flexShrink:0}} dangerouslySetInnerHTML={{__html:sec.iconSVG}} />}
-                        <span style={{fontSize:13,fontWeight:900,color:isOpen?"#28A0A0":isDone?"#1A9E73":"#0D1F1F"}}>{sec.label}</span>
+                        <span style={{fontSize:13,fontWeight:900,color:isOpen?"#1E3A5F":isDone?"#1A9E73":"#0D1F1F"}}>{sec.label}</span>
                         {isOptional && !hasFill && <span style={{fontSize:9,color:"#8A8A82",fontWeight:700}}>opz.</span>}
-                        {sec.badge && <span className={isFlashing?"m-badge-pop":""} style={{padding:"3px 9px",borderRadius:20,background:isDone?"rgba(26,158,115,0.12)":"rgba(40,160,160,0.10)",color:isDone?"#1A9E73":"#28A0A0",fontSize:10,fontWeight:900,boxShadow:isDone?"0 2px 0 0 rgba(26,158,115,0.3)":"0 2px 0 0 rgba(40,160,160,0.2)"}}>{sec.badge}</span>}
+                        {sec.badge && <span className={isFlashing?"m-badge-pop":""} style={{padding:"3px 9px",borderRadius:20,background:isDone?"rgba(26,158,115,0.12)":"rgba(30,58,95,0.10)",color:isDone?"#1A9E73":"#1E3A5F",fontSize:10,fontWeight:900,boxShadow:isDone?"0 2px 0 0 rgba(26,158,115,0.3)":"0 2px 0 0 rgba(30,58,95,0.2)"}}>{sec.badge}</span>}
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
                         {isDone && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E73" strokeWidth="2.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
@@ -1863,7 +1863,7 @@ export default function VanoDetailPanel() {
               return (
                 <div key={i} onClick={() => setVanoStep(i)} style={{ flex: 1, cursor: "pointer" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 6, background: isActive ? "#28A0A0" : isDone ? "#1A9E73" : "white", border: `1.5px solid ${isActive ? "#156060" : isDone ? "#0A5A3A" : "#F0EFEC"}`, boxShadow: isActive ? "0 2px 6px rgba(40,160,160,0.3)" : isDone ? "0 2px 6px rgba(26,158,115,0.2)" : "0 2px 6px rgba(0,0,0,0.04)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, background: isActive ? "#1E3A5F" : isDone ? "#1A9E73" : "white", border: `1.5px solid ${isActive ? "#156060" : isDone ? "#0A5A3A" : "#F0EFEC"}`, boxShadow: isActive ? "0 2px 6px rgba(30,58,95,0.3)" : isDone ? "0 2px 6px rgba(26,158,115,0.2)" : "0 2px 6px rgba(0,0,0,0.04)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       {isDone
                         ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                         : <span style={{ fontSize: 10, fontWeight: 900, color: isActive ? "white" : "#8BBCBC" }}>{i + 1}</span>
@@ -1871,7 +1871,7 @@ export default function VanoDetailPanel() {
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 900, color: isActive ? "#0D1F1F" : isDone ? "#1A9E73" : "#8A8A82" }}>{s.title}</span>
                   </div>
-                  <div style={{ height: 4, borderRadius: 2, background: isActive ? "#28A0A0" : isDone ? "#1A9E73" : "#D0E8E8", boxShadow: isActive ? "0 2px 6px rgba(40,160,160,0.3)" : "none" }} />
+                  <div style={{ height: 4, borderRadius: 2, background: isActive ? "#1E3A5F" : isDone ? "#1A9E73" : "#D0E8E8", boxShadow: isActive ? "0 2px 6px rgba(30,58,95,0.3)" : "none" }} />
                 </div>
               );
             })}
@@ -1881,8 +1881,8 @@ export default function VanoDetailPanel() {
         <div style={{ padding: "8px 16px" }}>
           {/* fliwoX Step header card */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "white", borderRadius: 16, border: "1.5px solid #F0EFEC", marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: "#28A0A010", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 3px 0 0 rgba(40,160,160,0.3)" }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.2" strokeLinecap="round">
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "#1E3A5F10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 3px 0 0 rgba(30,58,95,0.3)" }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.2" strokeLinecap="round">
                 {vanoStep === 0 && <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>}
                 {vanoStep === 1 && <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>}
                 {vanoStep === 2 && <><polyline points="20 6 9 17 4 12"/></>}
@@ -1897,8 +1897,8 @@ export default function VanoDetailPanel() {
                     const filled = ["lAlto","lCentro","lBasso","hSx","hCentro","hDx","d1","d2"].filter(f => m[f] > 0).length;
                     const isComplete = filled >= 6;
                     return (
-                      <div style={{ padding: "3px 10px", borderRadius: 20, background: isComplete ? "rgba(26,158,115,0.12)" : "rgba(40,160,160,0.10)", boxShadow: isComplete ? "0 2px 0 0 rgba(26,158,115,0.3)" : "0 2px 0 0 rgba(40,160,160,0.2)" }}>
-                        <span style={{ fontSize: 10, fontWeight: 900, color: isComplete ? "#1A9E73" : "#28A0A0" }}>{filled}/8 inserite</span>
+                      <div style={{ padding: "3px 10px", borderRadius: 20, background: isComplete ? "rgba(26,158,115,0.12)" : "rgba(30,58,95,0.10)", boxShadow: isComplete ? "0 2px 0 0 rgba(26,158,115,0.3)" : "0 2px 0 0 rgba(30,58,95,0.2)" }}>
+                        <span style={{ fontSize: 10, fontWeight: 900, color: isComplete ? "#1A9E73" : "#1E3A5F" }}>{filled}/8 inserite</span>
                       </div>
                     );
                   })()}
@@ -3914,7 +3914,7 @@ export default function VanoDetailPanel() {
               </button>
             )}
             {vanoStep < 2 && (
-              <button onClick={() => setVanoStep(s => s + 1)} style={{ flex: 2, padding: "15px", borderRadius: 14, border: "none", background: "#28A0A0", color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 2px 8px rgba(40,160,160,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <button onClick={() => setVanoStep(s => s + 1)} style={{ flex: 2, padding: "15px", borderRadius: 14, border: "none", background: "#1E3A5F", color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 2px 8px rgba(30,58,95,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 {vanoStep === 0 ? "MISURE →" : "RIEPILOGO →"}
               </button>
             )}
@@ -3983,7 +3983,7 @@ export default function VanoDetailPanel() {
                 ["H", m.hCentro || m.hSx || m.hDx, null],
                 ["Δ", fSq !== null ? `${fSq}mm` : null, fSq > 3 ? "#DC4444" : "#1A9E73"],
               ].map(([l, val, c]) => (
-                <div key={l as string} style={{ padding: "8px 10px", borderRadius: 10, background: c === "#DC4444" ? "rgba(220,68,68,0.08)" : val ? "rgba(40,160,160,0.08)" : "#F5F5F5", border: `1.5px solid ${c === "#DC4444" ? "rgba(220,68,68,0.3)" : val ? "rgba(40,160,160,0.2)" : "#E8E8E8"}`, textAlign: "center" as const, boxShadow: val ? "0 3px 0 0 rgba(40,160,160,0.2)" : "0 2px 0 0 #E0E0E0" }}>
+                <div key={l as string} style={{ padding: "8px 10px", borderRadius: 10, background: c === "#DC4444" ? "rgba(220,68,68,0.08)" : val ? "rgba(30,58,95,0.08)" : "#F5F5F5", border: `1.5px solid ${c === "#DC4444" ? "rgba(220,68,68,0.3)" : val ? "rgba(30,58,95,0.2)" : "#E8E8E8"}`, textAlign: "center" as const, boxShadow: val ? "0 3px 0 0 rgba(30,58,95,0.2)" : "0 2px 0 0 #E0E0E0" }}>
                   <div style={{ fontSize: 9, fontWeight: 800, color: "#8A8A82", marginBottom: 2, textTransform: "uppercase" as const }}>{l}</div>
                   <div style={{ fontSize: 16, fontWeight: 900, fontFamily: FM, color: c || (val ? "#0D1F1F" : "#8BBCBC") }}>{val || "—"}{val && l !== "Δ" ? <span style={{ fontSize: 10, color: "#8A8A82" }}>mm</span> : null}</div>
                 </div>
@@ -5157,7 +5157,7 @@ export default function VanoDetailPanel() {
               return (
                 <div key={vr.id} style={{ background: "#fff", borderRadius: 14, padding: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 18, background: "#28A0A0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900 }}>{idx+1}</div>
+                    <div style={{ width: 36, height: 36, borderRadius: 18, background: "#1E3A5F", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900 }}>{idx+1}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 900, color: "#0D1F1F" }}>{vr.nome || ("Vano " + (idx+1))}</div>
                       {livelli && <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>{livelli}</div>}
