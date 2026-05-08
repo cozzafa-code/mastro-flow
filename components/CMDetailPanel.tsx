@@ -197,30 +197,6 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
           );
         })}
       
-      {showRilieviPanel && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#EEF1F5", overflowY: "auto", display: "flex", flexDirection: "column" }}>
-          <div style={{ background: "#0A1628", color: "#fff", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-            <div onClick={() => setShowRilieviPanel(null)} style={{ color: "#aaa", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "4px 8px" }}>‹</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{c.cliente} {c.cognome}</div>
-              <div style={{ fontSize: 11, color: "#7a8694", marginTop: 1 }}>{c.code} · Rilievi e vani</div>
-            </div>
-            <div onClick={() => setShowRilieviPanel(null)} style={{ background: "#1E3A5F", color: "#fff", fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>Chiudi</div>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto" }}>
-            <RilieviVaniPanel onOpenVano={(vanoId: any, rilievoId: any) => {
-              const ril = (c.rilievi || []).find((rr: any) => rr.id === rilievoId);
-              const vano = (ril?.vani || []).find((vv: any) => vv.id === vanoId);
-              if (ril && vano) {
-                setShowRilieviPanel(null);
-                setSelectedRilievo(ril);
-                if (typeof setSelectedVano === "function") setSelectedVano(vano);
-                setCmSubTab("sopralluoghi");
-              }
-            }} />
-          </div>
-        </div>
-      )}
     </div>
     </>
   );
@@ -7397,6 +7373,30 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             setTimeout(() => setCcDone(null), 3000);
           }}
         />
+      )}
+            {showRilieviPanel && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#EEF1F5", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+          <div style={{ background: "#0A1628", color: "#fff", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+            <div onClick={() => setShowRilieviPanel(null)} style={{ color: "#aaa", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "4px 8px" }}>‹</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{(selectedCM as any)?.cliente} {(selectedCM as any)?.cognome}</div>
+              <div style={{ fontSize: 11, color: "#7a8694", marginTop: 1 }}>{(selectedCM as any)?.code} · Rilievi e vani</div>
+            </div>
+            <div onClick={() => setShowRilieviPanel(null)} style={{ background: "#1E3A5F", color: "#fff", fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>Chiudi</div>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            <RilieviVaniPanel onOpenVano={(vanoId: any, rilievoId: any) => {
+              const ril = ((selectedCM as any)?.rilievi || []).find((rr: any) => rr.id === rilievoId);
+              const vano = (ril?.vani || []).find((vv: any) => vv.id === vanoId);
+              if (ril && vano) {
+                setShowRilieviPanel(null);
+                setSelectedRilievo(ril);
+                if (typeof setSelectedVano === "function") setSelectedVano(vano);
+                setCmSubTab("sopralluoghi");
+              }
+            }} />
+          </div>
+        </div>
       )}
       </div>
     );
