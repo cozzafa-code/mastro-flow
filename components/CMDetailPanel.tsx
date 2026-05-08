@@ -2837,6 +2837,36 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 <div style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1, textShadow: "0 2px 5px rgba(0,0,0,0.18)" }}>&euro; {pwFmt(pwTotale)}</div>
                 <div style={{ fontSize: 9, opacity: 0.88, fontWeight: 700, marginTop: 4, letterSpacing: "0.4px" }}>IVA {pwIvaDefault}% incl.</div>
               </div>
+              {/* [v51] Bottone STORICO - sempre accessibile dal configuratore preventivo */}
+              <button
+                onClick={() => setShowStoricoPreventivi({ commessaId: c.id, numero: (c as any).numeroPreventivo || 1 })}
+                aria-label="Storico versioni preventivo"
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  background: "rgba(255,255,255,0.22)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)" as any,
+                  border: "1px solid rgba(255,255,255,0.28)",
+                  color: "#fff",
+                  padding: "7px 11px",
+                  borderRadius: 10,
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase" as any,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  fontFamily: "inherit",
+                  marginLeft: 8,
+                  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.1)",
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Storico
+              </button>
             </div>
           </div>
 
