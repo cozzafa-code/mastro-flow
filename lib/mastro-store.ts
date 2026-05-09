@@ -128,7 +128,7 @@ const hydrate = async (
 
 const listMerged = async (table: TableName): Promise<any[]> => {
   const all = await idbGetAll(storeFor(table));
-  return all.filter((r: any) => !r.deleted_at && !r.merged_into);
+  return all.filter((r: any) => !r.deleted_at && !r.merged_into && !r.archived_at);
 };
 
 // ─── API per tabella ────────────────────────────────────────
