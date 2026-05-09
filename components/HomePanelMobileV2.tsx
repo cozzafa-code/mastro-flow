@@ -1,26 +1,20 @@
-// HomePanelMobileV2 - Home titolare mobile - REBUILD v11 mockup approvato
-// Hero navy gradient + banner priorita + stat 2x2 + 11 card riordinabili
+// HomePanelMobileV2 - Home titolare REBUILD v12 con CALENDARIO
 'use client'
-
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
 import { useMastro } from './MastroContext'
 
-const NAVY = '#1B3A5C'
-const NAVY_DEEP = '#0F1F33'
-const BG = '#7A8A9A'
-const RED = '#C73E1D'
-const AMBER = '#BA7517'
-const GREEN = '#0F6E56'
-const TEXT = '#0F1F33'
-const MUTED = '#5C6B7A'
+const NAVY = '#1B3A5C', NAVY_DEEP = '#0F1F33', BG = '#7A8A9A'
+const RED = '#C73E1D', AMBER = '#BA7517', GREEN = '#0F6E56'
+const TEXT = '#0F1F33', MUTED = '#5C6B7A'
+const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre']
+const DOW = ['L','M','M','G','V','S','D']
 
-// Card disponibili e ordine default
 const ALL_CARDS = [
+  { id: 'agenda', title: 'AGENDA' },
   { id: 'urgente', title: 'URGENTE' },
   { id: 'task', title: 'TASK' },
   { id: 'prossimo-montaggio', title: 'PROSSIMO MONTAGGIO' },
-  { id: 'agenda', title: 'AGENDA' },
   { id: 'cassa', title: 'CASSA' },
   { id: 'squadra', title: 'SQUADRA' },
   { id: 'produzione', title: 'PRODUZIONE' },
@@ -38,7 +32,7 @@ export default function HomePanelMobileV2(props: any) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
-      const saved = localStorage.getItem('mastro_home_order_v11')
+      const saved = localStorage.getItem('mastro_home_order_v12')
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -48,23 +42,16 @@ export default function HomePanelMobileV2(props: any) {
       }
     } catch {}
   }, [])
-
   useEffect(() => {
     if (typeof window === 'undefined') return
-    try { localStorage.setItem('mastro_home_order_v11', JSON.stringify(order)) } catch {}
+    try { localStorage.setItem('mastro_home_order_v12', JSON.stringify(order)) } catch {}
   }, [order])
 
-  const goto = (tab: string) => {
-    if (ctx?.setTab) ctx.setTab(tab)
-    else if (props?.onNavigate) props.onNavigate(tab)
-  }
-  const apriCommessa = (id: string) => {
-    if (ctx?.setSelectedCM) ctx.setSelectedCM(id)
-    goto('commesse')
-  }
+  const goto = (tab: string) => { if (ctx?.setTab) ctx.setTab(tab); else if (props?.onNavigate) props.onNavigate(tab) }
+  const apriCommessa = (id: string) => { if (ctx?.setSelectedCM) ctx.setSelectedCM(id); goto('commesse') }
 
-  // Drag & drop
-  const dragState = useRef<{ id: string; el: HTMLElement; offsetY: number; placeholder: HTMLElement } | null>(null)
+  // Drag drop
+  const dragState = useRef<any>(null)
   const startDrag = (e: React.PointerEvent, id: string) => {
     e.preventDefault(); e.stopPropagation()
     ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
@@ -74,20 +61,15 @@ export default function HomePanelMobileV2(props: any) {
     const container = cardEl.parentElement
     if (!container) return
     const rect = cardEl.getBoundingClientRect()
-    const placeholder = document.createElement('div')
-    placeholder.style.cssText = `height: ${rect.height}px; background: rgba(27,58,92,0.08); border: 2px dashed ${NAVY}; border-radius: 14px;`
-    container.insertBefore(placeholder, cardEl)
-    cardEl.style.position = 'fixed'
-    cardEl.style.zIndex = '1000'
-    cardEl.style.width = `${rect.width}px`
-    cardEl.style.left = `${rect.left}px`
-    cardEl.style.top = `${rect.top}px`
-    cardEl.style.pointerEvents = 'none'
-    cardEl.style.opacity = '0.92'
+    const ph = document.createElement('div')
+    ph.style.cssText = `height: ${rect.height}px; background: rgba(27,58,92,0.08); border: 2px dashed ${NAVY}; border-radius: 14px;`
+    container.insertBefore(ph, cardEl)
+    cardEl.style.position = 'fixed'; cardEl.style.zIndex = '1000'
+    cardEl.style.width = `${rect.width}px`; cardEl.style.left = `${rect.left}px`; cardEl.style.top = `${rect.top}px`
+    cardEl.style.pointerEvents = 'none'; cardEl.style.opacity = '0.92'
     cardEl.style.boxShadow = '0 12px 32px rgba(15,31,51,0.4)'
-    dragState.current = { id, el: cardEl, offsetY: e.clientY - rect.top, placeholder }
-    document.body.style.userSelect = 'none'
-    document.body.style.touchAction = 'none'
+    dragState.current = { id, el: cardEl, offsetY: e.clientY - rect.top, ph }
+    document.body.style.userSelect = 'none'; document.body.style.touchAction = 'none'
     const onMove = (ev: PointerEvent) => {
       const ds = dragState.current; if (!ds) return
       ds.el.style.top = `${ev.clientY - ds.offsetY}px`
@@ -96,54 +78,50 @@ export default function HomePanelMobileV2(props: any) {
       for (const c of others) {
         const r = c.getBoundingClientRect()
         if (ev.clientY < r.top + r.height / 2) {
-          if (ds.placeholder.nextSibling !== c) container.insertBefore(ds.placeholder, c)
+          if (ds.ph.nextSibling !== c) container.insertBefore(ds.ph, c)
           inserted = true; break
         }
       }
       if (!inserted && others.length > 0) {
         const last = others[others.length - 1]
-        if (ds.placeholder.previousSibling !== last) container.insertBefore(ds.placeholder, last.nextSibling)
+        if (ds.ph.previousSibling !== last) container.insertBefore(ds.ph, last.nextSibling)
       }
     }
     const onUp = () => {
       const ds = dragState.current; if (!ds) return
-      ds.placeholder.parentNode?.insertBefore(ds.el, ds.placeholder)
-      ds.placeholder.remove()
+      ds.ph.parentNode?.insertBefore(ds.el, ds.ph); ds.ph.remove()
       ds.el.style.cssText = ''
       const newOrder = Array.from(container.querySelectorAll<HTMLElement>('[data-card-id]')).map(c => c.dataset.cardId!).filter(Boolean)
       setOrder(newOrder)
-      document.body.style.userSelect = ''
-      document.body.style.touchAction = ''
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
+      document.body.style.userSelect = ''; document.body.style.touchAction = ''
+      window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp)
       dragState.current = null
     }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
+    window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp)
   }
 
-  // Dati reali da context/data
+  // Dati
   const cantieri = (ctx?.cantieri || []).filter((c: any) => !c?.deleted_at && !c?.archived_at)
   const fattureDB = ctx?.fattureDB || []
   const team = ctx?.team || []
-  const eventiOggi = data?.agenda?.eventi || []
-  const eventiCount = eventiOggi.length
+  const eventi = ctx?.events || data?.agenda?.eventi || []
+  const tasks = (ctx?.tasks || []).filter((t: any) => !t?.completata).slice(0, 4)
+  const montaggi = ctx?.montaggi || []
   const ferme = cantieri.filter((c: any) => {
     const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
-    const days = (Date.now() - upd) / 86400000
-    return days > 5 && (c?.fase === 'preventivo' || c?.fase === 'sopralluogo')
+    return ((Date.now() - upd) / 86400000) > 5 && (c?.fase === 'preventivo' || c?.fase === 'sopralluogo')
   })
-  const tasks = (ctx?.tasks || []).filter((t: any) => !t?.completata).slice(0, 4)
   const daIncassare = fattureDB.reduce((s: number, f: any) => s + (f?.pagata ? 0 : Number(f?.totale || 0)), 0)
   const daIncassareLabel = daIncassare >= 1000 ? `${(daIncassare / 1000).toFixed(1)}k€` : `${Math.round(daIncassare)}€`
   const messaggiNonLetti = ctx?.talkUnread || 0
-  const prossimoMontaggio = (ctx?.montaggi || []).filter((m: any) => new Date(m?.data || 0).getTime() > Date.now()).sort((a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime())[0]
+  const prossimoMontaggio = montaggi.filter((m: any) => new Date(m?.data || 0).getTime() > Date.now()).sort((a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime())[0]
+  const eventiOggi = eventi.filter((e: any) => {
+    const d = new Date(e?.data || e?.start || 0); const oggi = new Date()
+    return d.toDateString() === oggi.toDateString()
+  })
 
   const renderCard = (id: string) => {
-    const card = ALL_CARDS.find(c => c.id === id)
-    if (!card) return null
+    const card = ALL_CARDS.find(c => c.id === id); if (!card) return null
     return (
       <div key={id} data-card-id={id} style={{
         background: '#FFF', borderRadius: 14, position: 'relative',
@@ -165,11 +143,11 @@ export default function HomePanelMobileV2(props: any) {
           </div>
         )}
         <div style={{ padding: '12px 14px' }}>
+          {id === 'agenda' && <CardCalendar eventi={eventi} onClick={() => goto('agenda')} />}
           {id === 'urgente' && <CardUrgente ferme={ferme} onClick={() => goto('commesse')} />}
           {id === 'task' && <CardTask tasks={tasks} onClick={() => goto('team')} />}
           {id === 'prossimo-montaggio' && <CardProssimoMontaggio mont={prossimoMontaggio} onClick={() => goto('agenda')} />}
-          {id === 'agenda' && <CardAgenda eventi={eventiOggi} onClick={() => goto('agenda')} />}
-          {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} onClick={() => goto('contabilita')} />}
+          {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => goto('contabilita')} />}
           {id === 'squadra' && <CardSquadra team={team} onClick={() => goto('team')} />}
           {id === 'produzione' && <CardProduzione cantieri={cantieri} onClick={() => goto('commesse')} />}
           {id === 'magazzino' && <CardMagazzino onClick={() => goto('magazzino')} />}
@@ -179,70 +157,57 @@ export default function HomePanelMobileV2(props: any) {
     )
   }
 
+  const userInit = (data?.user?.iniziali || ctx?.user?.email?.[0] || 'T').toUpperCase().slice(0, 2)
+  const userNome = (data?.user?.nome || ctx?.azienda?.nome || 'TITOLARE').toUpperCase()
+
   return (
     <div style={{ background: BG, minHeight: '100vh', paddingBottom: 110 }}>
       {/* HERO */}
-      <div style={{
-        background: `linear-gradient(180deg, ${NAVY} 0%, ${NAVY_DEEP} 100%)`,
-        padding: '14px 18px 22px', borderRadius: '0 0 22px 22px',
-      }}>
+      <div style={{ background: `linear-gradient(180deg, ${NAVY} 0%, ${NAVY_DEEP} 100%)`, padding: '14px 18px 22px', borderRadius: '0 0 22px 22px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div style={{ color: '#FFF', fontSize: 14, fontWeight: 600 }}>fliwoX</div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <button onClick={() => setEditMode(v => !v)} style={{
               background: editMode ? '#FFF' : 'rgba(255,255,255,0.12)',
-              color: editMode ? NAVY_DEEP : '#FFF',
-              fontSize: 10, padding: '5px 10px', borderRadius: 6,
+              color: editMode ? NAVY_DEEP : '#FFF', fontSize: 10, padding: '5px 10px', borderRadius: 6,
               fontWeight: 700, letterSpacing: 0.4, border: 'none', cursor: 'pointer',
             }}>{editMode ? 'FATTO' : 'RIORDINA'}</button>
             <button onClick={() => goto('settings')} style={{
               width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.12)',
-              border: 'none', color: '#FFF', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: 'none', color: '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2}>
                 <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
             </button>
-            <div style={{
-              width: 30, height: 30, borderRadius: 50, background: 'rgba(255,255,255,0.95)',
-              color: NAVY_DEEP, fontWeight: 600, fontSize: 12,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>{(data?.user?.iniziali || 'T').slice(0, 2)}</div>
+            <div style={{ width: 30, height: 30, borderRadius: 50, background: 'rgba(255,255,255,0.95)', color: NAVY_DEEP, fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{userInit}</div>
           </div>
         </div>
         <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11, letterSpacing: 1.5, fontWeight: 500 }}>BUONGIORNO</div>
-        <div style={{ color: '#FFF', fontSize: 30, fontWeight: 600, marginTop: 4, letterSpacing: 0.8, lineHeight: 1.05 }}>
-          {(data?.user?.nome || 'TITOLARE').toUpperCase()}
-        </div>
+        <div style={{ color: '#FFF', fontSize: 30, fontWeight: 600, marginTop: 4, letterSpacing: 0.8, lineHeight: 1.05 }}>{userNome}</div>
       </div>
 
-      {/* PRIORITY BANNER */}
-      <div onClick={() => goto('agenda')} style={{
-        margin: '12px 12px 8px', background: NAVY, borderRadius: 14,
-        padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
-      }}>
+      {/* PRIORITY */}
+      <div onClick={() => goto('agenda')} style={{ margin: '12px 12px 8px', background: NAVY, borderRadius: 14, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
         <div style={{ width: 30, height: 30, borderRadius: 50, background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}>
-            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
-          </svg>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1 }}>
           <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 9, letterSpacing: 0.5, fontWeight: 700 }}>PRIORITÀ OGGI</div>
-          <div style={{ color: '#FFF', fontSize: 12, fontWeight: 600, marginTop: 1 }}>{eventiCount} eventi · {ferme.length} commesse ferme</div>
+          <div style={{ color: '#FFF', fontSize: 12, fontWeight: 600, marginTop: 1 }}>{eventiOggi.length} eventi · {ferme.length} commesse ferme</div>
         </div>
         <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg>
       </div>
 
-      {/* STAT GRID 2x2 */}
+      {/* STAT GRID */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 12px 8px' }}>
         <Stat onClick={() => goto('commesse')} icon="briefcase" value={cantieri.length} label="Commesse attive" />
         <Stat onClick={() => goto('contabilita')} icon="cash" value={daIncassareLabel} label="In attesa" />
-        <Stat onClick={() => goto('agenda')} icon="calendar" value={eventiCount} label="Eventi oggi" />
+        <Stat onClick={() => goto('agenda')} icon="calendar" value={eventiOggi.length} label="Eventi oggi" />
         <Stat onClick={() => goto('talk')} icon="msg" value={messaggiNonLetti} label="Messaggi" badge={messaggiNonLetti > 0 ? messaggiNonLetti : null} />
       </div>
 
-      {/* LISTA CARD RIORDINABILI */}
+      {/* CARD LIST */}
       <div style={{ padding: '0 12px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {order.map(id => renderCard(id))}
       </div>
@@ -271,7 +236,7 @@ function CardHead({ title, link, badge, onClick, icon }: any) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {icon ? <div style={{ color: NAVY, fontSize: 16 }}>{icon}</div> : null}
+        {icon ? <div style={{ color: NAVY }}>{icon}</div> : null}
         <span style={{ color: TEXT, fontSize: 13, fontWeight: 600 }}>{title}</span>
         {badge != null ? <span style={{ background: '#F1F4F7', color: NAVY, fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{badge}</span> : null}
       </div>
@@ -280,18 +245,197 @@ function CardHead({ title, link, badge, onClick, icon }: any) {
   )
 }
 
+// CALENDARIO con tab giorno/settimana/mese + nav prev/next
+function CardCalendar({ eventi, onClick }: any) {
+  const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('mese')
+  const [cursor, setCursor] = useState(new Date())
+  const today = new Date()
+  const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
+
+  // Mappa eventi per giorno
+  const eventByDay = useMemo(() => {
+    const map: Record<string, any[]> = {}
+    eventi.forEach((e: any) => {
+      const d = new Date(e?.data || e?.start || 0)
+      if (isNaN(d.getTime())) return
+      const key = d.toDateString()
+      if (!map[key]) map[key] = []
+      map[key].push(e)
+    })
+    return map
+  }, [eventi])
+
+  const eventiGiornoSel = eventByDay[cursor.toDateString()] || []
+
+  // Costruisci griglia mese (lun-dom)
+  const buildMonth = () => {
+    const y = cursor.getFullYear(), m = cursor.getMonth()
+    const first = new Date(y, m, 1)
+    const last = new Date(y, m + 1, 0)
+    const startDow = (first.getDay() + 6) % 7  // 0=Lun
+    const days: { date: Date; muted: boolean }[] = []
+    for (let i = startDow; i > 0; i--) days.push({ date: new Date(y, m, 1 - i), muted: true })
+    for (let d = 1; d <= last.getDate(); d++) days.push({ date: new Date(y, m, d), muted: false })
+    while (days.length % 7 !== 0) {
+      const lastD = days[days.length - 1].date
+      days.push({ date: new Date(lastD.getFullYear(), lastD.getMonth(), lastD.getDate() + 1), muted: true })
+    }
+    return days
+  }
+
+  const navPrev = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))
+    else if (view === 'settimana') setCursor(new Date(cursor.getTime() - 7 * 86400000))
+    else setCursor(new Date(cursor.getTime() - 86400000))
+  }
+  const navNext = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))
+    else if (view === 'settimana') setCursor(new Date(cursor.getTime() + 7 * 86400000))
+    else setCursor(new Date(cursor.getTime() + 86400000))
+  }
+  const navOggi = (e: React.MouseEvent) => { e.stopPropagation(); setCursor(new Date()) }
+
+  const monthLabel = `${MESI[cursor.getMonth()]} ${cursor.getFullYear()}`
+  const days = buildMonth()
+  const dotColor = (e: any) => {
+    const t = (e?.tipo || '').toLowerCase()
+    if (t.includes('firma')) return RED
+    if (t.includes('sopral') || t.includes('rilievo')) return AMBER
+    if (t.includes('mont') || t.includes('posa')) return NAVY
+    return GREEN
+  }
+
+  return (
+    <>
+      {/* Tab vista */}
+      <div style={{ display: 'flex', gap: 4, background: '#F1F4F7', padding: 3, borderRadius: 10, marginBottom: 10 }}>
+        {(['giorno','settimana','mese'] as const).map(v => (
+          <div key={v} onClick={(e) => { e.stopPropagation(); setView(v) }} style={{
+            flex: 1, textAlign: 'center', padding: '6px 0', fontSize: 10, fontWeight: 600, letterSpacing: 0.5,
+            color: view === v ? TEXT : MUTED, background: view === v ? '#FFF' : 'transparent',
+            borderRadius: 7, cursor: 'pointer',
+          }}>{v.toUpperCase()}</div>
+        ))}
+      </div>
+
+      {/* Header mese + nav */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ color: TEXT, fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{monthLabel}</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button onClick={navPrev} style={navBtn}><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg></button>
+          <button onClick={navOggi} style={{ ...navBtn, padding: '0 10px', width: 'auto' }}>OGGI</button>
+          <button onClick={navNext} style={navBtn}><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+
+      {/* MESE: griglia 7 col */}
+      {view === 'mese' && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
+            {DOW.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 9, color: '#8FA8B8', padding: '2px 0' }}>{d}</div>)}
+            {days.map((d, i) => {
+              const isToday = isSameDay(d.date, today)
+              const isSel = isSameDay(d.date, cursor)
+              const has = (eventByDay[d.date.toDateString()] || []).length > 0
+              return (
+                <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d.date) }} style={{
+                  aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, color: d.muted ? '#C8D2DA' : (isToday ? '#FFF' : TEXT),
+                  cursor: 'pointer', borderRadius: '50%', position: 'relative',
+                  background: isToday ? NAVY : (isSel && !d.muted ? '#E5EAF0' : 'transparent'),
+                  fontWeight: isToday ? 600 : 400,
+                }}>
+                  {d.date.getDate()}
+                  {has && !d.muted && <div style={{ position: 'absolute', bottom: 2, width: 4, height: 4, background: isToday ? '#FFF' : NAVY, borderRadius: '50%' }}/>}
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {/* SETTIMANA: 7 col x 1 riga */}
+      {view === 'settimana' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+          {Array.from({ length: 7 }).map((_, i) => {
+            const dow = (cursor.getDay() + 6) % 7
+            const start = new Date(cursor.getTime() - dow * 86400000)
+            const d = new Date(start.getTime() + i * 86400000)
+            const isToday = isSameDay(d, today)
+            const isSel = isSameDay(d, cursor)
+            const evs = eventByDay[d.toDateString()] || []
+            return (
+              <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d) }} style={{
+                background: isToday ? NAVY : (isSel ? '#E5EAF0' : '#F7F9FB'),
+                color: isToday ? '#FFF' : TEXT, padding: '6px 4px', borderRadius: 8, textAlign: 'center', cursor: 'pointer',
+              }}>
+                <div style={{ fontSize: 9, opacity: 0.7 }}>{DOW[i]}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{d.getDate()}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 4, minHeight: 6 }}>
+                  {evs.slice(0, 3).map((e: any, j: number) => <div key={j} style={{ width: 4, height: 4, background: isToday ? '#FFF' : dotColor(e), borderRadius: '50%' }}/>)}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* GIORNO: timeline con eventi */}
+      {view === 'giorno' && (
+        <div style={{ background: '#F7F9FB', borderRadius: 8, padding: 10, minHeight: 100 }}>
+          <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 6, textTransform: 'uppercase' }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' })}</div>
+          {eventiGiornoSel.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '12px 0' }}>Nessun evento in questo giorno</div>}
+          {eventiGiornoSel.map((e: any, i: number) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' }}>
+              <div style={{ width: 7, height: 7, borderRadius: 50, background: dotColor(e), flexShrink: 0 }}/>
+              <div style={{ fontSize: 10, color: MUTED, minWidth: 40, fontFeatureSettings: '"tnum"', fontWeight: 600 }}>{e?.ora || (e?.data ? new Date(e.data).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—')}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{e?.titolo || e?.title || ''}</div>
+                <div style={{ fontSize: 9, color: NAVY }}>{e?.note || e?.luogo || ''}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Eventi del giorno selezionato (sotto griglia mese/settimana) */}
+      {view !== 'giorno' && eventiGiornoSel.length > 0 && (
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #E5E7EB' }}>
+          <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5, marginBottom: 4, fontWeight: 600 }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} · {eventiGiornoSel.length} EVENTI</div>
+          {eventiGiornoSel.slice(0, 4).map((e: any, i: number) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' }}>
+              <div style={{ width: 7, height: 7, borderRadius: 50, background: dotColor(e), flexShrink: 0 }}/>
+              <div style={{ fontSize: 10, color: MUTED, minWidth: 40, fontFeatureSettings: '"tnum"', fontWeight: 600 }}>{e?.ora || (e?.data ? new Date(e.data).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—')}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{e?.titolo || e?.title || ''}</div>
+                <div style={{ fontSize: 9, color: NAVY }}>{e?.note || e?.luogo || ''}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button onClick={onClick} style={{ marginTop: 10, background: 'transparent', border: 'none', color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer', width: '100%', padding: 4 }}>APRI AGENDA COMPLETA →</button>
+    </>
+  )
+}
+const navBtn: React.CSSProperties = { width: 26, height: 26, borderRadius: 6, background: '#F1F4F7', color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, cursor: 'pointer', border: 'none' }
+
 function CardUrgente({ ferme, onClick }: any) {
   return (
-    <div style={{ background: '#FCEFEC', margin: -12 + 'px ' + -14 + 'px', padding: '12px 14px', borderRadius: 14, position: 'relative' }}>
+    <div style={{ background: '#FCEFEC', margin: '-12px -14px', padding: '12px 14px', borderRadius: 14, position: 'relative' }}>
       <span style={{ position: 'absolute', top: -6, left: 12, background: RED, color: '#FFF', fontSize: 9, padding: '3px 9px', borderRadius: 5, fontWeight: 700, letterSpacing: 0.5 }}>URGENTE</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, marginTop: 4 }}>
-        <svg width={14} height={14} viewBox="0 0 24 24" fill={RED}><path d="M12 2L2 22h20L12 2zm0 6l7 12H5l7-12zm-1 4v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+        <svg width={14} height={14} viewBox="0 0 24 24" fill={RED}><path d="M12 2L2 22h20L12 2zm-1 6v8h2V8h-2zm0 10v2h2v-2h-2z"/></svg>
         <span style={{ color: TEXT, fontSize: 13, fontWeight: 600 }}>{ferme.length} commesse ferme</span>
       </div>
+      {ferme.length === 0 && <div style={{ fontSize: 11, color: MUTED }}>Tutto sotto controllo</div>}
       {ferme.slice(0, 3).map((c: any, i: number) => (
-        <div key={i} style={{ fontSize: 11, color: MUTED, lineHeight: 1.5 }}>{c?.codice || c?.code || '?'} — {c?.fase || ''}</div>
+        <div key={i} style={{ fontSize: 11, color: MUTED }}>{c?.codice || c?.code || '?'} — {c?.fase || ''}</div>
       ))}
-      <button onClick={onClick} style={{ marginTop: 10, background: '#FFF', border: '1px solid #D8DDE0', padding: '9px 10px', borderRadius: 10, fontSize: 11, color: TEXT, cursor: 'pointer', width: '100%', fontWeight: 600, letterSpacing: 0.5 }}>SBLOCCA →</button>
+      {ferme.length > 0 && <button onClick={onClick} style={{ marginTop: 10, background: '#FFF', border: '1px solid #D8DDE0', padding: '9px 10px', borderRadius: 10, fontSize: 11, color: TEXT, cursor: 'pointer', width: '100%', fontWeight: 600, letterSpacing: 0.5 }}>SBLOCCA →</button>}
     </div>
   )
 }
@@ -315,38 +459,30 @@ function CardTask({ tasks, onClick }: any) {
 }
 
 function CardProssimoMontaggio({ mont, onClick }: any) {
+  if (!mont) return (
+    <>
+      <CardHead title="Prossimo montaggio" link="agenda" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>} />
+      <div style={{ fontSize: 11, color: MUTED, padding: '8px 0' }}>Nessun montaggio programmato</div>
+    </>
+  )
+  const data = new Date(mont?.data || Date.now())
+  const dataLbl = data.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
+  const oraLbl = data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
         <span style={{ color: MUTED, fontSize: 9, letterSpacing: 0.5, fontWeight: 600 }}>PROSSIMO MONTAGGIO</span>
-        <span style={{ color: NAVY, fontSize: 11, fontWeight: 600 }}>{mont?.data || '—'}</span>
+        <span style={{ color: NAVY, fontSize: 11, fontWeight: 600 }}>{dataLbl} {oraLbl}</span>
       </div>
-      <div style={{ color: TEXT, fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{mont?.cliente || 'Nessun montaggio programmato'}</div>
-      <div style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{mont?.indirizzo || ''}</div>
+      <div style={{ color: TEXT, fontWeight: 600, fontSize: 14 }}>{mont?.cliente || mont?.titolo || 'Cliente'}</div>
+      <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{mont?.indirizzo || mont?.luogo || ''}</div>
     </>
   )
 }
 
-function CardAgenda({ eventi, onClick }: any) {
-  return (
-    <>
-      <CardHead title="Agenda oggi" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={3} y={4} width={18} height={18} rx={2}/></svg>} />
-      {eventi.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun evento oggi</div>}
-      {eventi.slice(0, 3).map((e: any, i: number) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' }}>
-          <div style={{ width: 7, height: 7, borderRadius: 50, background: e?.tipo === 'firma' ? RED : e?.tipo === 'sopralluogo' ? AMBER : NAVY, flexShrink: 0 }}/>
-          <div style={{ fontSize: 10, color: MUTED, minWidth: 38, fontFeatureSettings: '"tnum"', fontWeight: 600 }}>{e?.ora || '—'}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{e?.titolo || ''}</div>
-            <div style={{ fontSize: 9, color: NAVY, marginTop: 1 }}>{e?.meta || ''}</div>
-          </div>
-        </div>
-      ))}
-    </>
-  )
-}
-
-function CardCassa({ daIncassare, onClick }: any) {
+function CardCassa({ daIncassare, fatture, onClick }: any) {
+  const scadute = fatture.filter((f: any) => !f?.pagata && f?.scadenza && new Date(f.scadenza).getTime() < Date.now())
+  const scaduteAmt = scadute.reduce((s: number, f: any) => s + Number(f?.totale || 0), 0)
   return (
     <>
       <CardHead title="Cassa" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={6} width={20} height={12} rx={2}/><circle cx={12} cy={12} r={2}/></svg>} />
@@ -354,6 +490,12 @@ function CardCassa({ daIncassare, onClick }: any) {
         <span style={{ fontSize: 11, color: MUTED }}>Da incassare</span>
         <span style={{ fontSize: 13, color: TEXT, fontWeight: 600, fontFeatureSettings: '"tnum"' }}>{daIncassare}</span>
       </div>
+      {scadute.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0' }}>
+          <span style={{ fontSize: 11, color: MUTED }}>Scadute ({scadute.length})</span>
+          <span style={{ fontSize: 13, color: RED, fontWeight: 600, fontFeatureSettings: '"tnum"' }}>{Math.round(scaduteAmt)}€</span>
+        </div>
+      )}
     </>
   )
 }
@@ -363,6 +505,7 @@ function CardSquadra({ team, onClick }: any) {
   return (
     <>
       <CardHead title="Squadra" badge={`${attivi.length}/${team.length}`} link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/></svg>} />
+      {attivi.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun operatore attivo</div>}
       {attivi.map((t: any, i: number) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: i < attivi.length - 1 ? '1px solid #E5E7EB' : 'none' }}>
           <div style={{ width: 28, height: 28, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>{(t?.nome || '?').slice(0, 1).toUpperCase()}</div>
@@ -381,7 +524,7 @@ function CardProduzione({ cantieri, onClick }: any) {
   const inProd = cantieri.filter((c: any) => c?.fase === 'produzione' || c?.fase === 'ordine').slice(0, 3)
   return (
     <>
-      <CardHead title="Produzione" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M14 7l-5 5 5 5"/></svg>} />
+      <CardHead title="Produzione" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={3}/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4z"/></svg>} />
       {inProd.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun lavoro in produzione</div>}
       {inProd.map((c: any, i: number) => (
         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < inProd.length - 1 ? '1px solid #E5E7EB' : 'none' }}>
@@ -389,7 +532,7 @@ function CardProduzione({ cantieri, onClick }: any) {
             <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{c?.codice || c?.code} · {c?.cliente || ''}</div>
             <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{c?.fase}</div>
           </div>
-          <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: '#F1F4F7', color: NAVY, fontWeight: 600 }}>{c?.fase?.toUpperCase()}</span>
+          <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: '#F1F4F7', color: NAVY, fontWeight: 600 }}>{(c?.fase || '').toUpperCase()}</span>
         </div>
       ))}
     </>
@@ -399,25 +542,25 @@ function CardProduzione({ cantieri, onClick }: any) {
 function CardMagazzino({ onClick }: any) {
   return (
     <>
-      <CardHead title="Magazzino" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 8V21H3V8M1 3h22v5H1zM10 12h4"/></svg>} />
+      <CardHead title="Magazzino" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 8V21H3V8M1 3h22v5H1z"/></svg>} />
       <div style={{ fontSize: 11, color: MUTED, padding: '6px 0' }}>Modulo MASTRO MAGAZZINO in arrivo</div>
     </>
   )
 }
 
 function CardStatistiche({ cantieri, onClick }: any) {
-  const sopralluoghi = cantieri.filter((c: any) => c?.fase === 'sopralluogo').length
-  const preventivi = cantieri.filter((c: any) => c?.fase === 'preventivo').length
+  const sopr = cantieri.filter((c: any) => c?.fase === 'sopralluogo').length
+  const prev = cantieri.filter((c: any) => c?.fase === 'preventivo').length
   return (
     <>
-      <CardHead title="Statistiche" link="vedi report" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>} />
+      <CardHead title="Statistiche" link="report" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>} />
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #E5E7EB' }}>
         <span style={{ fontSize: 11, color: MUTED }}>Sopralluoghi</span>
-        <span style={{ fontSize: 13, color: TEXT, fontWeight: 600 }}>{sopralluoghi}</span>
+        <span style={{ fontSize: 13, color: TEXT, fontWeight: 600 }}>{sopr}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0' }}>
-        <span style={{ fontSize: 11, color: MUTED }}>Preventivi inviati</span>
-        <span style={{ fontSize: 13, color: TEXT, fontWeight: 600 }}>{preventivi}</span>
+        <span style={{ fontSize: 11, color: MUTED }}>Preventivi</span>
+        <span style={{ fontSize: 13, color: TEXT, fontWeight: 600 }}>{prev}</span>
       </div>
     </>
   )
