@@ -1,4 +1,4 @@
-// HomePanelMobileV2 - REBUILD v13 con calendario + swipe orizzontale ovunque
+// HomePanelMobileV2 - V14 settimana lista + swipe info ricche
 'use client'
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
@@ -8,6 +8,8 @@ const NAVY = '#1B3A5C', NAVY_DEEP = '#0F1F33', BG = '#7A8A9A'
 const RED = '#C73E1D', AMBER = '#BA7517', GREEN = '#0F6E56'
 const TEXT = '#0F1F33', MUTED = '#5C6B7A', BORDER = '#E5E7EB'
 const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre']
+const DOW_FULL = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica']
+const DOW_SHORT = ['LUN','MAR','MER','GIO','VEN','SAB','DOM']
 const DOW = ['L','M','M','G','V','S','D']
 
 const ALL_CARDS = [
@@ -24,31 +26,34 @@ const ALL_CARDS = [
 ]
 const DEFAULT_ORDER = ALL_CARDS.map(c => c.id)
 
-// ============ SWIPE TRACK orizzontale riusabile ============
 function SwipeTrack({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      display: 'flex', gap: 8, overflowX: 'auto',
-      scrollSnapType: 'x mandatory',
-      WebkitOverflowScrolling: 'touch' as any,
-      scrollbarWidth: 'none' as any,
+      display: 'flex', gap: 8, overflowX: 'auto', scrollSnapType: 'x mandatory',
+      WebkitOverflowScrolling: 'touch' as any, scrollbarWidth: 'none' as any,
       paddingBottom: 4, marginRight: -14, paddingRight: 14,
-    }}
-    onWheel={(e) => { e.currentTarget.scrollLeft += e.deltaY }}
-    >
-      <style>{`.mastro-swipe::-webkit-scrollbar{display:none}`}</style>
+    }} onWheel={(e) => { e.currentTarget.scrollLeft += e.deltaY }}>
+      <style>{`div::-webkit-scrollbar{display:none}`}</style>
       {children}
     </div>
   )
 }
-function SwipeItem({ children, width = 'calc(50% - 4px)' }: any) {
+function SwipeItem({ children, width = '220px' }: any) {
   return (
     <div style={{
       flex: `0 0 ${width}`, scrollSnapAlign: 'start',
-      background: '#F1F4F7', borderRadius: 10, padding: '8px 10px',
-      minWidth: 0,
+      background: '#F7F9FB', borderRadius: 10, padding: 10, minWidth: 0,
+      border: `1px solid ${BORDER}`,
     }}>{children}</div>
   )
+}
+
+const dotColor = (e: any) => {
+  const t = (e?.tipo || '').toLowerCase()
+  if (t.includes('firma')) return RED
+  if (t.includes('sopral') || t.includes('rilievo')) return AMBER
+  if (t.includes('mont') || t.includes('posa')) return NAVY
+  return GREEN
 }
 
 export default function HomePanelMobileV2(props: any) {
@@ -60,7 +65,7 @@ export default function HomePanelMobileV2(props: any) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
-      const saved = localStorage.getItem('mastro_home_order_v13')
+      const saved = localStorage.getItem('mastro_home_order_v14')
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -72,13 +77,12 @@ export default function HomePanelMobileV2(props: any) {
   }, [])
   useEffect(() => {
     if (typeof window === 'undefined') return
-    try { localStorage.setItem('mastro_home_order_v13', JSON.stringify(order)) } catch {}
+    try { localStorage.setItem('mastro_home_order_v14', JSON.stringify(order)) } catch {}
   }, [order])
 
   const goto = (tab: string) => { if (ctx?.setTab) ctx.setTab(tab); else if (props?.onNavigate) props.onNavigate(tab) }
-  const apriCM = (id: string) => { if (ctx?.setSelectedCM) ctx.setSelectedCM(id); goto('commesse') }
+  const apriCM = (id: string) => { if (id && ctx?.setSelectedCM) ctx.setSelectedCM(id); goto('commesse') }
 
-  // Drag drop
   const dragState = useRef<any>(null)
   const startDrag = (e: React.PointerEvent, id: string) => {
     e.preventDefault(); e.stopPropagation()
@@ -164,13 +168,13 @@ export default function HomePanelMobileV2(props: any) {
         </div>
       )}
       <div style={{ padding: '12px 14px' }}>
-        {id === 'agenda' && <CardCalendar eventi={eventi} onClick={() => goto('agenda')} />}
+        {id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} onClick={() => goto('agenda')} />}
         {id === 'urgente' && <CardUrgente ferme={ferme} apri={apriCM} />}
-        {id === 'task' && <CardTask tasks={tasks} onClick={() => goto('team')} />}
-        {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} onClick={() => goto('agenda')} />}
+        {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} onClick={() => goto('team')} />}
+        {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} />}
         {id === 'commesse' && <CardCommesse cantieri={cantieri} apri={apriCM} />}
         {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => goto('contabilita')} />}
-        {id === 'squadra' && <CardSquadra team={team} onClick={() => goto('team')} />}
+        {id === 'squadra' && <CardSquadra team={team} cantieri={cantieri} onClick={() => goto('team')} />}
         {id === 'produzione' && <CardProduzione cantieri={cantieri} apri={apriCM} />}
         {id === 'magazzino' && <CardMagazzino onClick={() => goto('magazzino')} />}
         {id === 'statistiche' && <CardStatistiche cantieri={cantieri} onClick={() => goto('contabilita')} />}
@@ -183,7 +187,6 @@ export default function HomePanelMobileV2(props: any) {
 
   return (
     <div style={{ background: BG, minHeight: '100vh', paddingBottom: 110 }}>
-      {/* HERO */}
       <div style={{ background: `linear-gradient(180deg, ${NAVY} 0%, ${NAVY_DEEP} 100%)`, padding: '14px 18px 22px', borderRadius: '0 0 22px 22px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div style={{ color: '#FFF', fontSize: 14, fontWeight: 600 }}>fliwoX</div>
@@ -203,7 +206,6 @@ export default function HomePanelMobileV2(props: any) {
         <div style={{ color: '#FFF', fontSize: 30, fontWeight: 600, marginTop: 4, letterSpacing: 0.8, lineHeight: 1.05 }}>{userNome}</div>
       </div>
 
-      {/* PRIORITY */}
       <div onClick={() => goto('agenda')} style={{ margin: '12px 12px 8px', background: NAVY, borderRadius: 14, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
         <div style={{ width: 30, height: 30, borderRadius: 50, background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
@@ -215,7 +217,6 @@ export default function HomePanelMobileV2(props: any) {
         <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg>
       </div>
 
-      {/* STAT GRID */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 12px 8px' }}>
         <Stat onClick={() => goto('commesse')} icon="briefcase" value={cantieri.length} label="Commesse attive" />
         <Stat onClick={() => goto('contabilita')} icon="cash" value={daIncassareLabel} label="In attesa" />
@@ -223,7 +224,6 @@ export default function HomePanelMobileV2(props: any) {
         <Stat onClick={() => goto('talk')} icon="msg" value={messaggi} label="Messaggi" badge={messaggi > 0 ? messaggi : null} />
       </div>
 
-      {/* CARD LIST */}
       <div style={{ padding: '0 12px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {order.map(id => renderCard(id))}
       </div>
@@ -261,8 +261,8 @@ function CardHead({ title, link, badge, onClick, icon }: any) {
   )
 }
 
-// ===== CALENDARIO =====
-function CardCalendar({ eventi, onClick }: any) {
+// CALENDARIO con settimana = lista verticale
+function CardCalendar({ eventi, cantieri, onClick }: any) {
   const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('mese')
   const [cursor, setCursor] = useState(new Date())
   const today = new Date()
@@ -277,7 +277,11 @@ function CardCalendar({ eventi, onClick }: any) {
     })
     return map
   }, [eventi])
-  const eventiSel = eventByDay[cursor.toDateString()] || []
+  const eventiSel = (eventByDay[cursor.toDateString()] || []).sort((a: any, b: any) => {
+    const ta = new Date(a?.data || a?.start || 0).getTime()
+    const tb = new Date(b?.data || b?.start || 0).getTime()
+    return ta - tb
+  })
   const buildMonth = () => {
     const y = cursor.getFullYear(), m = cursor.getMonth()
     const last = new Date(y, m + 1, 0)
@@ -291,19 +295,19 @@ function CardCalendar({ eventi, onClick }: any) {
     }
     return days
   }
-  const dotColor = (e: any) => {
-    const t = (e?.tipo || '').toLowerCase()
-    if (t.includes('firma')) return RED
-    if (t.includes('sopral') || t.includes('rilievo')) return AMBER
-    if (t.includes('mont') || t.includes('posa')) return NAVY
-    return GREEN
-  }
   const navPrev = (e: any) => { e.stopPropagation(); if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1)); else if (view === 'settimana') setCursor(new Date(cursor.getTime() - 7 * 86400000)); else setCursor(new Date(cursor.getTime() - 86400000)) }
   const navNext = (e: any) => { e.stopPropagation(); if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)); else if (view === 'settimana') setCursor(new Date(cursor.getTime() + 7 * 86400000)); else setCursor(new Date(cursor.getTime() + 86400000)) }
   const navOggi = (e: any) => { e.stopPropagation(); setCursor(new Date()) }
   const monthLabel = `${MESI[cursor.getMonth()]} ${cursor.getFullYear()}`
   const days = buildMonth()
   const navBtn: React.CSSProperties = { width: 26, height: 26, borderRadius: 6, background: '#F1F4F7', color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, cursor: 'pointer', border: 'none' }
+
+  // Settimana: 7 giorni a partire da lunedì
+  const weekDays = useMemo(() => {
+    const dow = (cursor.getDay() + 6) % 7
+    const start = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - dow)
+    return Array.from({ length: 7 }).map((_, i) => new Date(start.getTime() + i * 86400000))
+  }, [cursor])
 
   return (
     <>
@@ -324,6 +328,7 @@ function CardCalendar({ eventi, onClick }: any) {
           <button onClick={navNext} style={navBtn}><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg></button>
         </div>
       </div>
+
       {view === 'mese' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
           {DOW.map((d, i) => <div key={i} style={{ textAlign: 'center', fontSize: 9, color: '#8FA8B8', padding: '2px 0' }}>{d}</div>)}
@@ -345,68 +350,100 @@ function CardCalendar({ eventi, onClick }: any) {
           })}
         </div>
       )}
+
+      {/* SETTIMANA = lista verticale */}
       {view === 'settimana' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
-          {Array.from({ length: 7 }).map((_, i) => {
-            const dow = (cursor.getDay() + 6) % 7
-            const start = new Date(cursor.getTime() - dow * 86400000)
-            const d = new Date(start.getTime() + i * 86400000)
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {weekDays.map((d, i) => {
             const isT = isSameDay(d, today), isS = isSameDay(d, cursor)
-            const evs = eventByDay[d.toDateString()] || []
+            const evs = (eventByDay[d.toDateString()] || []).sort((a: any, b: any) => new Date(a?.data || 0).getTime() - new Date(b?.data || 0).getTime())
             return (
               <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d) }} style={{
-                background: isT ? NAVY : (isS ? '#E5EAF0' : '#F7F9FB'),
-                color: isT ? '#FFF' : TEXT, padding: '6px 4px', borderRadius: 8, textAlign: 'center', cursor: 'pointer',
+                background: isT ? '#E5EAF0' : (isS ? '#F1F4F7' : '#F7F9FB'),
+                borderLeft: isT ? `3px solid ${NAVY}` : `3px solid transparent`,
+                borderRadius: 8, padding: '8px 10px', cursor: 'pointer',
               }}>
-                <div style={{ fontSize: 9, opacity: 0.7 }}>{DOW[i]}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{d.getDate()}</div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 4, minHeight: 6 }}>
-                  {evs.slice(0, 3).map((e: any, j: number) => <div key={j} style={{ width: 4, height: 4, background: isT ? '#FFF' : dotColor(e), borderRadius: '50%' }}/>)}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: isT ? NAVY : MUTED, minWidth: 28 }}>{DOW_SHORT[i]}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{d.getDate()}</div>
+                    <div style={{ fontSize: 10, color: MUTED, textTransform: 'lowercase' }}>{MESI[d.getMonth()].slice(0, 3)}</div>
+                  </div>
+                  <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{evs.length === 0 ? '—' : `${evs.length} eventi`}</div>
+                </div>
+                {evs.length > 0 && (
+                  <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {evs.slice(0, 3).map((e: any, j: number) => {
+                      const data = new Date(e?.data || e?.start || 0)
+                      return (
+                        <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ width: 6, height: 6, borderRadius: 50, background: dotColor(e), flexShrink: 0 }}/>
+                          <span style={{ fontSize: 10, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 600, minWidth: 36 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span style={{ fontSize: 11, color: TEXT, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{e?.titolo || e?.title || ''}</span>
+                        </div>
+                      )
+                    })}
+                    {evs.length > 3 && <div style={{ fontSize: 9, color: NAVY, fontWeight: 600 }}>+{evs.length - 3} altri</div>}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {view === 'giorno' && (
+        <div style={{ background: '#F7F9FB', borderRadius: 8, padding: 10, minHeight: 100 }}>
+          <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 8, textTransform: 'capitalize' }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+          {eventiSel.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '12px 0' }}>Nessun evento programmato</div>}
+          {eventiSel.map((e: any, i: number) => {
+            const data = new Date(e?.data || e?.start || 0)
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 50, background: dotColor(e) }}/>
+                  <div style={{ fontSize: 11, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 700, minWidth: 38 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{e?.titolo || e?.title || ''}</div>
+                  <div style={{ fontSize: 10, color: NAVY, marginTop: 1 }}>{e?.tipo || ''}</div>
+                  {e?.note && <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{e.note}</div>}
+                  {e?.luogo && <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>📍 {e.luogo}</div>}
                 </div>
               </div>
             )
           })}
         </div>
       )}
-      {view === 'giorno' && (
-        <div style={{ background: '#F7F9FB', borderRadius: 8, padding: 10, minHeight: 100 }}>
-          <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 6, textTransform: 'uppercase' }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' })}</div>
-          {eventiSel.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '12px 0' }}>Nessun evento</div>}
-          {eventiSel.map((e: any, i: number) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' }}>
-              <div style={{ width: 7, height: 7, borderRadius: 50, background: dotColor(e), flexShrink: 0 }}/>
-              <div style={{ fontSize: 10, color: MUTED, minWidth: 40, fontFeatureSettings: '"tnum"', fontWeight: 600 }}>{e?.ora || (e?.data ? new Date(e.data).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—')}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{e?.titolo || e?.title || ''}</div>
-                <div style={{ fontSize: 9, color: NAVY }}>{e?.note || e?.luogo || ''}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {view !== 'giorno' && eventiSel.length > 0 && (
+
+      {view === 'mese' && eventiSel.length > 0 && (
         <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
           <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5, marginBottom: 4, fontWeight: 600 }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} · {eventiSel.length} EVENTI</div>
           <SwipeTrack>
-            {eventiSel.map((e: any, i: number) => (
-              <SwipeItem key={i}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: 50, background: dotColor(e) }}/>
-                  <div style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{e?.ora || (e?.data ? new Date(e.data).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—')}</div>
-                </div>
-                <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, marginTop: 2 }}>{e?.titolo || e?.title || ''}</div>
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{e?.note || e?.luogo || ''}</div>
-              </SwipeItem>
-            ))}
+            {eventiSel.map((e: any, i: number) => {
+              const data = new Date(e?.data || e?.start || 0)
+              return (
+                <SwipeItem key={i} width="220px">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: 50, background: dotColor(e) }}/>
+                    <div style={{ fontSize: 10, color: MUTED, fontWeight: 700 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+                  <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, marginTop: 4 }}>{e?.titolo || e?.title || ''}</div>
+                  {e?.tipo && <div style={{ fontSize: 9, color: NAVY, marginTop: 2, fontWeight: 600, textTransform: 'uppercase' }}>{e?.tipo}</div>}
+                  {e?.note && <div style={{ fontSize: 10, color: MUTED, marginTop: 4, lineHeight: 1.3 }}>{e.note}</div>}
+                  {e?.luogo && <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📍 {e.luogo}</div>}
+                </SwipeItem>
+              )
+            })}
           </SwipeTrack>
         </div>
       )}
+
       <button onClick={onClick} style={{ marginTop: 10, background: 'transparent', border: 'none', color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer', width: '100%', padding: 4 }}>APRI AGENDA COMPLETA →</button>
     </>
   )
 }
 
-// ===== URGENTE swipe =====
 function CardUrgente({ ferme, apri }: any) {
   return (
     <div style={{ background: '#FCEFEC', margin: '-12px -14px', padding: '12px 14px', borderRadius: 14, position: 'relative' }}>
@@ -418,61 +455,60 @@ function CardUrgente({ ferme, apri }: any) {
       {ferme.length === 0 && <div style={{ fontSize: 11, color: MUTED }}>Tutto sotto controllo</div>}
       {ferme.length > 0 && (
         <SwipeTrack>
-          {ferme.map((c: any, i: number) => (
-            <SwipeItem key={i} width="180px">
-              <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code || '?'}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || ''}</div>
-              <div style={{ fontSize: 9, color: RED, marginTop: 4, fontWeight: 600 }}>{c?.fase?.toUpperCase()}</div>
-              <button onClick={() => apri(c?.id)} style={{ marginTop: 6, background: '#FFF', border: `1px solid ${BORDER}`, padding: '4px 8px', borderRadius: 6, fontSize: 9, color: TEXT, cursor: 'pointer', fontWeight: 600 }}>APRI →</button>
-            </SwipeItem>
-          ))}
+          {ferme.map((c: any, i: number) => {
+            const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
+            const giorni = Math.floor((Date.now() - upd) / 86400000)
+            const tel = c?.cliente_telefono || c?.telefono
+            return (
+              <SwipeItem key={i} width="240px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code || '?'}</div>
+                  <span style={{ fontSize: 9, color: '#FFF', background: RED, padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>{giorni}g</span>
+                </div>
+                <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, marginTop: 3, lineHeight: 1.2 }}>{c?.cliente || 'Cliente'}</div>
+                <div style={{ fontSize: 9, color: NAVY, marginTop: 4, fontWeight: 600, textTransform: 'uppercase' }}>{c?.fase}</div>
+                {c?.indirizzo && <div style={{ fontSize: 10, color: MUTED, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {c?.indirizzo}</div>}
+                {c?.totale && <div style={{ fontSize: 10, color: TEXT, marginTop: 2, fontWeight: 600 }}>{Math.round(Number(c.totale))}€</div>}
+                <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+                  {tel && <a href={`tel:${tel}`} onClick={(e) => e.stopPropagation()} style={{ flex: 1, background: GREEN, color: '#FFF', padding: '5px 0', borderRadius: 6, fontSize: 9, textAlign: 'center', textDecoration: 'none', fontWeight: 700 }}>📞</a>}
+                  <button onClick={(e) => { e.stopPropagation(); apri(c?.id) }} style={{ flex: 2, background: NAVY, color: '#FFF', border: 'none', padding: '5px 0', borderRadius: 6, fontSize: 9, cursor: 'pointer', fontWeight: 700 }}>APRI →</button>
+                </div>
+              </SwipeItem>
+            )
+          })}
         </SwipeTrack>
       )}
     </div>
   )
 }
 
-// ===== TASK swipe =====
-function CardTask({ tasks, onClick }: any) {
+function CardTask({ tasks, cantieri, apri, onClick }: any) {
   return (
     <>
       <CardHead title="Task" badge={tasks.length} link="vedi tutte" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>} />
       {tasks.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessuna task aperta</div>}
       {tasks.length > 0 && (
         <SwipeTrack>
-          {tasks.map((t: any, i: number) => (
-            <SwipeItem key={i} width="200px">
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <div style={{ width: 16, height: 16, borderRadius: 4, border: '1.5px solid #B5C2D6', flexShrink: 0, marginTop: 1 }}/>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, lineHeight: 1.3 }}>{t?.titolo || t?.title || 'Task'}</div>
-                  <div style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>{t?.scadenza ? new Date(t.scadenza).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }) : ''}</div>
-                  {t?.priorita && <div style={{ fontSize: 9, color: t?.priorita === 'alta' ? RED : MUTED, marginTop: 2, fontWeight: 600 }}>{t?.priorita?.toUpperCase()}</div>}
-                </div>
-              </div>
-            </SwipeItem>
-          ))}
-        </SwipeTrack>
-      )}
-    </>
-  )
-}
-
-// ===== PROSSIMI MONTAGGI swipe =====
-function CardMontaggi({ montaggi, onClick }: any) {
-  return (
-    <>
-      <CardHead title="Prossimi montaggi" badge={montaggi.length} link="agenda" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>} />
-      {montaggi.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun montaggio programmato</div>}
-      {montaggi.length > 0 && (
-        <SwipeTrack>
-          {montaggi.map((m: any, i: number) => {
-            const d = new Date(m?.data || Date.now())
+          {tasks.map((t: any, i: number) => {
+            const cm = cantieri.find((c: any) => c?.id === t?.commessa_id || c?.id === t?.cantiere_id)
+            const scad = t?.scadenza ? new Date(t.scadenza) : null
+            const isLate = scad && scad.getTime() < Date.now()
+            const prio = (t?.priorita || '').toLowerCase()
+            const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : MUTED
             return (
-              <SwipeItem key={i} width="190px">
-                <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase' }}>{d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-                <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, marginTop: 2 }}>{m?.cliente || m?.titolo || 'Cliente'}</div>
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} · {m?.indirizzo || m?.luogo || ''}</div>
+              <SwipeItem key={i} width="230px">
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ width: 16, height: 16, borderRadius: 4, border: '1.5px solid #B5C2D6', flexShrink: 0, marginTop: 1, background: '#FFF' }}/>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, lineHeight: 1.3 }}>{t?.titolo || t?.title || 'Task'}</div>
+                    {t?.descrizione && <div style={{ fontSize: 9, color: MUTED, marginTop: 3, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>{t.descrizione}</div>}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                      {scad && <span style={{ fontSize: 9, color: isLate ? RED : MUTED, fontWeight: 600 }}>📅 {scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate && ' SCADUTA'}</span>}
+                      {prio && <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span>}
+                    </div>
+                    {cm && <div onClick={() => apri(cm.id)} style={{ marginTop: 6, fontSize: 9, color: NAVY, fontWeight: 600, cursor: 'pointer' }}>↗ {cm?.codice || cm?.code} · {cm?.cliente}</div>}
+                  </div>
+                </div>
               </SwipeItem>
             )
           })}
@@ -482,7 +518,47 @@ function CardMontaggi({ montaggi, onClick }: any) {
   )
 }
 
-// ===== COMMESSE ATTIVE swipe =====
+function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
+  return (
+    <>
+      <CardHead title="Prossimi montaggi" badge={montaggi.length} link="agenda" onClick={() => {}} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>} />
+      {montaggi.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun montaggio programmato</div>}
+      {montaggi.length > 0 && (
+        <SwipeTrack>
+          {montaggi.map((m: any, i: number) => {
+            const d = new Date(m?.data || Date.now())
+            const cm = cantieri.find((c: any) => c?.id === m?.commessa_id || c?.id === m?.cantiere_id)
+            const teamIds = m?.team || m?.operatori || []
+            const teamMembers = team.filter((t: any) => teamIds.includes(t?.id))
+            const dgg = Math.floor((d.getTime() - Date.now()) / 86400000)
+            return (
+              <SwipeItem key={i} width="240px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 9, color: NAVY, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>{d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                  <span style={{ fontSize: 9, color: '#FFF', background: dgg <= 1 ? RED : (dgg <= 3 ? AMBER : NAVY), padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>{dgg === 0 ? 'OGGI' : dgg === 1 ? 'DOMANI' : `+${dgg}gg`}</span>
+                </div>
+                <div style={{ fontSize: 12, color: TEXT, fontWeight: 700, marginTop: 4 }}>{m?.cliente || cm?.cliente || 'Cliente'}</div>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>🕐 {d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}{m?.durata && ` · ${m.durata}`}</div>
+                {(m?.indirizzo || cm?.indirizzo) && <div style={{ fontSize: 10, color: MUTED, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {m?.indirizzo || cm?.indirizzo}</div>}
+                {cm?.n_vani && <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>🪟 {cm.n_vani} vani</div>}
+                {teamMembers.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: -4, marginTop: 6 }}>
+                    {teamMembers.slice(0, 3).map((t: any, j: number) => (
+                      <div key={j} style={{ width: 22, height: 22, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: j > 0 ? -5 : 0, border: '1.5px solid #FFF' }}>{(t?.nome || '?').slice(0, 1).toUpperCase()}</div>
+                    ))}
+                    <span style={{ fontSize: 9, color: MUTED, marginLeft: 8 }}>{teamMembers.map((t: any) => t?.nome).filter(Boolean).join(' · ')}</span>
+                  </div>
+                )}
+                {cm && <button onClick={() => apri(cm.id)} style={{ marginTop: 6, background: NAVY, color: '#FFF', border: 'none', padding: '5px 0', borderRadius: 6, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI COMMESSA →</button>}
+              </SwipeItem>
+            )
+          })}
+        </SwipeTrack>
+      )}
+    </>
+  )
+}
+
 function CardCommesse({ cantieri, apri }: any) {
   return (
     <>
@@ -490,21 +566,28 @@ function CardCommesse({ cantieri, apri }: any) {
       {cantieri.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessuna commessa attiva</div>}
       {cantieri.length > 0 && (
         <SwipeTrack>
-          {cantieri.map((c: any, i: number) => (
-            <SwipeItem key={i} width="200px">
-              <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
-              <div style={{ fontSize: 11, color: TEXT, marginTop: 2 }}>{c?.cliente || ''}</div>
-              <div style={{ fontSize: 9, color: NAVY, marginTop: 4, fontWeight: 600, textTransform: 'uppercase' }}>{c?.fase || ''}</div>
-              <button onClick={() => apri(c?.id)} style={{ marginTop: 6, background: '#FFF', border: `1px solid ${BORDER}`, padding: '4px 8px', borderRadius: 6, fontSize: 9, color: TEXT, cursor: 'pointer', fontWeight: 600 }}>APRI →</button>
-            </SwipeItem>
-          ))}
+          {cantieri.map((c: any, i: number) => {
+            const upd = c?.updated_at ? new Date(c.updated_at) : null
+            return (
+              <SwipeItem key={i} width="230px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
+                  <span style={{ fontSize: 8, color: NAVY, background: '#E5EAF0', padding: '1px 6px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, marginTop: 3 }}>{c?.cliente || ''}</div>
+                {c?.indirizzo && <div style={{ fontSize: 10, color: MUTED, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {c?.indirizzo}</div>}
+                {c?.totale && <div style={{ fontSize: 11, color: TEXT, marginTop: 4, fontWeight: 700 }}>💰 {Math.round(Number(c.totale))}€</div>}
+                {upd && <div style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>aggiornata {upd.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div>}
+                <button onClick={() => apri(c?.id)} style={{ marginTop: 6, background: NAVY, color: '#FFF', border: 'none', padding: '5px 0', borderRadius: 6, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI →</button>
+              </SwipeItem>
+            )
+          })}
         </SwipeTrack>
       )}
     </>
   )
 }
 
-// ===== CASSA con righe =====
 function CardCassa({ daIncassare, fatture, onClick }: any) {
   const scadute = fatture.filter((f: any) => !f?.pagata && f?.scadenza && new Date(f.scadenza).getTime() < Date.now())
   const scaduteAmt = scadute.reduce((s: number, f: any) => s + Number(f?.totale || 0), 0)
@@ -528,8 +611,7 @@ function Row({ label, value, color, last }: any) {
   )
 }
 
-// ===== SQUADRA swipe =====
-function CardSquadra({ team, onClick }: any) {
+function CardSquadra({ team, cantieri, onClick }: any) {
   const attivi = team.filter((t: any) => t?.attivo !== false).length
   return (
     <>
@@ -537,27 +619,32 @@ function CardSquadra({ team, onClick }: any) {
       {team.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun operatore</div>}
       {team.length > 0 && (
         <SwipeTrack>
-          {team.map((t: any, i: number) => (
-            <SwipeItem key={i} width="160px">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative' }}>
-                  {(t?.nome || '?').slice(0, 1).toUpperCase()}
-                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: 9, height: 9, borderRadius: 50, background: t?.attivo !== false ? GREEN : '#C8D2DA', border: '1.5px solid #F1F4F7' }}/>
+          {team.map((t: any, i: number) => {
+            const cantiereAttuale = cantieri.find((c: any) => c?.id === t?.cantiere_attuale_id)
+            return (
+              <SwipeItem key={i} width="200px">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative', flexShrink: 0 }}>
+                    {(t?.nome || '?').slice(0, 1).toUpperCase()}
+                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 11, height: 11, borderRadius: 50, background: t?.attivo !== false ? GREEN : '#C8D2DA', border: '2px solid #F7F9FB' }}/>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
+                    <div style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{t?.ruolo || 'Operatore'}</div>
+                  </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
-                  <div style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{t?.ruolo || t?.stato || 'disponibile'}</div>
-                </div>
-              </div>
-            </SwipeItem>
-          ))}
+                {cantiereAttuale && <div style={{ marginTop: 8, padding: '4px 6px', background: '#FFF', borderRadius: 5, fontSize: 9, color: NAVY, fontWeight: 600 }}>📍 {cantiereAttuale?.codice}</div>}
+                {!cantiereAttuale && t?.stato && <div style={{ marginTop: 8, fontSize: 9, color: MUTED }}>{t?.stato}</div>}
+                {t?.telefono && <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ marginTop: 6, display: 'block', textAlign: 'center', background: GREEN, color: '#FFF', padding: '4px 0', borderRadius: 5, fontSize: 9, textDecoration: 'none', fontWeight: 700 }}>📞 CHIAMA</a>}
+              </SwipeItem>
+            )
+          })}
         </SwipeTrack>
       )}
     </>
   )
 }
 
-// ===== PRODUZIONE swipe =====
 function CardProduzione({ cantieri, apri }: any) {
   const inProd = cantieri.filter((c: any) => c?.fase === 'produzione' || c?.fase === 'ordine')
   return (
@@ -567,10 +654,15 @@ function CardProduzione({ cantieri, apri }: any) {
       {inProd.length > 0 && (
         <SwipeTrack>
           {inProd.map((c: any, i: number) => (
-            <SwipeItem key={i} width="190px">
-              <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || ''}</div>
-              <span style={{ display: 'inline-block', marginTop: 6, fontSize: 9, padding: '2px 6px', borderRadius: 4, background: '#FFF', color: NAVY, fontWeight: 600 }}>{(c?.fase || '').toUpperCase()}</span>
+            <SwipeItem key={i} width="220px">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
+                <span style={{ fontSize: 8, color: '#FFF', background: c?.fase === 'produzione' ? AMBER : NAVY, padding: '1px 6px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
+              </div>
+              <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, marginTop: 4 }}>{c?.cliente || ''}</div>
+              {c?.n_vani && <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>🪟 {c.n_vani} vani</div>}
+              {c?.data_consegna && <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📅 consegna {new Date(c.data_consegna).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div>}
+              <button onClick={() => apri(c?.id)} style={{ marginTop: 8, background: NAVY, color: '#FFF', border: 'none', padding: '5px 0', borderRadius: 6, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI →</button>
             </SwipeItem>
           ))}
         </SwipeTrack>
