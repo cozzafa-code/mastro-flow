@@ -11,12 +11,14 @@ import {
   CardOggiOperativo, CardTeamLive, CardCommesseCritiche, CardProblemi,
   CardAgendaLive, CardProduzione, CardCaricoLavoro, CardCassa,
   CardOperatoreFermo, CardAzioniRapide,
+  CardApiLive,
 } from './home-mobile/HomeWidgets'
 import { useMastro } from './MastroContext'
 
 const DEFAULT_ORDER = [
   'oggi-operativo','team-live','commesse-critiche','problemi','agenda-live',
   'produzione','carico-lavoro','cassa','operatore-fermo','azioni-rapide',
+  'api-live',
 ]
 
 // ============================================================
@@ -241,6 +243,15 @@ export default function HomePanelMobileV2(props: any) {
           onTask={() => goto('team')} onCommessa={() => goto('commesse')}
           onMappa={() => goto('team')} onFoto={() => goto('commesse')}
           onFirma={() => goto('contabilita')} onPreventivo={() => goto('preventivi')}
+        />
+      )
+      case 'api-live': return wrap(
+        <CardApiLive
+          callsToday={(data as any).api?.callsToday ?? 0}
+          activeKeys={(data as any).api?.activeKeys ?? 0}
+          expiringKeys={(data as any).api?.expiringKeys ?? 0}
+          leadsViaApi={(data as any).api?.leadsViaApi ?? 0}
+          onApri={() => goto('settings')}
         />
       )
       default: return null

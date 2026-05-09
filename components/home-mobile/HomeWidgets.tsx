@@ -568,3 +568,129 @@ export function CardAzioniRapide({
     </Card>
   )
 }
+
+// ==================================================================
+// APPENDERE QUESTO BLOCCO IN FONDO A: components/home-mobile/HomeWidgets.tsx
+// (PRIMA della chiusura, NON sostituire nulla)
+// ==================================================================
+
+// ==================== CardApiLive ====================
+// Widget home: stato API + integrazioni attive
+export function CardApiLive({
+  callsToday,
+  activeKeys,
+  expiringKeys,
+  leadsViaApi,
+  onApri,
+}: {
+  callsToday: number;
+  activeKeys: number;
+  expiringKeys: number;
+  leadsViaApi: number;
+  onApri: () => void;
+}) {
+  return (
+    <div onClick={onApri} style={{ cursor: 'pointer' }}>
+      {/* Stats grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 10,
+        marginBottom: 12,
+      }}>
+        <ApiStat label="CHIAMATE OGGI" value={callsToday.toLocaleString('it-IT')} accent="#1E3A5F" />
+        <ApiStat label="LEAD VIA API" value={String(leadsViaApi)} accent="#2D5F3F" sub="ultimi 7gg" />
+        <ApiStat label="CHIAVI ATTIVE" value={String(activeKeys)} accent="#1E3A5F" />
+        <ApiStat
+          label="STATO API"
+          value="OPERATIVA"
+          accent={expiringKeys > 0 ? '#E89F3F' : '#2D5F3F'}
+          sub={expiringKeys > 0 ? `${expiringKeys} key in scadenza` : 'tutto ok'}
+        />
+      </div>
+
+      {/* Quick links */}
+      <div style={{
+        background: '#1E3A5F',
+        borderRadius: 12,
+        padding: '12px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+      }}>
+        <div style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: '#E89F3F',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3" />
+          </svg>
+        </div>
+        <div style={{ flex: 1 }}>
+          <p style={{ margin: 0, color: '#F5F0E8', fontSize: 13, fontWeight: 700 }}>
+            Sistema API attivo
+          </p>
+          <p style={{ margin: '2px 0 0', color: '#B8C5D6', fontSize: 11 }}>
+            Tap per aprire Sviluppatori
+          </p>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E89F3F" strokeWidth="2.5">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function ApiStat({
+  label,
+  value,
+  accent,
+  sub,
+}: {
+  label: string;
+  value: string;
+  accent: string;
+  sub?: string;
+}) {
+  return (
+    <div style={{
+      background: '#FFFFFF',
+      border: '1px solid #d8cfc0',
+      borderRadius: 12,
+      padding: '12px 14px',
+    }}>
+      <p style={{
+        margin: 0,
+        color: '#6b6358',
+        fontSize: 9,
+        textTransform: 'uppercase',
+        letterSpacing: '0.8px',
+        fontWeight: 700,
+      }}>
+        {label}
+      </p>
+      <p style={{
+        margin: '4px 0 0',
+        color: accent,
+        fontSize: 22,
+        fontWeight: 700,
+        fontFamily: "'JetBrains Mono', monospace",
+      }}>
+        {value}
+      </p>
+      {sub && (
+        <p style={{ margin: '2px 0 0', color: '#6b6358', fontSize: 10 }}>
+          {sub}
+        </p>
+      )}
+    </div>
+  );
+}
+
