@@ -162,14 +162,7 @@ const bulkSoftDelete = async (
     return { ok, skipped: ids.length - ok };
   }
 
-  // FIX v10b: NON filtro isUuid - alcuni id sono salvati come stringa ma sono UUID validi
-  // Lascio che la RPC gestisca la validazione lato DB
-  console.log("[mastro:bulkSoftDelete] passing all ids to RPC:", ids);
-
-  if (ids.length === 0) {
-    console.warn("[mastro:bulkSoftDelete] no ids");
-    return { ok: 0, skipped: 0 };
-  }
+  if (ids.length === 0) return { ok: 0, skipped: 0 };
 
   try {
     console.log("[mastro:bulkSoftDelete] calling RPC bulk_soft_delete_commesse");
@@ -180,42 +173,37 @@ const bulkSoftDelete = async (
 
     if (error) {
       console.error("[mastro:bulkSoftDelete] RPC ERROR:", error);
-      alert("Errore cestino: " + error.message);
+      alert("Errore cestino: " + (error.message || JSON.stringify(error)));
       return { ok: 0, skipped: ids.length };
     }
 
     console.log("[mastro:bulkSoftDelete] RPC SUCCESS:", data);
 
-    // Aggiorna IDB locale
-    const now = new Date().toISOString();
+    // RIMUOVI da IDB invece di marcare deleted_at
+    // (cosi spariscono subito anche se il filtro client non funziona)
     for (const id of ids) {
       try {
-        const existing = await idbGet(STORES.CANTIERI, id);
-        if (existing) {
-          await idbPut(STORES.CANTIERI, {
-            ...existing,
-            deleted_at: now,
-            updated_at: now,
-          });
-          console.log("[mastro:bulkSoftDelete] IDB updated for", id);
-        }
+        await idbDelete(STORES.CANTIERI, id);
+        console.log("[mastro:bulkSoftDelete] IDB removed", id);
       } catch (e) {
         console.warn("[mastro:bulkSoftDelete] IDB skip", id, e);
       }
     }
 
-    // Forza reload UI
-    setTimeout(() => {
-      console.log("[mastro:bulkSoftDelete] forcing reload");
-      try {
-        if (typeof window !== "undefined") window.location.reload();
-      } catch {}
-    }, 500);
+    // Emetti evento custom per ricarica UI
+    try {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("mastro:commesse-deleted", {
+          detail: { ids }
+        }));
+        console.log("[mastro:bulkSoftDelete] event emitted");
+      }
+    } catch {}
 
     return { ok: ids.length, skipped: 0 };
   } catch (e: any) {
     console.error("[mastro:bulkSoftDelete] FATAL:", e);
-    alert("Errore cestino fatale: " + (e?.message || e));
+    alert("Errore cestino fatale: " + (e?.message || JSON.stringify(e)));
     return { ok: 0, skipped: ids.length };
   }
 };

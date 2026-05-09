@@ -171,6 +171,18 @@ export default function CommessePanel() {
     setBulkBusy(true);
     try {
       const result = await mastroStore.bulkSoftDelete("commesse", validIds);
+      // FIX v10: rimuovi localmente dopo successo
+      if (result?.ok > 0 && typeof setCantieri === "function") {
+        try {
+          setCantieri((prev: any[]) => prev.filter((c: any) => !validIds.includes(c.id)));
+        } catch {}
+      }
+      // Forza un reload dell'app
+      try {
+        if (typeof window !== "undefined" && (window as any).location) {
+          setTimeout(() => { (window as any).location.reload(); }, 600);
+        }
+      } catch {}
       if (result.ok === 0) throw new Error("Nessuna commessa eliminata");
       exitSelection();
       window.location.reload();
