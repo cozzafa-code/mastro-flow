@@ -467,7 +467,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{eventTitle(e)}</div>
                   {e?.tipo ? <div style={{ fontSize: 10, color: NAVY, marginTop: 1 }}>{e.tipo}</div> : null}
-                  {eventLuogo(e) ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📍 {eventLuogo(e)}</div> : null}
+                  {eventLuogo(e) ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg>{eventLuogo(e)}</div> : null}
                 </div>
               </div>
             )
@@ -488,7 +488,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{eventTitle(e)}</div>
-                  {eventLuogo(e) ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📍 {eventLuogo(e)}</div> : null}
+                  {eventLuogo(e) ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg>{eventLuogo(e)}</div> : null}
                 </div>
               </div>
             )
@@ -568,7 +568,7 @@ function CardTask({ tasks, cantieri, apri, toggleTask, onClick }: any) {
             <div onClick={() => cm && apri(cm.id)} style={{ flex: 1, minWidth: 0, cursor: cm ? 'pointer' : 'default' }}>
               <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3 }}>{t?.testo || 'Task'}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
-                {scad ? <span style={{ fontSize: 10, color: isLate ? RED : MUTED, fontWeight: 600 }}>📅 {scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
+                {scad ? <span style={{ fontSize: 10, color: isLate ? RED : MUTED, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
                 {prio ? <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span> : null}
                 {cm ? <span style={{ fontSize: 10, color: NAVY, fontWeight: 600 }}>↗ {cm?.codice || cm?.code}</span> : null}
               </div>
@@ -583,7 +583,7 @@ function CardTask({ tasks, cantieri, apri, toggleTask, onClick }: any) {
             {rest.map((t: any, i: number) => (
               <SwipeItem key={i} width="200px">
                 <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{t?.testo || 'Task'}</div>
-                {t?.data ? <div style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>📅 {new Date(t.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div> : null}
+                {t?.data ? <div style={{ fontSize: 9, color: MUTED, marginTop: 3, display: 'flex', alignItems: 'center', gap: 3 }}><svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/></svg>{new Date(t.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div> : null}
               </SwipeItem>
             ))}
           </SwipeTrack>
@@ -614,7 +614,7 @@ function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cm?.cliente || cm?.cliente_nome || cm?.codice || 'Cliente'}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>🕐 {m?.ora_inizio || '—'}{m?.ora_fine ? ` - ${m.ora_fine}` : ''}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, display: 'flex', alignItems: 'center', gap: 4 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>{m?.ora_inizio || '—'}{m?.ora_fine ? ` - ${m.ora_fine}` : ''}</div>
               {m?.urgente ? <span style={{ fontSize: 8, color: '#FFF', background: RED, padding: '1px 5px', borderRadius: 3, fontWeight: 700, marginTop: 4, display: 'inline-block' }}>URGENTE</span> : null}
             </div>
           </div>
@@ -658,7 +658,7 @@ function CardCommesse({ cantieri, apri }: any) {
               <span style={{ fontSize: 8, color: NAVY, background: '#E5EAF0', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
             </div>
             <div style={{ fontSize: 11, color: TEXT, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.cliente || c?.cliente_nome || ''}</div>
-            {c?.indirizzo ? <div style={{ fontSize: 9, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {c.indirizzo}</div> : null}
+            {c?.indirizzo ? <div style={{ fontSize: 9, color: MUTED, marginTop: 1, display: 'flex', alignItems: 'center', gap: 3, overflow: 'hidden' }}><svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.indirizzo}</span></div> : null}
           </div>
           {c?.totale ? <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, flexShrink: 0 }}>{Math.round(Number(c.totale))}€</div> : null}
         </div>
@@ -719,7 +719,7 @@ function CardSquadra({ team, cantieri, onClick }: any) {
               <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}{t?.cognome ? ` ${t.cognome[0]}.` : ''}</div>
               <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cm ? ` · ${cm?.codice}` : ''}</div>
             </div>
-            {t?.telefono ? <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ background: GREEN, color: '#FFF', padding: '6px 10px', borderRadius: 6, fontSize: 10, textDecoration: 'none', fontWeight: 700, flexShrink: 0 }}>📞</a> : null}
+            {t?.telefono ? <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ background: GREEN, color: '#FFF', padding: '6px 8px', borderRadius: 6, textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center' }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a> : null}
           </div>
         )
       })}
