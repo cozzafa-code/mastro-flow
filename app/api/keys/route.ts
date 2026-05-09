@@ -1,6 +1,7 @@
 // app/api/keys/route.ts
-// Route INTERNA per generare/revocare API keys.
-// Auth: cookie Supabase (stesso pattern del resto del progetto).
+// Route generazione/revoca API keys
+// AUTH MODE: legacy - accetta azienda_id da body (l'app usa storage custom, non auth.users)
+// Sicurezza: validazione formato UUID + verifica esistenza azienda
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -22,74 +23,34 @@ const ALL_SCOPES = [
   'webhook:receive',
 ];
 
-/**
- * Estrae user dalla request.
- * Tenta 3 modi (in ordine):
- *  1. Bearer token in header Authorization
- *  2. Cookie 'sb-session' (storage del progetto)
- *  3. Cookie 'sb-access-token' (legacy)
- */
-async function getUserFromRequest(req: NextRequest) {
-  // 1. Bearer token (per chiamate da modal con session.access_token)
-  const auth = req.headers.get('authorization');
-  if (auth?.startsWith('Bearer ')) {
-    const token = auth.slice(7);
-    const { data, error } = await supabaseAdmin.auth.getUser(token);
-    if (!error && data.user) return data.user;
-  }
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  // 2. Cookie sb-session (storage custom MASTRO da lib/supabase.ts)
-  const sbSession = req.cookies.get('sb-session')?.value;
-  if (sbSession) {
-    try {
-      const session = JSON.parse(decodeURIComponent(sbSession));
-      const accessToken = session?.access_token;
-      if (accessToken) {
-        const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
-        if (!error && data.user) return data.user;
-      }
-    } catch {
-      // ignore parse error
-    }
-  }
-
-  // 3. Cookie generici Supabase
-  for (const cookieName of req.cookies.getAll().map((c) => c.name)) {
-    if (cookieName.startsWith('sb-') && cookieName.includes('auth-token')) {
-      const value = req.cookies.get(cookieName)?.value;
-      if (!value) continue;
-      try {
-        // Formato: array JSON [access_token, refresh_token, ...]
-        const decoded = decodeURIComponent(value);
-        const parsed = JSON.parse(decoded);
-        const accessToken = Array.isArray(parsed) ? parsed[0] : parsed?.access_token;
-        if (accessToken) {
-          const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
-          if (!error && data.user) return data.user;
-        }
-      } catch {
-        // ignore
-      }
-    }
-  }
-
-  return null;
+async function validateAzienda(aziendaId: string): Promise<boolean> {
+  if (!UUID_REGEX.test(aziendaId)) return false;
+  const { data } = await supabaseAdmin
+    .from('aziende')
+    .select('id')
+    .eq('id', aziendaId)
+    .maybeSingle();
+  return !!data;
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getUserFromRequest(req);
-  if (!user) {
-    return NextResponse.json(
-      { error: 'unauthorized', message: 'Sessione non trovata. Effettua nuovamente il login.' },
-      { status: 401 }
-    );
+  const body = await req.json().catch(() => ({}));
+  const { azienda_id, name, scopes, expiresInDays } = body;
+
+  // Validazione
+  if (!azienda_id) {
+    return NextResponse.json({ error: 'missing_azienda_id' }, { status: 400 });
   }
-
-  const body = await req.json();
-  const { name, scopes, expiresInDays } = body;
-
-  if (!name || !Array.isArray(scopes) || scopes.length === 0) {
-    return NextResponse.json({ error: 'invalid_input' }, { status: 400 });
+  if (!await validateAzienda(azienda_id)) {
+    return NextResponse.json({ error: 'invalid_azienda' }, { status: 403 });
+  }
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return NextResponse.json({ error: 'invalid_name' }, { status: 400 });
+  }
+  if (!Array.isArray(scopes) || scopes.length === 0) {
+    return NextResponse.json({ error: 'no_scopes' }, { status: 400 });
   }
 
   const invalidScopes = scopes.filter((s: string) => !ALL_SCOPES.includes(s));
@@ -97,37 +58,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_scopes', invalid: invalidScopes }, { status: 400 });
   }
 
-  // Recupera azienda_id + ruolo
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('azienda_id, ruolo')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (!profile?.azienda_id) {
-    return NextResponse.json(
-      { error: 'no_azienda', message: 'Profilo senza azienda associata' },
-      { status: 403 }
-    );
-  }
-  if (!['owner', 'admin', 'titolare'].includes(profile.ruolo ?? '')) {
-    return NextResponse.json(
-      { error: 'forbidden', message: 'Solo owner/admin possono creare API keys' },
-      { status: 403 }
-    );
-  }
-
+  // Genera
   const { plaintext, hash, prefix } = generateKey();
-  const expiresAt = expiresInDays
+  const expiresAt = expiresInDays && expiresInDays > 0
     ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
     : null;
 
   const { data, error } = await supabaseAdmin
     .from('api_keys')
     .insert({
-      azienda_id: profile.azienda_id,
-      created_by: user.id,
-      name,
+      azienda_id,
+      created_by: null, // legacy mode senza user
+      name: name.trim(),
       key_hash: hash,
       key_prefix: prefix,
       scopes,
@@ -136,35 +78,44 @@ export async function POST(req: NextRequest) {
     .select('id, name, key_prefix, scopes, expires_at, created_at')
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: 'db_error', detail: error.message }, { status: 500 });
+  }
+
   return NextResponse.json({ ...data, plaintext });
 }
 
 export async function DELETE(req: NextRequest) {
-  const user = await getUserFromRequest(req);
-  if (!user) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
+  const url = new URL(req.url);
+  const id = url.searchParams.get('id');
+  const aziendaId = url.searchParams.get('azienda_id');
 
-  const id = new URL(req.url).searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'missing_id' }, { status: 400 });
-
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('azienda_id')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (!profile?.azienda_id) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  }
+  if (!aziendaId) return NextResponse.json({ error: 'missing_azienda_id' }, { status: 400 });
+  if (!UUID_REGEX.test(aziendaId)) return NextResponse.json({ error: 'invalid_azienda' }, { status: 403 });
 
   const { error } = await supabaseAdmin
     .from('api_keys')
     .update({ revoked_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('azienda_id', profile.azienda_id);
+    .eq('azienda_id', aziendaId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
+}
+
+export async function GET(req: NextRequest) {
+  const aziendaId = new URL(req.url).searchParams.get('azienda_id');
+  if (!aziendaId || !UUID_REGEX.test(aziendaId)) {
+    return NextResponse.json({ error: 'invalid_azienda' }, { status: 403 });
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('api_keys')
+    .select('id, name, key_prefix, scopes, created_at, expires_at, revoked_at, last_used_at')
+    .eq('azienda_id', aziendaId)
+    .order('created_at', { ascending: false });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ keys: data || [] });
 }
