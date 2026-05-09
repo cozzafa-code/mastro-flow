@@ -31,6 +31,7 @@ import DocumentBuilderMobile from './DocumentBuilderMobile'
 
 // Sviluppatori
 import ApiKeysMobile from './mobile/settings/ApiKeysMobile'
+import GeneraApiKeyModal from './mobile/settings/GeneraApiKeyModal'
 
 const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29'
 
@@ -45,6 +46,8 @@ type Sezione =
 export default function SettingsMobile() {
   const { azienda_id, tornaHome } = useMastro()
   const [sezione, setSezione] = useState<Sezione>(null)
+  const [showGeneraModal, setShowGeneraModal] = useState(false)
+  const [keysReload, setKeysReload] = useState(0)
 
   const aId = azienda_id || AZIENDA_ID
   const torna = () => setSezione(null)
@@ -71,12 +74,21 @@ export default function SettingsMobile() {
 
   // SVILUPPATORI
   if (sezione === 'sviluppatori') return (
-    <ApiKeysMobile
-      aziendaId={aId}
-      onBack={torna}
-      onOpenGenera={() => alert('Modal genera key in arrivo nella prossima sessione')}
-      onRevoke={() => alert('Modal revoca in arrivo nella prossima sessione')}
-    />
+    <>
+      <ApiKeysMobile
+        key={keysReload}
+        aziendaId={aId}
+        onBack={torna}
+        onOpenGenera={() => setShowGeneraModal(true)}
+        onRevoke={() => alert('Modal revoca in arrivo nella prossima sessione')}
+      />
+      {showGeneraModal && (
+        <GeneraApiKeyModal
+          onClose={() => setShowGeneraModal(false)}
+          onCreated={() => setKeysReload(n => n + 1)}
+        />
+      )}
+    </>
   )
 
   return (
