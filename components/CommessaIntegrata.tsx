@@ -9,6 +9,7 @@
 // ================================================================
 import React, { useState } from "react";
 import { useCommessaIntegrata } from "../hooks/useCommessaIntegrata";
+import EtichetteButton from "./codici/EtichetteButton";
 
 const TEAL = "#28A0A0";
 const DARK = "#156060";
@@ -53,7 +54,10 @@ export default function CommessaIntegrata({ commessaId }: { commessaId: string }
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: INK }}>{c.cliente || c.codice || "Commessa"}</h2>
           <div style={{ fontSize: 12, color: SUB, marginTop: 4 }}>{c.indirizzo || ""} {c.citta || ""}</div>
         </div>
-        <button onClick={reload} style={{ padding: "6px 14px", fontSize: 12, fontWeight: 700, color: TEAL, background: "transparent", border: `1px solid ${TEAL}`, borderRadius: 6, cursor: "pointer" }}>Aggiorna</button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <EtichetteButton commessaId={commessaId} variant="compact" />
+          <button onClick={reload} style={{ padding: "6px 14px", fontSize: 12, fontWeight: 700, color: TEAL, background: "transparent", border: `1px solid ${TEAL}`, borderRadius: 6, cursor: "pointer" }}>Aggiorna</button>
+        </div>
       </div>
 
       {/* KPI */}
