@@ -1382,15 +1382,51 @@ export default function CMDetailPanel() {
               }
             } else if (_faseDb === "preventivo") {
               eyebrow = "Fase corrente · Preventivo";
-              titolo = _haPrevInviato ? "Reinvia preventivo" : "Genera il preventivo";
-              desc = _haPrevInviato
-                ? "Cliente non ha ancora risposto. Sollecita o reinvia il link."
-                : `${totVZ3} ${totVZ3 === 1 ? "vano" : "vani"}. Stima ${stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "in calcolo"}.`;
-              tags = _haPrevInviato
-                ? [{ lbl: "Inviato", bg: "#DBEAFE", fg: "#1E40AF" }, { lbl: "Pending", bg: "#FEF3C7", fg: "#92400E" }]
-                : [{ lbl: "Da inviare", bg: "#FEF3C7", fg: "#92400E" }];
-              primaryLbl = _haPrevInviato ? "Reinvia preventivo" : "Genera preventivo";
-              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+              if (_haPrevInviato && _totaleFinale > 0) {
+                titolo = "Cliente accetta? Emetti CdO";
+                desc = "Quando il cliente conferma, emetti la Conferma d'Ordine per avanzare al passo successivo.";
+                tags = [{ lbl: "Inviato", bg: "#DBEAFE", fg: "#1E40AF" }, { lbl: fmtEurV73(_totaleFinale), bg: "#D1FAE5", fg: "#065F46" }];
+                primaryLbl = "EMETTI CONFERMA D'ORDINE";
+                primaryAction = async () => {
+                  try {
+                    if (!confirm(`Confermi che il cliente ha accettato il preventivo da ${fmtEurV73(_totaleFinale)}?\n\nVerrà emessa la Conferma d'Ordine e la commessa avanzerà alla fase \"conferma_ordine\".`)) return;
+                    const aziendaId = (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId'))) || (selectedCM as any)?.aziendaId || (selectedCM as any)?.azienda_id;
+                    if (!aziendaId) { alert('Azienda non trovata'); return; }
+                    const r = await fetch('/api/commessa/avanza-fase', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        aziendaId,
+                        commessaId: (selectedCM as any).id,
+                        faseDa: 'preventivo',
+                        faseA: 'conferma_ordine',
+                        payload: { conferma_ordine_inviata_at: new Date().toISOString() },
+                      }),
+                    });
+                    const j = await r.json();
+                    if (!r.ok) {
+                      alert(`Errore: ${j.error || 'sconosciuto'}`);
+                      return;
+                    }
+                    alert("Conferma d'Ordine emessa. La commessa è ora in attesa firma.");
+                    if (typeof window !== 'undefined') window.location.reload();
+                  } catch (e: any) {
+                    alert(`Errore: ${e?.message || e}`);
+                  }
+                };
+              } else if (_haPrevInviato) {
+                titolo = "Reinvia preventivo";
+                desc = "Cliente non ha ancora risposto. Sollecita o reinvia il link.";
+                tags = [{ lbl: "Inviato", bg: "#DBEAFE", fg: "#1E40AF" }, { lbl: "Pending", bg: "#FEF3C7", fg: "#92400E" }];
+                primaryLbl = "Reinvia preventivo";
+                primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+              } else {
+                titolo = "Genera il preventivo";
+                desc = `${totVZ3} ${totVZ3 === 1 ? "vano" : "vani"}. Stima ${stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "in calcolo"}.`;
+                tags = [{ lbl: "Da inviare", bg: "#FEF3C7", fg: "#92400E" }];
+                primaryLbl = "Genera preventivo";
+                primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+              }
             } else if (_faseDb === "conferma_ordine") {
               eyebrow = "Fase corrente · Conferma ordine";
               titolo = "In attesa firma cliente";
