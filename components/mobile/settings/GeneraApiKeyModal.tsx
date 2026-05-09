@@ -1,15 +1,14 @@
 // components/mobile/settings/GeneraApiKeyModal.tsx
-// Modal generazione API key - design fliwoX (navy + cream + amber)
+// Modal genera API key v3 - auth robusta multi-fallback
 
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const C = {
   navy: '#1E3A5F',
-  navyDark: '#122440',
-  navyMute: '#B8C5D6',
+  navyDark: '#0F1B2D',
   cream: '#F5F0E8',
   white: '#FFFFFF',
   amber: '#E89F3F',
@@ -20,20 +19,44 @@ const C = {
   textMuted: '#6b6358',
 };
 
-const FONT_MONO = "'JetBrains Mono', monospace";
-
-const SCOPES_AVAILABLE = [
-  { id: 'commesse:read', label: 'Leggi commesse', group: 'Commesse' },
-  { id: 'commesse:write', label: 'Crea/modifica commesse', group: 'Commesse' },
-  { id: 'fatture:read', label: 'Leggi fatture', group: 'Fatture' },
-  { id: 'fatture:write', label: 'Crea fatture', group: 'Fatture' },
-  { id: 'clienti:read', label: 'Leggi clienti', group: 'Clienti' },
-  { id: 'clienti:write', label: 'Crea/modifica clienti', group: 'Clienti' },
-  { id: 'vani:read', label: 'Leggi vani', group: 'Tecnico' },
-  { id: 'vani:write', label: 'Crea/modifica vani', group: 'Tecnico' },
-  { id: 'cnc:write', label: 'Invia programmi CNC', group: 'Tecnico' },
-  { id: 'leads:write', label: 'Crea lead da sito web', group: 'Leads' },
-  { id: 'webhook:receive', label: 'Ricevi webhook', group: 'Sistema' },
+const SCOPE_GROUPS = [
+  {
+    title: 'COMMESSE',
+    scopes: [
+      { id: 'commesse:read', label: 'Leggi commesse' },
+      { id: 'commesse:write', label: 'Crea/modifica commesse' },
+    ],
+  },
+  {
+    title: 'FATTURE',
+    scopes: [
+      { id: 'fatture:read', label: 'Leggi fatture' },
+      { id: 'fatture:write', label: 'Crea fatture' },
+    ],
+  },
+  {
+    title: 'CLIENTI',
+    scopes: [
+      { id: 'clienti:read', label: 'Leggi clienti' },
+      { id: 'clienti:write', label: 'Crea/modifica clienti' },
+    ],
+  },
+  {
+    title: 'TECNICO',
+    scopes: [
+      { id: 'vani:read', label: 'Leggi vani' },
+      { id: 'vani:write', label: 'Crea/modifica vani' },
+      { id: 'cnc:write', label: 'Invia programmi CNC' },
+    ],
+  },
+  {
+    title: 'LEADS',
+    scopes: [{ id: 'leads:write', label: 'Crea lead da sito web' }],
+  },
+  {
+    title: 'SISTEMA',
+    scopes: [{ id: 'webhook:receive', label: 'Ricevi webhook' }],
+  },
 ];
 
 const EXPIRY_OPTIONS = [
@@ -48,42 +71,87 @@ interface Props {
   onCreated: () => void;
 }
 
-type Step = 'form' | 'success';
+/**
+ * Recupera access_token con 4 fallback:
+ *  1. supabase.auth.getSession()
+ *  2. window.__supabase getSession (eventuale client globale)
+ *  3. localStorage chiave 'sb-fgefcigxlbrmbeqqzjmo-auth-token'
+ *  4. localStorage chiave 'sb-session' (storage custom MASTRO)
+ */
+async function getAccessToken(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) return session.access_token;
+  } catch {}
+
+  try {
+    const w = window as any;
+    if (w.__supabase) {
+      const { data: { session } } = await w.__supabase.auth.getSession();
+      if (session?.access_token) return session.access_token;
+    }
+  } catch {}
+
+  if (typeof window !== 'undefined') {
+    // Tutte le chiavi localStorage che iniziano con sb-
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      if (k.startsWith('sb-') || k === 'mastro_session' || k === 'supabase.auth.token') {
+        try {
+          const raw = localStorage.getItem(k);
+          if (!raw) continue;
+          const parsed = JSON.parse(raw);
+          // Formato 1: array [access_token, refresh_token, ...]
+          if (Array.isArray(parsed) && typeof parsed[0] === 'string' && parsed[0].length > 50) {
+            return parsed[0];
+          }
+          // Formato 2: { access_token: "...", ... } o { currentSession: {...} }
+          if (parsed?.access_token) return parsed.access_token;
+          if (parsed?.currentSession?.access_token) return parsed.currentSession.access_token;
+          if (parsed?.session?.access_token) return parsed.session.access_token;
+        } catch {}
+      }
+    }
+  }
+
+  return null;
+}
 
 export default function GeneraApiKeyModal({ onClose, onCreated }: Props) {
-  const [step, setStep] = useState<Step>('form');
   const [name, setName] = useState('');
-  const [selectedScopes, setSelectedScopes] = useState<string[]>([]);
-  const [expiresInDays, setExpiresInDays] = useState<number>(365);
+  const [scopes, setScopes] = useState<string[]>([]);
+  const [expiresInDays, setExpiresInDays] = useState(30);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [plaintext, setPlaintext] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [generated, setGenerated] = useState<{ plaintext: string; prefix: string } | null>(null);
+  const [authReady, setAuthReady] = useState<boolean | null>(null);
 
-  const toggleScope = (id: string) => {
-    setSelectedScopes((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
-  };
+  // Verifica auth subito all'apertura
+  useEffect(() => {
+    (async () => {
+      const tok = await getAccessToken();
+      setAuthReady(!!tok);
+      if (!tok) {
+        setError('Sessione non rilevata. Prova a ricaricare la pagina (Ctrl+Shift+R) e ad aprire di nuovo questo modal.');
+      }
+    })();
+  }, []);
 
-  const handleSubmit = async () => {
-    if (!name.trim()) {
-      setError('Inserisci un nome per la key');
-      return;
-    }
-    if (selectedScopes.length === 0) {
-      setError('Seleziona almeno un permesso');
-      return;
-    }
+  function toggleScope(s: string) {
+    setScopes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  }
+
+  async function handleGenera() {
+    setError('');
+    if (!name.trim()) { setError('Inserisci un nome'); return; }
+    if (scopes.length === 0) { setError('Seleziona almeno uno scope'); return; }
 
     setLoading(true);
-    setError('');
-
     try {
-      // Recupera token utente da supabase client
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        setError('Sessione scaduta. Effettua nuovamente il login.');
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        setError('Sessione non trovata. Ricarica la pagina e rifai login.');
         setLoading(false);
         return;
       }
@@ -92,479 +160,222 @@ export default function GeneraApiKeyModal({ onClose, onCreated }: Props) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
+        credentials: 'include', // anche cookie
         body: JSON.stringify({
           name: name.trim(),
-          scopes: selectedScopes,
-          expiresInDays: expiresInDays || null,
+          scopes,
+          expiresInDays: expiresInDays || undefined,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(data.message || data.error || 'Errore creazione key');
+        setError(data?.message || data?.error || `HTTP ${res.status}`);
         setLoading(false);
         return;
       }
 
-      setPlaintext(data.plaintext);
-      setStep('success');
+      setGenerated({ plaintext: data.plaintext, prefix: data.key_prefix });
+      onCreated();
     } catch (e: any) {
       setError(e?.message || 'Errore di rete');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(plaintext);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleClose = () => {
-    if (step === 'success') {
-      onCreated();
-    }
-    onClose();
-  };
+  }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(18, 36, 64, 0.6)',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-      }}
-      onClick={handleClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: C.cream,
-          width: '100%',
-          maxWidth: 480,
-          borderRadius: '24px 24px 0 0',
-          maxHeight: '92vh',
-          overflowY: 'auto',
-          paddingBottom: 'env(safe-area-inset-bottom, 16px)',
-        }}
-      >
-        {step === 'form' ? (
-          <FormStep
-            name={name}
-            setName={setName}
-            selectedScopes={selectedScopes}
-            toggleScope={toggleScope}
-            expiresInDays={expiresInDays}
-            setExpiresInDays={setExpiresInDays}
-            onSubmit={handleSubmit}
-            onClose={handleClose}
-            loading={loading}
-            error={error}
-          />
-        ) : (
-          <SuccessStep
-            plaintext={plaintext}
-            copied={copied}
-            onCopy={handleCopy}
-            onClose={handleClose}
-          />
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(15,27,45,0.6)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    }}>
+      <div style={{
+        background: C.cream, width: '100%', maxWidth: 520,
+        maxHeight: '92vh', overflowY: 'auto',
+        borderTopLeftRadius: 22, borderTopRightRadius: 22,
+        padding: '22px 18px 36px',
+        fontFamily: 'Inter, sans-serif',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+          <h2 style={{ margin: 0, color: C.navy, fontSize: 22, fontWeight: 700 }}>
+            Nuova API Key
+          </h2>
+          <button onClick={onClose} style={{
+            background: 'transparent', border: 'none',
+            fontSize: 24, color: C.textMuted, cursor: 'pointer',
+            width: 32, height: 32,
+          }}>×</button>
+        </div>
+
+        {/* Banner stato auth */}
+        {authReady === false && !generated && (
+          <div style={{
+            background: '#FFE5E5', border: `1px solid ${C.red}`,
+            color: C.red, padding: 12, borderRadius: 10,
+            fontSize: 12, marginBottom: 14,
+          }}>
+            ⚠️ Sessione non rilevata.<br />
+            <strong>Soluzione rapida:</strong> chiudi questa finestra, fai Ctrl+Shift+R sulla pagina, riapri il modal.
+          </div>
         )}
-      </div>
-    </div>
-  );
-}
 
-// ========== FORM STEP ==========
+        {generated ? (
+          <div>
+            <div style={{
+              background: '#FFF8E5', border: `2px solid ${C.amber}`,
+              borderRadius: 12, padding: 14, marginBottom: 14,
+            }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 11, color: C.amber, letterSpacing: 1 }}>
+                ⚠️ COPIA SUBITO — NON SARÀ PIÙ MOSTRATA
+              </p>
+            </div>
+            <code style={{
+              display: 'block', padding: 14,
+              background: C.navyDark, color: C.cream,
+              borderRadius: 10, fontSize: 12, wordBreak: 'break-all',
+              fontFamily: "'JetBrains Mono', monospace",
+            }}>
+              {generated.plaintext}
+            </code>
+            <button
+              onClick={() => { navigator.clipboard?.writeText(generated.plaintext); }}
+              style={{ ...btnPrimary, width: '100%', marginTop: 12 }}
+            >
+              📋 COPIA NEGLI APPUNTI
+            </button>
+            <button
+              onClick={onClose}
+              style={{ ...btnGhost, width: '100%', marginTop: 8 }}
+            >
+              CHIUDI
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Nome */}
+            <label style={lblStyle}>NOME</label>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="es. Sito web produzione"
+              style={inputStyle}
+            />
 
-function FormStep({
-  name, setName, selectedScopes, toggleScope, expiresInDays, setExpiresInDays,
-  onSubmit, onClose, loading, error,
-}: {
-  name: string;
-  setName: (v: string) => void;
-  selectedScopes: string[];
-  toggleScope: (id: string) => void;
-  expiresInDays: number;
-  setExpiresInDays: (n: number) => void;
-  onSubmit: () => void;
-  onClose: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  // Raggruppa scopes
-  const grouped: Record<string, typeof SCOPES_AVAILABLE> = {};
-  SCOPES_AVAILABLE.forEach((s) => {
-    if (!grouped[s.group]) grouped[s.group] = [];
-    grouped[s.group].push(s);
-  });
-
-  return (
-    <div>
-      {/* Header navy */}
-      <header
-        style={{
-          background: C.navy,
-          padding: '20px 20px 24px',
-          borderRadius: '24px 24px 0 0',
-          color: C.cream,
-          position: 'relative',
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            background: 'rgba(255,255,255,0.15)',
-            border: 'none',
-            color: C.cream,
-            width: 32,
-            height: 32,
-            borderRadius: 10,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          aria-label="Chiudi"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-        <p style={{ margin: 0, color: C.navyMute, fontSize: 11, textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 600 }}>
-          NUOVA API KEY
-        </p>
-        <h2 style={{ margin: '6px 0 0', fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px' }}>
-          Genera chiave
-        </h2>
-      </header>
-
-      {/* Body */}
-      <div style={{ padding: 20 }}>
-        {/* Nome */}
-        <Field label="NOME" required>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="es. Zapier Production"
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              background: C.white,
-              border: `1px solid ${C.borderWarm}`,
-              borderRadius: 12,
-              fontSize: 15,
-              color: C.navy,
-              fontWeight: 500,
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-        </Field>
-
-        {/* Scopes */}
-        <Field label="PERMESSI" required>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {Object.entries(grouped).map(([group, items]) => (
-              <div key={group}>
-                <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: C.textMuted, letterSpacing: '0.6px' }}>
-                  {group.toUpperCase()}
+            {/* Scopes */}
+            <label style={{ ...lblStyle, marginTop: 16 }}>PERMESSI</label>
+            {SCOPE_GROUPS.map(group => (
+              <div key={group.title} style={{ marginBottom: 10 }}>
+                <p style={{
+                  margin: '8px 0 4px', fontSize: 9, fontWeight: 700,
+                  color: C.textMuted, letterSpacing: 1,
+                }}>
+                  {group.title}
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {items.map((s) => {
-                    const checked = selectedScopes.includes(s.id);
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => toggleScope(s.id)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '10px 14px',
-                          background: checked ? C.navy : C.white,
-                          border: `1px solid ${checked ? C.navy : C.borderWarm}`,
-                          borderRadius: 10,
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          width: '100%',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: 5,
-                            background: checked ? C.amber : 'transparent',
-                            border: `2px solid ${checked ? C.amber : C.borderWarm}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {checked && (
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.navy} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: checked ? C.cream : C.navy }}>
-                            {s.label}
-                          </p>
-                          <code style={{ fontSize: 10, color: checked ? C.navyMute : C.textMuted, fontFamily: FONT_MONO }}>
-                            {s.id}
-                          </code>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                {group.scopes.map(s => (
+                  <label key={s.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: 12, background: C.white,
+                    border: `1px solid ${scopes.includes(s.id) ? C.greenText : C.borderWarm}`,
+                    borderRadius: 10, marginBottom: 4, cursor: 'pointer',
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={scopes.includes(s.id)}
+                      onChange={() => toggleScope(s.id)}
+                      style={{ margin: 0, cursor: 'pointer' }}
+                    />
+                    <span style={{ flex: 1 }}>
+                      <strong style={{ fontSize: 13, color: C.navy }}>{s.label}</strong>
+                      <code style={{
+                        display: 'block', fontSize: 10, color: C.textMuted,
+                        fontFamily: "'JetBrains Mono', monospace", marginTop: 2,
+                      }}>
+                        {s.id}
+                      </code>
+                    </span>
+                  </label>
+                ))}
               </div>
             ))}
-          </div>
-        </Field>
 
-        {/* Expiry */}
-        <Field label="SCADENZA">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-            {EXPIRY_OPTIONS.map((opt) => {
-              const active = expiresInDays === opt.days;
-              return (
+            {/* Scadenza */}
+            <label style={{ ...lblStyle, marginTop: 16 }}>SCADENZA</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              {EXPIRY_OPTIONS.map(opt => (
                 <button
                   key={opt.days}
-                  type="button"
                   onClick={() => setExpiresInDays(opt.days)}
                   style={{
-                    padding: '12px 8px',
-                    background: active ? C.navy : C.white,
-                    border: `1px solid ${active ? C.navy : C.borderWarm}`,
-                    borderRadius: 10,
-                    color: active ? C.cream : C.navy,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
+                    padding: '12px',
+                    background: expiresInDays === opt.days ? C.navy : C.white,
+                    color: expiresInDays === opt.days ? C.cream : C.navy,
+                    border: `1px solid ${C.navy}`, borderRadius: 10,
+                    fontWeight: 700, fontSize: 13, cursor: 'pointer',
                   }}
                 >
                   {opt.label}
                 </button>
-              );
-            })}
-          </div>
-        </Field>
+              ))}
+            </div>
 
-        {/* Error */}
-        {error && (
-          <div
-            style={{
-              background: '#FFE5E5',
-              border: `1px solid ${C.red}`,
-              color: C.red,
-              padding: '10px 14px',
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 600,
-              marginBottom: 16,
-            }}
-          >
-            {error}
-          </div>
+            {/* Errore */}
+            {error && (
+              <div style={{
+                marginTop: 14, padding: 12,
+                background: '#FFE5E5', color: C.red,
+                borderRadius: 10, fontSize: 12,
+              }}>
+                ⚠️ {error}
+              </div>
+            )}
+
+            {/* CTA */}
+            <button
+              onClick={handleGenera}
+              disabled={loading || !name.trim() || scopes.length === 0}
+              style={{
+                ...btnPrimary, width: '100%', marginTop: 16,
+                opacity: (loading || !name.trim() || scopes.length === 0) ? 0.5 : 1,
+                cursor: (loading || !name.trim() || scopes.length === 0) ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loading ? 'Generazione...' : 'GENERA KEY'}
+            </button>
+          </>
         )}
-
-        {/* Submit */}
-        <button
-          onClick={onSubmit}
-          disabled={loading}
-          style={{
-            width: '100%',
-            background: loading ? C.borderWarm : C.navy,
-            color: C.cream,
-            border: 'none',
-            borderRadius: 14,
-            padding: 16,
-            fontSize: 15,
-            fontWeight: 700,
-            cursor: loading ? 'wait' : 'pointer',
-            boxShadow: loading ? 'none' : `0 4px 0 ${C.navyDark}`,
-            letterSpacing: '0.3px',
-          }}
-        >
-          {loading ? 'GENERAZIONE…' : 'GENERA KEY'}
-        </button>
       </div>
     </div>
   );
 }
 
-// ========== SUCCESS STEP ==========
+const inputStyle: any = {
+  width: '100%', padding: '12px 14px',
+  border: `1px solid ${C.borderWarm}`, borderRadius: 10,
+  fontSize: 14, background: C.white, color: C.navy,
+  fontFamily: 'inherit', boxSizing: 'border-box',
+};
 
-function SuccessStep({
-  plaintext, copied, onCopy, onClose,
-}: {
-  plaintext: string;
-  copied: boolean;
-  onCopy: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div>
-      <header
-        style={{
-          background: C.navy,
-          padding: '20px 20px 24px',
-          borderRadius: '24px 24px 0 0',
-          color: C.cream,
-        }}
-      >
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            background: C.amber,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 12,
-          }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.navy} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </div>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px' }}>
-          Key creata!
-        </h2>
-        <p style={{ margin: '6px 0 0', color: C.navyMute, fontSize: 13 }}>
-          Copia la chiave ORA. Non sarà più visibile.
-        </p>
-      </header>
+const lblStyle: any = {
+  display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 1,
+  color: C.textMuted, marginBottom: 6, marginTop: 4,
+};
 
-      <div style={{ padding: 20 }}>
-        <div
-          style={{
-            background: '#FFF8E5',
-            border: `2px solid ${C.amber}`,
-            borderRadius: 12,
-            padding: 14,
-            marginBottom: 16,
-          }}
-        >
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: C.navy, marginBottom: 4 }}>
-            ⚠️ Salvala subito
-          </p>
-          <p style={{ margin: 0, fontSize: 12, color: C.textMuted }}>
-            Per sicurezza, MASTRO conserva solo un hash. Se la perdi, dovrai generarne una nuova.
-          </p>
-        </div>
+const btnPrimary: any = {
+  background: C.navy, color: C.cream,
+  border: 'none', borderRadius: 12,
+  padding: '14px 20px', fontWeight: 700, fontSize: 13,
+  letterSpacing: 0.5, cursor: 'pointer',
+  fontFamily: 'inherit',
+};
 
-        <div
-          style={{
-            background: C.navy,
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 16,
-            wordBreak: 'break-all',
-          }}
-        >
-          <p style={{ margin: 0, fontSize: 11, color: C.navyMute, marginBottom: 8, fontWeight: 600, letterSpacing: '0.5px' }}>
-            LA TUA API KEY
-          </p>
-          <code
-            style={{
-              color: C.amber,
-              fontSize: 13,
-              fontFamily: FONT_MONO,
-              fontWeight: 600,
-              lineHeight: 1.5,
-            }}
-          >
-            {plaintext}
-          </code>
-        </div>
-
-        <button
-          onClick={onCopy}
-          style={{
-            width: '100%',
-            background: copied ? C.greenBg : C.amber,
-            color: copied ? C.greenText : C.navy,
-            border: 'none',
-            borderRadius: 14,
-            padding: 16,
-            fontSize: 15,
-            fontWeight: 700,
-            cursor: 'pointer',
-            marginBottom: 8,
-            boxShadow: copied ? 'none' : `0 4px 0 #B87E2A`,
-            letterSpacing: '0.3px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-          }}
-        >
-          {copied ? '✓ COPIATA' : 'COPIA NEGLI APPUNTI'}
-        </button>
-
-        <button
-          onClick={onClose}
-          style={{
-            width: '100%',
-            background: 'transparent',
-            color: C.navy,
-            border: `1px solid ${C.borderWarm}`,
-            borderRadius: 14,
-            padding: 16,
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          Chiudi
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ========== Field wrapper ==========
-
-function Field({
-  label, required, children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{ marginBottom: 18 }}>
-      <p
-        style={{
-          margin: '0 0 8px',
-          fontSize: 11,
-          fontWeight: 700,
-          color: C.navy,
-          letterSpacing: '0.8px',
-        }}
-      >
-        {label} {required && <span style={{ color: C.red }}>*</span>}
-      </p>
-      {children}
-    </div>
-  );
-}
+const btnGhost: any = {
+  background: C.white, color: C.navy,
+  border: `1px solid ${C.borderWarm}`, borderRadius: 12,
+  padding: '12px 18px', fontWeight: 600, fontSize: 13,
+  cursor: 'pointer', fontFamily: 'inherit',
+};
