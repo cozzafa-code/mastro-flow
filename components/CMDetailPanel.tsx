@@ -30,6 +30,7 @@ import DisegnoTecnico from "./DisegnoTecnico";
 import Timeline from "./Timeline";
 import TimelineDrawer from "./TimelineDrawer";
 import StoricoPreventiviPanel from "./StoricoPreventiviPanel";
+import PannelloAzioniContestuali from "./PannelloAzioniContestuali";
 // @cadDraw state added below
 
 // ═══ v58 · Cronologia app-nell-app ═══
@@ -3038,6 +3039,21 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           )}
 
           {/* v77 · TAB FISCALE GUIDATO (mockup v3) */}
+
+        {/* PANNELLO AZIONI CONTESTUALI - mossa 7+8 v10 */}
+        {selectedCM?.id && (
+          <div style={{ padding: "10px 12px 0" }}>
+            <PannelloAzioniContestuali
+              commessa_id={selectedCM.id}
+              azienda_id={(typeof window !== "undefined" && (window as any).__AZIENDA_ID__) || "ccca51c1-656b-4e7c-a501-55753e20da29"}
+              cliente={selectedCM.cliente}
+              cliente_indirizzo={selectedCM.indirizzo}
+              totale={selectedCM.totale_finale || selectedCM.totale_preventivo || 0}
+              commessa_code={selectedCM.code}
+            />
+          </div>
+        )}
+
           {prevTab === "fiscale" && (
               <PreventivoFiscaleV10
                 azienda_id={(c as any)?.azienda_id ?? ""}
