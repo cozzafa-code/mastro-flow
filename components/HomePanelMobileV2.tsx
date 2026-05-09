@@ -1,4 +1,4 @@
-// HomePanelMobileV2 - V14 settimana lista + swipe info ricche
+// HomePanelMobileV2 V15 - lista vert prime 5 + swipe overflow
 'use client'
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
@@ -8,7 +8,6 @@ const NAVY = '#1B3A5C', NAVY_DEEP = '#0F1F33', BG = '#7A8A9A'
 const RED = '#C73E1D', AMBER = '#BA7517', GREEN = '#0F6E56'
 const TEXT = '#0F1F33', MUTED = '#5C6B7A', BORDER = '#E5E7EB'
 const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre']
-const DOW_FULL = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica']
 const DOW_SHORT = ['LUN','MAR','MER','GIO','VEN','SAB','DOM']
 const DOW = ['L','M','M','G','V','S','D']
 
@@ -25,6 +24,7 @@ const ALL_CARDS = [
   { id: 'statistiche', title: 'STATISTICHE' },
 ]
 const DEFAULT_ORDER = ALL_CARDS.map(c => c.id)
+const SHOW_VERTICAL = 5
 
 function SwipeTrack({ children }: { children: React.ReactNode }) {
   return (
@@ -32,13 +32,13 @@ function SwipeTrack({ children }: { children: React.ReactNode }) {
       display: 'flex', gap: 8, overflowX: 'auto', scrollSnapType: 'x mandatory',
       WebkitOverflowScrolling: 'touch' as any, scrollbarWidth: 'none' as any,
       paddingBottom: 4, marginRight: -14, paddingRight: 14,
-    }} onWheel={(e) => { e.currentTarget.scrollLeft += e.deltaY }}>
+    }}>
       <style>{`div::-webkit-scrollbar{display:none}`}</style>
       {children}
     </div>
   )
 }
-function SwipeItem({ children, width = '220px' }: any) {
+function SwipeItem({ children, width = '180px' }: any) {
   return (
     <div style={{
       flex: `0 0 ${width}`, scrollSnapAlign: 'start',
@@ -47,33 +47,6 @@ function SwipeItem({ children, width = '220px' }: any) {
     }}>{children}</div>
   )
 }
-function VStackThenSwipe({ items, renderRow, renderSwipeItem, swipeWidth }: { items: any[], renderRow: (item: any, i: number) => React.ReactNode, renderSwipeItem: (item: any, i: number) => React.ReactNode, swipeWidth?: string }) {
-  const SHOW_VERTICAL = 5
-  const top = items.slice(0, SHOW_VERTICAL)
-  const rest = items.slice(SHOW_VERTICAL)
-  return (
-    <>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {top.map((it: any, i: number) => (
-          <div key={i} style={{ borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
-            {renderRow(it, i)}
-          </div>
-        ))}
-      </div>
-      {rest.length > 0 && (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre · scorri →</div>
-          <SwipeTrack>
-            {rest.map((it: any, i: number) => (
-              <React.Fragment key={i}>{renderSwipeItem(it, i)}</React.Fragment>
-            ))}
-          </SwipeTrack>
-        </div>
-      )}
-    </>
-  )
-}
-
 
 const dotColor = (e: any) => {
   const t = (e?.tipo || '').toLowerCase()
@@ -92,19 +65,18 @@ export default function HomePanelMobileV2(props: any) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
-      const saved = localStorage.getItem('mastro_home_order_v14')
+      const saved = localStorage.getItem('mastro_home_order_v15')
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const merged = [...parsed, ...DEFAULT_ORDER.filter(id => !parsed.includes(id))]
-          setOrder(merged)
+          setOrder([...parsed, ...DEFAULT_ORDER.filter(id => !parsed.includes(id))])
         }
       }
     } catch {}
   }, [])
   useEffect(() => {
     if (typeof window === 'undefined') return
-    try { localStorage.setItem('mastro_home_order_v14', JSON.stringify(order)) } catch {}
+    try { localStorage.setItem('mastro_home_order_v15', JSON.stringify(order)) } catch {}
   }, [order])
 
   const goto = (tab: string) => { if (ctx?.setTab) ctx.setTab(tab); else if (props?.onNavigate) props.onNavigate(tab) }
@@ -195,7 +167,7 @@ export default function HomePanelMobileV2(props: any) {
         </div>
       )}
       <div style={{ padding: '12px 14px' }}>
-        {id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} onClick={() => goto('agenda')} />}
+        {id === 'agenda' && <CardCalendar eventi={eventi} onClick={() => goto('agenda')} />}
         {id === 'urgente' && <CardUrgente ferme={ferme} apri={apriCM} />}
         {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} onClick={() => goto('team')} />}
         {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} />}
@@ -262,7 +234,7 @@ function Stat({ icon, value, label, badge, onClick }: any) {
   const Ico = () => {
     if (icon === 'briefcase') return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={7} width={20} height={14} rx={2}/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
     if (icon === 'cash') return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={6} width={20} height={12} rx={2}/><circle cx={12} cy={12} r={2}/></svg>
-    if (icon === 'calendar') return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+    if (icon === 'calendar') return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={3} y={4} width={18} height={18} rx={2}/></svg>
     return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
   }
   return (
@@ -283,13 +255,22 @@ function CardHead({ title, link, badge, onClick, icon }: any) {
         <span style={{ color: TEXT, fontSize: 13, fontWeight: 600 }}>{title}</span>
         {badge != null ? <span style={{ background: '#F1F4F7', color: NAVY, fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{badge}</span> : null}
       </div>
-      {link && <span onClick={onClick} style={{ color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>{link} ›</span>}
+      {link ? <span onClick={onClick} style={{ color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>{link} ›</span> : null}
     </div>
   )
 }
 
-// CALENDARIO con settimana = lista verticale
-function CardCalendar({ eventi, cantieri, onClick }: any) {
+function Row({ label, value, color, last }: any) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: last ? 'none' : `1px solid ${BORDER}` }}>
+      <span style={{ fontSize: 11, color: MUTED }}>{label}</span>
+      <span style={{ fontSize: 13, color: color || TEXT, fontWeight: 600, fontFeatureSettings: '"tnum"' }}>{value}</span>
+    </div>
+  )
+}
+
+// CALENDARIO
+function CardCalendar({ eventi, onClick }: any) {
   const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('mese')
   const [cursor, setCursor] = useState(new Date())
   const today = new Date()
@@ -304,11 +285,9 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
     })
     return map
   }, [eventi])
-  const eventiSel = (eventByDay[cursor.toDateString()] || []).sort((a: any, b: any) => {
-    const ta = new Date(a?.data || a?.start || 0).getTime()
-    const tb = new Date(b?.data || b?.start || 0).getTime()
-    return ta - tb
-  })
+  const eventiSel = (eventByDay[cursor.toDateString()] || []).sort((a: any, b: any) =>
+    new Date(a?.data || 0).getTime() - new Date(b?.data || 0).getTime()
+  )
   const buildMonth = () => {
     const y = cursor.getFullYear(), m = cursor.getMonth()
     const last = new Date(y, m + 1, 0)
@@ -327,9 +306,7 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
   const navOggi = (e: any) => { e.stopPropagation(); setCursor(new Date()) }
   const monthLabel = `${MESI[cursor.getMonth()]} ${cursor.getFullYear()}`
   const days = buildMonth()
-  const navBtn: React.CSSProperties = { width: 26, height: 26, borderRadius: 6, background: '#F1F4F7', color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, cursor: 'pointer', border: 'none' }
-
-  // Settimana: 7 giorni a partire da lunedì
+  const navBtn: React.CSSProperties = { width: 26, height: 26, borderRadius: 6, background: '#F1F4F7', color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none' }
   const weekDays = useMemo(() => {
     const dow = (cursor.getDay() + 6) % 7
     const start = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - dow)
@@ -351,7 +328,7 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
         <span style={{ color: TEXT, fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{monthLabel}</span>
         <div style={{ display: 'flex', gap: 4 }}>
           <button onClick={navPrev} style={navBtn}><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg></button>
-          <button onClick={navOggi} style={{ ...navBtn, padding: '0 10px', width: 'auto' }}>OGGI</button>
+          <button onClick={navOggi} style={{ ...navBtn, padding: '0 10px', width: 'auto', fontSize: 10, fontWeight: 600 }}>OGGI</button>
           <button onClick={navNext} style={navBtn}><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg></button>
         </div>
       </div>
@@ -371,14 +348,13 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
                 fontWeight: isT ? 600 : 400,
               }}>
                 {d.date.getDate()}
-                {has && !d.muted && <div style={{ position: 'absolute', bottom: 2, width: 4, height: 4, background: isT ? '#FFF' : NAVY, borderRadius: '50%' }}/>}
+                {has && !d.muted ? <div style={{ position: 'absolute', bottom: 2, width: 4, height: 4, background: isT ? '#FFF' : NAVY, borderRadius: '50%' }}/> : null}
               </div>
             )
           })}
         </div>
       )}
 
-      {/* SETTIMANA = lista verticale */}
       {view === 'settimana' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {weekDays.map((d, i) => {
@@ -387,7 +363,7 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
             return (
               <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d) }} style={{
                 background: isT ? '#E5EAF0' : (isS ? '#F1F4F7' : '#F7F9FB'),
-                borderLeft: isT ? `3px solid ${NAVY}` : `3px solid transparent`,
+                borderLeft: isT ? `3px solid ${NAVY}` : '3px solid transparent',
                 borderRadius: 8, padding: '8px 10px', cursor: 'pointer',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -398,7 +374,7 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
                   </div>
                   <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{evs.length === 0 ? '—' : `${evs.length} eventi`}</div>
                 </div>
-                {evs.length > 0 && (
+                {evs.length > 0 ? (
                   <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {evs.slice(0, 3).map((e: any, j: number) => {
                       const data = new Date(e?.data || e?.start || 0)
@@ -410,9 +386,9 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
                         </div>
                       )
                     })}
-                    {evs.length > 3 && <div style={{ fontSize: 9, color: NAVY, fontWeight: 600 }}>+{evs.length - 3} altri</div>}
+                    {evs.length > 3 ? <div style={{ fontSize: 9, color: NAVY, fontWeight: 600 }}>+{evs.length - 3} altri</div> : null}
                   </div>
-                )}
+                ) : null}
               </div>
             )
           })}
@@ -422,7 +398,7 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
       {view === 'giorno' && (
         <div style={{ background: '#F7F9FB', borderRadius: 8, padding: 10, minHeight: 100 }}>
           <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 8, textTransform: 'capitalize' }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
-          {eventiSel.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '12px 0' }}>Nessun evento programmato</div>}
+          {eventiSel.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '12px 0' }}>Nessun evento programmato</div> : null}
           {eventiSel.map((e: any, i: number) => {
             const data = new Date(e?.data || e?.start || 0)
             return (
@@ -433,9 +409,7 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{e?.titolo || e?.title || ''}</div>
-                  <div style={{ fontSize: 10, color: NAVY, marginTop: 1 }}>{e?.tipo || ''}</div>
-                  {e?.note && <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{e.note}</div>}
-                  {e?.luogo && <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>📍 {e.luogo}</div>}
+                  {e?.tipo ? <div style={{ fontSize: 10, color: NAVY, marginTop: 1 }}>{e.tipo}</div> : null}
                 </div>
               </div>
             )
@@ -443,7 +417,7 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
         </div>
       )}
 
-      {view === 'mese' && eventiSel.length > 0 && (
+      {view === 'mese' && eventiSel.length > 0 ? (
         <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
           <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5, marginBottom: 6, fontWeight: 600 }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} · {eventiSel.length} EVENTI</div>
           {eventiSel.map((e: any, i: number) => {
@@ -456,21 +430,23 @@ function CardCalendar({ eventi, cantieri, onClick }: any) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{e?.titolo || e?.title || ''}</div>
-                  {e?.tipo && <div style={{ fontSize: 9, color: NAVY, marginTop: 1, fontWeight: 600, textTransform: 'uppercase' }}>{e?.tipo}</div>}
-                  {e?.luogo && <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📍 {e.luogo}</div>}
+                  {e?.luogo ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📍 {e.luogo}</div> : null}
                 </div>
               </div>
             )
           })}
         </div>
-      )}
+      ) : null}
 
       <button onClick={onClick} style={{ marginTop: 10, background: 'transparent', border: 'none', color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer', width: '100%', padding: 4 }}>APRI AGENDA COMPLETA →</button>
     </>
   )
 }
 
+// URGENTE
 function CardUrgente({ ferme, apri }: any) {
+  const top = ferme.slice(0, SHOW_VERTICAL)
+  const rest = ferme.slice(SHOW_VERTICAL)
   return (
     <div style={{ background: '#FCEFEC', margin: '-12px -14px', padding: '12px 14px', borderRadius: 14, position: 'relative' }}>
       <span style={{ position: 'absolute', top: -6, left: 12, background: RED, color: '#FFF', fontSize: 9, padding: '3px 9px', borderRadius: 5, fontWeight: 700, letterSpacing: 0.5 }}>URGENTE</span>
@@ -478,206 +454,174 @@ function CardUrgente({ ferme, apri }: any) {
         <svg width={14} height={14} viewBox="0 0 24 24" fill={RED}><path d="M12 2L2 22h20L12 2zm-1 6v8h2V8h-2zm0 10v2h2v-2h-2z"/></svg>
         <span style={{ color: TEXT, fontSize: 13, fontWeight: 600 }}>{ferme.length} commesse ferme</span>
       </div>
-      {ferme.length === 0 && <div style={{ fontSize: 11, color: MUTED }}>Tutto sotto controllo</div>}
-      {ferme.length > 0 && (
-        <SwipeTrack>
-          {ferme.map((c: any, i: number) => {
-            const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
-            const giorni = Math.floor((Date.now() - upd) / 86400000)
-            const tel = c?.cliente_telefono || c?.telefono
-            return (
-              <SwipeItem key={i} width="240px">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code || '?'}</div>
-                  <span style={{ fontSize: 9, color: '#FFF', background: RED, padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>{giorni}g</span>
-                </div>
-                <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, marginTop: 3, lineHeight: 1.2 }}>{c?.cliente || 'Cliente'}</div>
-                <div style={{ fontSize: 9, color: NAVY, marginTop: 4, fontWeight: 600, textTransform: 'uppercase' }}>{c?.fase}</div>
-                {c?.indirizzo && <div style={{ fontSize: 10, color: MUTED, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {c?.indirizzo}</div>}
-                {c?.totale && <div style={{ fontSize: 10, color: TEXT, marginTop: 2, fontWeight: 600 }}>{Math.round(Number(c.totale))}€</div>}
-                <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-                  {tel && <a href={`tel:${tel}`} onClick={(e) => e.stopPropagation()} style={{ flex: 1, background: GREEN, color: '#FFF', padding: '5px 0', borderRadius: 6, fontSize: 9, textAlign: 'center', textDecoration: 'none', fontWeight: 700 }}>📞</a>}
-                  <button onClick={(e) => { e.stopPropagation(); apri(c?.id) }} style={{ flex: 2, background: NAVY, color: '#FFF', border: 'none', padding: '5px 0', borderRadius: 6, fontSize: 9, cursor: 'pointer', fontWeight: 700 }}>APRI →</button>
-                </div>
+      {ferme.length === 0 ? <div style={{ fontSize: 11, color: MUTED }}>Tutto sotto controllo</div> : null}
+      {top.map((c: any, i: number) => {
+        const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
+        const giorni = Math.floor((Date.now() - upd) / 86400000)
+        return (
+          <div key={i} onClick={() => apri(c?.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid rgba(199,62,29,0.15)` : 'none', cursor: 'pointer' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</span>
+                <span style={{ fontSize: 8, color: '#FFF', background: RED, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{giorni}g</span>
+              </div>
+              <div style={{ fontSize: 11, color: TEXT, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.cliente || ''}</div>
+              <div style={{ fontSize: 9, color: NAVY, marginTop: 1, fontWeight: 600, textTransform: 'uppercase' }}>{c?.fase}</div>
+            </div>
+          </div>
+        )
+      })}
+      {rest.length > 0 ? (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre · scorri →</div>
+          <SwipeTrack>
+            {rest.map((c: any, i: number) => (
+              <SwipeItem key={i} width="180px">
+                <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || ''}</div>
+                <button onClick={() => apri(c?.id)} style={{ marginTop: 6, background: NAVY, color: '#FFF', border: 'none', padding: '4px 0', borderRadius: 5, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI →</button>
               </SwipeItem>
-            )
-          })}
-        </SwipeTrack>
-      )}
-    </div>
-  )
-}
-
-function TaskRow({ t, cantieri, apri }: any) {
-  const cm = cantieri.find((c: any) => c?.id === t?.commessa_id || c?.id === t?.cantiere_id)
-  const scad = t?.scadenza ? new Date(t.scadenza) : null
-  const isLate = scad && scad.getTime() < Date.now()
-  const prio = (t?.priorita || '').toLowerCase()
-  const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : MUTED
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0' }}>
-      <div style={{ width: 18, height: 18, borderRadius: 5, border: '1.5px solid #B5C2D6', flexShrink: 0, marginTop: 1, background: '#FFF' }}/>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3 }}>{t?.titolo || t?.title || 'Task'}</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
-          {scad && <span style={{ fontSize: 10, color: isLate ? RED : MUTED, fontWeight: 600 }}>📅 {scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate && ' SCADUTA'}</span>}
-          {prio && <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '1px 5px', borderRadius: 3, fontWeight: 700, letterSpacing: 0.3 }}>{prio.toUpperCase()}</span>}
-          {cm && <span onClick={() => apri(cm.id)} style={{ fontSize: 10, color: NAVY, fontWeight: 600, cursor: 'pointer' }}>↗ {cm?.codice || cm?.code}</span>}
+            ))}
+          </SwipeTrack>
         </div>
-      </div>
+      ) : null}
     </div>
   )
 }
 
+// TASK
 function CardTask({ tasks, cantieri, apri, onClick }: any) {
+  const top = tasks.slice(0, SHOW_VERTICAL)
+  const rest = tasks.slice(SHOW_VERTICAL)
   return (
     <>
       <CardHead title="Task" badge={tasks.length} link="vedi tutte" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>} />
-      {tasks.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessuna task aperta</div>}
-      {tasks.length > 0 && (
-        <VStackThenSwipe
-          items={tasks}
-          renderRow={(t: any, i: number) => <TaskRow t={t} cantieri={cantieri} apri={apri} />}
-          renderSwipeItem={(t: any, i: number) => {
-            const cm = cantieri.find((c: any) => c?.id === t?.commessa_id || c?.id === t?.cantiere_id)
-            const scad = t?.scadenza ? new Date(t.scadenza) : null
-            const isLate = scad && scad.getTime() < Date.now()
-            const prio = (t?.priorita || '').toLowerCase()
-            const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : MUTED
-            return (
-              <SwipeItem key={i} width="230px">
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <div style={{ width: 16, height: 16, borderRadius: 4, border: '1.5px solid #B5C2D6', flexShrink: 0, marginTop: 1, background: '#FFF' }}/>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, lineHeight: 1.3 }}>{t?.titolo || t?.title || 'Task'}</div>
-                    {t?.descrizione && <div style={{ fontSize: 9, color: MUTED, marginTop: 3, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>{t.descrizione}</div>}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-                      {scad && <span style={{ fontSize: 9, color: isLate ? RED : MUTED, fontWeight: 600 }}>📅 {scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate && ' SCADUTA'}</span>}
-                      {prio && <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span>}
-                    </div>
-                    {cm && <div onClick={() => apri(cm.id)} style={{ marginTop: 6, fontSize: 9, color: NAVY, fontWeight: 600, cursor: 'pointer' }}>↗ {cm?.codice || cm?.code} · {cm?.cliente}</div>}
-                  </div>
-                </div>
+      {tasks.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessuna task aperta</div> : null}
+      {top.map((t: any, i: number) => {
+        const cm = cantieri.find((c: any) => c?.id === t?.commessa_id || c?.id === t?.cantiere_id)
+        const scad = t?.scadenza ? new Date(t.scadenza) : null
+        const isLate = scad && scad.getTime() < Date.now()
+        const prio = (t?.priorita || '').toLowerCase()
+        const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : MUTED
+        return (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
+            <div style={{ width: 18, height: 18, borderRadius: 5, border: '1.5px solid #B5C2D6', flexShrink: 0, marginTop: 1, background: '#FFF' }}/>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3 }}>{t?.titolo || t?.title || 'Task'}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
+                {scad ? <span style={{ fontSize: 10, color: isLate ? RED : MUTED, fontWeight: 600 }}>📅 {scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
+                {prio ? <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span> : null}
+                {cm ? <span onClick={() => apri(cm.id)} style={{ fontSize: 10, color: NAVY, fontWeight: 600, cursor: 'pointer' }}>↗ {cm?.codice || cm?.code}</span> : null}
+              </div>
+            </div>
+          </div>
+        )
+      })}
+      {rest.length > 0 ? (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre · scorri →</div>
+          <SwipeTrack>
+            {rest.map((t: any, i: number) => (
+              <SwipeItem key={i} width="200px">
+                <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{t?.titolo || t?.title || 'Task'}</div>
+                {t?.scadenza ? <div style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>📅 {new Date(t.scadenza).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div> : null}
               </SwipeItem>
-            )
-          })}
-        />
-      )}
+            ))}
+          </SwipeTrack>
+        </div>
+      ) : null}
     </>
   )
 }
 
-function MontaggioRow({ m, cantieri, team, apri }: any) {
-  const d = new Date(m?.data || Date.now())
-  const cm = cantieri.find((c: any) => c?.id === m?.commessa_id || c?.id === m?.cantiere_id)
-  const teamIds = m?.team || m?.operatori || []
-  const teamMembers = team.filter((t: any) => teamIds.includes(t?.id))
-  const dgg = Math.floor((d.getTime() - Date.now()) / 86400000)
-  return (
-    <div onClick={() => cm && apri(cm.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer' }}>
-      <div style={{ flex: '0 0 50px', textAlign: 'center', background: dgg <= 1 ? RED : (dgg <= 3 ? AMBER : NAVY), color: '#FFF', borderRadius: 6, padding: '4px 0' }}>
-        <div style={{ fontSize: 9, fontWeight: 700 }}>{d.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase()}</div>
-        <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</div>
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m?.cliente || cm?.cliente || 'Cliente'}</div>
-        <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>🕐 {d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}{cm?.n_vani && ` · 🪟 ${cm.n_vani}v`}</div>
-        {teamMembers.length > 0 && <div style={{ fontSize: 10, color: NAVY, marginTop: 1, fontWeight: 600 }}>{teamMembers.map((t: any) => t?.nome).filter(Boolean).join(' · ')}</div>}
-      </div>
-    </div>
-  )
-}
-
+// MONTAGGI
 function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
+  const top = montaggi.slice(0, SHOW_VERTICAL)
+  const rest = montaggi.slice(SHOW_VERTICAL)
   return (
     <>
       <CardHead title="Prossimi montaggi" badge={montaggi.length} link="agenda" onClick={() => {}} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>} />
-      {montaggi.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun montaggio programmato</div>}
-      {montaggi.length > 0 && (
-        <VStackThenSwipe
-          items={montaggi}
-          renderRow={(m: any, i: number) => <MontaggioRow m={m} cantieri={cantieri} team={team} apri={apri} />}
-          renderSwipeItem={(m: any, i: number) => {
-            const d = new Date(m?.data || Date.now())
-            const cm = cantieri.find((c: any) => c?.id === m?.commessa_id || c?.id === m?.cantiere_id)
-            const teamIds = m?.team || m?.operatori || []
-            const teamMembers = team.filter((t: any) => teamIds.includes(t?.id))
-            const dgg = Math.floor((d.getTime() - Date.now()) / 86400000)
-            return (
-              <SwipeItem key={i} width="240px">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 9, color: NAVY, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>{d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                  <span style={{ fontSize: 9, color: '#FFF', background: dgg <= 1 ? RED : (dgg <= 3 ? AMBER : NAVY), padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>{dgg === 0 ? 'OGGI' : dgg === 1 ? 'DOMANI' : `+${dgg}gg`}</span>
-                </div>
-                <div style={{ fontSize: 12, color: TEXT, fontWeight: 700, marginTop: 4 }}>{m?.cliente || cm?.cliente || 'Cliente'}</div>
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>🕐 {d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}{m?.durata && ` · ${m.durata}`}</div>
-                {(m?.indirizzo || cm?.indirizzo) && <div style={{ fontSize: 10, color: MUTED, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {m?.indirizzo || cm?.indirizzo}</div>}
-                {cm?.n_vani && <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>🪟 {cm.n_vani} vani</div>}
-                {teamMembers.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: -4, marginTop: 6 }}>
-                    {teamMembers.slice(0, 3).map((t: any, j: number) => (
-                      <div key={j} style={{ width: 22, height: 22, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: j > 0 ? -5 : 0, border: '1.5px solid #FFF' }}>{(t?.nome || '?').slice(0, 1).toUpperCase()}</div>
-                    ))}
-                    <span style={{ fontSize: 9, color: MUTED, marginLeft: 8 }}>{teamMembers.map((t: any) => t?.nome).filter(Boolean).join(' · ')}</span>
-                  </div>
-                )}
-                {cm && <button onClick={() => apri(cm.id)} style={{ marginTop: 6, background: NAVY, color: '#FFF', border: 'none', padding: '5px 0', borderRadius: 6, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI COMMESSA →</button>}
-              </SwipeItem>
-            )
-          })}
-        </SwipeTrack>
-      )}
+      {montaggi.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun montaggio programmato</div> : null}
+      {top.map((m: any, i: number) => {
+        const d = new Date(m?.data || Date.now())
+        const cm = cantieri.find((c: any) => c?.id === m?.commessa_id || c?.id === m?.cantiere_id)
+        const teamIds = m?.team || m?.operatori || []
+        const teamMembers = team.filter((t: any) => teamIds.includes(t?.id))
+        const dgg = Math.floor((d.getTime() - Date.now()) / 86400000)
+        return (
+          <div key={i} onClick={() => cm && apri(cm.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+            <div style={{ flex: '0 0 50px', textAlign: 'center', background: dgg <= 1 ? RED : (dgg <= 3 ? AMBER : NAVY), color: '#FFF', borderRadius: 6, padding: '4px 0' }}>
+              <div style={{ fontSize: 9, fontWeight: 700 }}>{d.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase()}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</div>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m?.cliente || cm?.cliente || 'Cliente'}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>🕐 {d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}{cm?.n_vani ? ` · 🪟 ${cm.n_vani}v` : ''}</div>
+              {teamMembers.length > 0 ? <div style={{ fontSize: 10, color: NAVY, marginTop: 1, fontWeight: 600 }}>{teamMembers.map((t: any) => t?.nome).filter(Boolean).join(' · ')}</div> : null}
+            </div>
+          </div>
+        )
+      })}
+      {rest.length > 0 ? (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri · scorri →</div>
+          <SwipeTrack>
+            {rest.map((m: any, i: number) => {
+              const d = new Date(m?.data || Date.now())
+              return (
+                <SwipeItem key={i} width="180px">
+                  <div style={{ fontSize: 9, color: NAVY, fontWeight: 700 }}>{d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, marginTop: 2 }}>{m?.cliente || 'Cliente'}</div>
+                </SwipeItem>
+              )
+            })}
+          </SwipeTrack>
+        </div>
+      ) : null}
     </>
   )
 }
 
-function CommessaRow({ c, apri }: any) {
-  return (
-    <div onClick={() => apri(c?.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer' }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</span>
-          <span style={{ fontSize: 8, color: NAVY, background: '#E5EAF0', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
-        </div>
-        <div style={{ fontSize: 11, color: TEXT, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.cliente || ''}</div>
-        {c?.indirizzo && <div style={{ fontSize: 9, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {c?.indirizzo}</div>}
-      </div>
-      {c?.totale && <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, flexShrink: 0 }}>{Math.round(Number(c.totale))}€</div>}
-    </div>
-  )
-}
-
+// COMMESSE
 function CardCommesse({ cantieri, apri }: any) {
+  const top = cantieri.slice(0, SHOW_VERTICAL)
+  const rest = cantieri.slice(SHOW_VERTICAL)
   return (
     <>
       <CardHead title="Commesse attive" badge={cantieri.length} link="vedi tutte" onClick={() => apri('')} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={7} width={20} height={14} rx={2}/></svg>} />
-      {cantieri.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessuna commessa attiva</div>}
-      {cantieri.length > 0 && (
-        <VStackThenSwipe
-          items={cantieri}
-          renderRow={(c: any, i: number) => <CommessaRow c={c} apri={apri} />}
-          renderSwipeItem={(c: any, i: number) => {
-            const upd = c?.updated_at ? new Date(c.updated_at) : null
-            return (
-              <SwipeItem key={i} width="230px">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
-                  <span style={{ fontSize: 8, color: NAVY, background: '#E5EAF0', padding: '1px 6px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
-                </div>
-                <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, marginTop: 3 }}>{c?.cliente || ''}</div>
-                {c?.indirizzo && <div style={{ fontSize: 10, color: MUTED, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {c?.indirizzo}</div>}
-                {c?.totale && <div style={{ fontSize: 11, color: TEXT, marginTop: 4, fontWeight: 700 }}>💰 {Math.round(Number(c.totale))}€</div>}
-                {upd && <div style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>aggiornata {upd.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div>}
-                <button onClick={() => apri(c?.id)} style={{ marginTop: 6, background: NAVY, color: '#FFF', border: 'none', padding: '5px 0', borderRadius: 6, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI →</button>
+      {cantieri.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessuna commessa attiva</div> : null}
+      {top.map((c: any, i: number) => (
+        <div key={i} onClick={() => apri(c?.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</span>
+              <span style={{ fontSize: 8, color: NAVY, background: '#E5EAF0', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
+            </div>
+            <div style={{ fontSize: 11, color: TEXT, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.cliente || ''}</div>
+            {c?.indirizzo ? <div style={{ fontSize: 9, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {c.indirizzo}</div> : null}
+          </div>
+          {c?.totale ? <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, flexShrink: 0 }}>{Math.round(Number(c.totale))}€</div> : null}
+        </div>
+      ))}
+      {rest.length > 0 ? (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre · scorri →</div>
+          <SwipeTrack>
+            {rest.map((c: any, i: number) => (
+              <SwipeItem key={i} width="180px">
+                <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || ''}</div>
+                <button onClick={() => apri(c?.id)} style={{ marginTop: 6, background: NAVY, color: '#FFF', border: 'none', padding: '4px 0', borderRadius: 5, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI →</button>
               </SwipeItem>
-            )
-          })}
-        />
-      )}
+            ))}
+          </SwipeTrack>
+        </div>
+      ) : null}
     </>
   )
 }
 
+// CASSA
 function CardCassa({ daIncassare, fatture, onClick }: any) {
   const scadute = fatture.filter((f: any) => !f?.pagata && f?.scadenza && new Date(f.scadenza).getTime() < Date.now())
   const scaduteAmt = scadute.reduce((s: number, f: any) => s + Number(f?.totale || 0), 0)
@@ -687,116 +631,100 @@ function CardCassa({ daIncassare, fatture, onClick }: any) {
     <>
       <CardHead title="Cassa" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={6} width={20} height={12} rx={2}/><circle cx={12} cy={12} r={2}/></svg>} />
       <Row label="Da incassare" value={daIncassare} color={TEXT} />
-      {scadute.length > 0 && <Row label={`Scadute (${scadute.length})`} value={`${Math.round(scaduteAmt)}€`} color={RED} />}
-      {incassate.length > 0 && <Row label={`Incassate (${incassate.length})`} value={`${Math.round(incassateAmt)}€`} color={GREEN} last />}
+      {scadute.length > 0 ? <Row label={`Scadute (${scadute.length})`} value={`${Math.round(scaduteAmt)}€`} color={RED} /> : null}
+      {incassate.length > 0 ? <Row label={`Incassate (${incassate.length})`} value={`${Math.round(incassateAmt)}€`} color={GREEN} last /> : null}
     </>
   )
 }
-function Row({ label, value, color, last }: any) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: last ? 'none' : `1px solid ${BORDER}` }}>
-      <span style={{ fontSize: 11, color: MUTED }}>{label}</span>
-      <span style={{ fontSize: 13, color: color || TEXT, fontWeight: 600, fontFeatureSettings: '"tnum"' }}>{value}</span>
-    </div>
-  )
-}
 
-function OperatoreRow({ t, cantieri }: any) {
-  const cantiereAttuale = cantieri.find((c: any) => c?.id === t?.cantiere_attuale_id)
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-      <div style={{ width: 32, height: 32, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative', flexShrink: 0 }}>
-        {(t?.nome || '?').slice(0, 1).toUpperCase()}
-        <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 50, background: t?.attivo !== false ? GREEN : '#C8D2DA', border: '2px solid #FFF' }}/>
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
-        <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cantiereAttuale && ` · ${cantiereAttuale?.codice}`}</div>
-      </div>
-      {t?.telefono && <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ background: GREEN, color: '#FFF', padding: '6px 10px', borderRadius: 6, fontSize: 10, textDecoration: 'none', fontWeight: 700, flexShrink: 0 }}>📞</a>}
-    </div>
-  )
-}
-
+// SQUADRA
 function CardSquadra({ team, cantieri, onClick }: any) {
   const attivi = team.filter((t: any) => t?.attivo !== false).length
+  const top = team.slice(0, SHOW_VERTICAL)
+  const rest = team.slice(SHOW_VERTICAL)
   return (
     <>
       <CardHead title="Squadra" badge={`${attivi}/${team.length}`} link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/></svg>} />
-      {team.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun operatore</div>}
-      {team.length > 0 && (
-        <VStackThenSwipe
-          items={team}
-          renderRow={(t: any, i: number) => <OperatoreRow t={t} cantieri={cantieri} />}
-          renderSwipeItem={(t: any, i: number) => {
-            const cantiereAttuale = cantieri.find((c: any) => c?.id === t?.cantiere_attuale_id)
-            return (
-              <SwipeItem key={i} width="200px">
+      {team.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun operatore</div> : null}
+      {top.map((t: any, i: number) => {
+        const cantiereAttuale = cantieri.find((c: any) => c?.id === t?.cantiere_attuale_id)
+        return (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative', flexShrink: 0 }}>
+              {(t?.nome || '?').slice(0, 1).toUpperCase()}
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 50, background: t?.attivo !== false ? GREEN : '#C8D2DA', border: '2px solid #FFF' }}/>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cantiereAttuale ? ` · ${cantiereAttuale?.codice}` : ''}</div>
+            </div>
+            {t?.telefono ? <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ background: GREEN, color: '#FFF', padding: '6px 10px', borderRadius: 6, fontSize: 10, textDecoration: 'none', fontWeight: 700, flexShrink: 0 }}>📞</a> : null}
+          </div>
+        )
+      })}
+      {rest.length > 0 ? (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri · scorri →</div>
+          <SwipeTrack>
+            {rest.map((t: any, i: number) => (
+              <SwipeItem key={i} width="160px">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative', flexShrink: 0 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative' }}>
                     {(t?.nome || '?').slice(0, 1).toUpperCase()}
-                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 11, height: 11, borderRadius: 50, background: t?.attivo !== false ? GREEN : '#C8D2DA', border: '2px solid #F7F9FB' }}/>
+                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 9, height: 9, borderRadius: 50, background: t?.attivo !== false ? GREEN : '#C8D2DA', border: '1.5px solid #F7F9FB' }}/>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
-                    <div style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{t?.ruolo || 'Operatore'}</div>
+                    <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
                   </div>
                 </div>
-                {cantiereAttuale && <div style={{ marginTop: 8, padding: '4px 6px', background: '#FFF', borderRadius: 5, fontSize: 9, color: NAVY, fontWeight: 600 }}>📍 {cantiereAttuale?.codice}</div>}
-                {!cantiereAttuale && t?.stato && <div style={{ marginTop: 8, fontSize: 9, color: MUTED }}>{t?.stato}</div>}
-                {t?.telefono && <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ marginTop: 6, display: 'block', textAlign: 'center', background: GREEN, color: '#FFF', padding: '4px 0', borderRadius: 5, fontSize: 9, textDecoration: 'none', fontWeight: 700 }}>📞 CHIAMA</a>}
               </SwipeItem>
-            )
-          })}
-        />
-      )}
+            ))}
+          </SwipeTrack>
+        </div>
+      ) : null}
     </>
   )
 }
 
-function ProduzioneRow({ c, apri }: any) {
-  return (
-    <div onClick={() => apri(c?.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer' }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</span>
-          <span style={{ fontSize: 8, color: '#FFF', background: c?.fase === 'produzione' ? AMBER : NAVY, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
-        </div>
-        <div style={{ fontSize: 11, color: TEXT, marginTop: 2 }}>{c?.cliente || ''}</div>
-      </div>
-      {c?.n_vani && <div style={{ fontSize: 10, color: MUTED, flexShrink: 0 }}>🪟 {c.n_vani}v</div>}
-    </div>
-  )
-}
-
+// PRODUZIONE
 function CardProduzione({ cantieri, apri }: any) {
   const inProd = cantieri.filter((c: any) => c?.fase === 'produzione' || c?.fase === 'ordine')
+  const top = inProd.slice(0, SHOW_VERTICAL)
+  const rest = inProd.slice(SHOW_VERTICAL)
   return (
     <>
       <CardHead title="Produzione" badge={inProd.length} link="apri" onClick={() => apri('')} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={3}/></svg>} />
-      {inProd.length === 0 && <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun lavoro in produzione</div>}
-      {inProd.length > 0 && (
-        <VStackThenSwipe
-          items={inProd}
-          renderRow={(c: any, i: number) => <ProduzioneRow c={c} apri={apri} />}
-          renderSwipeItem={(c: any, i: number) => (
-            <SwipeItem key={i} width="220px">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      {inProd.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun lavoro in produzione</div> : null}
+      {top.map((c: any, i: number) => (
+        <div key={i} onClick={() => apri(c?.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</span>
+              <span style={{ fontSize: 8, color: '#FFF', background: c?.fase === 'produzione' ? AMBER : NAVY, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
+            </div>
+            <div style={{ fontSize: 11, color: TEXT, marginTop: 2 }}>{c?.cliente || ''}</div>
+          </div>
+          {c?.n_vani ? <div style={{ fontSize: 10, color: MUTED, flexShrink: 0 }}>🪟 {c.n_vani}v</div> : null}
+        </div>
+      ))}
+      {rest.length > 0 ? (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri · scorri →</div>
+          <SwipeTrack>
+            {rest.map((c: any, i: number) => (
+              <SwipeItem key={i} width="180px">
                 <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
-                <span style={{ fontSize: 8, color: '#FFF', background: c?.fase === 'produzione' ? AMBER : NAVY, padding: '1px 6px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
-              </div>
-              <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, marginTop: 4 }}>{c?.cliente || ''}</div>
-              {c?.n_vani && <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>🪟 {c.n_vani} vani</div>}
-              {c?.data_consegna && <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📅 consegna {new Date(c.data_consegna).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div>}
-              <button onClick={() => apri(c?.id)} style={{ marginTop: 8, background: NAVY, color: '#FFF', border: 'none', padding: '5px 0', borderRadius: 6, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI →</button>
-            </SwipeItem>
-          )}
-        />
-      )}
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || ''}</div>
+              </SwipeItem>
+            ))}
+          </SwipeTrack>
+        </div>
+      ) : null}
     </>
   )
 }
 
+// MAGAZZINO
 function CardMagazzino({ onClick }: any) {
   return (
     <>
@@ -806,6 +734,7 @@ function CardMagazzino({ onClick }: any) {
   )
 }
 
+// STATISTICHE
 function CardStatistiche({ cantieri, onClick }: any) {
   const sopr = cantieri.filter((c: any) => c?.fase === 'sopralluogo').length
   const prev = cantieri.filter((c: any) => c?.fase === 'preventivo').length
