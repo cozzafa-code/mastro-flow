@@ -147,47 +147,47 @@ const bulkSoftDelete = async (
   table: TableName,
   ids: string[]
 ): Promise<{ ok: number; skipped: number }> => {
-  // FIX v10 DEFINITIVO: chiama RPC server-side bulk_soft_delete_commesse
-  // saltando softDeleteRecord che falliva silenziosamente
+  console.log("[mastro:bulkSoftDelete] called with", { table, ids });
+  
   if (table !== "commesse") {
+    console.log("[mastro:bulkSoftDelete] non-commesse table, fallback");
     let ok = 0;
     for (const id of ids) {
       try {
         await softDeleteRecord(table, id);
         ok++;
       } catch (e) {
-        console.warn(`[mastro:store] bulkSoftDelete skip ${id}:`, e);
+        console.warn("[mastro:bulkSoftDelete] skip", id, e);
       }
     }
     return { ok, skipped: ids.length - ok };
   }
 
-  // commesse: usa RPC sicura
   const validIds = ids.filter((id) => isUuid(id));
+  console.log("[mastro:bulkSoftDelete] validIds:", validIds);
+  
   if (validIds.length === 0) {
-    console.warn("[mastro:store] bulkSoftDelete: nessun UUID valido");
+    console.warn("[mastro:bulkSoftDelete] no valid UUIDs, abort");
     return { ok: 0, skipped: ids.length };
   }
 
   try {
+    console.log("[mastro:bulkSoftDelete] calling RPC bulk_soft_delete_commesse");
     const { data, error } = await supabase.rpc("bulk_soft_delete_commesse", {
       commessa_ids: validIds,
       restore: false,
     });
+    
     if (error) {
-      console.error("[mastro:store] bulkSoftDelete RPC error:", error);
-      throw error;
+      console.error("[mastro:bulkSoftDelete] RPC ERROR:", error);
+      alert("Errore cestino: " + error.message);
+      return { ok: 0, skipped: ids.length };
     }
-    console.log("[mastro:store] bulkSoftDelete OK:", data);
+    
+    console.log("[mastro:bulkSoftDelete] RPC SUCCESS:", data);
 
-    // Aggiorna cache IDB locale per ogni id (cosi sparisce subito dalla UI)
+    // Aggiorna IDB locale
     const now = new Date().toISOString();
-    let userId: string | null = null;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      userId = user?.id || null;
-    } catch {}
-
     for (const id of validIds) {
       try {
         const existing = await idbGet(STORES.CANTIERI, id);
@@ -195,27 +195,31 @@ const bulkSoftDelete = async (
           await idbPut(STORES.CANTIERI, {
             ...existing,
             deleted_at: now,
-            deleted_by: userId,
             updated_at: now,
           });
+          console.log("[mastro:bulkSoftDelete] IDB updated for", id);
         }
       } catch (e) {
-        console.warn(`[mastro:store] IDB update skip ${id}:`, e);
+        console.warn("[mastro:bulkSoftDelete] IDB skip", id, e);
       }
     }
 
-    // Notifica UI per reload
-    try {
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("mastro:commesse-changed", {
-          detail: { action: "deleted", ids: validIds }
-        }));
+    // FORZA reload UI dopo 500ms
+    setTimeout(() => {
+      console.log("[mastro:bulkSoftDelete] forcing reload");
+      try {
+        if (typeof window !== "undefined") {
+          window.location.reload();
+        }
+      } catch (e) {
+        console.error("[mastro:bulkSoftDelete] reload error", e);
       }
-    } catch {}
+    }, 500);
 
     return { ok: validIds.length, skipped: ids.length - validIds.length };
-  } catch (e) {
-    console.error("[mastro:store] bulkSoftDelete fatal:", e);
+  } catch (e: any) {
+    console.error("[mastro:bulkSoftDelete] FATAL:", e);
+    alert("Errore cestino fatale: " + (e?.message || e));
     return { ok: 0, skipped: ids.length };
   }
 };
