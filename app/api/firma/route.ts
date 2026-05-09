@@ -192,6 +192,73 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: uErr.message }, { status: 500 });
       }
 
+      // ============================================================
+      // FIX: aggiorna ANCHE la commessa - avanza fase + setta firme
+      // ============================================================
+      try {
+        // Recupera token completo per cm_id e tipo
+        const { data: tok } = await sb
+          .from("firma_tokens")
+          .select("commessa_id, cm_id, tipo")
+          .eq("token", token)
+          .maybeSingle();
+
+        const cmUuid = tok?.commessa_id || (tok?.cm_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(tok.cm_id)) ? tok.cm_id : null);
+
+        if (cmUuid) {
+          // Recupera fase attuale
+          const { data: cm } = await sb
+            .from("commesse")
+            .select("id, fase, firma_data, firma_cliente")
+            .eq("id", cmUuid)
+            .maybeSingle();
+
+          if (cm) {
+            // Step 1: setta firma_data + firma_cliente (sempre)
+            await sb.from("commesse").update({
+              firma_data: cm.firma_data || ts,
+              firma_cliente: cm.firma_cliente || data.firmaData,
+            }).eq("id", cmUuid);
+
+            // Step 2: avanza fase se firma "preventivo" o "conferma_ordine"
+            // Pipeline: preventivo -> conferma_ordine -> confermata
+            // Il trigger DB richiede avanzamento di 1 step alla volta + gates rispettati
+            const tipoFirma = tok?.tipo || "preventivo";
+            const faseAttuale = cm.fase;
+
+            if (tipoFirma === "preventivo" && faseAttuale === "preventivo") {
+              // preventivo -> conferma_ordine (richiede preventivo_inviato_at + totale_finale > 0)
+              const { error: e1 } = await sb.from("commesse").update({
+                fase: "conferma_ordine",
+                conferma_ordine_inviata_at: ts,
+              }).eq("id", cmUuid);
+
+              if (!e1) {
+                // conferma_ordine -> confermata (richiede firma_data o conferma_ordine_firmata_at)
+                await sb.from("commesse").update({
+                  fase: "confermata",
+                  conferma_ordine_firmata_at: ts,
+                }).eq("id", cmUuid);
+              } else {
+                console.warn("[firma] avanzamento preventivo->conferma_ordine bloccato:", e1.message);
+                // Fallback: setta solo conferma_ordine_firmata_at
+                await sb.from("commesse").update({
+                  conferma_ordine_firmata_at: ts,
+                }).eq("id", cmUuid);
+              }
+            } else if (tipoFirma === "conferma_ordine" && faseAttuale === "conferma_ordine") {
+              // Solo passaggio conferma_ordine -> confermata
+              await sb.from("commesse").update({
+                fase: "confermata",
+                conferma_ordine_firmata_at: ts,
+              }).eq("id", cmUuid);
+            }
+          }
+        }
+      } catch (eCm: any) {
+        console.warn("[firma] aggiornamento commessa fallito (non bloccante):", eCm?.message || eCm);
+      }
+
       return NextResponse.json({ ok: true, firmaDataOra: ts });
     }
 
