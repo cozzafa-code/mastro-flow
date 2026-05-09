@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
 import { useMastro } from './MastroContext'
+import { supabase } from '../lib/supabase'
 
 const NAVY = '#1B3A5C', NAVY_DEEP = '#0F1F33', BG = '#7A8A9A'
 const RED = '#C73E1D', AMBER = '#BA7517', GREEN = '#0F6E56'
@@ -109,15 +110,31 @@ export default function HomePanelMobileV2(props: any) {
   const goto = (tab: string) => { if (ctx?.setTab) ctx.setTab(tab); else if (props?.onNavigate) props.onNavigate(tab) }
   const apriCM = (id: string) => { if (id && ctx?.setSelectedCM) ctx.setSelectedCM(id); goto('commesse') }
 
-  // Toggle done task
+  // Toggle done task con UI ottimistica
+  const [doneOptim, setDoneOptim] = useState<Record<string, boolean>>({})
   const toggleTask = async (taskId: string, currentDone: boolean) => {
+    if (!taskId) return
+    // 1. UI ottimistica: aggiorna subito stato locale
+    setDoneOptim(prev => ({ ...prev, [taskId]: !currentDone }))
     try {
-      const supabase = ctx?.supabase || (window as any).supabase
-      if (!supabase) return
-      await supabase.from('tasks').update({ done: !currentDone, done_at: !currentDone ? new Date().toISOString() : null }).eq('id', taskId)
-      // Trigger refresh se possibile
-      if (ctx?.refresh) ctx.refresh()
-    } catch (err) { console.error('toggle task error', err) }
+      const { error } = await supabase
+        .from('tasks')
+        .update({ done: !currentDone, done_at: !currentDone ? new Date().toISOString() : null })
+        .eq('id', taskId)
+      if (error) {
+        console.error('toggleTask supabase error', error)
+        // rollback
+        setDoneOptim(prev => ({ ...prev, [taskId]: currentDone }))
+        return
+      }
+      // 2. Trigger refresh contesto se disponibile
+      if (typeof ctx?.refresh === 'function') ctx.refresh()
+      else if (typeof ctx?.reload === 'function') ctx.reload()
+      else if (typeof ctx?.refreshTasks === 'function') ctx.refreshTasks()
+    } catch (err) {
+      console.error('toggle task error', err)
+      setDoneOptim(prev => ({ ...prev, [taskId]: currentDone }))
+    }
   }
 
   // DRAG drop riordina - ottimizzato
@@ -220,7 +237,7 @@ export default function HomePanelMobileV2(props: any) {
       <div style={{ padding: '12px 14px', pointerEvents: editMode ? 'none' : 'auto' }}>
         {id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} apriCM={apriCM} onClick={() => goto('agenda')} />}
         {id === 'urgente' && <CardUrgente ferme={ferme} apri={apriCM} />}
-        {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} toggleTask={toggleTask} onClick={() => goto('team')} />}
+        {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} toggleTask={toggleTask} doneOptim={doneOptim} onClick={() => goto('team')} />}
         {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} />}
         {id === 'commesse' && <CardCommesse cantieri={cantieri} apri={apriCM} />}
         {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => goto('contabilita')} />}
@@ -548,8 +565,8 @@ function CardUrgente({ ferme, apri }: any) {
   )
 }
 
-// TASK con campi DB CORRETTI: testo, data, done, priorita
-function CardTask({ tasks, cantieri, apri, toggleTask, onClick }: any) {
+// TASK con campi DB CORRETTI + UI ottimistica + checkbox grande
+function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any) {
   const top = tasks.slice(0, SHOW_VERTICAL)
   const rest = tasks.slice(SHOW_VERTICAL)
   return (
@@ -562,11 +579,19 @@ function CardTask({ tasks, cantieri, apri, toggleTask, onClick }: any) {
         const isLate = scad && scad.getTime() < Date.now() - 86400000
         const prio = (t?.priorita || '').toLowerCase()
         const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : MUTED
+        const localDone = doneOptim?.[t?.id] !== undefined ? doneOptim[t.id] : !!t?.done
         return (
-          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
-            <div onClick={(e) => { e.stopPropagation(); toggleTask(t?.id, !!t?.done) }} style={{ width: 22, height: 22, borderRadius: 5, border: '1.5px solid #B5C2D6', flexShrink: 0, marginTop: 1, background: '#FFF', cursor: 'pointer' }}/>
-            <div onClick={() => cm && apri(cm.id)} style={{ flex: 1, minWidth: 0, cursor: cm ? 'pointer' : 'default' }}>
-              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3 }}>{t?.testo || 'Task'}</div>
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleTask(t?.id, localDone) }}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-label={localDone ? 'Riapri task' : 'Completa task'}
+              style={{ width: 26, height: 26, borderRadius: 6, border: localDone ? `2px solid ${GREEN}` : '2px solid #B5C2D6', flexShrink: 0, background: localDone ? GREEN : '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transition: 'all 0.15s ease' }}
+            >
+              {localDone ? <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : null}
+            </button>
+            <div onClick={() => cm && apri(cm.id)} style={{ flex: 1, minWidth: 0, cursor: cm ? 'pointer' : 'default', opacity: localDone ? 0.5 : 1 }}>
+              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3, textDecoration: localDone ? 'line-through' : 'none' }}>{t?.testo || 'Task'}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
                 {scad ? <span style={{ fontSize: 10, color: isLate ? RED : MUTED, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
                 {prio ? <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span> : null}
