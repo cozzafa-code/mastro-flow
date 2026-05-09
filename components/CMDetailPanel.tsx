@@ -1336,6 +1336,8 @@ export default function CMDetailPanel() {
             const haFirmaZ3 = !!(cZ3.firmaCliente || cZ3.firma_cliente);
             const rilieviZ3: any[] = cZ3?.rilievi || [];
 
+            // FIX v10: leggo commesse.fase dal DB come UNICA fonte
+            const _faseDb = (selectedCM?.fase ?? selectedCM?.ops_fase_corrente ?? "").toLowerCase();
             // Determino fase corrente
             let eyebrow = "Fase corrente · Cliente";
             let titolo = "Inserisci dati cliente";

@@ -148,9 +148,8 @@ const bulkSoftDelete = async (
   ids: string[]
 ): Promise<{ ok: number; skipped: number }> => {
   console.log("[mastro:bulkSoftDelete] called with", { table, ids });
-  
+
   if (table !== "commesse") {
-    console.log("[mastro:bulkSoftDelete] non-commesse table, fallback");
     let ok = 0;
     for (const id of ids) {
       try {
@@ -163,32 +162,33 @@ const bulkSoftDelete = async (
     return { ok, skipped: ids.length - ok };
   }
 
-  const validIds = ids.filter((id) => isUuid(id));
-  console.log("[mastro:bulkSoftDelete] validIds:", validIds);
-  
-  if (validIds.length === 0) {
-    console.warn("[mastro:bulkSoftDelete] no valid UUIDs, abort");
-    return { ok: 0, skipped: ids.length };
+  // FIX v10b: NON filtro isUuid - alcuni id sono salvati come stringa ma sono UUID validi
+  // Lascio che la RPC gestisca la validazione lato DB
+  console.log("[mastro:bulkSoftDelete] passing all ids to RPC:", ids);
+
+  if (ids.length === 0) {
+    console.warn("[mastro:bulkSoftDelete] no ids");
+    return { ok: 0, skipped: 0 };
   }
 
   try {
     console.log("[mastro:bulkSoftDelete] calling RPC bulk_soft_delete_commesse");
     const { data, error } = await supabase.rpc("bulk_soft_delete_commesse", {
-      commessa_ids: validIds,
+      commessa_ids: ids,
       restore: false,
     });
-    
+
     if (error) {
       console.error("[mastro:bulkSoftDelete] RPC ERROR:", error);
       alert("Errore cestino: " + error.message);
       return { ok: 0, skipped: ids.length };
     }
-    
+
     console.log("[mastro:bulkSoftDelete] RPC SUCCESS:", data);
 
     // Aggiorna IDB locale
     const now = new Date().toISOString();
-    for (const id of validIds) {
+    for (const id of ids) {
       try {
         const existing = await idbGet(STORES.CANTIERI, id);
         if (existing) {
@@ -204,19 +204,15 @@ const bulkSoftDelete = async (
       }
     }
 
-    // FORZA reload UI dopo 500ms
+    // Forza reload UI
     setTimeout(() => {
       console.log("[mastro:bulkSoftDelete] forcing reload");
       try {
-        if (typeof window !== "undefined") {
-          window.location.reload();
-        }
-      } catch (e) {
-        console.error("[mastro:bulkSoftDelete] reload error", e);
-      }
+        if (typeof window !== "undefined") window.location.reload();
+      } catch {}
     }, 500);
 
-    return { ok: validIds.length, skipped: ids.length - validIds.length };
+    return { ok: ids.length, skipped: 0 };
   } catch (e: any) {
     console.error("[mastro:bulkSoftDelete] FATAL:", e);
     alert("Errore cestino fatale: " + (e?.message || e));
