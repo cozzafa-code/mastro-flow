@@ -148,9 +148,26 @@ const bulkSoftDelete = async (
   ids: string[]
 ): Promise<{ ok: number; skipped: number }> => {
   let ok = 0;
+  const now = new Date().toISOString();
+  let userId: string | null = null;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    userId = user?.id || null;
+  } catch {}
   for (const id of ids) {
     try {
       await softDeleteRecord(table, id);
+      // FIX v10: aggiorna IDB locale subito - cosi sparisce dalla UI senza reload
+      const storeName = storeFor(table);
+      const existing = await idbGet(storeName, id);
+      if (existing) {
+        await idbPut(storeName, {
+          ...existing,
+          deleted_at: now,
+          deleted_by: userId,
+          updated_at: now,
+        });
+      }
       ok++;
     } catch (e) {
       console.warn(`[mastro:store] bulkSoftDelete skip ${id}:`, e);
