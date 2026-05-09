@@ -24,7 +24,7 @@ import SettingsAccessoriTendaggi from './settings-mobile/SettingsAccessoriTendag
 import SettingsColoriTendaggi from './settings-mobile/SettingsColoriTendaggi'
 import SettingsFornitoriTendaggi from './settings-mobile/SettingsFornitoriTendaggi'
 
-// Flusso lavoro (NEW v10)
+// Flusso lavoro v10
 import SettingsPipelineMobile from './SettingsPipelineMobile'
 import SettingsBrandingMobile from './SettingsBrandingMobile'
 import DocumentBuilderMobile from './DocumentBuilderMobile'
@@ -39,22 +39,20 @@ type Sezione =
   | 'pipeline' | 'branding' | 'docbuilder'
 
 export default function SettingsMobile() {
-  const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
+  const { azienda_id, tornaHome } = useMastro()
   const [sezione, setSezione] = useState<Sezione>(null)
 
-  const tornaHome = () => { if (ctx?.setTab) ctx.setTab('dashboard') }
+  const aId = azienda_id || AZIENDA_ID
   const torna = () => setSezione(null)
-
-  const azienda_id = ctx?.azienda?.id || ctx?.aziendaId || AZIENDA_ID
 
   // CATALOGO PRODOTTI
   if (sezione === 'profili')   return <SettingsProfiliMobile onBack={torna} />
   if (sezione === 'vetri')     return <SettingsVetriMobile onBack={torna} />
   if (sezione === 'accessori') return <SettingsAccessoriMobile onBack={torna} />
-  if (sezione === 'win')       return <MastroWinMobile azienda_id={azienda_id} onBack={torna} />
-  if (sezione === 'sistemi')   return <SettingsSistemiMobile azienda_id={azienda_id} onBack={torna} />
+  if (sezione === 'win')       return <MastroWinMobile azienda_id={aId} onBack={torna} />
+  if (sezione === 'sistemi')   return <SettingsSistemiMobile azienda_id={aId} onBack={torna} />
   if (sezione === 'nodi')      return <NodiTecniciPanelMobile onBack={torna} />
-  if (sezione === 'importa')   return <SettingsImportaMobile azienda_id={azienda_id} onBack={torna} />
+  if (sezione === 'importa')   return <SettingsImportaMobile azienda_id={aId} onBack={torna} />
 
   // TENDAGGI
   if (sezione === 'tendaggi')           return <SettingsCatalogoTendaggi onBack={torna} />
@@ -63,9 +61,9 @@ export default function SettingsMobile() {
   if (sezione === 'fornitori_tendaggi') return <SettingsFornitoriTendaggi onBack={torna} />
 
   // FLUSSO LAVORO
-  if (sezione === 'pipeline')   return <SettingsPipelineMobile  azienda_id={azienda_id} onClose={torna} />
-  if (sezione === 'branding')   return <SettingsBrandingMobile  azienda_id={azienda_id} onClose={torna} />
-  if (sezione === 'docbuilder') return <DocumentBuilderMobile   azienda_id={azienda_id} onClose={torna} />
+  if (sezione === 'pipeline')   return <SettingsPipelineMobile  azienda_id={aId} onClose={torna} />
+  if (sezione === 'branding')   return <SettingsBrandingMobile  azienda_id={aId} onClose={torna} />
+  if (sezione === 'docbuilder') return <DocumentBuilderMobile   azienda_id={aId} onClose={torna} />
 
   return (
     <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 100 }}>
@@ -73,12 +71,17 @@ export default function SettingsMobile() {
 
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
+        <SectionTitle>Flusso lavoro</SectionTitle>
+        <CardSezione icona="⚡" titolo="Pipeline fasi"     sub="Personalizza il flusso di lavoro"            colore="#1E3A5F" onClick={() => setSezione('pipeline')}   badge="NEW" />
+        <CardSezione icona="🎨" titolo="Branding"          sub="Logo, colori, intestazione, footer"          colore="#10B981" onClick={() => setSezione('branding')}   badge="NEW" />
+        <CardSezione icona="📐" titolo="Document Builder"  sub="Costruisci i tuoi template documenti"        colore="#8B5CF6" onClick={() => setSezione('docbuilder')} badge="NEW" />
+
         <SectionTitle>Catalogo profilati</SectionTitle>
         <CardSezione icona="📐" titolo="Profili"          sub="Catalogo profili (telai, ante, traversi)"      colore={T.acc}      onClick={() => setSezione('profili')} />
         <CardSezione icona="🪟" titolo="Vetri"            sub="Catalogo vetri configurati"                    colore={T.numBlue}  onClick={() => setSezione('vetri')} />
         <CardSezione icona="🔧" titolo="Accessori"        sub="Catalogo accessori"                            colore={T.numAmber} onClick={() => setSezione('accessori')} />
         <CardSezione icona="⚡" titolo="Ferramenta WIN"   sub="Selezione automatica per anta"                 colore={T.accDeep}  onClick={() => setSezione('win')}     badge="NEW" />
-        <CardSezione icona="⚙️" titolo="Sistemi profilo"  sub="Aluplast, Twin Systems · attivazione e prezzi" colore="#6B5BA6"    onClick={() => setSezione('sistemi')} badge="NEW" />
+        <CardSezione icona="⚙️" titolo="Sistemi profilo"  sub="Aluplast, Twin Systems"                      colore="#6B5BA6"    onClick={() => setSezione('sistemi')} badge="NEW" />
         <CardSezione icona="🔗" titolo="Nodi tecnici"     sub="Nodi costruttivi per sistema"                  colore={T.numTeal}  onClick={() => setSezione('nodi')}    badge="NEW" />
         <CardSezione icona="📥" titolo="Importa da Excel" sub="Aggiorna prezzi profili / colori / accessori"  colore={T.numRed}   onClick={() => setSezione('importa')} badge="NEW" />
 
@@ -87,7 +90,6 @@ export default function SettingsMobile() {
         <CardSezione icona="🔧" titolo="Accessori tendaggi"  sub="Bastoni, binari, mantovane, fissaggi"   colore="#C49E66" onClick={() => setSezione('accessori_tendaggi')} />
         <CardSezione icona="🎨" titolo="Colori tendaggi"     sub="RAL, finiture, palette colore"          colore="#D4A373" onClick={() => setSezione('colori_tendaggi')} />
         <CardSezione icona="🚚" titolo="Fornitori tendaggi"  sub="Anagrafica fornitori"                   colore="#B08968" onClick={() => setSezione('fornitori_tendaggi')} />
-
       </div>
     </div>
   )
@@ -96,11 +98,8 @@ export default function SettingsMobile() {
 function Header({ onBack }: { onBack: () => void }) {
   return (
     <div style={{
-      background: `linear-gradient(160deg, ${T.acc} 0%, ${T.accDeep} 100%)`,
-      padding: '14px 16px 24px',
-      borderBottomLeftRadius: 28,
-      borderBottomRightRadius: 28,
-      color: '#FFF',
+      background: 'linear-gradient(135deg, #0F1B2D 0%, #1E3A5F 100%)',
+      color: '#FFF', padding: '20px 16px 24px', borderBottomLeftRadius: 22, borderBottomRightRadius: 22,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
         <button onClick={onBack} style={{
@@ -132,30 +131,28 @@ function CardSezione({ icona, titolo, sub, colore, onClick, badge }: {
   return (
     <button onClick={onClick} style={{
       background: '#FFF', border: `1px solid ${T.bdr}`, borderRadius: 16, padding: 16,
-      display: 'flex', alignItems: 'center', gap: 14,
-      cursor: 'pointer', boxShadow: T.shadow,
+      display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer',
       width: '100%', textAlign: 'left',
+      boxShadow: '0 1px 0 rgba(15,27,45,0.04)',
     }}>
       <div style={{
-        width: 48, height: 48, borderRadius: 12,
-        background: colore + '15',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 24, flexShrink: 0,
+        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+        background: `${colore}15`, color: colore,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
       }}>{icona}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
-          {titolo}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>{titolo}</div>
           {badge && (
-            <span style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
-              padding: '2px 6px', borderRadius: 4,
-              background: T.acc, color: '#FFF',
-            }}>{badge}</span>
+            <div style={{
+              background: '#0F1B2D', color: '#FFF', padding: '2px 7px',
+              borderRadius: 6, fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
+            }}>{badge}</div>
           )}
         </div>
-        <div style={{ fontSize: 12, color: T.muted }}>{sub}</div>
+        <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>{sub}</div>
       </div>
-      <div style={{ color: T.acc, fontSize: 22, fontWeight: 700 }}>›</div>
+      <div style={{ color: T.muted, fontSize: 18 }}>›</div>
     </button>
   )
 }
