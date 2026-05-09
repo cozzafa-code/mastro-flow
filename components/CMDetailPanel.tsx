@@ -1336,59 +1336,132 @@ export default function CMDetailPanel() {
             const haFirmaZ3 = !!(cZ3.firmaCliente || cZ3.firma_cliente);
             const rilieviZ3: any[] = cZ3?.rilievi || [];
 
-            // FIX v10: leggo commesse.fase dal DB come UNICA fonte
-            const _faseDb = (selectedCM?.fase ?? selectedCM?.ops_fase_corrente ?? "").toLowerCase();
-            // Determino fase corrente
-            let eyebrow = "Fase corrente · Cliente";
-            let titolo = "Inserisci dati cliente";
-            let desc = "Compila i dati per procedere al rilievo.";
+            // FIX v22: fase DB come UNICA fonte di verita\'. Mappa autoritativa.
+            const _faseDb = (selectedCM?.fase ?? selectedCM?.ops_fase_corrente ?? (cZ3 as any)?.fase ?? "sopralluogo").toLowerCase();
+            const _haPrevInviato = !!(cZ3.preventivoInviato || cZ3.preventivoInviatoAt || (cZ3 as any).preventivo_inviato_at);
+            const _totaleFinale = Number((cZ3 as any).totale_finale || cZ3.totaleFinale || 0);
+
+            // Determino fase corrente in base a fase DB (unica fonte)
+            let eyebrow = "Fase corrente";
+            let titolo = "Continua";
+            let desc = "";
             let tags: { lbl: string; bg: string; fg: string }[] = [];
-            let primaryLbl = "Compila scheda";
+            let primaryLbl = "Apri";
             let primaryAction = onClickBtnV70;
 
-            if (rilieviZ3.length === 0) {
-              eyebrow = "Fase corrente · Misure";
-              titolo = "Crea il primo sopralluogo";
-              desc = "Vai in cantiere e fai il rilievo delle misure.";
-              tags = [{ lbl: tEdifLabelV70, bg: "#DBEAFE", fg: "#1E40AF" }];
-              primaryLbl = "Crea rilievo";
-              primaryAction = onClickBtnV70;
-            } else if (!misureOkZ3 && !haPrevZ3) {
-              eyebrow = "Fase corrente · Misure";
-              titolo = totVZ3 === 0 ? "Aggiungi il primo vano" : "Completa le misure";
-              desc = totVZ3 === 0
-                ? `R${rZ3?.numero || rZ3?.n || 1} creato. Aggiungi i vani da misurare.`
-                : `${vaniOkZ3}/${totVZ3} vani con misure complete. Continua il rilievo.`;
-              tags = [
-                { lbl: `R${rZ3?.numero || rZ3?.n || 1}`, bg: "#FEF3C7", fg: "#92400E" },
-                { lbl: `${vaniOkZ3}/${totVZ3} vani`, bg: "#F1F5F9", fg: "#475569" },
-              ];
-              primaryLbl = btnV70 || "Apri rilievo";
-              primaryAction = onClickBtnV70;
-            } else if (misureOkZ3 && !haPrevZ3) {
+            if (_faseDb === "sopralluogo") {
+              if (rilieviZ3.length === 0) {
+                eyebrow = "Fase corrente · Sopralluogo";
+                titolo = "Crea il primo sopralluogo";
+                desc = "Vai in cantiere e fai il rilievo delle misure.";
+                tags = [{ lbl: tEdifLabelV70, bg: "#DBEAFE", fg: "#1E40AF" }];
+                primaryLbl = "Crea rilievo";
+                primaryAction = onClickBtnV70;
+              } else if (!misureOkZ3) {
+                eyebrow = "Fase corrente · Misure";
+                titolo = totVZ3 === 0 ? "Aggiungi il primo vano" : "Completa le misure";
+                desc = totVZ3 === 0
+                  ? `R${rZ3?.numero || rZ3?.n || 1} creato. Aggiungi i vani da misurare.`
+                  : `${vaniOkZ3}/${totVZ3} vani con misure complete. Continua il rilievo.`;
+                tags = [
+                  { lbl: `R${rZ3?.numero || rZ3?.n || 1}`, bg: "#FEF3C7", fg: "#92400E" },
+                  { lbl: `${vaniOkZ3}/${totVZ3} vani`, bg: "#F1F5F9", fg: "#475569" },
+                ];
+                primaryLbl = btnV70 || "Apri rilievo";
+                primaryAction = onClickBtnV70;
+              } else {
+                eyebrow = "Fase corrente · Preventivo";
+                titolo = "Genera il preventivo";
+                desc = `${totVZ3} ${totVZ3 === 1 ? "vano" : "vani"} con tutte le misure. Stima ${stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "in calcolo"}.`;
+                tags = [
+                  { lbl: "Misure OK", bg: "#D1FAE5", fg: "#065F46" },
+                  { lbl: stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "—", bg: "#DBEAFE", fg: "#1E40AF" },
+                ];
+                primaryLbl = "Genera preventivo";
+                primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); setEditingVanoId(null); } catch (e) { console.warn(e); } };
+              }
+            } else if (_faseDb === "preventivo") {
               eyebrow = "Fase corrente · Preventivo";
-              titolo = "Genera il preventivo";
-              desc = `${totVZ3} ${totVZ3 === 1 ? "vano" : "vani"} con tutte le misure. Stima ${stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "in calcolo"}.`;
-              tags = [
-                { lbl: "Misure OK", bg: "#D1FAE5", fg: "#065F46" },
-                { lbl: stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "—", bg: "#DBEAFE", fg: "#1E40AF" },
-              ];
-              primaryLbl = "Genera preventivo";
-              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); setEditingVanoId(null); } catch (e) { console.warn(e); } };
-            } else if (haPrevZ3 && !haFirmaZ3) {
-              eyebrow = "Fase corrente · Firma cliente";
-              titolo = "In attesa firma";
-              desc = "Preventivo inviato. Sollecita o reinvia il link al cliente.";
-              tags = [{ lbl: "Pending firma", bg: "#FEF3C7", fg: "#92400E" }];
-              primaryLbl = "Gestisci preventivo";
+              titolo = _haPrevInviato ? "Reinvia preventivo" : "Genera il preventivo";
+              desc = _haPrevInviato
+                ? "Cliente non ha ancora risposto. Sollecita o reinvia il link."
+                : `${totVZ3} ${totVZ3 === 1 ? "vano" : "vani"}. Stima ${stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "in calcolo"}.`;
+              tags = _haPrevInviato
+                ? [{ lbl: "Inviato", bg: "#DBEAFE", fg: "#1E40AF" }, { lbl: "Pending", bg: "#FEF3C7", fg: "#92400E" }]
+                : [{ lbl: "Da inviare", bg: "#FEF3C7", fg: "#92400E" }];
+              primaryLbl = _haPrevInviato ? "Reinvia preventivo" : "Genera preventivo";
               primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
-            } else if (haFirmaZ3) {
-              eyebrow = "Fase corrente · Ordine";
-              titolo = "Procedi con l'ordine";
-              desc = "Preventivo firmato. Crea ordini fornitori.";
-              tags = [{ lbl: "Firmato", bg: "#D1FAE5", fg: "#065F46" }];
-              primaryLbl = "Apri preventivo";
+            } else if (_faseDb === "conferma_ordine") {
+              eyebrow = "Fase corrente · Conferma ordine";
+              titolo = "In attesa firma cliente";
+              desc = "Cliente ha accettato il preventivo. Sta firmando la conferma d\'ordine.";
+              tags = [{ lbl: "Da firmare", bg: "#FEF3C7", fg: "#92400E" }, { lbl: fmtEurV73(_totaleFinale), bg: "#DBEAFE", fg: "#1E40AF" }];
+              primaryLbl = "Reinvia link firma";
+              primaryAction = () => { try { setShowModalFirma && setShowModalFirma(true); } catch (e) { console.warn(e); } };
+            } else if (_faseDb === "confermata") {
+              eyebrow = "Fase corrente · Confermata";
+              titolo = "Genera fattura acconto";
+              desc = "Cliente ha firmato. Procedi con la fattura di acconto e l\'ordine materiali.";
+              tags = [{ lbl: "Firmata", bg: "#D1FAE5", fg: "#065F46" }, { lbl: fmtEurV73(_totaleFinale), bg: "#DBEAFE", fg: "#1E40AF" }];
+              primaryLbl = "Apri commessa";
               primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+            } else if (_faseDb === "acconto_pagato") {
+              eyebrow = "Fase corrente · Acconto pagato";
+              titolo = "Genera ordine fornitori";
+              desc = "Acconto incassato. Ora ordina materiali e profili al fornitore.";
+              tags = [{ lbl: "Acconto OK", bg: "#D1FAE5", fg: "#065F46" }];
+              primaryLbl = "Crea ordine";
+              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+            } else if (_faseDb === "ordine") {
+              eyebrow = "Fase corrente · Ordine inviato";
+              titolo = "In attesa consegna";
+              desc = "Ordine inviato al fornitore. Aspetta consegna materiali per avviare produzione.";
+              tags = [{ lbl: "In transito", bg: "#FEF3C7", fg: "#92400E" }];
+              primaryLbl = "Vedi ordine";
+              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+            } else if (_faseDb === "produzione") {
+              eyebrow = "Fase corrente · Produzione";
+              titolo = "Lavorazione in corso";
+              desc = "Materiali ricevuti. Produzione in officina. Marca completata quando finita.";
+              tags = [{ lbl: "In lavorazione", bg: "#FEF3C7", fg: "#92400E" }];
+              primaryLbl = "Marca completata";
+              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+            } else if (_faseDb === "montaggio") {
+              eyebrow = "Fase corrente · Montaggio";
+              titolo = "Montaggio in cantiere";
+              desc = "Squadra in opera. Marca completato quando il cantiere è chiuso.";
+              tags = [{ lbl: "In cantiere", bg: "#FEF3C7", fg: "#92400E" }];
+              primaryLbl = "Marca completato";
+              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+            } else if (_faseDb === "fatturata" || _faseDb === "fattura") {
+              eyebrow = "Fase corrente · Fatturata";
+              titolo = "Genera fattura saldo";
+              desc = "Lavoro completato. Genera la fattura di saldo per chiudere la commessa.";
+              tags = [{ lbl: "Da saldare", bg: "#FEF3C7", fg: "#92400E" }, { lbl: fmtEurV73(_totaleFinale), bg: "#DBEAFE", fg: "#1E40AF" }];
+              primaryLbl = "Genera saldo";
+              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+            } else if (_faseDb === "pagata") {
+              eyebrow = "Fase corrente · Pagata";
+              titolo = "Commessa chiusa";
+              desc = "Tutto saldato. Commessa archiviabile.";
+              tags = [{ lbl: "Saldata", bg: "#D1FAE5", fg: "#065F46" }];
+              primaryLbl = "Vedi storia";
+              primaryAction = () => { try { setShowStoria && setShowStoria(true); } catch (e) { console.warn(e); } };
+            } else if (_faseDb === "persa" || _faseDb === "annullata") {
+              eyebrow = "Fase corrente · " + (_faseDb === "persa" ? "Persa" : "Annullata");
+              titolo = _faseDb === "persa" ? "Commessa persa" : "Commessa annullata";
+              desc = "Riapri come sopralluogo se vuoi ripartire.";
+              tags = [{ lbl: _faseDb.toUpperCase(), bg: "#FEE2E2", fg: "#991B1B" }];
+              primaryLbl = "Riapri";
+              primaryAction = onClickBtnV70;
+            } else {
+              // Fallback per fasi sconosciute
+              eyebrow = "Fase corrente · " + _faseDb;
+              titolo = "Continua il flusso";
+              desc = `Fase: ${_faseDb}`;
+              tags = [{ lbl: _faseDb, bg: "#F1F5F9", fg: "#475569" }];
+              primaryLbl = "Apri commessa";
+              primaryAction = onClickBtnV70;
             }
 
             return (
