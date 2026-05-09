@@ -93,6 +93,9 @@ export default function CommessePanel() {
     getVaniAttivi, giorniFermaCM, sogliaDays, fattureDB,
   } = useMastro();
 
+  // FIX v10: cantieri attivi (esclude cestinate/archiviate) per contatori
+  const cantieriAttivi = (cantieri || []).filter((c: any) => !c?.deleted_at && !c?.archived_at);
+
   const TODAY = new Date().toISOString().split("T")[0];
   const [sortBy, setSortBy] = useState("default");
   const [expandedCmId, setExpandedCmId] = useState<any>(null);
@@ -277,7 +280,7 @@ export default function CommessePanel() {
   if (selectedRilievo && selectedCM) return <CMDetailPanel />;
   if (selectedCM) return <CMDetailPanel />;
 
-  const fermeCount = cantieri.filter(c => isFerma(c)).length;
+  const fermeCount = cantieriAttivi.filter(c => isFerma(c)).length;
   const totaleEuro = filtered.reduce((sum, c) => sum + (c.euro ? parseFloat(c.euro) : 0), 0);
   const filteredSorted = [...filtered].sort((a, b) => {
     if (sortBy === "nome") return (a.cliente || "").localeCompare(b.cliente || "");
@@ -687,7 +690,7 @@ export default function CommessePanel() {
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.2, color: "#93B0CF", textTransform: "uppercase" as any }}>Lavori</div>
             <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: -0.02, lineHeight: 1.1, marginTop: 2 }}>Commesse</div>
             <div style={{ fontSize: 13, color: "#B5C8DD", fontWeight: 600, marginTop: 4, display: "flex", gap: 8, alignItems: "center" }}>
-              <span>{cantieri.length} totali</span>
+              <span>{cantieriAttivi.length} totali</span>
               {fermeCount > 0 && (
                 <span style={{
                   fontSize: 10, fontWeight: 800, color: "#FFFFFF",
@@ -780,9 +783,9 @@ export default function CommessePanel() {
         WebkitOverflowScrolling: "touch" as any,
       }} className="hide-scrollbar">
         {[
-          { id: "tutte", nome: "Tutte", count: cantieri.length },
+          { id: "tutte", nome: "Tutte", count: cantieriAttivi.length },
           ...PIPELINE.filter(p => p.attiva)
-            .map(p => ({ ...p, count: cantieri.filter(c => c.fase === p.id).length }))
+            .map(p => ({ ...p, count: cantieriAttivi.filter(c => c.fase === p.id).length }))
             .filter(p => p.count > 0),
         ].map(p => {
           const sel = filterFase === p.id;
