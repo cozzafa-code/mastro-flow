@@ -1,4 +1,4 @@
-// HomePanelMobileV2 V15 - lista vert prime 5 + swipe overflow
+// HomePanelMobileV2 V16 - DB campi corretti + tap funzionante
 'use client'
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
@@ -10,6 +10,7 @@ const TEXT = '#0F1F33', MUTED = '#5C6B7A', BORDER = '#E5E7EB'
 const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre']
 const DOW_SHORT = ['LUN','MAR','MER','GIO','VEN','SAB','DOM']
 const DOW = ['L','M','M','G','V','S','D']
+const SHOW_VERTICAL = 5
 
 const ALL_CARDS = [
   { id: 'agenda', title: 'AGENDA' },
@@ -24,26 +25,25 @@ const ALL_CARDS = [
   { id: 'statistiche', title: 'STATISTICHE' },
 ]
 const DEFAULT_ORDER = ALL_CARDS.map(c => c.id)
-const SHOW_VERTICAL = 5
 
 function SwipeTrack({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{
+    <div className="mastro-swipe" style={{
       display: 'flex', gap: 8, overflowX: 'auto', scrollSnapType: 'x mandatory',
       WebkitOverflowScrolling: 'touch' as any, scrollbarWidth: 'none' as any,
       paddingBottom: 4, marginRight: -14, paddingRight: 14,
     }}>
-      <style>{`div::-webkit-scrollbar{display:none}`}</style>
+      <style>{`.mastro-swipe::-webkit-scrollbar{display:none}`}</style>
       {children}
     </div>
   )
 }
-function SwipeItem({ children, width = '180px' }: any) {
+function SwipeItem({ children, width = '180px', onClick }: any) {
   return (
-    <div style={{
+    <div onClick={onClick} style={{
       flex: `0 0 ${width}`, scrollSnapAlign: 'start',
       background: '#F7F9FB', borderRadius: 10, padding: 10, minWidth: 0,
-      border: `1px solid ${BORDER}`,
+      border: `1px solid ${BORDER}`, cursor: onClick ? 'pointer' : 'default',
     }}>{children}</div>
   )
 }
@@ -56,6 +56,33 @@ const dotColor = (e: any) => {
   return GREEN
 }
 
+// Helper per parsare data eventi (events ha date+time, eventi ha data+ora)
+const parseEventDate = (e: any): Date => {
+  // Tabella `events`: date + time stringhe
+  if (e?.date) {
+    const d = new Date(e.date)
+    if (e?.time) {
+      const [h, m] = String(e.time).split(':').map(Number)
+      if (!isNaN(h)) d.setHours(h || 0, m || 0)
+    }
+    return d
+  }
+  // Tabella `eventi`: data + ora
+  if (e?.data) {
+    const d = new Date(e.data)
+    if (e?.ora) {
+      const [h, m] = String(e.ora).split(':').map(Number)
+      if (!isNaN(h)) d.setHours(h || 0, m || 0)
+    }
+    return d
+  }
+  // fallback
+  return new Date(e?.start || 0)
+}
+
+const eventTitle = (e: any) => e?.text || e?.titolo || e?.title || ''
+const eventLuogo = (e: any) => e?.addr || e?.indirizzo || e?.luogo || ''
+
 export default function HomePanelMobileV2(props: any) {
   const { data } = useHomeMobile()
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
@@ -65,7 +92,7 @@ export default function HomePanelMobileV2(props: any) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
-      const saved = localStorage.getItem('mastro_home_order_v15')
+      const saved = localStorage.getItem('mastro_home_order_v16')
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -76,28 +103,42 @@ export default function HomePanelMobileV2(props: any) {
   }, [])
   useEffect(() => {
     if (typeof window === 'undefined') return
-    try { localStorage.setItem('mastro_home_order_v15', JSON.stringify(order)) } catch {}
+    try { localStorage.setItem('mastro_home_order_v16', JSON.stringify(order)) } catch {}
   }, [order])
 
   const goto = (tab: string) => { if (ctx?.setTab) ctx.setTab(tab); else if (props?.onNavigate) props.onNavigate(tab) }
   const apriCM = (id: string) => { if (id && ctx?.setSelectedCM) ctx.setSelectedCM(id); goto('commesse') }
 
+  // Toggle done task
+  const toggleTask = async (taskId: string, currentDone: boolean) => {
+    try {
+      const supabase = ctx?.supabase || (window as any).supabase
+      if (!supabase) return
+      await supabase.from('tasks').update({ done: !currentDone, done_at: !currentDone ? new Date().toISOString() : null }).eq('id', taskId)
+      // Trigger refresh se possibile
+      if (ctx?.refresh) ctx.refresh()
+    } catch (err) { console.error('toggle task error', err) }
+  }
+
+  // DRAG drop riordina - ottimizzato
   const dragState = useRef<any>(null)
   const startDrag = (e: React.PointerEvent, id: string) => {
     e.preventDefault(); e.stopPropagation()
-    ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
     const handleEl = e.currentTarget as HTMLElement
     const cardEl = handleEl.closest('[data-card-id]') as HTMLElement
     if (!cardEl) return
-    const container = cardEl.parentElement; if (!container) return
+    const container = cardEl.parentElement
+    if (!container) return
+    handleEl.setPointerCapture?.(e.pointerId)
     const rect = cardEl.getBoundingClientRect()
     const ph = document.createElement('div')
-    ph.style.cssText = `height: ${rect.height}px; background: rgba(27,58,92,0.08); border: 2px dashed ${NAVY}; border-radius: 14px;`
+    ph.style.cssText = `height: ${rect.height}px; background: rgba(27,58,92,0.08); border: 2px dashed ${NAVY}; border-radius: 14px; margin: 4px 0;`
     container.insertBefore(ph, cardEl)
     cardEl.style.position = 'fixed'; cardEl.style.zIndex = '1000'
     cardEl.style.width = `${rect.width}px`; cardEl.style.left = `${rect.left}px`; cardEl.style.top = `${rect.top}px`
     cardEl.style.pointerEvents = 'none'; cardEl.style.opacity = '0.92'
     cardEl.style.boxShadow = '0 12px 32px rgba(15,31,51,0.4)'
+    cardEl.style.transform = 'scale(1.02)'
     dragState.current = { id, el: cardEl, offsetY: e.clientY - rect.top, ph }
     document.body.style.userSelect = 'none'; document.body.style.touchAction = 'none'
     const onMove = (ev: PointerEvent) => {
@@ -127,11 +168,15 @@ export default function HomePanelMobileV2(props: any) {
     window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp)
   }
 
+  // === FILTRI con CAMPI DB CORRETTI ===
   const cantieri = (ctx?.cantieri || []).filter((c: any) => !c?.deleted_at && !c?.archived_at)
   const fattureDB = ctx?.fattureDB || []
   const team = ctx?.team || []
-  const eventi = ctx?.events || data?.agenda?.eventi || []
-  const tasks = (ctx?.tasks || []).filter((t: any) => !t?.completata)
+  // Eventi: usa entrambe le tabelle events + eventi
+  const eventi = ctx?.events || ctx?.eventi || data?.agenda?.eventi || []
+  // TASK: campo è `done` non `completata`, titolo è `testo`
+  const tasks = (ctx?.tasks || []).filter((t: any) => !t?.done)
+  // MONTAGGI: data_montaggio
   const montaggi = ctx?.montaggi || []
   const ferme = cantieri.filter((c: any) => {
     const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
@@ -141,35 +186,41 @@ export default function HomePanelMobileV2(props: any) {
   const daIncassareLabel = daIncassare >= 1000 ? `${(daIncassare / 1000).toFixed(1)}k€` : `${Math.round(daIncassare)}€`
   const messaggi = ctx?.talkUnread || 0
   const eventiOggi = eventi.filter((e: any) => {
-    const d = new Date(e?.data || e?.start || 0); return d.toDateString() === new Date().toDateString()
+    const d = parseEventDate(e); return d.toDateString() === new Date().toDateString()
   })
-  const prossimiMontaggi = montaggi.filter((m: any) => new Date(m?.data || 0).getTime() > Date.now())
-    .sort((a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime())
+  const prossimiMontaggi = montaggi.filter((m: any) => {
+    const dm = m?.data_montaggio || m?.data
+    return dm && new Date(dm).getTime() > Date.now()
+  }).sort((a: any, b: any) => new Date(a.data_montaggio || a.data).getTime() - new Date(b.data_montaggio || b.data).getTime())
 
   const renderCard = (id: string) => (
     <div key={id} data-card-id={id} style={{
       background: '#FFF', borderRadius: 14, position: 'relative',
       border: editMode ? `2px dashed ${NAVY}` : 'none',
       boxShadow: '0 1px 4px rgba(15,31,51,0.08)',
+      animation: editMode ? 'mastroWiggle 0.5s ease-in-out infinite alternate' : undefined,
     }}>
       {editMode && (
-        <div onPointerDown={(e) => startDrag(e, id)} style={{
-          position: 'absolute', left: -10, top: '50%', transform: 'translateY(-50%)',
-          width: 30, height: 30, borderRadius: 8, background: NAVY, color: '#FFF',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab',
-          touchAction: 'none', zIndex: 10, boxShadow: '0 3px 8px rgba(15,31,51,0.4)',
-        }}>
-          <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor">
-            <circle cx={9} cy={6} r={1.5}/><circle cx={15} cy={6} r={1.5}/>
-            <circle cx={9} cy={12} r={1.5}/><circle cx={15} cy={12} r={1.5}/>
-            <circle cx={9} cy={18} r={1.5}/><circle cx={15} cy={18} r={1.5}/>
-          </svg>
-        </div>
+        <>
+          <style>{`@keyframes mastroWiggle { from { transform: rotate(-0.4deg); } to { transform: rotate(0.4deg); } }`}</style>
+          <div onPointerDown={(e) => startDrag(e, id)} style={{
+            position: 'absolute', left: -10, top: '50%', transform: 'translateY(-50%)',
+            width: 36, height: 36, borderRadius: 8, background: NAVY, color: '#FFF',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab',
+            touchAction: 'none', zIndex: 10, boxShadow: '0 3px 8px rgba(15,31,51,0.4)',
+          }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor">
+              <circle cx={9} cy={6} r={1.5}/><circle cx={15} cy={6} r={1.5}/>
+              <circle cx={9} cy={12} r={1.5}/><circle cx={15} cy={12} r={1.5}/>
+              <circle cx={9} cy={18} r={1.5}/><circle cx={15} cy={18} r={1.5}/>
+            </svg>
+          </div>
+        </>
       )}
-      <div style={{ padding: '12px 14px' }}>
-        {id === 'agenda' && <CardCalendar eventi={eventi} onClick={() => goto('agenda')} />}
+      <div style={{ padding: '12px 14px', pointerEvents: editMode ? 'none' : 'auto' }}>
+        {id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} apriCM={apriCM} onClick={() => goto('agenda')} />}
         {id === 'urgente' && <CardUrgente ferme={ferme} apri={apriCM} />}
-        {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} onClick={() => goto('team')} />}
+        {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} toggleTask={toggleTask} onClick={() => goto('team')} />}
         {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} />}
         {id === 'commesse' && <CardCommesse cantieri={cantieri} apri={apriCM} />}
         {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => goto('contabilita')} />}
@@ -260,17 +311,17 @@ function CardHead({ title, link, badge, onClick, icon }: any) {
   )
 }
 
-function Row({ label, value, color, last }: any) {
+function Row({ label, value, color, last, onClick }: any) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: last ? 'none' : `1px solid ${BORDER}` }}>
+    <div onClick={onClick} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: last ? 'none' : `1px solid ${BORDER}`, cursor: onClick ? 'pointer' : 'default' }}>
       <span style={{ fontSize: 11, color: MUTED }}>{label}</span>
       <span style={{ fontSize: 13, color: color || TEXT, fontWeight: 600, fontFeatureSettings: '"tnum"' }}>{value}</span>
     </div>
   )
 }
 
-// CALENDARIO
-function CardCalendar({ eventi, onClick }: any) {
+// CALENDARIO con tap evento
+function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
   const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('mese')
   const [cursor, setCursor] = useState(new Date())
   const today = new Date()
@@ -278,7 +329,7 @@ function CardCalendar({ eventi, onClick }: any) {
   const eventByDay = useMemo(() => {
     const map: Record<string, any[]> = {}
     eventi.forEach((e: any) => {
-      const d = new Date(e?.data || e?.start || 0)
+      const d = parseEventDate(e)
       if (isNaN(d.getTime())) return
       const k = d.toDateString(); if (!map[k]) map[k] = []
       map[k].push(e)
@@ -286,7 +337,7 @@ function CardCalendar({ eventi, onClick }: any) {
     return map
   }, [eventi])
   const eventiSel = (eventByDay[cursor.toDateString()] || []).sort((a: any, b: any) =>
-    new Date(a?.data || 0).getTime() - new Date(b?.data || 0).getTime()
+    parseEventDate(a).getTime() - parseEventDate(b).getTime()
   )
   const buildMonth = () => {
     const y = cursor.getFullYear(), m = cursor.getMonth()
@@ -312,6 +363,12 @@ function CardCalendar({ eventi, onClick }: any) {
     const start = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - dow)
     return Array.from({ length: 7 }).map((_, i) => new Date(start.getTime() + i * 86400000))
   }, [cursor])
+
+  const apriEvento = (e: any) => {
+    const cmId = e?.commessa_id || e?.cm
+    if (cmId) apriCM(cmId)
+    else onClick()
+  }
 
   return (
     <>
@@ -359,7 +416,7 @@ function CardCalendar({ eventi, onClick }: any) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {weekDays.map((d, i) => {
             const isT = isSameDay(d, today), isS = isSameDay(d, cursor)
-            const evs = (eventByDay[d.toDateString()] || []).sort((a: any, b: any) => new Date(a?.data || 0).getTime() - new Date(b?.data || 0).getTime())
+            const evs = (eventByDay[d.toDateString()] || []).sort((a: any, b: any) => parseEventDate(a).getTime() - parseEventDate(b).getTime())
             return (
               <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d) }} style={{
                 background: isT ? '#E5EAF0' : (isS ? '#F1F4F7' : '#F7F9FB'),
@@ -377,12 +434,12 @@ function CardCalendar({ eventi, onClick }: any) {
                 {evs.length > 0 ? (
                   <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {evs.slice(0, 3).map((e: any, j: number) => {
-                      const data = new Date(e?.data || e?.start || 0)
+                      const data = parseEventDate(e)
                       return (
-                        <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div key={j} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                           <div style={{ width: 6, height: 6, borderRadius: 50, background: dotColor(e), flexShrink: 0 }}/>
                           <span style={{ fontSize: 10, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 600, minWidth: 36 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
-                          <span style={{ fontSize: 11, color: TEXT, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{e?.titolo || e?.title || ''}</span>
+                          <span style={{ fontSize: 11, color: TEXT, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{eventTitle(e)}</span>
                         </div>
                       )
                     })}
@@ -400,16 +457,17 @@ function CardCalendar({ eventi, onClick }: any) {
           <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 8, textTransform: 'capitalize' }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
           {eventiSel.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '12px 0' }}>Nessun evento programmato</div> : null}
           {eventiSel.map((e: any, i: number) => {
-            const data = new Date(e?.data || e?.start || 0)
+            const data = parseEventDate(e)
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
+              <div key={i} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 50, background: dotColor(e) }}/>
                   <div style={{ fontSize: 11, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 700, minWidth: 38 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{e?.titolo || e?.title || ''}</div>
+                  <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{eventTitle(e)}</div>
                   {e?.tipo ? <div style={{ fontSize: 10, color: NAVY, marginTop: 1 }}>{e.tipo}</div> : null}
+                  {eventLuogo(e) ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📍 {eventLuogo(e)}</div> : null}
                 </div>
               </div>
             )
@@ -421,16 +479,16 @@ function CardCalendar({ eventi, onClick }: any) {
         <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
           <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5, marginBottom: 6, fontWeight: 600 }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} · {eventiSel.length} EVENTI</div>
           {eventiSel.map((e: any, i: number) => {
-            const data = new Date(e?.data || e?.start || 0)
+            const data = parseEventDate(e)
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
+              <div key={i} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                   <div style={{ width: 7, height: 7, borderRadius: 50, background: dotColor(e) }}/>
                   <div style={{ fontSize: 10, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 700, minWidth: 38 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{e?.titolo || e?.title || ''}</div>
-                  {e?.luogo ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📍 {e.luogo}</div> : null}
+                  <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{eventTitle(e)}</div>
+                  {eventLuogo(e) ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>📍 {eventLuogo(e)}</div> : null}
                 </div>
               </div>
             )
@@ -465,9 +523,10 @@ function CardUrgente({ ferme, apri }: any) {
                 <span style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</span>
                 <span style={{ fontSize: 8, color: '#FFF', background: RED, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{giorni}g</span>
               </div>
-              <div style={{ fontSize: 11, color: TEXT, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.cliente || ''}</div>
+              <div style={{ fontSize: 11, color: TEXT, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.cliente || c?.cliente_nome || ''}</div>
               <div style={{ fontSize: 9, color: NAVY, marginTop: 1, fontWeight: 600, textTransform: 'uppercase' }}>{c?.fase}</div>
             </div>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg>
           </div>
         )
       })}
@@ -476,10 +535,10 @@ function CardUrgente({ ferme, apri }: any) {
           <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre · scorri →</div>
           <SwipeTrack>
             {rest.map((c: any, i: number) => (
-              <SwipeItem key={i} width="180px">
+              <SwipeItem key={i} width="180px" onClick={() => apri(c?.id)}>
                 <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || ''}</div>
-                <button onClick={() => apri(c?.id)} style={{ marginTop: 6, background: NAVY, color: '#FFF', border: 'none', padding: '4px 0', borderRadius: 5, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI →</button>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}</div>
+                <div style={{ fontSize: 9, color: RED, marginTop: 4, fontWeight: 700 }}>APRI →</div>
               </SwipeItem>
             ))}
           </SwipeTrack>
@@ -489,8 +548,8 @@ function CardUrgente({ ferme, apri }: any) {
   )
 }
 
-// TASK
-function CardTask({ tasks, cantieri, apri, onClick }: any) {
+// TASK con campi DB CORRETTI: testo, data, done, priorita
+function CardTask({ tasks, cantieri, apri, toggleTask, onClick }: any) {
   const top = tasks.slice(0, SHOW_VERTICAL)
   const rest = tasks.slice(SHOW_VERTICAL)
   return (
@@ -498,20 +557,20 @@ function CardTask({ tasks, cantieri, apri, onClick }: any) {
       <CardHead title="Task" badge={tasks.length} link="vedi tutte" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>} />
       {tasks.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessuna task aperta</div> : null}
       {top.map((t: any, i: number) => {
-        const cm = cantieri.find((c: any) => c?.id === t?.commessa_id || c?.id === t?.cantiere_id)
-        const scad = t?.scadenza ? new Date(t.scadenza) : null
-        const isLate = scad && scad.getTime() < Date.now()
+        const cm = cantieri.find((c: any) => c?.id === t?.commessa_id)
+        const scad = t?.data ? new Date(t.data) : null
+        const isLate = scad && scad.getTime() < Date.now() - 86400000
         const prio = (t?.priorita || '').toLowerCase()
         const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : MUTED
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
-            <div style={{ width: 18, height: 18, borderRadius: 5, border: '1.5px solid #B5C2D6', flexShrink: 0, marginTop: 1, background: '#FFF' }}/>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3 }}>{t?.titolo || t?.title || 'Task'}</div>
+            <div onClick={(e) => { e.stopPropagation(); toggleTask(t?.id, !!t?.done) }} style={{ width: 22, height: 22, borderRadius: 5, border: '1.5px solid #B5C2D6', flexShrink: 0, marginTop: 1, background: '#FFF', cursor: 'pointer' }}/>
+            <div onClick={() => cm && apri(cm.id)} style={{ flex: 1, minWidth: 0, cursor: cm ? 'pointer' : 'default' }}>
+              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3 }}>{t?.testo || 'Task'}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
                 {scad ? <span style={{ fontSize: 10, color: isLate ? RED : MUTED, fontWeight: 600 }}>📅 {scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
                 {prio ? <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span> : null}
-                {cm ? <span onClick={() => apri(cm.id)} style={{ fontSize: 10, color: NAVY, fontWeight: 600, cursor: 'pointer' }}>↗ {cm?.codice || cm?.code}</span> : null}
+                {cm ? <span style={{ fontSize: 10, color: NAVY, fontWeight: 600 }}>↗ {cm?.codice || cm?.code}</span> : null}
               </div>
             </div>
           </div>
@@ -523,8 +582,8 @@ function CardTask({ tasks, cantieri, apri, onClick }: any) {
           <SwipeTrack>
             {rest.map((t: any, i: number) => (
               <SwipeItem key={i} width="200px">
-                <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{t?.titolo || t?.title || 'Task'}</div>
-                {t?.scadenza ? <div style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>📅 {new Date(t.scadenza).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div> : null}
+                <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{t?.testo || 'Task'}</div>
+                {t?.data ? <div style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>📅 {new Date(t.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div> : null}
               </SwipeItem>
             ))}
           </SwipeTrack>
@@ -534,7 +593,7 @@ function CardTask({ tasks, cantieri, apri, onClick }: any) {
   )
 }
 
-// MONTAGGI
+// MONTAGGI con data_montaggio
 function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
   const top = montaggi.slice(0, SHOW_VERTICAL)
   const rest = montaggi.slice(SHOW_VERTICAL)
@@ -543,21 +602,20 @@ function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
       <CardHead title="Prossimi montaggi" badge={montaggi.length} link="agenda" onClick={() => {}} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>} />
       {montaggi.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun montaggio programmato</div> : null}
       {top.map((m: any, i: number) => {
-        const d = new Date(m?.data || Date.now())
-        const cm = cantieri.find((c: any) => c?.id === m?.commessa_id || c?.id === m?.cantiere_id)
-        const teamIds = m?.team || m?.operatori || []
-        const teamMembers = team.filter((t: any) => teamIds.includes(t?.id))
+        const dStr = m?.data_montaggio || m?.data
+        const d = new Date(dStr)
+        const cm = cantieri.find((c: any) => c?.id === m?.commessa_id)
         const dgg = Math.floor((d.getTime() - Date.now()) / 86400000)
         return (
-          <div key={i} onClick={() => cm && apri(cm.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+          <div key={i} onClick={() => cm && apri(cm.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: cm ? 'pointer' : 'default' }}>
             <div style={{ flex: '0 0 50px', textAlign: 'center', background: dgg <= 1 ? RED : (dgg <= 3 ? AMBER : NAVY), color: '#FFF', borderRadius: 6, padding: '4px 0' }}>
               <div style={{ fontSize: 9, fontWeight: 700 }}>{d.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase()}</div>
               <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</div>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m?.cliente || cm?.cliente || 'Cliente'}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>🕐 {d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}{cm?.n_vani ? ` · 🪟 ${cm.n_vani}v` : ''}</div>
-              {teamMembers.length > 0 ? <div style={{ fontSize: 10, color: NAVY, marginTop: 1, fontWeight: 600 }}>{teamMembers.map((t: any) => t?.nome).filter(Boolean).join(' · ')}</div> : null}
+              <div style={{ fontSize: 12, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cm?.cliente || cm?.cliente_nome || cm?.codice || 'Cliente'}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>🕐 {m?.ora_inizio || '—'}{m?.ora_fine ? ` - ${m.ora_fine}` : ''}</div>
+              {m?.urgente ? <span style={{ fontSize: 8, color: '#FFF', background: RED, padding: '1px 5px', borderRadius: 3, fontWeight: 700, marginTop: 4, display: 'inline-block' }}>URGENTE</span> : null}
             </div>
           </div>
         )
@@ -567,11 +625,13 @@ function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
           <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri · scorri →</div>
           <SwipeTrack>
             {rest.map((m: any, i: number) => {
-              const d = new Date(m?.data || Date.now())
+              const dStr = m?.data_montaggio || m?.data
+              const d = new Date(dStr)
+              const cm = cantieri.find((c: any) => c?.id === m?.commessa_id)
               return (
-                <SwipeItem key={i} width="180px">
+                <SwipeItem key={i} width="180px" onClick={() => cm && apri(cm.id)}>
                   <div style={{ fontSize: 9, color: NAVY, fontWeight: 700 }}>{d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, marginTop: 2 }}>{m?.cliente || 'Cliente'}</div>
+                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, marginTop: 2 }}>{cm?.cliente || cm?.codice || 'Cliente'}</div>
                 </SwipeItem>
               )
             })}
@@ -597,7 +657,7 @@ function CardCommesse({ cantieri, apri }: any) {
               <span style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</span>
               <span style={{ fontSize: 8, color: NAVY, background: '#E5EAF0', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
             </div>
-            <div style={{ fontSize: 11, color: TEXT, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.cliente || ''}</div>
+            <div style={{ fontSize: 11, color: TEXT, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.cliente || c?.cliente_nome || ''}</div>
             {c?.indirizzo ? <div style={{ fontSize: 9, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {c.indirizzo}</div> : null}
           </div>
           {c?.totale ? <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, flexShrink: 0 }}>{Math.round(Number(c.totale))}€</div> : null}
@@ -608,10 +668,10 @@ function CardCommesse({ cantieri, apri }: any) {
           <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre · scorri →</div>
           <SwipeTrack>
             {rest.map((c: any, i: number) => (
-              <SwipeItem key={i} width="180px">
+              <SwipeItem key={i} width="180px" onClick={() => apri(c?.id)}>
                 <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || ''}</div>
-                <button onClick={() => apri(c?.id)} style={{ marginTop: 6, background: NAVY, color: '#FFF', border: 'none', padding: '4px 0', borderRadius: 5, fontSize: 9, cursor: 'pointer', fontWeight: 700, width: '100%' }}>APRI →</button>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}</div>
+                <div style={{ fontSize: 9, color: NAVY, marginTop: 4, fontWeight: 700 }}>APRI →</div>
               </SwipeItem>
             ))}
           </SwipeTrack>
@@ -621,7 +681,6 @@ function CardCommesse({ cantieri, apri }: any) {
   )
 }
 
-// CASSA
 function CardCassa({ daIncassare, fatture, onClick }: any) {
   const scadute = fatture.filter((f: any) => !f?.pagata && f?.scadenza && new Date(f.scadenza).getTime() < Date.now())
   const scaduteAmt = scadute.reduce((s: number, f: any) => s + Number(f?.totale || 0), 0)
@@ -630,14 +689,14 @@ function CardCassa({ daIncassare, fatture, onClick }: any) {
   return (
     <>
       <CardHead title="Cassa" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={6} width={20} height={12} rx={2}/><circle cx={12} cy={12} r={2}/></svg>} />
-      <Row label="Da incassare" value={daIncassare} color={TEXT} />
-      {scadute.length > 0 ? <Row label={`Scadute (${scadute.length})`} value={`${Math.round(scaduteAmt)}€`} color={RED} /> : null}
-      {incassate.length > 0 ? <Row label={`Incassate (${incassate.length})`} value={`${Math.round(incassateAmt)}€`} color={GREEN} last /> : null}
+      <Row label="Da incassare" value={daIncassare} color={TEXT} onClick={onClick} />
+      {scadute.length > 0 ? <Row label={`Scadute (${scadute.length})`} value={`${Math.round(scaduteAmt)}€`} color={RED} onClick={onClick} /> : null}
+      {incassate.length > 0 ? <Row label={`Incassate (${incassate.length})`} value={`${Math.round(incassateAmt)}€`} color={GREEN} last onClick={onClick} /> : null}
     </>
   )
 }
 
-// SQUADRA
+// SQUADRA con stato_attuale + commessa_attuale_id
 function CardSquadra({ team, cantieri, onClick }: any) {
   const attivi = team.filter((t: any) => t?.attivo !== false).length
   const top = team.slice(0, SHOW_VERTICAL)
@@ -647,16 +706,18 @@ function CardSquadra({ team, cantieri, onClick }: any) {
       <CardHead title="Squadra" badge={`${attivi}/${team.length}`} link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/></svg>} />
       {team.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun operatore</div> : null}
       {top.map((t: any, i: number) => {
-        const cantiereAttuale = cantieri.find((c: any) => c?.id === t?.cantiere_attuale_id)
+        const cm = cantieri.find((c: any) => c?.id === t?.commessa_attuale_id)
+        const stato = t?.stato_attuale || (t?.attivo === false ? 'inattivo' : 'disponibile')
+        const isWorking = stato === 'lavora' || stato === 'in_cantiere' || stato === 'avviato'
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
-            <div style={{ width: 32, height: 32, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative', flexShrink: 0 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 50, background: t?.colore || '#D8E5F0', color: TEXT, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative', flexShrink: 0 }}>
               {(t?.nome || '?').slice(0, 1).toUpperCase()}
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 50, background: t?.attivo !== false ? GREEN : '#C8D2DA', border: '2px solid #FFF' }}/>
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 50, background: isWorking ? GREEN : (t?.attivo !== false ? AMBER : '#C8D2DA'), border: '2px solid #FFF' }}/>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cantiereAttuale ? ` · ${cantiereAttuale?.codice}` : ''}</div>
+              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}{t?.cognome ? ` ${t.cognome[0]}.` : ''}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cm ? ` · ${cm?.codice}` : ''}</div>
             </div>
             {t?.telefono ? <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ background: GREEN, color: '#FFF', padding: '6px 10px', borderRadius: 6, fontSize: 10, textDecoration: 'none', fontWeight: 700, flexShrink: 0 }}>📞</a> : null}
           </div>
@@ -669,7 +730,7 @@ function CardSquadra({ team, cantieri, onClick }: any) {
             {rest.map((t: any, i: number) => (
               <SwipeItem key={i} width="160px">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 50, background: '#D8E5F0', color: TEXT, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 50, background: t?.colore || '#D8E5F0', color: TEXT, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative' }}>
                     {(t?.nome || '?').slice(0, 1).toUpperCase()}
                     <div style={{ position: 'absolute', bottom: 0, right: 0, width: 9, height: 9, borderRadius: 50, background: t?.attivo !== false ? GREEN : '#C8D2DA', border: '1.5px solid #F7F9FB' }}/>
                   </div>
@@ -686,7 +747,6 @@ function CardSquadra({ team, cantieri, onClick }: any) {
   )
 }
 
-// PRODUZIONE
 function CardProduzione({ cantieri, apri }: any) {
   const inProd = cantieri.filter((c: any) => c?.fase === 'produzione' || c?.fase === 'ordine')
   const top = inProd.slice(0, SHOW_VERTICAL)
@@ -702,9 +762,9 @@ function CardProduzione({ cantieri, apri }: any) {
               <span style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</span>
               <span style={{ fontSize: 8, color: '#FFF', background: c?.fase === 'produzione' ? AMBER : NAVY, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
             </div>
-            <div style={{ fontSize: 11, color: TEXT, marginTop: 2 }}>{c?.cliente || ''}</div>
+            <div style={{ fontSize: 11, color: TEXT, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}</div>
           </div>
-          {c?.n_vani ? <div style={{ fontSize: 10, color: MUTED, flexShrink: 0 }}>🪟 {c.n_vani}v</div> : null}
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg>
         </div>
       ))}
       {rest.length > 0 ? (
@@ -712,9 +772,9 @@ function CardProduzione({ cantieri, apri }: any) {
           <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri · scorri →</div>
           <SwipeTrack>
             {rest.map((c: any, i: number) => (
-              <SwipeItem key={i} width="180px">
+              <SwipeItem key={i} width="180px" onClick={() => apri(c?.id)}>
                 <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || ''}</div>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}</div>
               </SwipeItem>
             ))}
           </SwipeTrack>
@@ -724,7 +784,6 @@ function CardProduzione({ cantieri, apri }: any) {
   )
 }
 
-// MAGAZZINO
 function CardMagazzino({ onClick }: any) {
   return (
     <>
@@ -734,7 +793,6 @@ function CardMagazzino({ onClick }: any) {
   )
 }
 
-// STATISTICHE
 function CardStatistiche({ cantieri, onClick }: any) {
   const sopr = cantieri.filter((c: any) => c?.fase === 'sopralluogo').length
   const prev = cantieri.filter((c: any) => c?.fase === 'preventivo').length
@@ -743,10 +801,10 @@ function CardStatistiche({ cantieri, onClick }: any) {
   return (
     <>
       <CardHead title="Statistiche" link="report" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>} />
-      <Row label="Sopralluoghi" value={sopr} />
-      <Row label="Preventivi" value={prev} />
-      <Row label="Confermate" value={conf} />
-      <Row label="Fatturate" value={fatt} last />
+      <Row label="Sopralluoghi" value={sopr} onClick={onClick} />
+      <Row label="Preventivi" value={prev} onClick={onClick} />
+      <Row label="Confermate" value={conf} onClick={onClick} />
+      <Row label="Fatturate" value={fatt} last onClick={onClick} />
     </>
   )
 }
