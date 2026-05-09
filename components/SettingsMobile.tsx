@@ -24,6 +24,11 @@ import SettingsAccessoriTendaggi from './settings-mobile/SettingsAccessoriTendag
 import SettingsColoriTendaggi from './settings-mobile/SettingsColoriTendaggi'
 import SettingsFornitoriTendaggi from './settings-mobile/SettingsFornitoriTendaggi'
 
+// Flusso lavoro (NEW v10)
+import SettingsPipelineMobile from './SettingsPipelineMobile'
+import SettingsBrandingMobile from './SettingsBrandingMobile'
+import DocumentBuilderMobile from './DocumentBuilderMobile'
+
 const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29'
 
 type Sezione =
@@ -31,6 +36,7 @@ type Sezione =
   | 'profili' | 'vetri' | 'accessori'
   | 'win' | 'sistemi' | 'nodi' | 'importa'
   | 'tendaggi' | 'accessori_tendaggi' | 'colori_tendaggi' | 'fornitori_tendaggi'
+  | 'pipeline' | 'branding' | 'docbuilder'
 
 export default function SettingsMobile() {
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
@@ -55,6 +61,11 @@ export default function SettingsMobile() {
   if (sezione === 'accessori_tendaggi') return <SettingsAccessoriTendaggi onBack={torna} />
   if (sezione === 'colori_tendaggi')    return <SettingsColoriTendaggi onBack={torna} />
   if (sezione === 'fornitori_tendaggi') return <SettingsFornitoriTendaggi onBack={torna} />
+
+  // FLUSSO LAVORO
+  if (sezione === 'pipeline')   return <SettingsPipelineMobile  azienda_id={azienda_id} onClose={torna} />
+  if (sezione === 'branding')   return <SettingsBrandingMobile  azienda_id={azienda_id} onClose={torna} />
+  if (sezione === 'docbuilder') return <DocumentBuilderMobile   azienda_id={azienda_id} onClose={torna} />
 
   return (
     <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 100 }}>
