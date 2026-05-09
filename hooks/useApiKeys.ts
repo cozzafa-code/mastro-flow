@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/lib/supabase';
 import type { ApiKey, ApiKeyStats } from '@/lib/types';
 
 export function useApiKeys(aziendaId: string) {
@@ -16,9 +16,11 @@ export function useApiKeys(aziendaId: string) {
   });
   const [loading, setLoading] = useState(true);
 
-  const supabase = createClientComponentClient();
-
   const fetchKeys = useCallback(async () => {
+    if (!aziendaId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     const { data: keysData } = await supabase
@@ -35,7 +37,6 @@ export function useApiKeys(aziendaId: string) {
       .eq('azienda_id', aziendaId)
       .gte('created_at', startMonth);
 
-    // Piano azienda da `aziende.piano`
     const { data: az } = await supabase
       .from('aziende')
       .select('piano')
@@ -63,7 +64,7 @@ export function useApiKeys(aziendaId: string) {
       planName: piano.toUpperCase(),
     });
     setLoading(false);
-  }, [aziendaId, supabase]);
+  }, [aziendaId]);
 
   useEffect(() => {
     fetchKeys();

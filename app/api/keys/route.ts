@@ -1,11 +1,16 @@
 // app/api/keys/route.ts
-// Route INTERNA (cookie-auth) per generare/revocare API keys.
-// NB: non confondere con /api/v1/* che è la API pubblica.
+// Route INTERNA per generare/revocare API keys.
+// Auth: Bearer token utente (dal supabase client browser).
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import { generateKey } from '@/lib/api/auth-middleware';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+);
 
 const ALL_SCOPES = [
   'commesse:read', 'commesse:write',
@@ -17,9 +22,17 @@ const ALL_SCOPES = [
   'webhook:receive',
 ];
 
+async function getUserFromRequest(req: NextRequest) {
+  const auth = req.headers.get('authorization');
+  if (!auth?.startsWith('Bearer ')) return null;
+  const token = auth.slice(7);
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !data.user) return null;
+  return data.user;
+}
+
 export async function POST(req: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUserFromRequest(req);
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const body = await req.json();
@@ -34,8 +47,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_scopes', invalid: invalidScopes }, { status: 400 });
   }
 
-  // Recupera azienda_id + ruolo dal profilo (no service_role: la RLS controlla)
-  const { data: profile } = await supabase
+  const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('azienda_id, ruolo')
     .eq('id', user.id)
@@ -53,7 +65,7 @@ export async function POST(req: NextRequest) {
     ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
     : null;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('api_keys')
     .insert({
       azienda_id: profile.azienda_id,
@@ -68,23 +80,32 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // PRIMA E ULTIMA volta che il plaintext è visibile
   return NextResponse.json({ ...data, plaintext });
 }
 
 export async function DELETE(req: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUserFromRequest(req);
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const id = new URL(req.url).searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'missing_id' }, { status: 400 });
 
-  const { error } = await supabase
+  // Verifica ownership via profile
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('azienda_id')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile?.azienda_id) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  const { error } = await supabaseAdmin
     .from('api_keys')
     .update({ revoked_at: new Date().toISOString() })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('azienda_id', profile.azienda_id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
