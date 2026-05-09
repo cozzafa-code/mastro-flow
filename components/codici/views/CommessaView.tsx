@@ -1,18 +1,39 @@
 'use client';
 import type { NextAction, Ruolo } from '@/lib/codici/types';
 
+const C = {
+  bg: '#0D1F1F', teal: '#28A0A0', tealDark: '#1a6b6b', light: '#EEF8F8',
+};
+
 export default function CommessaView({
   nextAction, ruolo, short
 }: { nextAction: NextAction; ruolo: Ruolo; short: string }) {
   return (
-    <div className="min-h-screen bg-[#0D1F1F] text-[#EEF8F8] p-6">
-      <p className="text-[#28A0A0] text-sm uppercase tracking-wider">Commessa</p>
-      <h1 className="text-2xl font-bold mt-2">{short}</h1>
-      <p className="mt-4 text-[#EEF8F8]/70">Stato: {nextAction.stato}</p>
-      <button className="mt-6 w-full py-4 bg-[#28A0A0] rounded-xl font-bold">
+    <div style={{
+      minHeight: '100vh', background: C.bg, color: C.light,
+      padding: 24, fontFamily: '-apple-system, sans-serif',
+    }}>
+      <p style={{
+        color: C.teal, fontSize: 11, textTransform: 'uppercase',
+        letterSpacing: 2, fontWeight: 700, marginTop: 24,
+      }}>COMMESSA</p>
+      <h1 style={{
+        fontSize: 28, fontWeight: 800, margin: '8px 0',
+      }}>{short}</h1>
+      <p style={{ color: `${C.light}99`, marginTop: 16 }}>
+        Stato: <strong>{nextAction.stato}</strong>
+      </p>
+      <button style={{
+        marginTop: 24, width: '100%', padding: 18,
+        background: C.teal, color: 'white', border: 'none',
+        borderRadius: 14, fontSize: 16, fontWeight: 800,
+        boxShadow: `0 6px 0 ${C.tealDark}`, cursor: 'pointer',
+      }}>
         {nextAction.label}
       </button>
-      <p className="mt-8 text-xs text-[#EEF8F8]/40">Ruolo: {ruolo}</p>
+      <p style={{
+        marginTop: 32, fontSize: 11, color: `${C.light}55`, textAlign: 'center',
+      }}>Ruolo: {ruolo}</p>
     </div>
   );
 }
