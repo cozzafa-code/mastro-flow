@@ -1,18 +1,13 @@
 "use client";
 // @ts-nocheck
 // ================================================================
-// MASTRO ERP — useVaniSync
-// Osserva lo state `cantieri` e sincronizza automaticamente:
-//   - vani → tabella `vani` (record separato per ogni vano)
-//   - vani_disegno → tabella `vani_disegno` (misure + disegno per vano)
-//   - foto → tabella `ops_foto` (foto scattate in cantiere)
-// Cosi' il desktop ritrova tutto quello che il mobile scrive.
-//
-// UTILIZZO: aggiungere in MastroERP.tsx dopo la riga degli effect:
-//   import { useVaniSync } from "../hooks/useVaniSync";
-//   useVaniSync(cantieri, aziendaId, isUuid);
-//
-// NON modifica cantieri/state. Solo SCRIVE su tabelle Supabase separate.
+// MASTRO ERP - useVaniSync (v2 - FIX persistenza vani su DB)
+// Sincronizza in background lo state cantieri verso Supabase:
+//   - tabella `vani` (record canonici - usata per workspace preventivo)
+//   - tabella `vani_disegno` (misure + disegno CAD)
+//   - tabella `ops_foto` (foto cantiere)
+// FIX: prima scriveva solo vani_disegno, ora scrive ANCHE vani
+// FIX: aziendaId da sessionStorage (gia disponibile), non da query operatori
 // File < 300 righe.
 // ================================================================
 import { useEffect, useRef } from "react";
@@ -25,8 +20,23 @@ function sb() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
-// Debounce: non scrivere ad ogni keystroke, aspetta 3 secondi di inattivita'
 const DEBOUNCE_MS = 3000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Recupera aziendaId da MULTIPLE fonti (gerarchia priorita')
+function getAziendaId(): string | null {
+  if (typeof window === "undefined") return null;
+  const candidates = [
+    sessionStorage.getItem("mastro:aziendaId"),
+    localStorage.getItem("mastro:aziendaId"),
+    sessionStorage.getItem("aziendaId"),
+    localStorage.getItem("aziendaId"),
+  ];
+  for (const c of candidates) {
+    if (c && UUID_RE.test(c)) return c;
+  }
+  return null;
+}
 
 export function useVaniSync(
   cantieri: any[],
@@ -35,25 +45,22 @@ export function useVaniSync(
 ) {
   const timerRef = useRef<any>(null);
   const lastHashRef = useRef<string>("");
-  const aziendaIdRef = useRef<string | null>(null);
-
-  // Ricava aziendaId una volta sola
-  useEffect(() => {
-    if (!isUuid || !userId || aziendaIdRef.current) return;
-    sb().from("operatori").select("azienda_id").eq("attivo", true).limit(1)
-      .then(({ data }) => { if (data?.[0]?.azienda_id) aziendaIdRef.current = data[0].azienda_id; });
-  }, [userId, isUuid]);
 
   useEffect(() => {
     if (!isUuid || !cantieri || cantieri.length === 0) return;
     if (!supabaseUrl || !supabaseKey) return;
-    const aziendaId = aziendaIdRef.current;
-    if (!aziendaId) return;
 
-    // Hash veloce per evitare sync inutili
+    const aziendaId = getAziendaId();
+    if (!aziendaId) {
+      console.warn("[useVaniSync] aziendaId non trovato in sessionStorage. Sync DISATTIVATO.");
+      return;
+    }
+
+    // Hash veloce per evitare sync inutili (rilieva solo cambi rilevanti)
     const hash = JSON.stringify(
       cantieri.map(c => ({
         id: c.id,
+        f: c.fase,
         vani: (c.rilievi || []).flatMap((r: any) =>
           (r.vani || []).map((v: any) => ({
             id: v.id,
@@ -61,6 +68,9 @@ export function useVaniSync(
             misure: v.misure,
             note: v.note,
             sistema: v.sistema,
+            stanza: v.stanza,
+            piano: v.piano,
+            pezzi: v.pezzi,
             coloreInt: v.coloreInt,
             coloreEst: v.coloreEst,
             _dKeys: v.disegno ? Object.keys(v.disegno).length : 0,
@@ -71,7 +81,6 @@ export function useVaniSync(
     if (hash === lastHashRef.current) return;
     lastHashRef.current = hash;
 
-    // Debounce
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       syncVaniToSupabase(cantieri, aziendaId);
@@ -86,12 +95,13 @@ export function useVaniSync(
 // -------- Sync effettivo --------
 async function syncVaniToSupabase(cantieri: any[], aziendaId: string) {
   const s = sb();
+  let totaleVaniSync = 0;
+  let totaleErrori = 0;
 
   for (const commessa of cantieri) {
     const commessaId = commessa.id;
-    if (!commessaId) continue;
+    if (!commessaId || !UUID_RE.test(String(commessaId))) continue;
 
-    // Estrai tutti i vani da tutti i rilievi
     const rilievi = commessa.rilievi || [];
     for (const rilievo of rilievi) {
       const vani = rilievo.vani || [];
@@ -99,11 +109,74 @@ async function syncVaniToSupabase(cantieri: any[], aziendaId: string) {
         if (!vano.id) continue;
 
         try {
-          // 1. Upsert su vani_disegno (misure + configurazione)
           const misure = vano.misure || {};
-          const row = {
+          const vanoIdStr = String(vano.id);
+
+          // ===== 1. UPSERT su tabella `vani` (record canonico per workspace) =====
+          const isVanoUuid = UUID_RE.test(vanoIdStr);
+          const vanoRow: any = {
+            commessa_id: String(commessaId),
+            rilievo_id: rilievo.id && UUID_RE.test(String(rilievo.id)) ? String(rilievo.id) : null,
+            nome: vano.nome || vano.tipo || "Vano",
+            tipo: vano.tipo || null,
+            stanza: vano.stanza || null,
+            piano: vano.piano || null,
+            sistema: vano.sistema || null,
+            pezzi: vano.pezzi || 1,
+            ordine: vano.ordine || 0,
+            misure_json: misure,
+            misure_complete: !!(misure.lCentro && misure.hCentro),
+            colore_int: vano.coloreInt || null,
+            colore_est: vano.coloreEst || null,
+            bicolore: !!vano.bicolore,
+            vetro: vano.vetro || null,
+            telaio: vano.telaio || null,
+            rifilato: vano.rifilato || null,
+            coprifilo: vano.coprifilo || null,
+            lamiera: vano.lamiera || null,
+            difficolta_salita: vano.difficoltaSalita || null,
+            mezzo_salita: vano.mezzoSalita || null,
+            note: vano.note || null,
+            accessori: vano.accessori || null,
+            cassonetto: vano.cassonetto || null,
+            cassonetto_config: vano.cassonettoConfig || null,
+            controtelaio_config: vano.controtelaio || null,
+            persiana_config: vano.persianaConfig || null,
+            tapparella_config: vano.tapparellaConfig || null,
+            zanzariera_config: vano.zanzarieraConfig || null,
+            updated_at: new Date().toISOString(),
+          };
+          if (isVanoUuid) vanoRow.id = vanoIdStr;
+
+          // Cerca esistente per id (se UUID) o per commessa+nome
+          let existingVano: any = null;
+          if (isVanoUuid) {
+            const { data } = await s.from("vani").select("id").eq("id", vanoIdStr).maybeSingle();
+            existingVano = data;
+          }
+          if (!existingVano) {
+            const { data } = await s.from("vani")
+              .select("id")
+              .eq("commessa_id", String(commessaId))
+              .eq("nome", vanoRow.nome)
+              .limit(1);
+            if (data && data.length > 0) existingVano = data[0];
+          }
+
+          if (existingVano?.id) {
+            const { error } = await s.from("vani").update(vanoRow).eq("id", existingVano.id);
+            if (error) { console.warn(`[useVaniSync] update vani err ${vano.id}:`, error.message); totaleErrori++; }
+            else totaleVaniSync++;
+          } else {
+            const { error } = await s.from("vani").insert(vanoRow);
+            if (error) { console.warn(`[useVaniSync] insert vani err ${vano.id}:`, error.message); totaleErrori++; }
+            else totaleVaniSync++;
+          }
+
+          // ===== 2. UPSERT su tabella `vani_disegno` (misure + disegno per CAD) =====
+          const disegnoRow = {
             azienda_id: aziendaId,
-            vano_id: String(vano.id),
+            vano_id: vanoIdStr,
             commessa_id: String(commessaId),
             tipologia: vano.tipo || null,
             sistema: vano.sistema || null,
@@ -120,50 +193,32 @@ async function syncVaniToSupabase(cantieri: any[], aziendaId: string) {
               piano: vano.piano,
               coloreInt: vano.coloreInt,
               coloreEst: vano.coloreEst,
-              bicolore: vano.bicolore,
-              vetro: vano.vetro,
-              telaio: vano.telaio,
-              rifilato: vano.rifilato,
-              coprifilo: vano.coprifilo,
-              lamiera: vano.lamiera,
-              difficoltaSalita: vano.difficoltaSalita,
-              mezzoSalita: vano.mezzoSalita,
-              pezzi: vano.pezzi,
-              accessori: vano.accessori,
-              cassonetto: vano.cassonetto,
-              controtelaio: vano.controtelaio,
               misure_complete: misure,
               rilievo_id: rilievo.id,
-              rilievo_data: rilievo.data,
               disegno: vano.disegno || null,
             },
             updated_at: new Date().toISOString(),
           };
 
-          // Cerca se esiste gia'
-          const { data: existing } = await s
+          const { data: existDis } = await s
             .from("vani_disegno")
             .select("id")
-            .eq("vano_id", String(vano.id))
+            .eq("vano_id", vanoIdStr)
             .eq("commessa_id", String(commessaId))
             .limit(1);
 
-          if (existing && existing.length > 0) {
-            await s
-              .from("vani_disegno")
-              .update(row)
-              .eq("id", existing[0].id);
+          if (existDis && existDis.length > 0) {
+            await s.from("vani_disegno").update(disegnoRow).eq("id", existDis[0].id);
           } else {
-            await s.from("vani_disegno").insert(row);
+            await s.from("vani_disegno").insert(disegnoRow);
           }
 
-          // 2. Sync foto del vano (se presenti come URL)
+          // ===== 3. Sync foto vano =====
           const fotoVano = vano.foto || {};
           const fotoEntries = Object.entries(fotoVano).filter(
             ([, v]) => v && typeof v === "string" && (v as string).startsWith("http")
           );
           for (const [fotoKey, fotoUrl] of fotoEntries) {
-            // Evita duplicati: cerca se esiste gia' questa URL
             const { data: existFoto } = await s
               .from("ops_foto")
               .select("id")
@@ -182,43 +237,20 @@ async function syncVaniToSupabase(cantieri: any[], aziendaId: string) {
               });
             }
           }
-
-          // 3. Sync disegno libero (canvas pages) se presenti
-          if (vano.drawPages && Array.isArray(vano.drawPages)) {
-            for (let i = 0; i < vano.drawPages.length; i++) {
-              const pageDataUrl = vano.drawPages[i];
-              if (!pageDataUrl || !pageDataUrl.startsWith("data:")) continue;
-
-              const { data: existDraw } = await s
-                .from("ops_foto")
-                .select("id")
-                .eq("commessa_id", String(commessaId))
-                .eq("tipo", "disegno_libero")
-                .eq("fase_codice", `draw_p${i}_v${vano.id}`)
-                .limit(1);
-
-              if (!existDraw || existDraw.length === 0) {
-                await s.from("ops_foto").insert({
-                  azienda_id: aziendaId,
-                  commessa_id: String(commessaId),
-                  url: pageDataUrl,
-                  tipo: "disegno_libero",
-                  fase_codice: `draw_p${i}_v${vano.id}`,
-                  note: `Disegno libero pagina ${i + 1} - ${vano.tipo || "vano"}`,
-                });
-              }
-            }
-          }
-        } catch (e) {
-          console.warn(`[useVaniSync] errore sync vano ${vano.id}:`, e);
+        } catch (e: any) {
+          console.warn(`[useVaniSync] errore sync vano ${vano.id}:`, e?.message || e);
+          totaleErrori++;
         }
       }
     }
   }
+
+  if (totaleVaniSync > 0 || totaleErrori > 0) {
+    console.log(`[useVaniSync] Sync completato: ${totaleVaniSync} vani OK, ${totaleErrori} errori`);
+  }
 }
 
-// -------- Sync dettatura vocale (testo trascritto) --------
-// Chiamare dopo che saveVoiceNote aggiorna il vano
+// -------- Sync dettatura vocale (mantenuto da v1) --------
 export async function syncDettatura(
   aziendaId: string,
   commessaId: string,
@@ -228,7 +260,6 @@ export async function syncDettatura(
   if (!aziendaId || !commessaId || !vanoId) return;
   try {
     const s = sb();
-    // Aggiorna mis_note in vani_disegno
     const { data: existing } = await s
       .from("vani_disegno")
       .select("id, mis_note")
@@ -247,7 +278,6 @@ export async function syncDettatura(
         .eq("id", existing[0].id);
     }
 
-    // Log evento
     await s.from("log_eventi").insert({
       azienda_id: aziendaId,
       tipo_evento: "dettatura_vocale",
@@ -255,8 +285,7 @@ export async function syncDettatura(
       commessa_id: String(commessaId),
       origine: "mobile",
     });
-  } catch (e) {
-    console.warn("[syncDettatura] errore:", e);
+  } catch (e: any) {
+    console.warn("[syncDettatura] errore:", e?.message || e);
   }
 }
-// sync
