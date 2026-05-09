@@ -67,6 +67,24 @@ const stepIndex = (faseId: string) => {
 };
 
 export default function CommessePanel() {
+  // FIX v10: ascolta evento dello store per ricaricare commesse dopo soft delete
+  React.useEffect(() => {
+    const handler = () => {
+      try {
+        // Forza re-render. Se esiste un setter setCommesse, viene aggiornato dalla list()
+        if (typeof window !== "undefined" && (window as any).__mastroForceReload) {
+          (window as any).__mastroForceReload();
+        }
+        // Trigger generico via reload del'app
+        setTimeout(() => {
+          try { window.location.reload(); } catch {}
+        }, 100);
+      } catch {}
+    };
+    window.addEventListener("mastro:commesse-changed", handler);
+    return () => window.removeEventListener("mastro:commesse-changed", handler);
+  }, []);
+
   const {
     T, isDesktop, isTablet, PIPELINE,
     cantieri, filtered, selectedCM, setSelectedCM, selectedRilievo, selectedVano,

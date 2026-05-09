@@ -147,33 +147,77 @@ const bulkSoftDelete = async (
   table: TableName,
   ids: string[]
 ): Promise<{ ok: number; skipped: number }> => {
-  let ok = 0;
-  const now = new Date().toISOString();
-  let userId: string | null = null;
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    userId = user?.id || null;
-  } catch {}
-  for (const id of ids) {
-    try {
-      await softDeleteRecord(table, id);
-      // FIX v10: aggiorna IDB locale subito - cosi sparisce dalla UI senza reload
-      const storeName = storeFor(table);
-      const existing = await idbGet(storeName, id);
-      if (existing) {
-        await idbPut(storeName, {
-          ...existing,
-          deleted_at: now,
-          deleted_by: userId,
-          updated_at: now,
-        });
+  // FIX v10 DEFINITIVO: chiama RPC server-side bulk_soft_delete_commesse
+  // saltando softDeleteRecord che falliva silenziosamente
+  if (table !== "commesse") {
+    let ok = 0;
+    for (const id of ids) {
+      try {
+        await softDeleteRecord(table, id);
+        ok++;
+      } catch (e) {
+        console.warn(`[mastro:store] bulkSoftDelete skip ${id}:`, e);
       }
-      ok++;
-    } catch (e) {
-      console.warn(`[mastro:store] bulkSoftDelete skip ${id}:`, e);
     }
+    return { ok, skipped: ids.length - ok };
   }
-  return { ok, skipped: ids.length - ok };
+
+  // commesse: usa RPC sicura
+  const validIds = ids.filter((id) => isUuid(id));
+  if (validIds.length === 0) {
+    console.warn("[mastro:store] bulkSoftDelete: nessun UUID valido");
+    return { ok: 0, skipped: ids.length };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc("bulk_soft_delete_commesse", {
+      commessa_ids: validIds,
+      restore: false,
+    });
+    if (error) {
+      console.error("[mastro:store] bulkSoftDelete RPC error:", error);
+      throw error;
+    }
+    console.log("[mastro:store] bulkSoftDelete OK:", data);
+
+    // Aggiorna cache IDB locale per ogni id (cosi sparisce subito dalla UI)
+    const now = new Date().toISOString();
+    let userId: string | null = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id || null;
+    } catch {}
+
+    for (const id of validIds) {
+      try {
+        const existing = await idbGet(STORES.CANTIERI, id);
+        if (existing) {
+          await idbPut(STORES.CANTIERI, {
+            ...existing,
+            deleted_at: now,
+            deleted_by: userId,
+            updated_at: now,
+          });
+        }
+      } catch (e) {
+        console.warn(`[mastro:store] IDB update skip ${id}:`, e);
+      }
+    }
+
+    // Notifica UI per reload
+    try {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("mastro:commesse-changed", {
+          detail: { action: "deleted", ids: validIds }
+        }));
+      }
+    } catch {}
+
+    return { ok: validIds.length, skipped: ids.length - validIds.length };
+  } catch (e) {
+    console.error("[mastro:store] bulkSoftDelete fatal:", e);
+    return { ok: 0, skipped: ids.length };
+  }
 };
 
 // ─── Bulk: ARCHIVIA ─────────────────────────────────────────
