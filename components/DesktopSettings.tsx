@@ -6,6 +6,9 @@
 import { useState } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM } from "./mastro-constants";
+import SettingsPipeline from "./SettingsPipeline";
+import SettingsBranding from "./SettingsBranding";
+import DocumentBuilder from "./DocumentBuilder";
 
 const TEAL="#1A9E73",DARK="#1A1A1C",RED="#DC4444",AMB="#D08008",BLU="#3B7FE0",PUR="#8B5CF6",ORG="#F97316";
 
@@ -42,6 +45,8 @@ const NAV=[
     {id:"settore",  label:"Settore",       icon:"M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"},
     {id:"importa",  label:"Importa dati",  icon:"M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"},
     {id:"temi",     label:"Tema",          icon:"M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343"},
+    {id:"branding",  label:"Branding",      icon:"M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343"},
+    {id:"docbuilder", label:"Document Builder", icon:"M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"},
     {id:"reset",    label:"Reset dati",    icon:"M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"},
   ]},
 ];
@@ -1127,32 +1132,15 @@ export default function DesktopSettings(){
       );
 
       case "pipeline": return (
-        <Sez title="Pipeline fasi" sub="Trascina per riordinare, configura gate e notifiche">
-          {(pipelineDB||[]).map((p:any,i:number)=>{
-            const col=p.color||TEAL;
-            return (
-              <div key={p.id} style={{padding:"14px 18px",borderBottom:`1px solid #F2F1EC`,display:"flex",alignItems:"center",gap:12}}>
-                <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                  <div onClick={()=>{if(i===0)return;const a=[...pipelineDB];[a[i-1],a[i]]=[a[i],a[i-1]];setPipelineDB?.(a);}} style={{cursor:i===0?"default":"pointer",opacity:i===0?.2:1,color:"#86868b",fontSize:10}}>▲</div>
-                  <div onClick={()=>{if(i===pipelineDB.length-1)return;const a=[...pipelineDB];[a[i],a[i+1]]=[a[i+1],a[i]];setPipelineDB?.(a);}} style={{cursor:i===pipelineDB.length-1?"default":"pointer",opacity:i===pipelineDB.length-1?.2:1,color:"#86868b",fontSize:10}}>▼</div>
-                </div>
-                <div style={{width:10,height:10,borderRadius:"50%",background:col,flexShrink:0}}/>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:DARK}}>{p.nome||p.id}</div>
-                  <div style={{display:"flex",gap:6,marginTop:4}}>
-                    {(p.gateRequisiti||[]).length>0&&badge(RED+"12",RED,`⛔ ${p.gateRequisiti.length} gate`)}
-                    {p.gateBloccante&&badge(RED+"20",RED,"Bloccante")}
-                    {(p.automazioni||[]).length>0&&badge(PUR+"12",PUR,`⚡ ${p.automazioni.length} auto`)}
-                    {p.emailTemplate&&badge(BLU+"12",BLU,"Email")}
-                  </div>
-                </div>
-                <div onClick={()=>setPipelineDB?.((db:any[])=>db.map((x:any,j:number)=>j===i?{...x,attiva:!x.attiva}:x))} style={{width:38,height:22,borderRadius:11,background:p.attiva!==false?TEAL:"#E5E3DC",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
-                  <div style={{position:"absolute",top:3,left:p.attiva!==false?18:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-                </div>
-              </div>
-            );
-          })}
-        </Sez>
+        <SettingsPipeline azienda_id={(typeof window!=="undefined" && (window as any).__AZIENDA_ID__) || "ccca51c1-656b-4e7c-a501-55753e20da29"} />
+      );
+
+      case "branding": return (
+        <SettingsBranding azienda_id={(typeof window!=="undefined" && (window as any).__AZIENDA_ID__) || "ccca51c1-656b-4e7c-a501-55753e20da29"} />
+      );
+
+      case "docbuilder": return (
+        <DocumentBuilder azienda_id={(typeof window!=="undefined" && (window as any).__AZIENDA_ID__) || "ccca51c1-656b-4e7c-a501-55753e20da29"} />
       );
 
       case "temi": return (
