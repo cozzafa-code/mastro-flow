@@ -1439,15 +1439,46 @@ export default function CMDetailPanel() {
               titolo = "Genera fattura acconto";
               desc = "Cliente ha firmato. Procedi con la fattura di acconto e l\'ordine materiali.";
               tags = [{ lbl: "Firmata", bg: "#D1FAE5", fg: "#065F46" }, { lbl: fmtEurV73(_totaleFinale), bg: "#DBEAFE", fg: "#1E40AF" }];
-              primaryLbl = "Apri commessa";
-              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+              primaryLbl = "GENERA FATTURA ACCONTO";
+              primaryAction = () => {
+                try {
+                  if (typeof creaFattura === "function") {
+                    const importoAcconto = Math.round(_totaleFinale * 0.3);
+                    if (!confirm(`Generare fattura acconto del 30% (${fmtEurV73(importoAcconto)}) per ${cZ3.code}?`)) return;
+                    (creaFattura as any)(cZ3, "acconto", importoAcconto);
+                    if (typeof generaFatturaPDF === "function") {
+                      const fAcc = (cZ3.fattureDB || []).slice(-1)[0];
+                      if (fAcc) (generaFatturaPDF as any)(fAcc);
+                    }
+                    alert("Fattura acconto creata. Quando il cliente paga, marcala come pagata per avanzare.");
+                  } else {
+                    setPrevWorkspace(true); setPrevTab("fiscale");
+                  }
+                } catch (e) { console.warn(e); alert("Errore: " + (e as any)?.message); }
+              };
             } else if (_faseDb === "acconto_pagato") {
               eyebrow = "Fase corrente · Acconto pagato";
               titolo = "Genera ordine fornitori";
               desc = "Acconto incassato. Ora ordina materiali e profili al fornitore.";
               tags = [{ lbl: "Acconto OK", bg: "#D1FAE5", fg: "#065F46" }];
-              primaryLbl = "Crea ordine";
-              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+              primaryLbl = "CREA ORDINE FORNITORE";
+              primaryAction = async () => {
+                try {
+                  if (typeof creaOrdiniSplitFornitori === "function") {
+                    if (!confirm(`Generare ordini fornitori automatici per ${cZ3.code}?\n\nVerranno raggruppati per sistema/fornitore.`)) return;
+                    const ordini = await (creaOrdiniSplitFornitori as any)(cZ3, "");
+                    alert(`${(ordini || []).length} ordine/i creato/i. Apri preventivo per inviarli ai fornitori.`);
+                    setPrevWorkspace(true); setPrevTab("fiscale");
+                  } else if (typeof creaOrdineFornitore === "function") {
+                    if (!confirm(`Generare ordine fornitore per ${cZ3.code}?`)) return;
+                    (creaOrdineFornitore as any)(cZ3, cZ3.sistema?.split(" ")[0] || "");
+                    alert("Ordine creato. Apri preventivo per inviarlo.");
+                    setPrevWorkspace(true); setPrevTab("fiscale");
+                  } else {
+                    setPrevWorkspace(true); setPrevTab("fiscale");
+                  }
+                } catch (e) { console.warn(e); alert("Errore: " + (e as any)?.message); }
+              };
             } else if (_faseDb === "ordine") {
               eyebrow = "Fase corrente · Ordine inviato";
               titolo = "In attesa consegna";
@@ -1464,18 +1495,50 @@ export default function CMDetailPanel() {
               primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
             } else if (_faseDb === "montaggio") {
               eyebrow = "Fase corrente · Montaggio";
-              titolo = "Montaggio in cantiere";
-              desc = "Squadra in opera. Marca completato quando il cantiere è chiuso.";
-              tags = [{ lbl: "In cantiere", bg: "#FEF3C7", fg: "#92400E" }];
-              primaryLbl = "Marca completato";
-              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+              const haGiaMontaggio = !!(cZ3.montaggiDB || []).find?.((m: any) => m.cmId === cZ3.id);
+              titolo = haGiaMontaggio ? "Marca montaggio completato" : "Organizza montaggio";
+              desc = haGiaMontaggio
+                ? "Squadra in opera. Marca completato quando il cantiere è chiuso."
+                : "Pianifica data, squadra e durata del montaggio.";
+              tags = haGiaMontaggio
+                ? [{ lbl: "Programmato", bg: "#FEF3C7", fg: "#92400E" }]
+                : [{ lbl: "Da pianificare", bg: "#FEF3C7", fg: "#92400E" }];
+              primaryLbl = haGiaMontaggio ? "MARCA COMPLETATO" : "ORGANIZZA MONTAGGIO";
+              primaryAction = () => {
+                try {
+                  if (haGiaMontaggio) {
+                    setPrevWorkspace(true); setPrevTab("fiscale");
+                  } else if (typeof creaMontaggio === "function") {
+                    if (!confirm(`Pianificare il montaggio per ${cZ3.code}?\n\nVerrà creato un evento da assegnare a squadra e data nella sezione Montaggi.`)) return;
+                    const m = (creaMontaggio as any)(cZ3);
+                    alert("Montaggio creato. Apri sezione Montaggi per assegnare data e squadra.");
+                    setPrevWorkspace(true); setPrevTab("fiscale");
+                  } else {
+                    setPrevWorkspace(true); setPrevTab("fiscale");
+                  }
+                } catch (e) { console.warn(e); alert("Errore: " + (e as any)?.message); }
+              };
             } else if (_faseDb === "fatturata" || _faseDb === "fattura") {
               eyebrow = "Fase corrente · Fatturata";
               titolo = "Genera fattura saldo";
               desc = "Lavoro completato. Genera la fattura di saldo per chiudere la commessa.";
               tags = [{ lbl: "Da saldare", bg: "#FEF3C7", fg: "#92400E" }, { lbl: fmtEurV73(_totaleFinale), bg: "#DBEAFE", fg: "#1E40AF" }];
-              primaryLbl = "Genera saldo";
-              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+              primaryLbl = "GENERA FATTURA SALDO";
+              primaryAction = () => {
+                try {
+                  if (typeof creaFattura === "function") {
+                    const fattureCM = (cZ3.fattureDB || []).filter?.((f: any) => f.cmId === cZ3.id) || [];
+                    const acconto = fattureCM.find((f: any) => f.tipo === "acconto");
+                    const importoSaldo = acconto ? _totaleFinale - Number(acconto.totale || 0) : _totaleFinale;
+                    const tipo = acconto ? "saldo" : "unica";
+                    if (!confirm(`Generare fattura ${tipo} per ${fmtEurV73(importoSaldo)} su ${cZ3.code}?`)) return;
+                    (creaFattura as any)(cZ3, tipo, importoSaldo);
+                    alert(`Fattura ${tipo} creata. Quando incassi, marcala come pagata.`);
+                  } else {
+                    setPrevWorkspace(true); setPrevTab("fiscale");
+                  }
+                } catch (e) { console.warn(e); alert("Errore: " + (e as any)?.message); }
+              };
             } else if (_faseDb === "pagata") {
               eyebrow = "Fase corrente · Pagata";
               titolo = "Commessa chiusa";
