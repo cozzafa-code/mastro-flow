@@ -29,6 +29,9 @@ import SettingsPipelineMobile from './SettingsPipelineMobile'
 import SettingsBrandingMobile from './SettingsBrandingMobile'
 import DocumentBuilderMobile from './DocumentBuilderMobile'
 
+// Sviluppatori
+import ApiKeysMobile from './mobile/settings/ApiKeysMobile'
+
 const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29'
 
 type Sezione =
@@ -37,6 +40,7 @@ type Sezione =
   | 'win' | 'sistemi' | 'nodi' | 'importa'
   | 'tendaggi' | 'accessori_tendaggi' | 'colori_tendaggi' | 'fornitori_tendaggi'
   | 'pipeline' | 'branding' | 'docbuilder'
+  | 'sviluppatori'
 
 export default function SettingsMobile() {
   const { azienda_id, tornaHome } = useMastro()
@@ -65,6 +69,16 @@ export default function SettingsMobile() {
   if (sezione === 'branding')   return <SettingsBrandingMobile  azienda_id={aId} onClose={torna} />
   if (sezione === 'docbuilder') return <DocumentBuilderMobile   azienda_id={aId} onClose={torna} />
 
+  // SVILUPPATORI
+  if (sezione === 'sviluppatori') return (
+    <ApiKeysMobile
+      aziendaId={aId}
+      onBack={torna}
+      onOpenGenera={() => alert('Modal genera key in arrivo nella prossima sessione')}
+      onRevoke={() => alert('Modal revoca in arrivo nella prossima sessione')}
+    />
+  )
+
   return (
     <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 100 }}>
       <Header onBack={tornaHome} />
@@ -90,6 +104,9 @@ export default function SettingsMobile() {
         <CardSezione icona="🔧" titolo="Accessori tendaggi"  sub="Bastoni, binari, mantovane, fissaggi"   colore="#C49E66" onClick={() => setSezione('accessori_tendaggi')} />
         <CardSezione icona="🎨" titolo="Colori tendaggi"     sub="RAL, finiture, palette colore"          colore="#D4A373" onClick={() => setSezione('colori_tendaggi')} />
         <CardSezione icona="🚚" titolo="Fornitori tendaggi"  sub="Anagrafica fornitori"                   colore="#B08968" onClick={() => setSezione('fornitori_tendaggi')} />
+
+        <SectionTitle>Sviluppatori</SectionTitle>
+        <CardSezione icona="🔑" titolo="API Keys" sub="Genera chiavi per integrazioni esterne" colore="#1E3A5F" onClick={() => setSezione('sviluppatori')} badge="NEW" />
       </div>
     </div>
   )
