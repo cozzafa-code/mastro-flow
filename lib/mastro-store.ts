@@ -147,17 +147,13 @@ const bulkSoftDelete = async (
   table: TableName,
   ids: string[]
 ): Promise<{ ok: number; skipped: number }> => {
-  console.log("[mastro:bulkSoftDelete] called with", { table, ids });
+  console.log("[mastro:bulkSoftDelete] called", { table, ids });
 
   if (table !== "commesse") {
     let ok = 0;
     for (const id of ids) {
-      try {
-        await softDeleteRecord(table, id);
-        ok++;
-      } catch (e) {
-        console.warn("[mastro:bulkSoftDelete] skip", id, e);
-      }
+      try { await softDeleteRecord(table, id); ok++; }
+      catch (e) { console.warn("[mastro:bulkSoftDelete] skip", id, e); }
     }
     return { ok, skipped: ids.length - ok };
   }
@@ -165,45 +161,37 @@ const bulkSoftDelete = async (
   if (ids.length === 0) return { ok: 0, skipped: 0 };
 
   try {
-    console.log("[mastro:bulkSoftDelete] calling RPC bulk_soft_delete_commesse");
+    console.log("[mastro:bulkSoftDelete] RPC bulk_soft_delete_commesse");
     const { data, error } = await supabase.rpc("bulk_soft_delete_commesse", {
       commessa_ids: ids,
       restore: false,
     });
 
     if (error) {
-      console.error("[mastro:bulkSoftDelete] RPC ERROR:", error);
-      alert("Errore cestino: " + (error.message || JSON.stringify(error)));
+      console.error("[mastro:bulkSoftDelete] RPC error", error);
+      alert("Cestino fallito: " + (error.message || "errore sconosciuto"));
       return { ok: 0, skipped: ids.length };
     }
 
-    console.log("[mastro:bulkSoftDelete] RPC SUCCESS:", data);
+    console.log("[mastro:bulkSoftDelete] RPC OK", data);
 
-    // RIMUOVI da IDB invece di marcare deleted_at
-    // (cosi spariscono subito anche se il filtro client non funziona)
+    // Rimuove da IDB - sparisce subito
     for (const id of ids) {
-      try {
-        await idbDelete(STORES.CANTIERI, id);
-        console.log("[mastro:bulkSoftDelete] IDB removed", id);
-      } catch (e) {
-        console.warn("[mastro:bulkSoftDelete] IDB skip", id, e);
-      }
+      try { await idbDelete(STORES.CANTIERI, id); }
+      catch (e) { console.warn("[mastro:bulkSoftDelete] idb skip", id, e); }
     }
 
-    // Emetti evento custom per ricarica UI
-    try {
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("mastro:commesse-deleted", {
-          detail: { ids }
-        }));
-        console.log("[mastro:bulkSoftDelete] event emitted");
-      }
-    } catch {}
+    // Reload pagina dopo 500ms
+    setTimeout(() => {
+      try {
+        if (typeof window !== "undefined" && window.location) window.location.reload();
+      } catch {}
+    }, 500);
 
     return { ok: ids.length, skipped: 0 };
   } catch (e: any) {
-    console.error("[mastro:bulkSoftDelete] FATAL:", e);
-    alert("Errore cestino fatale: " + (e?.message || JSON.stringify(e)));
+    console.error("[mastro:bulkSoftDelete] FATAL", e);
+    alert("Errore cestino: " + (e?.message || "fatale"));
     return { ok: 0, skipped: ids.length };
   }
 };
