@@ -946,13 +946,13 @@ export default function HomePanelMobile(props: any) {
   const availableToAdd = ALL_WIDGETS.filter(w => !layout.includes(w.id));
 
   return (
-    <div style={{ background: "#F4F1EA", minHeight: "100vh", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", paddingBottom: 100 }}>
+    <div style={{ background: "#7A8A9A", minHeight: "100vh", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", paddingBottom: 100 }}>
       <div style={{ padding: "12px 10px 0" }}>
-      <div style={{ background: "linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)", padding: "18px 18px 20px", borderRadius: 22, boxShadow: "0 4px 16px rgba(40,160,160,0.18)" }}>
+      <div style={{ background: "linear-gradient(180deg, #1B3A5C 0%, #0F1F33 100%)", padding: "18px 18px 20px", borderRadius: 22, boxShadow: "0 4px 16px rgba(15,31,51,0.25)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
           <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "6px 12px", display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 16, height: 16, borderRadius: 4, background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth={3}><path d="M18 6L6 18M6 6l12 12" /></svg>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1B3A5C" strokeWidth={3}><path d="M18 6L6 18M6 6l12 12" /></svg>
             </div>
             <span style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 500 }}>fliwoX</span>
           </div>
@@ -961,7 +961,7 @@ export default function HomePanelMobile(props: any) {
             <div onClick={() => onNavigate?.("altro")} style={{ width: 30, height: 30, borderRadius: 10, background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </div>
-            <div style={{ width: 34, height: 34, borderRadius: 50, background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", color: "#28A0A0", fontSize: 12, fontWeight: 600, marginLeft: 4 }}>{iniziali}</div>
+            <div style={{ width: 34, height: 34, borderRadius: 50, background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", color: "#0F1F33", fontSize: 12, fontWeight: 600, marginLeft: 4 }}>{iniziali}</div>
           </div>
         </div>
         <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: 400, letterSpacing: 0.5 }}>{greeting}</div>
@@ -978,9 +978,9 @@ export default function HomePanelMobile(props: any) {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth={2}><path d="M12 5v14M5 12h14" /></svg>
               Aggiungi
             </button>
-            <button onClick={() => setEditMode(!editMode)} style={{ background: editMode ? "#1E8080" : "#28A0A0", border: "none", borderRadius: 12, padding: "6px 10px", fontSize: 11, fontWeight: 500, color: "#FFF", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+            <button onClick={() => setEditMode(!editMode)} style={{ background: editMode ? "#0F1F33" : "#1B3A5C", border: "none", borderRadius: 12, padding: "6px 10px", fontSize: 11, fontWeight: 500, color: "#FFF", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2}><path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z" /></svg>
-              {editMode ? "Fine" : "Modifica"}
+              {editMode ? "FATTO" : "RIORDINA"}
             </button>
           </div>
         </div>
