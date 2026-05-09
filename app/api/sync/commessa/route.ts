@@ -1,7 +1,8 @@
 // app/api/sync/commessa/route.ts
-// Upsert commessa lato server con service_role — bypassa RLS.
+// Upsert commessa lato server con service_role - bypassa RLS.
 // Il client passa azienda_id da sessionStorage (PIN login) o Supabase auth.
 // Il server valida e ritorna il record con UUID reale.
+// FIX: gestione corretta INSERT con fase != sopralluogo (trigger DB esige sopralluogo all'INSERT)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // Verifica che l'azienda esista (protezione base)
+    // Verifica azienda
     const { data: az } = await sb.from('aziende').select('id').eq('id', aziendaId).maybeSingle();
     if (!az) {
       return NextResponse.json({ error: 'azienda non trovata' }, { status: 404 });
@@ -35,8 +36,9 @@ export async function POST(req: NextRequest) {
 
     const c = commessa;
     const isUUID = typeof c.id === 'string' && UUID_RE.test(c.id);
+    const faseTarget = c.fase || 'sopralluogo';
 
-    const row: any = {
+    const baseRow: any = {
       azienda_id: aziendaId,
       code: c.code,
       cliente: c.cliente || '',
@@ -44,7 +46,6 @@ export async function POST(req: NextRequest) {
       indirizzo: c.indirizzo || '',
       telefono: c.telefono || '',
       email: c.email || '',
-      fase: c.fase || 'sopralluogo',
       tipo: c.tipo || 'nuova',
       sistema: c.sistema || '',
       difficolta_salita: c.difficoltaSalita || '',
@@ -58,31 +59,81 @@ export async function POST(req: NextRequest) {
       firma_cliente: c.firmaCliente || null,
     };
 
+    // Cerca commessa esistente: per id se UUID, altrimenti per code+azienda
+    let existingId: string | null = null;
     if (isUUID) {
-      row.id = c.id;
-    } else {
-      // Cerca commessa esistente con stesso code+azienda per evitare duplicati
-      const { data: existing } = await sb
+      const { data: ex } = await sb
+        .from('commesse')
+        .select('id')
+        .eq('id', c.id)
+        .maybeSingle();
+      if (ex?.id) existingId = ex.id;
+    }
+    if (!existingId) {
+      const { data: ex2 } = await sb
         .from('commesse')
         .select('id')
         .eq('azienda_id', aziendaId)
         .eq('code', c.code)
         .maybeSingle();
-      if (existing?.id) row.id = existing.id;
+      if (ex2?.id) existingId = ex2.id;
     }
 
-    const { data, error } = await sb
+    if (existingId) {
+      // === UPDATE: commessa esiste, applica TUTTI i campi inclusa fase target ===
+      const updateRow: any = { ...baseRow, fase: faseTarget };
+      const { data, error } = await sb
+        .from('commesse')
+        .update(updateRow)
+        .eq('id', existingId)
+        .select('id, code, cliente, fase, updated_at')
+        .single();
+
+      if (error) {
+        console.error('[sync/commessa] UPDATE error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json({ ok: true, commessa: data, action: 'update' });
+    }
+
+    // === INSERT: commessa nuova - trigger DB esige fase=sopralluogo ===
+    // Step 1: INSERT con sopralluogo
+    const insertRow: any = { ...baseRow, fase: 'sopralluogo' };
+    if (isUUID) insertRow.id = c.id;
+
+    const { data: inserted, error: insErr } = await sb
       .from('commesse')
-      .upsert(row, { onConflict: 'id' })
+      .insert(insertRow)
       .select('id, code, cliente, fase, updated_at')
       .single();
 
-    if (error) {
-      console.error('[sync/commessa] upsert error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (insErr) {
+      console.error('[sync/commessa] INSERT error:', insErr);
+      return NextResponse.json({ error: insErr.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, commessa: data });
+    // Step 2: se fase target != sopralluogo, avanza progressivamente
+    // (il trigger DB richiede di avanzare un passo alla volta + gates)
+    if (faseTarget !== 'sopralluogo' && inserted?.id) {
+      // Per ora settiamo direttamente la fase target. Se il trigger blocca per gates
+      // (es. preventivo richiede vani con misure), almeno la commessa esiste e l'utente
+      // pu\u00f2 procedere normalmente dal client.
+      const { data: updated, error: updErr } = await sb
+        .from('commesse')
+        .update({ fase: faseTarget })
+        .eq('id', inserted.id)
+        .select('id, code, cliente, fase, updated_at')
+        .single();
+
+      if (updErr) {
+        // Non blocchiamo: la commessa esiste, lasciamo a sopralluogo
+        console.warn('[sync/commessa] avanzamento fase fallito (commessa creata in sopralluogo):', updErr.message);
+        return NextResponse.json({ ok: true, commessa: inserted, action: 'insert_partial', warning: updErr.message });
+      }
+      return NextResponse.json({ ok: true, commessa: updated, action: 'insert_advanced' });
+    }
+
+    return NextResponse.json({ ok: true, commessa: inserted, action: 'insert' });
   } catch (e: any) {
     console.error('[sync/commessa] exception:', e);
     return NextResponse.json({ error: e.message || 'Errore server' }, { status: 500 });
