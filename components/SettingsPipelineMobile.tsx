@@ -222,22 +222,56 @@ function FaseCardMobile({
 
 // ─── TAB EMAIL ─────────────────────────────────────────
 function TabEmailMob({ fase, onPatch }: { fase: FaseConfig; onPatch: (p: Partial<FaseConfig>) => void }) {
+  const variabili = [
+    { codice: "{{cliente}}", label: "Cliente" },
+    { codice: "{{commessa_code}}", label: "N. Commessa" },
+    { codice: "{{totale}}", label: "Totale" },
+    { codice: "{{data}}", label: "Data oggi" },
+    { codice: "{{data_sopralluogo}}", label: "Data sopralluogo" },
+    { codice: "{{indirizzo}}", label: "Indirizzo" },
+    { codice: "{{azienda_nome}}", label: "Mia azienda" },
+  ];
+
+  function inserisci(codice: string, campo: "oggetto" | "corpo") {
+    if (campo === "oggetto") {
+      const cur = fase.email_oggetto ?? "";
+      onPatch({ email_oggetto: cur + (cur && !cur.endsWith(" ") ? " " : "") + codice });
+    } else {
+      const cur = fase.email_corpo ?? "";
+      onPatch({ email_corpo: cur + (cur && !cur.endsWith("\n") && !cur.endsWith(" ") ? " " : "") + codice });
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <Field label="Oggetto">
         <input type="text" value={fase.email_oggetto ?? ""} onChange={(e) => onPatch({ email_oggetto: e.target.value })}
           placeholder="es: Conferma sopralluogo - {{cliente}}"
           style={inputBig} />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+          {variabili.map(v => (
+            <button key={v.codice} onClick={() => inserisci(v.codice, "oggetto")} style={chipVar}>
+              + {v.label}
+            </button>
+          ))}
+        </div>
       </Field>
       <Field label="Corpo">
         <textarea value={fase.email_corpo ?? ""} onChange={(e) => onPatch({ email_corpo: e.target.value })}
-          placeholder="Gentile cliente, ..." rows={5} style={textBig} />
+          placeholder="Gentile cliente, ..." rows={6} style={textBig} />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+          {variabili.map(v => (
+            <button key={v.codice} onClick={() => inserisci(v.codice, "corpo")} style={chipVar}>
+              + {v.label}
+            </button>
+          ))}
+        </div>
       </Field>
       <Field label="Destinatario">
         <select value={fase.email_destinatario ?? "cliente"} onChange={(e) => onPatch({ email_destinatario: e.target.value })}
           style={inputBig}>
           <option value="cliente">Al cliente</option>
-          <option value="azienda">All'azienda</option>
+          <option value="azienda">All\'azienda</option>
           <option value="fornitore">Al fornitore</option>
           <option value="team">Al team</option>
         </select>
@@ -247,9 +281,12 @@ function TabEmailMob({ fase, onPatch }: { fase: FaseConfig; onPatch: (p: Partial
           style={{ width: 22, height: 22, accentColor: "#1E3A5F" }} />
         <span style={{ fontSize: 13, fontWeight: 700, color: "#0F1B2D" }}>Invio automatico</span>
       </label>
-      <p style={{ fontSize: 9.5, color: "#94A3B8", margin: 0, lineHeight: 1.4 }}>
-        Variabili: <code style={{ color: "#1E3A5F", fontWeight: 700 }}>{`{{cliente}}`}</code> <code style={{ color: "#1E3A5F", fontWeight: 700 }}>{`{{commessa_code}}`}</code> <code style={{ color: "#1E3A5F", fontWeight: 700 }}>{`{{totale}}`}</code>
-      </p>
+      <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, padding: 10, fontSize: 10.5, color: "#1E40AF", lineHeight: 1.4 }}>
+        <b>Anteprima per cliente "Mario Rossi":</b><br/>
+        <span style={{ fontFamily: "monospace", fontSize: 10 }}>
+          {(fase.email_oggetto ?? "").replace(/\{\{cliente\}\}/g, "Mario Rossi").replace(/\{\{commessa_code\}\}/g, "S-0042").replace(/\{\{data_sopralluogo\}\}/g, "12/05/2026")}
+        </span>
+      </div>
     </div>
   );
 }
