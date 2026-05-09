@@ -171,6 +171,30 @@ export default function CommessePanel() {
     setBulkBusy(true);
     try {
       const result = await mastroStore.bulkSoftDelete("commesse", validIds);
+      // FIX BRUTAL v10: ricarica pagina dopo successo, niente cache puo fermarci
+      console.log("[CommessePanel] bulkSoftDelete result:", result);
+      if (result?.ok > 0) {
+        console.log("[CommessePanel] FORCING window.location.reload");
+        try {
+          // Cancella tutta la cache prima del reload
+          if (typeof window !== "undefined") {
+            try {
+              if (window.caches) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(k => caches.delete(k)));
+              }
+            } catch {}
+            try {
+              if (window.indexedDB) {
+                indexedDB.deleteDatabase("mastro_offline");
+              }
+            } catch {}
+            setTimeout(() => { window.location.href = window.location.pathname + "?t=" + Date.now(); }, 200);
+          }
+        } catch (err) {
+          console.error("[CommessePanel] reload error", err);
+        }
+      }
       // FIX v10: rimuovi localmente dopo successo
       if (result?.ok > 0 && typeof setCantieri === "function") {
         try {
