@@ -9,6 +9,7 @@ import PezzoCncView from './views/PezzoCncView';
 import ColloView from './views/ColloView';
 import CommessaView from './views/CommessaView';
 import GenericoView from './views/GenericoView';
+import { ArticoloView, CantiereView, DocumentoView, MacchinaView, FurgoneView, FornitoreEsternoView } from './views/EntitaViews';
 import LoadingView from './views/LoadingView';
 
 type Props = {
@@ -65,6 +66,12 @@ export default function CodiceViewer({ initialCodice, short }: Props) {
     case 'pezzo_cnc': return <PezzoCncView {...props} />;
     case 'collo': return <ColloView {...props} />;
     case 'commessa': return <CommessaView {...props} />;
+    case 'articolo': return <ArticoloView {...props} />;
+    case 'cantiere': return <CantiereView {...props} />;
+    case 'documento': return <DocumentoView {...props} />;
+    case 'macchina': return <MacchinaView {...props} />;
+    case 'furgone': return <FurgoneView {...props} />;
+    case 'fornitore_esterno': return <FornitoreEsternoView {...props} />;
     default: return <GenericoView {...props} />;
   }
 }
