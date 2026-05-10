@@ -1,6 +1,5 @@
 "use client";
-// MASTRO TABLET - Magazzino v2 con dati reali Supabase
-// Tabella: magazzino_articoli (filter by azienda_id da getAziendaId())
+// MASTRO TABLET - Magazzino v3 (fix layout colonne)
 import * as React from "react";
 import { supabase } from "../../../lib/supabase";
 import { getAziendaId } from "../../mastro-constants";
@@ -46,10 +45,10 @@ const C = {
 
 function catColor(cat: string | null): { bg: string; fg: string } {
   const k = (cat || "").toLowerCase();
-  if (k.includes("profil")) return { bg: C.blueTint, fg: C.blue };
+  if (k.includes("profil") || k.includes("alluminio") || k.includes("barre")) return { bg: C.blueTint, fg: C.blue };
   if (k.includes("vetr"))   return { bg: C.purpleTint, fg: C.purple };
   if (k.includes("ferr") || k.includes("manig") || k.includes("cernier")) return { bg: C.amberTint, fg: C.amber };
-  if (k.includes("guarn"))  return { bg: C.greenTint, fg: C.green };
+  if (k.includes("guarn") || k.includes("silicon"))  return { bg: C.greenTint, fg: C.green };
   return { bg: C.navyTint, fg: C.navy };
 }
 
@@ -208,72 +207,68 @@ export default function MagazzinoTablet() {
           </div>
         )}
         {!error && !loading && filtered.length > 0 && (
-          <div>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 100px) minmax(0, 110px) minmax(0, 110px) minmax(0, 100px)",
-              gap: 12, padding: "12px 18px",
-              background: C.cardSoft,
-              borderBottom: `1px solid ${C.border}`,
-              fontSize: 11, fontWeight: 800, color: C.sub,
-              textTransform: "uppercase", letterSpacing: 0.5,
-            }}>
-              <div>Articolo</div>
-              <div>Categoria</div>
-              <div style={{ textAlign: "right" }}>Disponib.</div>
-              <div style={{ textAlign: "right" }}>Prezzo</div>
-              <div style={{ textAlign: "center" }}>Stato</div>
-              <div style={{ textAlign: "center" }}>Ubicaz.</div>
-            </div>
-            {filtered.map(a => {
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {filtered.map((a, idx) => {
               const cat = catColor(a.categoria);
               const stato = statoScorta(a.qta_disponibile || 0, a.qta_minima || 0);
+              const valore = ((a.qta_disponibile || 0) * (a.prezzo_medio || 0));
               return (
                 <div key={a.id} style={{
-                  display: "grid",
-                  gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 100px) minmax(0, 110px) minmax(0, 110px) minmax(0, 100px)",
-                  gap: 12, padding: "14px 18px",
-                  borderBottom: `1px solid ${C.border}`,
-                  alignItems: "center", cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  padding: "16px 20px",
+                  borderBottom: idx < filtered.length - 1 ? `1px solid ${C.border}` : "none",
+                  cursor: "pointer",
+                  minWidth: 0,
                 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {a.nome}
+                  {/* COL 1: nome + categoria pill + fornitore */}
+                  <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+                        {a.nome}
+                      </div>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999,
+                        background: cat.bg, color: cat.fg, textTransform: "uppercase", letterSpacing: 0.4,
+                        flexShrink: 0,
+                      }}>{a.categoria || "altro"}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: C.sub, marginTop: 2, fontWeight: 600 }}>
+                    <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {a.codice_interno || "—"} · {a.fornitore_principale || "Fornitore n/d"}
                     </div>
                   </div>
-                  <div>
-                    <span style={{
-                      fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
-                      background: cat.bg, color: cat.fg, textTransform: "uppercase", letterSpacing: 0.4,
-                    }}>{a.categoria || "altro"}</span>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" }}>
-                      {a.qta_disponibile} <span style={{ fontSize: 11, color: C.sub, fontWeight: 700 }}>{a.unita || ""}</span>
+
+                  {/* COL 2: disponibilità */}
+                  <div style={{ flex: "0 0 100px", textAlign: "right" }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                      {a.qta_disponibile}
+                      <span style={{ fontSize: 11, color: C.sub, fontWeight: 700, marginLeft: 4 }}>{a.unita || ""}</span>
                     </div>
-                    <div style={{ fontSize: 10, color: C.sub, fontWeight: 600 }}>
+                    <div style={{ fontSize: 10, color: C.sub, fontWeight: 600, marginTop: 3 }}>
                       min: {a.qta_minima}
                     </div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" }}>
+
+                  {/* COL 3: prezzo + valore */}
+                  <div style={{ flex: "0 0 110px", textAlign: "right" }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                       €{(a.prezzo_medio || 0).toFixed(2)}
                     </div>
-                    <div style={{ fontSize: 10, color: C.sub, fontWeight: 600 }}>
-                      val: €{((a.qta_disponibile || 0) * (a.prezzo_medio || 0)).toFixed(0)}
+                    <div style={{ fontSize: 10, color: C.sub, fontWeight: 600, marginTop: 3 }}>
+                      val: €{valore.toFixed(0)}
                     </div>
                   </div>
-                  <div style={{ textAlign: "center" }}>
+
+                  {/* COL 4: stato + ubicazione */}
+                  <div style={{ flex: "0 0 130px", textAlign: "center" }}>
                     <span style={{
-                      fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 8,
-                      background: stato.bg, color: stato.fg,
+                      fontSize: 11, fontWeight: 800, padding: "5px 12px", borderRadius: 8,
+                      background: stato.bg, color: stato.fg, display: "inline-block",
                     }}>{stato.label}</span>
-                  </div>
-                  <div style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: C.navy }}>
-                    {a.ubicazione || "—"}
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, marginTop: 4 }}>
+                      📍 {a.ubicazione || "—"}
+                    </div>
                   </div>
                 </div>
               );
