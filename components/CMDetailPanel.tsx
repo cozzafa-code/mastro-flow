@@ -1413,7 +1413,7 @@ export default function CMDetailPanel() {
                       return;
                     }
                     alert("Conferma d'Ordine emessa. La commessa è ora in attesa firma.");
-                    if (typeof window !== 'undefined') window.location.reload();
+                    /* [v-no-reload] reload rimosso */
                   } catch (e: any) {
                     alert(`Errore: ${e?.message || e}`);
                   }
@@ -1490,7 +1490,7 @@ export default function CMDetailPanel() {
                     const j = await r.json();
                     if (!r.ok) { alert(`Errore: ${j.error || 'sconosciuto'}`); return; }
                     alert("Acconto incassato. Ora puoi creare l'ordine fornitori.");
-                    if (typeof window !== 'undefined') window.location.reload();
+                    /* [v-no-reload] reload rimosso */
                   } catch (e: any) { alert(`Errore: ${e?.message || e}`); }
                 };
               } else {
@@ -1510,7 +1510,7 @@ export default function CMDetailPanel() {
                     });
                     const j = await r.json();
                     if (!r.ok) { alert(`Errore: ${j.error || 'sconosciuto'}`); return; }
-                    if (typeof window !== 'undefined') window.location.reload();
+                    /* [v-no-reload] reload rimosso */
                   } catch (e: any) { alert(`Errore: ${e?.message || e}`); }
                 };
               }
@@ -2151,7 +2151,7 @@ export default function CMDetailPanel() {
                             setTimeout(() => setCcDone(null), 3000);
                           }
                           if (typeof window !== 'undefined') {
-                            setTimeout(() => window.location.reload(), 500);
+                            /* [v-no-reload] setTimeout reload rimosso */
                           }
                         } catch (e: any) { alert(`Errore: ${e?.message || e}`); }
                       }}
