@@ -23,6 +23,7 @@ import OpsTablet from "./ops/OpsTablet";
 import CodiciHub from "../codici/CodiciHub";
 
 import EntityDetailPanel from "./EntityDetailPanel";
+import VanoSectorRouter from "../VanoSectorRouter";
 import SideEffectsToaster from "./SideEffectsToaster";
 import { EntityType } from "./dashboard-context";
 import { RuoloProvider } from "./store";
@@ -81,7 +82,7 @@ const SECTION_TO_FASE: Record<string, string> = {
 
 export default function MastroTablet() {
   const ctx = useMastro();
-  const { setTab, setFilterFase, setSelectedCM, showModal, setShowModal, setCantieri } = ctx as any;
+  const { setTab, setFilterFase, setSelectedCM, showModal, setShowModal, setCantieri, selectedVano, setSelectedVano } = ctx as any;
 
   const [active, setActive] = React.useState<string>("dashboard");
   const [userCollapsed, setUserCollapsed] = React.useState(false);
@@ -244,6 +245,19 @@ export default function MastroTablet() {
           }}
         />
 
+        {selectedVano && (
+          <div className="mastro-tablet-vano-wrapper" style={{
+            position: "fixed", inset: 0, zIndex: 1500,
+            background: "#F2F1EC", overflow: "auto",
+            fontSize: "1.15em",
+          }}>
+            <style>{`
+              .mastro-tablet-vano-wrapper button { min-height: 52px; padding: 14px 18px; font-size: 1.05em; }
+              .mastro-tablet-vano-wrapper [role="button"], .mastro-tablet-vano-wrapper [data-row] { min-height: 56px; }
+            `}</style>
+            <VanoSectorRouter />
+          </div>
+        )}
         <SideEffectsToaster />
         <EntityDetailPanel
           tipo={activeEntity?.tipo || null}
