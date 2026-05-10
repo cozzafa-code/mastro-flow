@@ -1,260 +1,337 @@
 "use client";
+// MASTRO TABLET - Magazzino v1 con dati reali Supabase
+// Tabella: magazzino_articoli (filter by azienda_id)
 import * as React from "react";
-import { TT, cardStyle } from "../design-system";
-import { Icon, IconName } from "../icons";
-import { useMastroData } from "../store";
-import NuovoArticoloModal from "./NuovoArticoloModal";
-import { ToastSuccess } from "../FormModal";
+import { supabase } from "../../../lib/supabase";
+import { useMastro } from "../../MastroContext";
 
-const TINTS = {
-  blue: TT.blue, violet: TT.violet, amber: TT.amber,
-  teal: TT.teal, green: TT.green, red: TT.red, slate: TT.slate, orange: TT.orange,
-} as const;
-
-const CAT_DEF: Record<string, { label: string; tint: keyof typeof TINTS }> = {
-  profili:     { label: "Profili",      tint: "blue"   },
-  vetri:       { label: "Vetri",        tint: "violet" },
-  ferramenta:  { label: "Ferramenta",   tint: "amber"  },
-  guarnizioni: { label: "Guarnizioni",  tint: "teal"   },
-  accessori:   { label: "Accessori",    tint: "green"  },
+type Articolo = {
+  id: string;
+  azienda_id: string;
+  codice_interno: string | null;
+  nome: string;
+  categoria: string | null;
+  fornitore_principale: string | null;
+  unita: string | null;
+  qta_disponibile: number;
+  qta_minima: number;
+  qta_riordino: number;
+  ubicazione: string | null;
+  prezzo_medio: number;
+  attivo: boolean;
 };
 
+const C = {
+  bg: "#94A3B8",
+  card: "#FFFFFF",
+  cardSoft: "#F8FAFC",
+  ink: "#0A1628",
+  sub: "#64748B",
+  subLight: "#94A3B8",
+  border: "#E2E8F0",
+  navy: "#1E3A5F",
+  navyTint: "#DBE6F1",
+  amber: "#92400E",
+  amberTint: "#FEF3C7",
+  green: "#065F46",
+  greenTint: "#ECFDF5",
+  red: "#991B1B",
+  redTint: "#FEE2E2",
+  redSoft: "#FEF2F2",
+  blue: "#3B7FE0",
+  blueTint: "#DBEAFE",
+  purple: "#6D28D9",
+  purpleTint: "#EDE9FE",
+};
+
+// Colore per categoria
+function catColor(cat: string | null): { bg: string; fg: string } {
+  const k = (cat || "").toLowerCase();
+  if (k.includes("profil")) return { bg: C.blueTint, fg: C.blue };
+  if (k.includes("vetr"))   return { bg: C.purpleTint, fg: C.purple };
+  if (k.includes("ferr") || k.includes("manig") || k.includes("cernier")) return { bg: C.amberTint, fg: C.amber };
+  if (k.includes("guarn"))  return { bg: C.greenTint, fg: C.green };
+  return { bg: C.navyTint, fg: C.navy };
+}
+
+// Stato scorta
+function statoScorta(qta: number, qmin: number): { label: string; bg: string; fg: string } {
+  if (qta === 0) return { label: "Esaurito", bg: C.redTint, fg: C.red };
+  if (qta < qmin * 0.5) return { label: "Critico", bg: C.redTint, fg: C.red };
+  if (qta < qmin) return { label: "Basso", bg: C.amberTint, fg: C.amber };
+  return { label: "OK", bg: C.greenTint, fg: C.green };
+}
+
 export default function MagazzinoTablet() {
-  const data = useMastroData();
-  const [modalOpen, setModalOpen] = React.useState(false);
-  const [toast, setToast] = React.useState(false);
-  const articoli = data.getArticoli();
-  const movimenti = data.getMovimenti();
-  const sottoSoglia = articoli.filter((a) => a.scorta < a.scortaMin).length;
-  const esauriti = articoli.filter((a) => a.scorta === 0).length;
-  const valore = articoli.reduce((s, a) => s + a.scorta * a.prezzoMedio, 0);
+  const { aziendaId } = useMastro();
+  const [articoli, setArticoli] = React.useState<Articolo[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [searchQ, setSearchQ] = React.useState("");
+  const [filtroCat, setFiltroCat] = React.useState<string>("tutte");
+
+  const loadArticoli = React.useCallback(async () => {
+    if (!aziendaId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from("magazzino_articoli")
+        .select("*")
+        .eq("azienda_id", aziendaId)
+        .eq("attivo", true)
+        .order("nome", { ascending: true });
+      if (error) throw error;
+      setArticoli(data || []);
+    } catch (e: any) {
+      setError(e.message || "Errore caricamento magazzino");
+    } finally {
+      setLoading(false);
+    }
+  }, [aziendaId]);
+
+  React.useEffect(() => { loadArticoli(); }, [loadArticoli]);
+
+  // Categorie disponibili
+  const categorie = React.useMemo(() => {
+    const set = new Set<string>();
+    articoli.forEach(a => { if (a.categoria) set.add(a.categoria); });
+    return Array.from(set).sort();
+  }, [articoli]);
+
+  // Filtro
+  const filtered = React.useMemo(() => {
+    return articoli.filter(a => {
+      if (filtroCat !== "tutte" && a.categoria !== filtroCat) return false;
+      if (searchQ.trim()) {
+        const q = searchQ.toLowerCase();
+        const hay = `${a.nome} ${a.codice_interno || ""} ${a.fornitore_principale || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [articoli, filtroCat, searchQ]);
+
+  // KPI
+  const kpiTotale = articoli.length;
+  const kpiValore = articoli.reduce((s, a) => s + (a.qta_disponibile * a.prezzo_medio), 0);
+  const kpiSottoSoglia = articoli.filter(a => a.qta_disponibile > 0 && a.qta_disponibile < a.qta_minima).length;
+  const kpiEsauriti = articoli.filter(a => a.qta_disponibile === 0).length;
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: TT.text1, letterSpacing: "-0.5px" }}>Magazzino</div>
-          <div style={{ fontSize: 12, color: TT.text3, marginTop: 2 }}>
-            {articoli.length} articoli &middot; valore € {valore.toLocaleString("it-IT", { maximumFractionDigits: 0 })} &middot; {sottoSoglia} sotto soglia &middot; {esauriti} esauriti
-          </div>
+    <div style={{ background: C.bg, minHeight: "100%", padding: 24 }}>
+
+      {/* HEADER */}
+      <div style={{
+        background: `linear-gradient(135deg, ${C.navy} 0%, #0F1B2D 100%)`,
+        borderRadius: 18, padding: "22px 26px", color: "#fff",
+        marginBottom: 18, boxShadow: "0 8px 24px rgba(15,27,45,0.4)",
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: "#93B0CF", letterSpacing: 1.5, textTransform: "uppercase" }}>Magazzino</div>
+        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.1, marginTop: 4 }}>
+          {loading ? "Caricamento..." : `${kpiTotale} articoli`}
         </div>
-        <button onClick={() => setModalOpen(true)} style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          padding: "9px 14px",
-          background: TT.amber[400], color: "#fff",
-          border: "none", borderRadius: 10,
-          fontSize: 13, fontWeight: 700,
-          cursor: "pointer", fontFamily: TT.fontFamily,
-          boxShadow: `0 2px 8px ${TT.amber[300]}`,
+        <div style={{ fontSize: 13, color: "#B5C8DD", fontWeight: 600, marginTop: 4 }}>
+          Valore stock: €{kpiValore.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
+        </div>
+      </div>
+
+      {/* KPI ROW */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12, marginBottom: 18 }}>
+        <Kpi label="Articoli totali" value={String(kpiTotale)} color="navy" />
+        <Kpi label="Valore stock" value={`€${(kpiValore/1000).toFixed(1)}k`} color="green" />
+        <Kpi label="Sotto soglia" value={String(kpiSottoSoglia)} color="amber" alert={kpiSottoSoglia > 0} />
+        <Kpi label="Esauriti" value={String(kpiEsauriti)} color="red" alert={kpiEsauriti > 0} />
+      </div>
+
+      {/* FILTRI + SEARCH */}
+      <div style={{
+        background: C.card, borderRadius: 14, padding: 16,
+        boxShadow: "0 4px 16px rgba(15,23,42,0.18)", marginBottom: 14,
+        display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+      }}>
+        <div style={{
+          flex: 1, minWidth: 220,
+          background: C.cardSoft, borderRadius: 11, padding: "10px 14px",
+          display: "flex", alignItems: "center", gap: 10,
         }}>
-          <Icon name="plus" size={13} color="#fff" strokeWidth={2.4} />
-          Aggiungi articolo
-        </button>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
-        <KpiMini icon="magazzino"   label="Articoli totali" value={String(articoli.length)} tint="amber" />
-        <KpiMini icon="contabilita" label="Valore stock"    value={`€ ${(valore/1000).toFixed(0)}k`} tint="green" />
-        <KpiMini icon="bell"        label="Sotto soglia"    value={String(sottoSoglia)} tint="amber" />
-        <KpiMini icon="x"           label="Esauriti"        value={String(esauriti)} tint="red" />
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 12, alignItems: "flex-start" }}>
-        <div style={cardStyle({ padding: 0, overflow: "hidden" })}>
-          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: 12 }}>
-            <thead>
-              <tr style={{ background: TT.bgSoft }}>
-                <Th>Articolo</Th>
-                <Th>Categoria</Th>
-                <Th align="center">Ubicaz.</Th>
-                <Th align="right">Scorta</Th>
-                <Th align="right">Stato</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {articoli.map((a) => {
-                const cat = CAT_DEF[a.categoria];
-                const catRamp = TINTS[cat.tint];
-                const stato = a.scorta === 0 ? "esaurito" : a.scorta < a.scortaMin * 0.5 ? "critico" : a.scorta < a.scortaMin ? "basso" : "ok";
-                const sm = stato === "ok" ? { label: "OK", tint: TT.green } : stato === "basso" ? { label: "Basso", tint: TT.amber } : { label: stato === "esaurito" ? "Esaurito" : "Critico", tint: TT.red };
-                const pct = Math.min(100, (a.scorta / Math.max(1, a.scortaMin)) * 100);
-                return (
-                  <tr key={a.id} style={{ borderTop: `1px solid ${TT.border}`, cursor: "pointer" }}>
-                    <Td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{
-                          width: 34, height: 34, borderRadius: 7,
-                          background: catRamp[100], color: catRamp[600],
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 9, fontWeight: 800,
-                          fontFamily: "monospace", letterSpacing: "0.3px",
-                        }}>
-                          {a.categoria.substring(0, 3).toUpperCase()}
-                        </div>
-                        <div>
-                          <div style={{ fontFamily: "monospace", fontSize: 9, color: TT.text3, fontWeight: 600, marginBottom: 1 }}>
-                            {a.codice}
-                          </div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: TT.text1, letterSpacing: "-0.1px" }}>
-                            {a.nome}
-                          </div>
-                          <div style={{ fontSize: 10, color: TT.text3, marginTop: 1 }}>
-                            {a.descrizione}
-                          </div>
-                        </div>
-                      </div>
-                    </Td>
-                    <Td>
-                      <span style={{
-                        padding: "2px 8px",
-                        background: catRamp[100], color: catRamp[600],
-                        borderRadius: 12, fontSize: 10, fontWeight: 700,
-                        letterSpacing: "0.2px", textTransform: "uppercase",
-                      }}>
-                        {cat.label}
-                      </span>
-                    </Td>
-                    <Td align="center">
-                      <span style={{
-                        fontFamily: "monospace", fontSize: 11, color: TT.text2,
-                        fontWeight: 600, padding: "2px 6px",
-                        background: TT.bgSoft, borderRadius: 4,
-                      }}>
-                        {a.ubicazione}
-                      </span>
-                    </Td>
-                    <Td align="right">
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: sm.tint[600], fontVariantNumeric: "tabular-nums" }}>
-                          {a.scorta.toLocaleString("it-IT")} <span style={{ fontSize: 10, color: TT.text3, fontWeight: 600 }}>{a.unita}</span>
-                        </div>
-                        <div style={{ fontSize: 9, color: TT.text3, marginTop: 2 }}>
-                          min: {a.scortaMin} {a.unita}
-                        </div>
-                      </div>
-                    </Td>
-                    <Td align="right">
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                        <span style={{
-                          padding: "2px 8px",
-                          background: sm.tint[100], color: sm.tint[600],
-                          borderRadius: 999, fontSize: 9, fontWeight: 700,
-                          letterSpacing: "0.3px", textTransform: "uppercase",
-                        }}>
-                          {sm.label}
-                        </span>
-                        <div style={{ width: 80, height: 3, background: TT.bgSoft, borderRadius: 2, overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${pct}%`, background: sm.tint[400] }} />
-                        </div>
-                      </div>
-                    </Td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.subLight} strokeWidth={2.5}>
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            value={searchQ}
+            onChange={e => setSearchQ(e.target.value)}
+            placeholder="Cerca articolo, codice, fornitore..."
+            style={{
+              flex: 1, border: "none", background: "transparent",
+              fontSize: 14, fontWeight: 600, color: C.ink, outline: "none",
+              fontFamily: "inherit", minWidth: 0,
+            }}
+          />
         </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <Pill label={`Tutte (${articoli.length})`} active={filtroCat === "tutte"} onClick={() => setFiltroCat("tutte")} />
+          {categorie.map(cat => (
+            <Pill
+              key={cat}
+              label={`${cat} (${articoli.filter(a => a.categoria === cat).length})`}
+              active={filtroCat === cat}
+              onClick={() => setFiltroCat(cat)}
+            />
+          ))}
+        </div>
+      </div>
 
-        <div style={cardStyle({ padding: "14px 16px" })}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: TT.text1, marginBottom: 12 }}>
-            Movimenti recenti
+      {/* TABELLA / EMPTY / ERROR */}
+      <div style={{ background: C.card, borderRadius: 14, boxShadow: "0 4px 16px rgba(15,23,42,0.18)", overflow: "hidden" }}>
+        {error && (
+          <div style={{ padding: 32, textAlign: "center", color: C.red, fontWeight: 700 }}>
+            ⚠ {error}
+            <div style={{ marginTop: 10 }}>
+              <button onClick={loadArticoli} style={{
+                padding: "8px 16px", background: C.red, color: "#fff",
+                border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              }}>Riprova</button>
+            </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {movimenti.map((m) => {
-              const isCarico = m.tipo === "carico";
-              const ramp = isCarico ? TT.green : TT.amber;
+        )}
+        {!error && loading && (
+          <div style={{ padding: 60, textAlign: "center", color: C.sub, fontSize: 14, fontWeight: 600 }}>
+            Caricamento articoli...
+          </div>
+        )}
+        {!error && !loading && filtered.length === 0 && articoli.length === 0 && (
+          <div style={{ padding: 60, textAlign: "center" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, marginBottom: 6 }}>Magazzino vuoto</div>
+            <div style={{ fontSize: 13, color: C.sub, fontWeight: 600 }}>Nessun articolo registrato per questa azienda</div>
+          </div>
+        )}
+        {!error && !loading && filtered.length === 0 && articoli.length > 0 && (
+          <div style={{ padding: 60, textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.sub }}>Nessun articolo corrisponde ai filtri</div>
+          </div>
+        )}
+        {!error && !loading && filtered.length > 0 && (
+          <div>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 100px) minmax(0, 110px) minmax(0, 110px) minmax(0, 100px)",
+              gap: 12, padding: "12px 18px",
+              background: C.cardSoft,
+              borderBottom: `1px solid ${C.border}`,
+              fontSize: 11, fontWeight: 800, color: C.sub,
+              textTransform: "uppercase", letterSpacing: 0.5,
+            }}>
+              <div>Articolo</div>
+              <div>Categoria</div>
+              <div style={{ textAlign: "right" }}>Disponib.</div>
+              <div style={{ textAlign: "right" }}>Prezzo</div>
+              <div style={{ textAlign: "center" }}>Stato</div>
+              <div style={{ textAlign: "center" }}>Ubicaz.</div>
+            </div>
+            {filtered.map(a => {
+              const cat = catColor(a.categoria);
+              const stato = statoScorta(a.qta_disponibile, a.qta_minima);
               return (
-                <div key={m.id} style={{
-                  display: "flex", gap: 9,
-                  padding: "8px 10px",
-                  background: ramp[50],
-                  border: `1px solid ${ramp[100]}`,
-                  borderRadius: 8,
+                <div key={a.id} style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 100px) minmax(0, 110px) minmax(0, 110px) minmax(0, 100px)",
+                  gap: 12, padding: "14px 18px",
+                  borderBottom: `1px solid ${C.border}`,
+                  alignItems: "center", cursor: "pointer",
                 }}>
-                  <div style={{
-                    width: 26, height: 26, borderRadius: 7,
-                    background: ramp[400],
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>
-                    <Icon name={isCarico ? "plus" : "chevronRight"} size={12} color="#fff" strokeWidth={2.6} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {a.nome}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.sub, marginTop: 2, fontWeight: 600 }}>
+                      {a.codice_interno || "—"} · {a.fornitore_principale || "Fornitore n/d"}
+                    </div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 1 }}>
-                      <span style={{ fontSize: 9, fontWeight: 700, color: ramp[600], letterSpacing: "0.3px", textTransform: "uppercase" }}>
-                        {isCarico ? "Carico" : "Scarico"}
-                      </span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: TT.text1, fontVariantNumeric: "tabular-nums" }}>
-                        {isCarico ? "+" : "−"}{m.qta} {m.unita}
-                      </span>
+                  <div>
+                    <span style={{
+                      fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
+                      background: cat.bg, color: cat.fg, textTransform: "uppercase", letterSpacing: 0.4,
+                    }}>{a.categoria || "altro"}</span>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" }}>
+                      {a.qta_disponibile} <span style={{ fontSize: 11, color: C.sub, fontWeight: 700 }}>{a.unita || ""}</span>
                     </div>
-                    <div style={{
-                      fontSize: 11, fontWeight: 600, color: TT.text1,
-                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                    }}>
-                      {m.articoloNome}
+                    <div style={{ fontSize: 10, color: C.sub, fontWeight: 600 }}>
+                      min: {a.qta_minima}
                     </div>
-                    <div style={{ fontSize: 10, color: TT.text3, marginTop: 2 }}>
-                      {m.data} &middot; <span style={{ fontFamily: "monospace", fontWeight: 600 }}>{m.riferimento}</span>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" }}>
+                      €{a.prezzo_medio.toFixed(2)}
                     </div>
+                    <div style={{ fontSize: 10, color: C.sub, fontWeight: 600 }}>
+                      val: €{(a.qta_disponibile * a.prezzo_medio).toFixed(0)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "center" }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 8,
+                      background: stato.bg, color: stato.fg,
+                    }}>{stato.label}</span>
+                  </div>
+                  <div style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: C.navy }}>
+                    {a.ubicazione || "—"}
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        )}
       </div>
 
-      <NuovoArticoloModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onCreated={() => {
-          setModalOpen(false);
-          setToast(true);
-          setTimeout(() => setToast(false), 3000);
-        }}
-      />
-      <ToastSuccess open={toast} msg="Articolo aggiunto al magazzino" />
     </div>
   );
 }
 
-function KpiMini({ icon, label, value, tint }: { icon: IconName; label: string; value: string; tint: keyof typeof TINTS }) {
-  const ramp = TINTS[tint];
-  return (
-    <div style={cardStyle({ padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 })}>
-      <div style={{
-        width: 38, height: 38, borderRadius: 10,
-        background: ramp[400],
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-      }}>
-        <Icon name={icon} size={18} color="#fff" strokeWidth={2.2} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 10, color: TT.text3, fontWeight: 600, letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 2 }}>
-          {label}
-        </div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: ramp[600], letterSpacing: "-0.5px", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
-          {value}
-        </div>
-      </div>
-    </div>
-  );
-}
+// ============ SUB-COMPONENTS ============
 
-function Th({ children, align }: { children?: React.ReactNode; align?: "left"|"center"|"right" }) {
+const Kpi: React.FC<{ label: string; value: string; color: "navy" | "green" | "amber" | "red"; alert?: boolean }> = ({ label, value, color, alert }) => {
+  const colorMap = {
+    navy: { bd: C.navy, fg: C.navy },
+    green: { bd: C.green, fg: C.green },
+    amber: { bd: C.amber, fg: C.amber },
+    red: { bd: C.red, fg: C.red },
+  };
+  const m = colorMap[color];
   return (
-    <th style={{
-      padding: "10px 12px", textAlign: align || "left",
-      fontSize: 10, fontWeight: 700, color: TT.text3,
-      letterSpacing: "0.6px", textTransform: "uppercase",
+    <div style={{
+      background: alert ? C.redSoft : C.card,
+      borderRadius: 14, padding: 16,
+      boxShadow: "0 4px 16px rgba(15,23,42,0.18)",
+      borderTop: `4px solid ${m.bd}`,
+      display: "flex", flexDirection: "column", gap: 4,
+      minWidth: 0, overflow: "hidden",
     }}>
-      {children}
-    </th>
+      <div style={{ fontSize: 24, fontWeight: 800, color: m.fg, letterSpacing: -0.5, lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 11, color: C.sub, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 }}>
+        {label}
+      </div>
+    </div>
   );
-}
+};
 
-function Td({ children, align }: { children?: React.ReactNode; align?: "left"|"center"|"right" }) {
-  return <td style={{ padding: "10px 12px", textAlign: align || "left", verticalAlign: "middle" }}>{children}</td>;
-}
+const Pill: React.FC<{ label: string; active: boolean; onClick: () => void }> = ({ label, active, onClick }) => (
+  <div
+    onClick={onClick}
+    style={{
+      padding: "8px 14px",
+      borderRadius: 10,
+      background: active ? C.navy : C.cardSoft,
+      color: active ? "#fff" : C.ink,
+      fontSize: 12, fontWeight: 800,
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+      letterSpacing: 0.3,
+    }}
+  >{label}</div>
+);
