@@ -2114,14 +2114,37 @@ export default function CMDetailPanel() {
                           setTimeout(() => setCcDone(null), 3000);
                         }
                       }}
-                      onMarcaPagata={(fatturaId, metodoPag) => {
-                        if (typeof setFattureDB === "function") {
-                          (setFattureDB as any)((prev: any[]) => prev.map((f: any) => f.id === fatturaId ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: metodoPag } : f));
-                        }
-                        if (typeof setCcDone === "function") {
-                          setCcDone("Fattura pagata");
-                          setTimeout(() => setCcDone(null), 3000);
-                        }
+                      onMarcaPagata={async (fatturaId, metodoPag) => {
+                        try {
+                          const aziendaId = (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId'))) || (selectedCM as any)?.aziendaId || (selectedCM as any)?.azienda_id;
+                          if (!aziendaId) { alert('Azienda non trovata'); return; }
+                          const r = await fetch('/api/fatture/marca-pagata', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              aziendaId,
+                              fatturaId,
+                              metodoPagamento: metodoPag,
+                              dataPagamento: new Date().toISOString().split('T')[0],
+                            }),
+                          });
+                          const j = await r.json();
+                          if (!r.ok) { alert(`Errore: ${j.error || 'sconosciuto'}`); return; }
+                          // Aggiorna stato locale per UI immediata
+                          if (typeof setFattureDB === "function") {
+                            (setFattureDB as any)((prev: any[]) => prev.map((f: any) => f.id === fatturaId ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: metodoPag } : f));
+                          }
+                          if (typeof setCcDone === "function") {
+                            const newFase = j.commessa?.fase;
+                            const msg = newFase === 'acconto_pagato' ? "Fattura pagata. Fase avanzata ad acconto pagato." : "Fattura pagata.";
+                            setCcDone(msg);
+                            setTimeout(() => setCcDone(null), 3000);
+                          }
+                          // Reload commessa per leggere fase aggiornata dal DB
+                          if (typeof window !== 'undefined') {
+                            setTimeout(() => window.location.reload(), 500);
+                          }
+                        } catch (e: any) { alert(`Errore: ${e?.message || e}`); }
                       }}
                       onAnnullaFattura={(fatturaId) => {
                         if (typeof setFattureDB === "function") {
