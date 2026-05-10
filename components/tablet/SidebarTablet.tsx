@@ -2,7 +2,7 @@
 import * as React from "react";
 import { Icon, IconName } from "./icons";
 
-type Mode = "xs" | "sm" | "md" | "lg";
+type Mode = "sm" | "md" | "lg";
 
 interface MenuItem {
   id: string;
@@ -56,13 +56,6 @@ export default function SidebarTablet({
 }: SidebarTabletProps) {
   const initials = userName.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase();
 
-  // Dimensioni responsive
-  const itemPadX = collapsed ? 0 : (mode === "lg" ? 16 : mode === "md" ? 14 : 12);
-  const itemPadY = mode === "lg" ? 13 : mode === "md" ? 12 : 10;
-  const navItemFont = mode === "lg" ? 14 : mode === "md" ? 13 : 13;
-  const iconSize = mode === "xs" ? 20 : 22;
-  const logoSize = mode === "lg" ? 24 : mode === "md" ? 22 : 20;
-
   return (
     <aside
       style={{
@@ -75,9 +68,8 @@ export default function SidebarTablet({
         overflow: "hidden",
       }}
     >
-      {/* LOGO */}
       <div style={{
-        padding: collapsed ? "16px 0 18px" : `${mode === "lg" ? 20 : 16}px ${mode === "lg" ? 24 : 18}px ${mode === "lg" ? 24 : 18}px`,
+        padding: collapsed ? "20px 0 22px" : "20px 22px 22px",
         borderBottom: `1px solid ${C.white10}`,
         marginBottom: 12,
         display: "flex",
@@ -86,26 +78,20 @@ export default function SidebarTablet({
       }}>
         {collapsed ? (
           <div style={{
-            width: 38, height: 38, borderRadius: 10,
+            width: 40, height: 40, borderRadius: 10,
             background: C.navyLight,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 16, fontWeight: 800, color: "#fff",
+            fontSize: 18, fontWeight: 800, color: "#fff",
           }}>X</div>
         ) : (
           <div style={{ minWidth: 0, overflow: "hidden" }}>
-            <div style={{ fontSize: logoSize, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>fliwoX</div>
-            <div style={{ fontSize: 10, color: C.blueLight, fontWeight: 600, letterSpacing: 0.4, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>MASTRO ERP</div>
+            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>fliwoX</div>
+            <div style={{ fontSize: 11, color: C.blueLight, fontWeight: 600, letterSpacing: 0.5, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>MASTRO ERP</div>
           </div>
         )}
       </div>
 
-      {/* MENU */}
-      <nav style={{
-        flex: 1,
-        padding: collapsed ? "0 10px" : `0 ${mode === "lg" ? 12 : 10}px`,
-        overflowY: "auto",
-        overflowX: "hidden",
-      }}>
+      <nav style={{ flex: 1, padding: collapsed ? "0 12px" : "0 12px", overflowY: "auto", overflowX: "hidden" }}>
         {MENU.map(item => {
           const isActive = active === item.id;
           return (
@@ -117,11 +103,11 @@ export default function SidebarTablet({
                 display: "flex",
                 alignItems: "center",
                 gap: collapsed ? 0 : 14,
-                padding: collapsed ? `${itemPadY + 1}px 0` : `${itemPadY}px ${itemPadX}px`,
+                padding: collapsed ? "14px 0" : "12px 14px",
                 borderRadius: 11,
                 cursor: "pointer",
                 color: isActive ? "#fff" : C.white60,
-                fontSize: navItemFont,
+                fontSize: 14,
                 fontWeight: isActive ? 700 : 600,
                 marginBottom: 3,
                 background: isActive ? C.white12 : "transparent",
@@ -130,8 +116,8 @@ export default function SidebarTablet({
                 position: "relative",
               }}
             >
-              <div style={{ width: iconSize, height: iconSize, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon name={item.icon} size={iconSize} color="currentColor" />
+              <div style={{ width: 22, height: 22, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name={item.icon} size={22} color="currentColor" />
               </div>
               {!collapsed && (
                 <>
@@ -142,9 +128,9 @@ export default function SidebarTablet({
                       color: "#fff",
                       fontSize: 10,
                       fontWeight: 800,
-                      padding: "2px 6px",
+                      padding: "2px 7px",
                       borderRadius: 999,
-                      minWidth: 18,
+                      minWidth: 20,
                       textAlign: "center",
                     }}>{item.badge}</span>
                   )}
@@ -153,8 +139,8 @@ export default function SidebarTablet({
               {collapsed && item.badge && (
                 <span style={{
                   position: "absolute",
-                  top: 5,
-                  right: 11,
+                  top: 6,
+                  right: 14,
                   background: C.red,
                   color: "#fff",
                   fontSize: 9,
@@ -171,10 +157,9 @@ export default function SidebarTablet({
         })}
       </nav>
 
-      {/* USER BOX */}
       <div style={{
-        padding: collapsed ? "12px 0" : `12px ${mode === "lg" ? 14 : 12}px`,
-        margin: collapsed ? "0 10px 12px" : `0 ${mode === "lg" ? 12 : 10}px 12px`,
+        padding: collapsed ? "12px 0" : "12px 14px",
+        margin: collapsed ? "0 12px 12px" : "0 12px 12px",
         background: C.white06,
         borderRadius: 11,
         display: "flex",
@@ -183,15 +168,15 @@ export default function SidebarTablet({
         justifyContent: collapsed ? "center" : "flex-start",
       }}>
         <div style={{
-          width: 36, height: 36, borderRadius: 10,
+          width: 38, height: 38, borderRadius: 11,
           background: `linear-gradient(135deg, ${C.navyLight}, ${C.navy})`,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontWeight: 800, fontSize: 12, color: "#fff", flexShrink: 0,
+          fontWeight: 800, fontSize: 13, color: "#fff", flexShrink: 0,
         }}>{initials}</div>
         {!collapsed && (
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName}</div>
-            <div style={{ fontSize: 10, color: C.blueLight, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userRole}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName}</div>
+            <div style={{ fontSize: 11, color: C.blueLight, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userRole}</div>
           </div>
         )}
       </div>

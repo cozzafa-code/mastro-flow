@@ -33,21 +33,18 @@ const PRESET_KEY = "mastro_tablet_preset";
 const COLLAPSE_KEY = "mastro_tablet_collapsed";
 const BG = "#94A3B8";
 
-// Hook responsive: ritorna lo size corrente
-function useViewport() {
-  const [size, setSize] = React.useState<{ w: number; mode: "xs" | "sm" | "md" | "lg" }>({
+function useViewport(): { w: number; mode: "sm" | "md" | "lg" } {
+  const [size, setSize] = React.useState<{ w: number; mode: "sm" | "md" | "lg" }>({
     w: typeof window !== "undefined" ? window.innerWidth : 1280,
     mode: "lg",
   });
-
   React.useEffect(() => {
     const calc = () => {
       const w = window.innerWidth;
-      let mode: "xs" | "sm" | "md" | "lg" = "lg";
-      if (w < 900) mode = "xs";        // iPad mini portrait, telefoni grandi
-      else if (w < 1100) mode = "sm";  // iPad portrait
-      else if (w < 1280) mode = "md";  // iPad Pro 11"
-      else mode = "lg";                 // iPad Pro 12.9"+
+      let mode: "sm" | "md" | "lg" = "lg";
+      if (w < 1024) mode = "sm";
+      else if (w < 1280) mode = "md";
+      else mode = "lg";
       setSize({ w, mode });
     };
     calc();
@@ -58,13 +55,13 @@ function useViewport() {
       window.removeEventListener("orientationchange", calc);
     };
   }, []);
-
   return size;
 }
 
 export default function MastroTablet() {
   const [active, setActive] = React.useState<string>("dashboard");
   const [userCollapsed, setUserCollapsed] = React.useState(false);
+  const [hasUserOverride, setHasUserOverride] = React.useState(false);
   const [preset, setPresetState] = React.useState<Preset>("titolare");
   const [expanded, setExpanded] = React.useState<string | null>(null);
   const [selectedCommessaId, setSelectedCommessaId] = React.useState<string | null>(null);
@@ -72,10 +69,7 @@ export default function MastroTablet() {
   const [activeEntity, setActiveEntity] = React.useState<{ tipo: EntityType; id: string } | null>(null);
 
   const { mode } = useViewport();
-
-  // Auto-collapse su xs/sm, espandi su md/lg (a meno che user non abbia toggle)
-  const [hasUserOverride, setHasUserOverride] = React.useState(false);
-  const autoCollapsed = mode === "xs" || mode === "sm";
+  const autoCollapsed = mode === "sm";
   const isCollapsed = hasUserOverride ? userCollapsed : autoCollapsed;
 
   React.useEffect(() => {
@@ -134,10 +128,7 @@ export default function MastroTablet() {
   }, []);
 
   const navigate = React.useCallback((sezione: string, params?: any) => {
-    if (params?.commessaId) {
-      openCommessa(params.commessaId);
-      return;
-    }
+    if (params?.commessaId) { openCommessa(params.commessaId); return; }
     setActive(sezione);
     setSelectedCommessaId(null);
     setActiveClienteId(null);
@@ -145,17 +136,10 @@ export default function MastroTablet() {
     setExpanded(null);
   }, [openCommessa]);
 
-  const expand = React.useCallback((blocco: string) => {
-    setExpanded(blocco);
-  }, []);
-
+  const expand = React.useCallback((blocco: string) => { setExpanded(blocco); }, []);
   const closeExpand = React.useCallback(() => setExpanded(null), []);
-
   const goBack = React.useCallback(() => {
-    if (selectedCommessaId) {
-      setSelectedCommessaId(null);
-      return;
-    }
+    if (selectedCommessaId) { setSelectedCommessaId(null); return; }
     navigate("dashboard");
   }, [selectedCommessaId, navigate]);
 
@@ -167,14 +151,9 @@ export default function MastroTablet() {
     setExpanded(null);
   }, []);
 
-  // Sidebar width responsive
-  const sidebarW = isCollapsed
-    ? (mode === "xs" ? 72 : 88)
-    : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
-
-  // Padding main responsive
-  const mainPad = mode === "xs" ? "12px 14px 16px" : mode === "sm" ? "16px 18px 20px" : "20px 24px 24px";
-
+  // Sidebar width: aperta = 280 (lg) / 240 (md) / 220 (sm). Chiusa = 88 sempre.
+  const sidebarW = isCollapsed ? 88 : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
+  const mainPad = mode === "sm" ? "16px 18px 20px" : "20px 24px 24px";
   const isDashboard = active === "dashboard" && !selectedCommessaId;
   const currentUserId = "op-walter";
 
@@ -224,19 +203,8 @@ export default function MastroTablet() {
             mode={mode}
           />
 
-          <main
-            style={{
-              gridArea: "main",
-              overflowY: "auto",
-              overflowX: "hidden",
-              padding: mainPad,
-              background: BG,
-            }}
-          >
-            {!isDashboard && (
-              <BackButton active={active} onBack={goBack} />
-            )}
-
+          <main style={{ gridArea: "main", overflowY: "auto", overflowX: "hidden", padding: mainPad, background: BG }}>
+            {!isDashboard && <BackButton active={active} onBack={goBack} />}
             {selectedCommessaId ? (
               <CommessaDettaglioTablet commessaId={selectedCommessaId} />
             ) : (
@@ -260,21 +228,11 @@ export default function MastroTablet() {
             )}
           </main>
 
-          <ExpandModal open={expanded === "agenda"} onClose={closeExpand} title="Agenda" subtitle="" icon="calendario" tint="violet">
-            <div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div>
-          </ExpandModal>
-          <ExpandModal open={expanded === "scadenze"} onClose={closeExpand} title="Scadenze" subtitle="" icon="bell" tint="amber">
-            <div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div>
-          </ExpandModal>
-          <ExpandModal open={expanded === "produzione"} onClose={closeExpand} title="Produzione" subtitle="" icon="produzione" tint="blue">
-            <div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div>
-          </ExpandModal>
-          <ExpandModal open={expanded === "commesse"} onClose={closeExpand} title="Commesse" subtitle="" icon="commesse" tint="orange">
-            <div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div>
-          </ExpandModal>
-          <ExpandModal open={expanded === "team"} onClose={closeExpand} title="Team" subtitle="" icon="team" tint="teal">
-            <div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div>
-          </ExpandModal>
+          <ExpandModal open={expanded === "agenda"} onClose={closeExpand} title="Agenda" subtitle="" icon="calendario" tint="violet"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
+          <ExpandModal open={expanded === "scadenze"} onClose={closeExpand} title="Scadenze" subtitle="" icon="bell" tint="amber"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
+          <ExpandModal open={expanded === "produzione"} onClose={closeExpand} title="Produzione" subtitle="" icon="produzione" tint="blue"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
+          <ExpandModal open={expanded === "commesse"} onClose={closeExpand} title="Commesse" subtitle="" icon="commesse" tint="orange"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
+          <ExpandModal open={expanded === "team"} onClose={closeExpand} title="Team" subtitle="" icon="team" tint="teal"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
         </div>
         <SideEffectsToaster />
         <EntityDetailPanel
