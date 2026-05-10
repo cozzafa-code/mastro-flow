@@ -1,12 +1,11 @@
 "use client";
-// MASTRO TABLET v20
-// FIX: filterFase = "tutte" per Commesse (default che mostra tutte)
-// Per Sopralluoghi/Produzione/Montaggi resta la fase specifica
+// MASTRO TABLET v21 - aggiunto NuovaCommessaModalTablet
 import * as React from "react";
 import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
 import TopbarTablet from "./TopbarTablet";
 import DashboardTablet from "./dashboard/DashboardTablet";
+import NuovaCommessaModalTablet from "./modals/NuovaCommessaModalTablet";
 
 import CommessePanel from "../CommessePanel";
 import AgendaPanel from "../AgendaPanel";
@@ -72,7 +71,6 @@ const SECTION_TO_TAB: Record<string, string> = {
   impostazioni: "settings",
 };
 
-// FIX v20: "tutte" per Commesse (CommessePanel riga 794 usa "tutte" come default no-filtro)
 const SECTION_TO_FASE: Record<string, string> = {
   commesse: "tutte",
   sopralluoghi: "sopralluogo",
@@ -82,7 +80,7 @@ const SECTION_TO_FASE: Record<string, string> = {
 
 export default function MastroTablet() {
   const ctx = useMastro();
-  const { setTab, setFilterFase, setSelectedCM } = ctx as any;
+  const { setTab, setFilterFase, setSelectedCM, showModal, setShowModal, setCantieri } = ctx as any;
 
   const [active, setActive] = React.useState<string>("dashboard");
   const [userCollapsed, setUserCollapsed] = React.useState(false);
@@ -151,6 +149,10 @@ export default function MastroTablet() {
     setActive(s);
     setActiveEntity(null);
   }, []);
+
+  const closeModal = React.useCallback(() => {
+    if (setShowModal) setShowModal(null);
+  }, [setShowModal]);
 
   const sidebarW = isCollapsed ? 88 : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
 
@@ -227,6 +229,18 @@ export default function MastroTablet() {
             {active === "ops"          && <OpsTablet />}
           </main>
         </div>
+
+        {/* MODAL NUOVA COMMESSA */}
+        <NuovaCommessaModalTablet
+          open={showModal === "commessa"}
+          onClose={closeModal}
+          setCantieri={setCantieri}
+          onCreated={(c) => {
+            setActive("commesse");
+            if (setSelectedCM && c?.id) setSelectedCM(c.id);
+          }}
+        />
+
         <SideEffectsToaster />
         <EntityDetailPanel
           tipo={activeEntity?.tipo || null}
