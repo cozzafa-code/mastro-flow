@@ -1864,9 +1864,13 @@ export default function CMDetailPanel() {
                             { txt: "IN ATTESA" + giorniLbl29, bg: inAttesaBg29, icon: "⏳" };
 
             // Prossima azione consigliata
-            const prossima = haFirmato29 ? { lbl: "AVVIA PRODUZIONE", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { setFaseTo(c29.id, "ordini"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "ordini" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "ordini" }) : p); } } :
-                           (tipoRis29 === "accettato" && c29.fase === "conferma") ? { lbl: "INVIA LINK FIRMA AL CLIENTE", bg: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)", action: () => setShowModalFirma(true) } :
-                           tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D\'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); setShowModalFirma(true); } } :
+            // Stati DB: sopralluogo → preventivo → conferma_ordine → confermata → acconto_pagato → ordine → produzione → montaggio → fatturata → pagata
+            const faseDb29 = (c29 as any).fase;
+            const accontoOk29 = !!((c29 as any).fattura_acconto_pagata_at) || faseDb29 === 'acconto_pagato' || faseDb29 === 'ordine' || faseDb29 === 'produzione' || faseDb29 === 'montaggio';
+            const prossima = accontoOk29 ? { lbl: "CREA ORDINI FORNITORI", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { setShowOrdiniSheet(true); } } :
+                           haFirmato29 ? { lbl: "EMETTI FATTURA ACCONTO", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { if (typeof creaFattura === "function") (creaFattura as any)(c29, "acconto", (Number((c29 as any).totale_finale) || 0) * 0.5, null, "Acconto 50%"); } } :
+                           (tipoRis29 === "accettato" && c29.fase === "conferma_ordine") ? { lbl: "INVIA LINK FIRMA AL CLIENTE", bg: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)", action: () => setShowModalFirma(true) } :
+                           tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D\'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma_ordine"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma_ordine" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma_ordine" }) : p); setShowModalFirma(true); } } :
                            tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
                              // Crea R(N+1) duplicando il corrente
                              const oggiIso = new Date().toISOString().split("T")[0];
@@ -2116,8 +2120,13 @@ export default function CMDetailPanel() {
                       }}
                       onMarcaPagata={async (fatturaId, metodoPag) => {
                         try {
-                          const aziendaId = (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId'))) || (selectedCM as any)?.aziendaId || (selectedCM as any)?.azienda_id;
-                          if (!aziendaId) { alert('Azienda non trovata'); return; }
+                          // Priorita: commessa loaded (sicuro), poi storage, poi global, poi Walter fallback
+                          const aziendaId = 
+                            (selectedCM as any)?.azienda_id 
+                            || (selectedCM as any)?.aziendaId
+                            || (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId')))
+                            || (typeof window !== 'undefined' && (window as any).__AZIENDA_ID__)
+                            || 'ccca51c1-656b-4e7c-a501-55753e20da29';
                           const r = await fetch('/api/fatture/marca-pagata', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -2130,7 +2139,6 @@ export default function CMDetailPanel() {
                           });
                           const j = await r.json();
                           if (!r.ok) { alert(`Errore: ${j.error || 'sconosciuto'}`); return; }
-                          // Aggiorna stato locale per UI immediata
                           if (typeof setFattureDB === "function") {
                             (setFattureDB as any)((prev: any[]) => prev.map((f: any) => f.id === fatturaId ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: metodoPag } : f));
                           }
@@ -2140,7 +2148,6 @@ export default function CMDetailPanel() {
                             setCcDone(msg);
                             setTimeout(() => setCcDone(null), 3000);
                           }
-                          // Reload commessa per leggere fase aggiornata dal DB
                           if (typeof window !== 'undefined') {
                             setTimeout(() => window.location.reload(), 500);
                           }
