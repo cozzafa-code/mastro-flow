@@ -1,5 +1,6 @@
 "use client";
 import OrdiniSheet from "./ordini-sheet/OrdiniSheet";
+import { createPortal as _createPortalCM } from "react-dom"; // [v-ordini-portal]
 import RilieviVaniPanel from "./RilieviVaniPanel";
 // @ts-nocheck
 // 
@@ -53,12 +54,16 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
 
   return (
     <>
-      {showOrdiniSheet && selectedCM ? (
-        <OrdiniSheet
-          commessa={selectedCM}
-          onClose={() => setShowOrdiniSheet(false)}
-          onCompletato={() => { setShowOrdiniSheet(false); if (typeof window !== 'undefined') window.location.reload(); }}
-        />
+      {/* [v-ordini-portal] render via createPortal - indipendente da branch prevWorkspace */}
+      {showOrdiniSheet && selectedCM && typeof document !== 'undefined' ? _createPortalCM(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999 }}>
+          <OrdiniSheet
+            commessa={selectedCM}
+            onClose={() => setShowOrdiniSheet(false)}
+            onCompletato={() => { setShowOrdiniSheet(false); }}
+          />
+        </div>,
+        document.body
       ) : null}
       <div style={{ ...S.section, marginTop: 8 }}>
         <div style={S.sectionTitle}>Cronologia · {log.length}</div>
