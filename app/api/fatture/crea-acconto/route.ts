@@ -1,3 +1,4 @@
+// rebuild-20260510174513
 // app/api/fatture/crea-acconto/route.ts
 // Crea fattura ACCONTO (o saldo/altro) persistente su fin_fatture_emesse.
 // Numero progressivo per anno + tipo. Stato iniziale = 'bozza'.

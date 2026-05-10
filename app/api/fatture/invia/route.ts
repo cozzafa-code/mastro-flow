@@ -1,3 +1,4 @@
+// rebuild-20260510174513
 // app/api/fatture/invia/route.ts
 // Marca fattura come 'inviata' (passaggio bozza -> inviata).
 // Body: { aziendaId, fatturaId, canale?: 'whatsapp'|'email'|'manuale' }

@@ -1,3 +1,4 @@
+// rebuild-20260510174513
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { generaFatturaPA } from '@/lib/fattura-pa';

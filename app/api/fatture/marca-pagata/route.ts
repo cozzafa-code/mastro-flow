@@ -1,3 +1,4 @@
+// rebuild-20260510174513
 // app/api/fatture/marca-pagata/route.ts
 // Marca fattura come pagata. Trigger DB avanza la fase commessa.
 // Body: { aziendaId, fatturaId, metodoPagamento?, dataPagamento? }
