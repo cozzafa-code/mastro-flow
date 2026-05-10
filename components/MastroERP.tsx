@@ -49,6 +49,7 @@ import BottomToolbar from "./BottomToolbar";
 import TeamMobile from "./mobile/team/TeamMobile";
 import VoiceAssistant from "./VoiceAssistant";
 import CMDetailPanel from "./CMDetailPanel";
+import MaterialiPanel from "./MaterialiPanel";
 import ModalPanel from "./ModalPanel";
 import RiepilogoPanel from "./RiepilogoPanel";
 import AgendaPanel from "./AgendaPanel";
@@ -3976,6 +3977,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         {tab === "commesse" && <PanelErrorBoundary name="Commesse">{renderCommesse()}</PanelErrorBoundary>}
         {selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
         {tab === "clienti" && <PanelErrorBoundary name="Clienti">{renderClienti()}</PanelErrorBoundary>}
+        {tab === "materiali" && <PanelErrorBoundary name="Materiali"><MaterialiPanel onBack={() => setTab("home")} /></PanelErrorBoundary>}
         {tab === "messaggi" && !selectedMsg && <PanelErrorBoundary name="Messaggi">{renderMessaggi()}</PanelErrorBoundary>}
 
         {tab === "agenda" && <PanelErrorBoundary name="Agenda">{renderAgenda()}</PanelErrorBoundary>}
