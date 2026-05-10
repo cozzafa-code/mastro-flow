@@ -1,6 +1,6 @@
 "use client";
-// MASTRO TABLET v15
-// Aggiunto: delega Contabilità -> ContabilitaPanel mobile
+// MASTRO TABLET v16
+// Aggiunto: delega Talk -> MessaggiPanel mobile
 import * as React from "react";
 import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
@@ -12,6 +12,7 @@ import CommessePanel from "../CommessePanel";
 import AgendaPanel from "../AgendaPanel";
 import ClientiPanel from "../ClientiPanel";
 import ContabilitaPanel from "../ContabilitaPanel";
+import MessaggiPanel from "../MessaggiPanel";
 
 // Custom tablet con dati reali Supabase
 import MagazzinoTablet from "./magazzino/MagazzinoTablet";
@@ -21,7 +22,6 @@ import FiscaleTablet from "./fiscale/FiscaleTablet";
 import OrdiniFornitoriTablet from "./ordini/OrdiniFornitoriTablet";
 import TeamTablet from "./team/TeamTablet";
 import OpsTablet from "./ops/OpsTablet";
-import AiMastroTablet from "./ai/AiMastroTablet";
 import ImpostazioniTablet from "./impostazioni/ImpostazioniTablet";
 
 // Servizi
@@ -71,6 +71,7 @@ const SECTION_TO_TAB: Record<string, string> = {
   calendario: "agenda",
   clienti: "clienti",
   contabilita: "contabilita",
+  ai: "messaggi",
 };
 
 const SECTION_TO_FASE: Record<string, string | null> = {
@@ -148,7 +149,7 @@ export default function MastroTablet() {
 
   const sidebarW = isCollapsed ? 88 : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
 
-  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario", "clienti", "contabilita"].includes(active);
+  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario", "clienti", "contabilita", "ai"].includes(active);
   const mainPad = isMobilePanel ? 0 : (mode === "sm" ? "16px 18px 20px" : "20px 24px 24px");
   const mainBg = isMobilePanel ? "#94A3B8" : BG;
 
@@ -212,6 +213,7 @@ export default function MastroTablet() {
             {active === "calendario"   && <AgendaPanel />}
             {active === "clienti"      && <ClientiPanel />}
             {active === "contabilita"  && <ContabilitaPanel />}
+            {active === "ai"           && <MessaggiPanel />}
 
             {/* CUSTOM TABLET CON DATI REALI SUPABASE */}
             {active === "magazzino"    && <MagazzinoTablet />}
@@ -221,7 +223,6 @@ export default function MastroTablet() {
             {active === "ordini"       && <OrdiniFornitoriTablet />}
             {active === "team"         && <TeamTablet />}
             {active === "ops"          && <OpsTablet />}
-            {active === "ai"           && <AiMastroTablet />}
             {active === "impostazioni" && <ImpostazioniTablet />}
           </main>
         </div>
