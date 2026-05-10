@@ -7179,8 +7179,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           </div>
         </div>
       )}
-{/* [v-ordini-FINAL] OrdiniSheet via Portal nel componente padre */}
-      {showOrdiniSheet && selectedCM && typeof document !== 'undefined' ? ((<OrdiniSheet commessa={selectedCM} onClose={() => setShowOrdiniSheet(false)} onCompletato={() => { setShowOrdiniSheet(false); }} />)) : null}
+{/* [v-final-fix] OrdiniSheet diretto */}
+      {showOrdiniSheet && selectedCM ? <OrdiniSheet commessa={selectedCM} onClose={() => setShowOrdiniSheet(false)} onCompletato={() => setShowOrdiniSheet(false)} /> : null}
       </div>
     );
 
