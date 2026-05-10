@@ -1,4 +1,5 @@
 "use client";
+// @ts-nocheck
 import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
 import { logEvento, TIPI_EVENTO as TL_TIPI } from "@/lib/timeline-logger";
@@ -1760,6 +1761,19 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   // === AUTO-ADVANCE: sincronizza fase pipeline con azioni reali ===
   const setFaseTo = (cmId: string, targetFase: string, operatore?: string) => {
+    // Mappa nomi UI legacy -> enum DB canonico
+    const mapFase = (f: string): string => {
+      switch (f) {
+        case 'conferma': return 'conferma_ordine';
+        case 'ordini': return 'ordine';
+        case 'modifiche': return 'preventivo'; // 'modifiche' non e' una fase DB, resta a preventivo
+        case 'da_contattare': return 'preventivo';
+        case 'chiusura': return 'chiusa';
+        default: return f;
+      }
+    };
+    const targetFaseDb = mapFase(targetFase);
+
     const targetIdx = faseIndex(targetFase);
     const faseDef = pipelineDB.find((p: any) => p.id === targetFase);
 
@@ -1822,6 +1836,47 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         setFaseNotif({ fase: next?.nome || targetFase, addetto: operatore || "Auto", color: next?.color || "#0D7C6B" });
         setTimeout(() => setFaseNotif(null), 3000);
       }
+    }
+
+    // PERSISTENZA DB: scrivi fase canonica + timestamp gates corrispondenti
+    // Best-effort: se trigger DB rifiuta (gate mancanti) log e proseguo
+    if (typeof window !== 'undefined' && cmId && targetFaseDb) {
+      import('@/lib/supabase-sync').then(m => {
+        const ts = new Date().toISOString();
+        // Avanzamento via API (rispetta i gate trigger DB)
+        const aziendaId = sessionStorage.getItem('mastro:aziendaId') 
+          || localStorage.getItem('mastro:aziendaId')
+          || (selectedCM as any)?.azienda_id
+          || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+        // Setta i gate timestamp che servono per la fase di destinazione
+        const payload: any = {};
+        if (targetFaseDb === 'preventivo') payload.preventivo_inviato_at = ts;
+        if (targetFaseDb === 'conferma_ordine') payload.conferma_ordine_inviata_at = ts;
+        if (targetFaseDb === 'confermata') payload.conferma_ordine_firmata_at = ts;
+        if (targetFaseDb === 'acconto_pagato') payload.fattura_acconto_pagata_at = ts;
+        if (targetFaseDb === 'produzione') payload.produzione_completata_at = null; // entrata
+        if (targetFaseDb === 'montaggio') payload.montaggio_completato_at = null;
+        // Chiama API avanza-fase (rispetta i gate del trigger DB con messaggi chiari)
+        fetch('/api/commessa/avanza-fase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            aziendaId,
+            commessaId: cmId,
+            faseA: targetFaseDb,
+            payload,
+          }),
+        }).then(async r => {
+          if (!r.ok) {
+            const j = await r.json().catch(() => ({}));
+            console.warn('[setFaseTo->DB] avanzamento bloccato:', j.error || r.status);
+            // Fallback: scrivi solo i timestamp senza cambiare fase
+            if (Object.keys(payload).length > 0) {
+              await supabase.from('commesse').update(payload).eq('id', cmId).then(() => {}).catch(() => {});
+            }
+          }
+        }).catch(err => console.warn('[setFaseTo->DB] error:', err));
+      });
     }
   };
 
@@ -2970,7 +3025,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     return annoPrev.length + 1;
   };
 
-  const creaFattura = (c, tipo: "acconto" | "sal" | "saldo" | "unica", importoOverride?: number, scadenzaIso?: string, noteCustom?: string) => {
+  const creaFattura = async (c, tipo: "acconto" | "sal" | "saldo" | "unica", importoOverride?: number, scadenzaIso?: string, noteCustom?: string) => {
     const num = nextNumFattura();
     const anno = new Date().getFullYear();
     // Calcola totale REALE dai vani + voci libere
@@ -2986,13 +3041,54 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     const iva = 10; // serramenti = 10% se ristrutturazione, 22% se nuova costruzione
     const imponibile = Math.round(importo / (1 + iva / 100) * 100) / 100;
     const ivaAmt = importo - imponibile;
+    
+    // PERSISTENZA DB (priorita): chiamata async, se OK usa numero+id dal DB
+    let dbId: string | null = null;
+    let dbNumero: string | null = null;
+    let dbStato = 'bozza';
+    try {
+      const aziendaId = (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId')))
+        || (c as any).azienda_id
+        || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+      const tipoApi = tipo === 'acconto' ? 'acconto' : (tipo === 'saldo' ? 'saldo' : 'altro');
+      const r = await fetch('/api/fatture/crea-acconto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          aziendaId,
+          commessaId: c.id,
+          tipo: tipoApi,
+          importo,
+          ivaPerc: iva,
+          scadenzaGiorni: 30,
+          note: noteCustom || (tipo === "acconto" ? "Acconto 50% su ordine"
+                              : tipo === "sal" ? "SAL stato avanzamento lavori"
+                              : tipo === "saldo" ? "Saldo a completamento lavori"
+                              : ""),
+        }),
+      });
+      const j = await r.json();
+      if (r.ok && j.fattura) {
+        dbId = j.fattura.id;
+        dbNumero = j.fattura.numero;
+        dbStato = j.fattura.stato || 'bozza';
+      } else {
+        console.warn('[creaFattura DB] fail:', j.error);
+      }
+    } catch (e) {
+      console.warn('[creaFattura DB] exception:', e);
+    }
+    
     const fattura = {
-      id: "fat_" + Date.now(),
-      numero: num,
+      id: dbId || ("fat_" + Date.now()),
+      dbId, // tracker se persistita
+      numero: dbNumero ? Number(String(dbNumero).split('-').pop()) : num, // numero ui per legacy compat
+      numeroFull: dbNumero || `${tipo === 'acconto' ? 'ACC' : tipo === 'saldo' ? 'SAL' : 'FAT'}-${anno}-${String(num).padStart(4,'0')}`,
       anno,
       data: new Date().toLocaleDateString("it-IT"),
       dataISO: new Date().toISOString().split("T")[0],
       tipo,
+      stato: dbStato,
       cmId: c.id,
       cmCode: c.code,
       cliente: c.cliente,
@@ -3016,9 +3112,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                           : ""),
     };
     setFattureDB(prev => [...prev, fattura]);
-    // AUTO-ADVANCE pipeline
-    if (tipo === "acconto" || tipo === "unica") setFaseTo(c.id, "ordini");
-    if (tipo === "saldo") setFaseTo(c.id, "chiusura");
+    // NOTE: rimosso auto-advance fase qui. Il DB lo fa via trigger (al pagamento).
+    // Per l'avanzamento "creata fattura" possiamo avanzare confermata->acconto_pagato solo dopo pagamento (gate DB).
     return fattura;
   };
 

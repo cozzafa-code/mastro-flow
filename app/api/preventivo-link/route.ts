@@ -209,14 +209,17 @@ export async function PATCH(req: NextRequest) {
 
     if (errToken) throw errToken;
 
-    // v36: aggiorna anche la fase della commessa in base alla risposta
-    if (tokenRow?.cm_id) {
-      const nuovaFase = risposta === "accettato" ? "conferma"
-                      : risposta === "modifiche" ? "modifiche"
-                      : risposta === "chiamare" ? "da_contattare"
-                      : null;
-      if (nuovaFase) {
-        await sb.from("commesse").update({ fase: nuovaFase }).eq("id", tokenRow.cm_id);
+    // v36 + fix enum DB: avanza fase commessa solo se cliente ha accettato
+    // Le risposte 'modifiche' / 'chiamare' non avanzano fase (rimangono a 'preventivo')
+    if (tokenRow?.cm_id && risposta === "accettato") {
+      // accettato: avanza preventivo -> conferma_ordine (richiede preventivo_inviato_at + totale_finale > 0)
+      // Se mancano i gates, l'update fallisce silenziosamente: il bottone "CREA CONFERMA D'ORDINE" servira' per forzare
+      const { error: errFase } = await sb.from("commesse").update({ 
+        fase: "conferma_ordine",
+        conferma_ordine_inviata_at: new Date().toISOString(),
+      }).eq("id", tokenRow.cm_id);
+      if (errFase) {
+        console.warn("[preventivo-link] avanza preventivo->conferma_ordine bloccato:", errFase.message);
       }
     }
 

@@ -2127,12 +2127,19 @@ export default function CMDetailPanel() {
                             || (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId')))
                             || (typeof window !== 'undefined' && (window as any).__AZIENDA_ID__)
                             || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+                          // Risolve fatturaId reale: legacy "fat_" prefix o id JS = non DB
+                          const fattLocale = Array.isArray(fattureDB) ? (fattureDB as any[]).find((f: any) => f.id === fatturaId) : null;
+                          const realId = (fattLocale && fattLocale.dbId) ? fattLocale.dbId : fatturaId;
+                          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(realId))) {
+                            alert('Questa fattura non e stata persistita su DB. Annullala e ricreala.');
+                            return;
+                          }
                           const r = await fetch('/api/fatture/marca-pagata', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                               aziendaId,
-                              fatturaId,
+                              fatturaId: realId,
                               metodoPagamento: metodoPag,
                               dataPagamento: new Date().toISOString().split('T')[0],
                             }),
