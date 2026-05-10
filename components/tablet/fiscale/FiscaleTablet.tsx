@@ -1,5 +1,5 @@
 "use client";
-// MASTRO TABLET - Fiscale v2 con debug
+// MASTRO TABLET - Fiscale v3 (produzione)
 import * as React from "react";
 import { supabase } from "../../../lib/supabase";
 import { getAziendaId } from "../../mastro-constants";
@@ -65,51 +65,27 @@ export default function FiscaleTablet() {
   const [fatture, setFatture] = React.useState<Fattura[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = React.useState<string>("");
   const [searchQ, setSearchQ] = React.useState("");
   const [filtroStato, setFiltroStato] = React.useState<string>("tutte");
 
   const loadFatture = React.useCallback(async () => {
     setLoading(true);
     setError(null);
-    setDebugInfo("");
     try {
-      console.log("[FISCALE] Inizio caricamento...");
       const aziendaId = await getAziendaId();
-      console.log("[FISCALE] aziendaId ricevuto:", aziendaId);
-
       if (!aziendaId) {
-        const msg = "getAziendaId() ha ritornato null";
-        console.error("[FISCALE]", msg);
-        setError(msg);
-        setDebugInfo(`aziendaId: null`);
+        setError("Azienda non identificata");
+        setFatture([]);
         return;
       }
-
-      // Test 1: query con filter azienda_id
-      console.log("[FISCALE] Query 1: con filter azienda_id =", aziendaId);
-      const { data: data1, error: err1, count: c1 } = await supabase
+      const { data, error } = await supabase
         .from("fin_fatture_emesse")
-        .select("*", { count: "exact" })
-        .eq("azienda_id", aziendaId);
-      console.log("[FISCALE] Query 1 risultato:", { count: c1, dataLen: data1?.length, error: err1 });
-
-      // Test 2: query SENZA filter (vediamo se RLS blocca tutto)
-      console.log("[FISCALE] Query 2: SENZA filter (test RLS)");
-      const { data: data2, error: err2, count: c2 } = await supabase
-        .from("fin_fatture_emesse")
-        .select("id, numero, azienda_id", { count: "exact" })
-        .limit(5);
-      console.log("[FISCALE] Query 2 risultato:", { count: c2, dataLen: data2?.length, sample: data2, error: err2 });
-
-      const dbg = `aziendaId: ${aziendaId}\nQuery1 (con filter): count=${c1} len=${data1?.length} err=${err1?.message || "ok"}\nQuery2 (no filter): count=${c2} len=${data2?.length} err=${err2?.message || "ok"}\nSample IDs: ${(data2 || []).map(d => d.azienda_id).join(", ")}`;
-      setDebugInfo(dbg);
-      console.log("[FISCALE] DEBUG:", dbg);
-
-      if (err1) throw err1;
-      setFatture((data1 || []) as Fattura[]);
+        .select("*")
+        .eq("azienda_id", aziendaId)
+        .order("data_emissione", { ascending: false });
+      if (error) throw error;
+      setFatture((data || []) as Fattura[]);
     } catch (e: any) {
-      console.error("[FISCALE] CATCH:", e);
       setError(e?.message || "Errore caricamento fatture");
     } finally {
       setLoading(false);
@@ -135,9 +111,17 @@ export default function FiscaleTablet() {
   const kpiInc = fatture.reduce((s, f) => s + (Number(f.pagato) || 0), 0);
   const kpiRes = fatture.reduce((s, f) => s + (Number(f.residuo) || 0), 0);
   const kpiScad = fatture.filter(isScaduta).length;
+  const kpiDaInviare = fatture.filter(f => f.stato === "da_inviare").length;
+
+  const stati = React.useMemo(() => {
+    const set = new Set<string>();
+    fatture.forEach(f => { if (f.stato) set.add(f.stato); });
+    return Array.from(set).sort();
+  }, [fatture]);
 
   return (
     <div style={{ background: C.bg, minHeight: "100%", padding: 20 }}>
+
       <div style={{
         background: `linear-gradient(135deg, ${C.navy} 0%, #0F1B2D 100%)`,
         borderRadius: 16, padding: "20px 24px", color: "#fff",
@@ -148,20 +132,9 @@ export default function FiscaleTablet() {
           {loading ? "Caricamento..." : `${fatture.length} fatture emesse`}
         </div>
         <div style={{ fontSize: 12, color: "#B5C8DD", fontWeight: 600, marginTop: 4 }}>
-          Fatturato: €{kpiTotale.toLocaleString("it-IT")} · Incassato: €{kpiInc.toLocaleString("it-IT")}
+          Fatturato: €{kpiTotale.toLocaleString("it-IT", { maximumFractionDigits: 2 })} · Incassato: €{kpiInc.toLocaleString("it-IT", { maximumFractionDigits: 2 })}
         </div>
       </div>
-
-      {/* DEBUG BOX */}
-      {debugInfo && (
-        <div style={{
-          background: "#FEF3C7", border: "2px solid #F59E0B", borderRadius: 10,
-          padding: 14, marginBottom: 14, fontSize: 12, fontFamily: "monospace",
-          whiteSpace: "pre-wrap", color: "#92400E", fontWeight: 600,
-        }}>
-          🔍 DEBUG (rimuovi dopo){"\n"}{debugInfo}
-        </div>
-      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
         <Kpi label="Fatturato" value={`€${(kpiTotale/1000).toFixed(1)}k`} color="navy" />
@@ -194,7 +167,23 @@ export default function FiscaleTablet() {
             }}
           />
         </div>
-        <Pill label={`Tutte (${fatture.length})`} active={filtroStato === "tutte"} onClick={() => setFiltroStato("tutte")} />
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+          <Pill label={`Tutte (${fatture.length})`} active={filtroStato === "tutte"} onClick={() => setFiltroStato("tutte")} />
+          {kpiScad > 0 && (
+            <Pill label={`Scadute (${kpiScad})`} active={filtroStato === "scadute"} onClick={() => setFiltroStato("scadute")} alert />
+          )}
+          {stati.map(s => {
+            const sc = statoFatturaColor(s);
+            return (
+              <Pill
+                key={s}
+                label={`${sc.label} (${fatture.filter(f => f.stato === s).length})`}
+                active={filtroStato === s}
+                onClick={() => setFiltroStato(s)}
+              />
+            );
+          })}
+        </div>
       </div>
 
       <div style={{ background: C.card, borderRadius: 14, boxShadow: "0 4px 16px rgba(15,23,42,0.18)", overflow: "hidden" }}>
@@ -211,19 +200,18 @@ export default function FiscaleTablet() {
         )}
         {!error && loading && (
           <div style={{ padding: 50, textAlign: "center", color: C.sub, fontSize: 13, fontWeight: 600 }}>
-            Caricamento...
+            Caricamento fatture...
           </div>
         )}
-        {!error && !loading && fatture.length === 0 && (
+        {!error && !loading && filtered.length === 0 && fatture.length === 0 && (
           <div style={{ padding: 50, textAlign: "center" }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: C.ink, marginBottom: 6 }}>Nessuna fattura emessa</div>
             <div style={{ fontSize: 12, color: C.sub, fontWeight: 600 }}>Le fatture emesse compariranno qui</div>
-            <div style={{ marginTop: 12 }}>
-              <button onClick={loadFatture} style={{
-                padding: "8px 16px", background: C.navy, color: "#fff",
-                border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer",
-              }}>Ricarica</button>
-            </div>
+          </div>
+        )}
+        {!error && !loading && filtered.length === 0 && fatture.length > 0 && (
+          <div style={{ padding: 50, textAlign: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.sub }}>Nessuna fattura corrisponde ai filtri</div>
           </div>
         )}
         {!error && !loading && filtered.length > 0 && (
@@ -241,15 +229,46 @@ export default function FiscaleTablet() {
                 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 7, background: C.navy, color: "#fff", letterSpacing: 0.4 }}>{f.numero}</span>
-                      <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 7, background: finalStato.bg, color: finalStato.fg }}>{finalStato.label}</span>
+                      <span style={{
+                        fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 7,
+                        background: C.navy, color: "#fff", letterSpacing: 0.4,
+                        fontVariantNumeric: "tabular-nums",
+                      }}>{f.numero}</span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 7,
+                        background: finalStato.bg, color: finalStato.fg,
+                      }}>{finalStato.label}</span>
+                      {f.sdi_stato && (
+                        <span style={{
+                          fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 7,
+                          background: C.blueTint, color: C.blue, textTransform: "uppercase", letterSpacing: 0.5,
+                        }}>SDI: {f.sdi_stato}</span>
+                      )}
+                      {f.commessa_code && (
+                        <span style={{ fontSize: 11, color: C.sub, fontWeight: 700 }}>· {f.commessa_code}</span>
+                      )}
                     </div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" }}>
                       €{Number(f.totale).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginBottom: 4 }}>{f.cliente || "Cliente n/d"}</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, paddingTop: 10, borderTop: `1px dashed ${C.border}` }}>
+
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, lineHeight: 1.3, marginBottom: 4 }}>
+                    {f.cliente || "Cliente n/d"}
+                  </div>
+                  {f.cliente_piva && (
+                    <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginBottom: 8 }}>
+                      P.IVA {f.cliente_piva}
+                    </div>
+                  )}
+
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                    gap: 10,
+                    paddingTop: 10,
+                    borderTop: `1px dashed ${C.border}`,
+                  }}>
                     <DataCell label="Emessa" value={fmtData(f.data_emissione)} />
                     <DataCell label="Scadenza" value={fmtData(f.data_scadenza)} alert={scaduta} />
                     <DataCell label="Pagato" value={`€${Number(f.pagato).toFixed(2)}`} accent="green" />
@@ -261,6 +280,33 @@ export default function FiscaleTablet() {
           </div>
         )}
       </div>
+
+      {kpiDaInviare > 0 && (
+        <div style={{
+          marginTop: 14,
+          background: C.amberTint,
+          border: `1px solid #FCD34D`,
+          borderRadius: 12,
+          padding: "14px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, background: C.amber, color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18, fontWeight: 800, flexShrink: 0,
+          }}>!</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: C.amber }}>
+              {kpiDaInviare} {kpiDaInviare === 1 ? "fattura" : "fatture"} in attesa di invio SDI
+            </div>
+            <div style={{ fontSize: 11, color: "#475A75", fontWeight: 600, marginTop: 2 }}>
+              Controlla e invia al Sistema di Interscambio per la trasmissione fiscale
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -279,12 +325,12 @@ const Kpi: React.FC<{ label: string; value: string; color: "navy" | "green" | "a
   );
 };
 
-const Pill: React.FC<{ label: string; active: boolean; onClick: () => void }> = ({ label, active, onClick }) => (
+const Pill: React.FC<{ label: string; active: boolean; onClick: () => void; alert?: boolean }> = ({ label, active, onClick, alert }) => (
   <div onClick={onClick} style={{
     padding: "7px 12px", borderRadius: 9,
-    background: active ? C.navy : C.cardSoft,
-    color: active ? "#fff" : C.ink,
-    fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap",
+    background: active ? (alert ? C.red : C.navy) : (alert ? C.redTint : C.cardSoft),
+    color: active ? "#fff" : (alert ? C.red : C.ink),
+    fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", letterSpacing: 0.3,
   }}>{label}</div>
 );
 
@@ -293,7 +339,7 @@ const DataCell: React.FC<{ label: string; value: string; alert?: boolean; accent
   return (
     <div>
       <div style={{ fontSize: 9, fontWeight: 700, color: C.sub, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 13, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 13, fontWeight: 800, color, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</div>
     </div>
   );
 };
