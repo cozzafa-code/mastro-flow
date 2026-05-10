@@ -53,6 +53,13 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
 
   return (
     <>
+      {showOrdiniSheet && selectedCM ? (
+        <OrdiniSheet
+          commessa={selectedCM}
+          onClose={() => setShowOrdiniSheet(false)}
+          onCompletato={() => { setShowOrdiniSheet(false); if (typeof window !== 'undefined') window.location.reload(); }}
+        />
+      ) : null}
       <div style={{ ...S.section, marginTop: 8 }}>
         <div style={S.sectionTitle}>Cronologia · {log.length}</div>
       </div>
@@ -82,13 +89,6 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
               position: "relative" as any,
               zIndex: 1,
             }}>
-      {showOrdiniSheet && selectedCM ? (
-        <OrdiniSheet
-          commessa={selectedCM}
-          onClose={() => setShowOrdiniSheet(false)}
-          onCompletato={() => { setShowOrdiniSheet(false); if (typeof window !== 'undefined') window.location.reload(); }}
-        />
-      ) : null}
               {/* Bubble icona tipo */}
               <div style={{
                 width: 40, height: 40, borderRadius: 12,
