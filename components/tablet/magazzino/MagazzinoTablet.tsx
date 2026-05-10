@@ -1,9 +1,9 @@
 "use client";
-// MASTRO TABLET - Magazzino v1 con dati reali Supabase
-// Tabella: magazzino_articoli (filter by azienda_id)
+// MASTRO TABLET - Magazzino v2 con dati reali Supabase
+// Tabella: magazzino_articoli (filter by azienda_id da getAziendaId())
 import * as React from "react";
 import { supabase } from "../../../lib/supabase";
-import { useMastro } from "../../MastroContext";
+import { getAziendaId } from "../../mastro-constants";
 
 type Articolo = {
   id: string;
@@ -44,7 +44,6 @@ const C = {
   purpleTint: "#EDE9FE",
 };
 
-// Colore per categoria
 function catColor(cat: string | null): { bg: string; fg: string } {
   const k = (cat || "").toLowerCase();
   if (k.includes("profil")) return { bg: C.blueTint, fg: C.blue };
@@ -54,7 +53,6 @@ function catColor(cat: string | null): { bg: string; fg: string } {
   return { bg: C.navyTint, fg: C.navy };
 }
 
-// Stato scorta
 function statoScorta(qta: number, qmin: number): { label: string; bg: string; fg: string } {
   if (qta === 0) return { label: "Esaurito", bg: C.redTint, fg: C.red };
   if (qta < qmin * 0.5) return { label: "Critico", bg: C.redTint, fg: C.red };
@@ -63,7 +61,6 @@ function statoScorta(qta: number, qmin: number): { label: string; bg: string; fg
 }
 
 export default function MagazzinoTablet() {
-  const { aziendaId } = useMastro();
   const [articoli, setArticoli] = React.useState<Articolo[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -71,10 +68,15 @@ export default function MagazzinoTablet() {
   const [filtroCat, setFiltroCat] = React.useState<string>("tutte");
 
   const loadArticoli = React.useCallback(async () => {
-    if (!aziendaId) return;
     setLoading(true);
     setError(null);
     try {
+      const aziendaId = await getAziendaId();
+      if (!aziendaId) {
+        setError("Azienda non identificata");
+        setArticoli([]);
+        return;
+      }
       const { data, error } = await supabase
         .from("magazzino_articoli")
         .select("*")
@@ -84,22 +86,20 @@ export default function MagazzinoTablet() {
       if (error) throw error;
       setArticoli(data || []);
     } catch (e: any) {
-      setError(e.message || "Errore caricamento magazzino");
+      setError(e?.message || "Errore caricamento magazzino");
     } finally {
       setLoading(false);
     }
-  }, [aziendaId]);
+  }, []);
 
   React.useEffect(() => { loadArticoli(); }, [loadArticoli]);
 
-  // Categorie disponibili
   const categorie = React.useMemo(() => {
     const set = new Set<string>();
     articoli.forEach(a => { if (a.categoria) set.add(a.categoria); });
     return Array.from(set).sort();
   }, [articoli]);
 
-  // Filtro
   const filtered = React.useMemo(() => {
     return articoli.filter(a => {
       if (filtroCat !== "tutte" && a.categoria !== filtroCat) return false;
@@ -112,16 +112,14 @@ export default function MagazzinoTablet() {
     });
   }, [articoli, filtroCat, searchQ]);
 
-  // KPI
   const kpiTotale = articoli.length;
-  const kpiValore = articoli.reduce((s, a) => s + (a.qta_disponibile * a.prezzo_medio), 0);
-  const kpiSottoSoglia = articoli.filter(a => a.qta_disponibile > 0 && a.qta_disponibile < a.qta_minima).length;
-  const kpiEsauriti = articoli.filter(a => a.qta_disponibile === 0).length;
+  const kpiValore = articoli.reduce((s, a) => s + ((a.qta_disponibile || 0) * (a.prezzo_medio || 0)), 0);
+  const kpiSottoSoglia = articoli.filter(a => (a.qta_disponibile || 0) > 0 && (a.qta_disponibile || 0) < (a.qta_minima || 0)).length;
+  const kpiEsauriti = articoli.filter(a => (a.qta_disponibile || 0) === 0).length;
 
   return (
     <div style={{ background: C.bg, minHeight: "100%", padding: 24 }}>
 
-      {/* HEADER */}
       <div style={{
         background: `linear-gradient(135deg, ${C.navy} 0%, #0F1B2D 100%)`,
         borderRadius: 18, padding: "22px 26px", color: "#fff",
@@ -136,7 +134,6 @@ export default function MagazzinoTablet() {
         </div>
       </div>
 
-      {/* KPI ROW */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12, marginBottom: 18 }}>
         <Kpi label="Articoli totali" value={String(kpiTotale)} color="navy" />
         <Kpi label="Valore stock" value={`€${(kpiValore/1000).toFixed(1)}k`} color="green" />
@@ -144,7 +141,6 @@ export default function MagazzinoTablet() {
         <Kpi label="Esauriti" value={String(kpiEsauriti)} color="red" alert={kpiEsauriti > 0} />
       </div>
 
-      {/* FILTRI + SEARCH */}
       <div style={{
         background: C.card, borderRadius: 14, padding: 16,
         boxShadow: "0 4px 16px rgba(15,23,42,0.18)", marginBottom: 14,
@@ -183,7 +179,6 @@ export default function MagazzinoTablet() {
         </div>
       </div>
 
-      {/* TABELLA / EMPTY / ERROR */}
       <div style={{ background: C.card, borderRadius: 14, boxShadow: "0 4px 16px rgba(15,23,42,0.18)", overflow: "hidden" }}>
         {error && (
           <div style={{ padding: 32, textAlign: "center", color: C.red, fontWeight: 700 }}>
@@ -232,7 +227,7 @@ export default function MagazzinoTablet() {
             </div>
             {filtered.map(a => {
               const cat = catColor(a.categoria);
-              const stato = statoScorta(a.qta_disponibile, a.qta_minima);
+              const stato = statoScorta(a.qta_disponibile || 0, a.qta_minima || 0);
               return (
                 <div key={a.id} style={{
                   display: "grid",
@@ -265,10 +260,10 @@ export default function MagazzinoTablet() {
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" }}>
-                      €{a.prezzo_medio.toFixed(2)}
+                      €{(a.prezzo_medio || 0).toFixed(2)}
                     </div>
                     <div style={{ fontSize: 10, color: C.sub, fontWeight: 600 }}>
-                      val: €{(a.qta_disponibile * a.prezzo_medio).toFixed(0)}
+                      val: €{((a.qta_disponibile || 0) * (a.prezzo_medio || 0)).toFixed(0)}
                     </div>
                   </div>
                   <div style={{ textAlign: "center" }}>
@@ -290,8 +285,6 @@ export default function MagazzinoTablet() {
     </div>
   );
 }
-
-// ============ SUB-COMPONENTS ============
 
 const Kpi: React.FC<{ label: string; value: string; color: "navy" | "green" | "amber" | "red"; alert?: boolean }> = ({ label, value, color, alert }) => {
   const colorMap = {
