@@ -55,7 +55,10 @@ export function usePreventivoState({ commessa_id, azienda_id }: Args) {
 
   // ─── LOAD ────────────────────────────────────────────────
   useEffect(() => {
-    if (!commessa_id) { setLoading(false); return; }
+    // [v-trafila-fix-5] skip se ids vuoti/non UUID (no 400 Bad Request)
+    const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!commessa_id || !_UUID_RE.test(String(commessa_id))) { setLoading(false); return; }
+    if (!azienda_id || !_UUID_RE.test(String(azienda_id))) { setLoading(false); return; }
     let alive = true;
     (async () => {
       try {
