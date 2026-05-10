@@ -1,15 +1,11 @@
 "use client";
-// MASTRO TABLET — Home (Cockpit Operativo) — v9 grande
-// Sostituisce orchestratore precedente, contiene tutti i 12 blocchi inline.
-// Mantiene export default per compatibilità con MastroTablet.tsx.
-// NOTA: dati statici per ora; bridge useMastro() in commit successivo.
+// MASTRO TABLET — Home (Cockpit Operativo) — v9.1
+// FIX: KPI minmax(0,1fr) per evitare overflow last KPI
+// FIX: rimosso padding outer, gestito da MastroTablet shell
 import * as React from "react";
 import { TT } from "../design-system";
 import { useDashboard } from "../dashboard-context";
 
-// ============================================================
-// COLORI (allineati al mobile mastro-constants.tsx tema 2)
-// ============================================================
 const C = {
   bg: "#94A3B8",
   card: "#FFFFFF",
@@ -35,38 +31,32 @@ const C = {
   purpleTint: "#EDE9FE",
 };
 
-// ============================================================
-// HELPERS UI
-// ============================================================
 const Panel: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
   <div style={{
-    background: C.card, borderRadius: 20, padding: 24,
-    boxShadow: "0 4px 16px rgba(15,23,42,0.18)", ...style,
+    background: C.card, borderRadius: 20, padding: 22,
+    boxShadow: "0 4px 16px rgba(15,23,42,0.18)", minWidth: 0, ...style,
   }}>{children}</div>
 );
 
 const PanelHead: React.FC<{ icon: React.ReactNode; title: string; link?: string; iconBg?: string; iconColor?: string }> = ({ icon, title, link, iconBg, iconColor }) => (
-  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, gap: 10 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
       <div style={{
-        width: 36, height: 36, borderRadius: 10,
+        width: 34, height: 34, borderRadius: 10,
         background: iconBg || C.navyTint, color: iconColor || C.navy,
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
       }}>{icon}</div>
-      <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, textTransform: "uppercase", letterSpacing: 0.6 }}>{title}</div>
+      <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
     </div>
-    {link && <div style={{ fontSize: 12, color: C.navy, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.6 }}>{link}</div>}
+    {link && <div style={{ fontSize: 11, color: C.navy, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.5, flexShrink: 0 }}>{link}</div>}
   </div>
 );
 
-// ============================================================
-// DATI MOCK (per ora statici - bridge useMastro() in commit successivo)
-// ============================================================
 const TODAY_EVENTS = [
-  { time: "08:30", h: "08", m: ":30", title: "Montaggio Verdi Giuseppe", sub: "Via Roma 12 · squadra A · 8 vani", tag: "MONTAGGIO", color: "mont" as const },
-  { time: "09:00", h: "09", m: ":00", title: "Preventivo Bianchi Maria", sub: "Studio Rende · €6.820", tag: "PREVENTIVO", color: "prev" as const },
-  { time: "11:30", h: "11", m: ":30", title: "Sopralluogo Marino Edilizia", sub: "Via Roma 88, Cosenza", tag: "SOPRALLUOGO", color: "sopra" as const },
-  { time: "14:00", h: "14", m: ":00", title: "Sopralluogo Esposito Franco", sub: "Via Garibaldi 45, Mendicino", tag: "SOPRALLUOGO", color: "sopra" as const },
+  { h: "08", m: ":30", title: "Montaggio Verdi Giuseppe", sub: "Via Roma 12 · squadra A · 8 vani", tag: "MONTAGGIO", color: "mont" as const },
+  { h: "09", m: ":00", title: "Preventivo Bianchi Maria", sub: "Studio Rende · €6.820", tag: "PREVENTIVO", color: "prev" as const },
+  { h: "11", m: ":30", title: "Sopralluogo Marino Edilizia", sub: "Via Roma 88, Cosenza", tag: "SOPRALLUOGO", color: "sopra" as const },
+  { h: "14", m: ":00", title: "Sopralluogo Esposito Franco", sub: "Via Garibaldi 45, Mendicino", tag: "SOPRALLUOGO", color: "sopra" as const },
 ];
 
 const ALERTS = [
@@ -133,16 +123,13 @@ const RECENT_COMMESSE = [
   { code: "ME", name: "Marino Edilizia", num: "C-2026-047", phase: "Sopralluogo", phaseClass: "prod" as const, eur: "€9,2k" },
 ];
 
-// ============================================================
-// COMPONENT
-// ============================================================
 export default function DashboardTablet() {
   const { preset } = useDashboard();
 
   return (
-    <div style={{ background: C.bg, minHeight: "100vh", padding: 28 }}>
+    <div style={{ background: C.bg, minWidth: 0, width: "100%", overflow: "hidden" }}>
 
-      {/* ============ 1. HERO TIMELINE ============ */}
+      {/* HERO */}
       <div style={{
         background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyDark} 100%)`,
         borderRadius: 22, padding: "28px 32px", color: "#fff",
@@ -156,12 +143,12 @@ export default function DashboardTablet() {
           pointerEvents: "none",
         }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap", marginBottom: 24, position: "relative", zIndex: 1 }}>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#93B0CF", letterSpacing: 1.6, textTransform: "uppercase" }}>Buongiorno Fabio</div>
             <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: -0.8, lineHeight: 1.1, marginTop: 6 }}>Domenica, 10 maggio</div>
             <div style={{ fontSize: 15, color: "#B5C8DD", fontWeight: 600, marginTop: 6 }}>4 eventi oggi · ☀️ 22°C Cosenza</div>
           </div>
-          <div style={{ display: "flex", gap: 24 }}>
+          <div style={{ display: "flex", gap: 24, flexShrink: 0 }}>
             <HeroStat num="14" lbl="Attive" />
             <HeroStat num="2" lbl="Ferme" alert />
             <HeroStat num="€17,9k" lbl="Mese" />
@@ -170,12 +157,11 @@ export default function DashboardTablet() {
         <div style={{ position: "relative", zIndex: 1, paddingTop: 8 }}>
           <div style={{ position: "relative", height: 6, background: "rgba(255,255,255,0.15)", borderRadius: 3, margin: "42px 16px 8px" }}>
             <TLEvent left="5%" color={C.green} time="08:30" tag="MONT" />
-            <TLEvent left="8%" color={C.amber} time="09:00" tag="PREV" />
-            <TLEvent left="30%" color={C.navy} time="11:30" tag="SOPRA" />
-            <TLEvent left="55%" color={C.navy} time="14:00" tag="SOPRA" />
-            {/* Now indicator */}
-            <div style={{ position: "absolute", top: -5, width: 16, height: 16, borderRadius: "50%", background: "#10B981", border: "3px solid #fff", boxShadow: "0 0 0 5px rgba(16,185,129,0.3)", left: "38%" }} />
-            <div style={{ position: "absolute", top: -38, transform: "translateX(-50%)", background: "#10B981", color: "#fff", fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 7, letterSpacing: 0.5, left: "38%" }}>ORA 12:14</div>
+            <TLEvent left="10%" color={C.amber} time="09:00" tag="PREV" />
+            <TLEvent left="32%" color={C.navy} time="11:30" tag="SOPRA" />
+            <TLEvent left="60%" color={C.navy} time="14:00" tag="SOPRA" />
+            <div style={{ position: "absolute", top: -5, width: 16, height: 16, borderRadius: "50%", background: "#10B981", border: "3px solid #fff", boxShadow: "0 0 0 5px rgba(16,185,129,0.3)", left: "42%" }} />
+            <div style={{ position: "absolute", top: -38, transform: "translateX(-50%)", background: "#10B981", color: "#fff", fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 7, letterSpacing: 0.5, left: "42%" }}>ORA 12:14</div>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14, padding: "0 16px", fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
             <span>08</span><span>10</span>
@@ -185,17 +171,17 @@ export default function DashboardTablet() {
         </div>
       </div>
 
-      {/* ============ 2. KPI ROW (6) ============ */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 14, marginBottom: 22 }}>
+      {/* KPI 6 — minmax(0,1fr) FIX OVERFLOW */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12, marginBottom: 22 }}>
         <Kpi color="navy" iconPath={<><path d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></>} value="14" label="Attive" delta="▲ +2" deltaUp />
-        <Kpi color="amber" iconPath={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></>} value="3" label="Sopralluoghi" />
-        <Kpi color="purple" iconPath={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} value="5" label="Produzione" delta="▲ +1" deltaUp />
+        <Kpi color="amber" iconPath={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></>} value="3" label="Sopra." />
+        <Kpi color="purple" iconPath={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} value="5" label="Produz." delta="▲ +1" deltaUp />
         <Kpi color="red" iconPath={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} value="2" label="Ferme" delta="▲ +1" />
-        <Kpi color="blue" iconPath={<><path d="M12 2v6m0 0L9 5m3 3l3-3"/><circle cx="12" cy="14" r="6"/></>} value="7" label="In scadenza" />
-        <Kpi color="green" iconPath={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></>} value="€17,9" unit="k" label="Fatturato" delta="▲ 12%" deltaUp />
+        <Kpi color="blue" iconPath={<><path d="M12 2v6m0 0L9 5m3 3l3-3"/><circle cx="12" cy="14" r="6"/></>} value="7" label="Scadenza" />
+        <Kpi color="green" iconPath={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></>} value="€17,9k" label="Fatturato" delta="▲ 12%" deltaUp small />
       </div>
 
-      {/* ============ 3. PIPELINE BAR ============ */}
+      {/* PIPELINE */}
       <div style={{ background: C.card, borderRadius: 18, padding: "24px 28px", boxShadow: "0 4px 16px rgba(15,23,42,0.18)", marginBottom: 22 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -217,27 +203,27 @@ export default function DashboardTablet() {
         </div>
       </div>
 
-      {/* ============ ROW 1: AGENDA + URGENTI + TEAM ============ */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 20, marginBottom: 22 }}>
+      {/* ROW 1: Agenda + Urgenti + Team */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr)", gap: 18, marginBottom: 22 }}>
 
         <Panel>
           <PanelHead title="Agenda oggi" link="Tutti ›" icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {TODAY_EVENTS.map((e, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: 14, background: C.cardSoft, borderRadius: 13, cursor: "pointer" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: 12, background: C.cardSoft, borderRadius: 13, cursor: "pointer", minWidth: 0 }}>
                 <div style={{
-                  width: 54, height: 54, borderRadius: "50%",
+                  width: 50, height: 50, borderRadius: "50%",
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontWeight: 800, fontSize: 14, flexShrink: 0,
+                  fontWeight: 800, fontSize: 13, flexShrink: 0,
                   background: e.color === "mont" ? C.green : e.color === "prev" ? C.amber : C.navy,
                   color: "#fff", lineHeight: 1,
                 }}>
-                  {e.h}<small style={{ fontSize: 11, opacity: 0.75, fontWeight: 700 }}>{e.m}</small>
+                  {e.h}<small style={{ fontSize: 10, opacity: 0.75, fontWeight: 700 }}>{e.m}</small>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: C.ink, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.title}</div>
-                  <div style={{ fontSize: 12, color: C.sub, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.sub}</div>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: C.subLight, textTransform: "uppercase", letterSpacing: 0.6, marginTop: 4 }}>{e.tag}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.title}</div>
+                  <div style={{ fontSize: 12, color: C.sub, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.sub}</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: C.subLight, textTransform: "uppercase", letterSpacing: 0.6, marginTop: 3 }}>{e.tag}</div>
                 </div>
               </div>
             ))}
@@ -248,14 +234,14 @@ export default function DashboardTablet() {
           <PanelHead title="Urgenti" link="Tutte ›" iconBg={C.redTint} iconColor={C.red} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {ALERTS.map((a, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: 14, background: C.redSoft, borderRadius: 13, cursor: "pointer", border: "1px solid #FECACA" }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: C.red, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>{a.code}</div>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: C.redSoft, borderRadius: 13, cursor: "pointer", border: "1px solid #FECACA", minWidth: 0 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: C.red, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, flexShrink: 0 }}>{a.code}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#7F1D1D", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</div>
-                  <div style={{ fontSize: 12, color: C.red, marginTop: 3, fontWeight: 700 }}>{a.sub}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#7F1D1D", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</div>
+                  <div style={{ fontSize: 11, color: C.red, marginTop: 3, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.sub}</div>
                 </div>
-                <div style={{ background: C.red, color: "#fff", padding: "6px 12px", borderRadius: 10, fontSize: 13, fontWeight: 800, flexShrink: 0, textAlign: "center", lineHeight: 1.1 }}>
-                  {a.days > 0 ? <>{a.days}<small style={{ fontSize: 10, opacity: 0.85, fontWeight: 700, display: "block", marginTop: 2 }}>{a.label}</small></> : a.label}
+                <div style={{ background: C.red, color: "#fff", padding: "5px 10px", borderRadius: 9, fontSize: 12, fontWeight: 800, flexShrink: 0, textAlign: "center", lineHeight: 1.1 }}>
+                  {a.days > 0 ? <>{a.days}<small style={{ fontSize: 9, opacity: 0.85, fontWeight: 700, display: "block", marginTop: 2 }}>{a.label}</small></> : a.label}
                 </div>
               </div>
             ))}
@@ -264,19 +250,19 @@ export default function DashboardTablet() {
 
         <Panel>
           <PanelHead title="Team live" link="Tutti ›" icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>} />
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {TEAM.map((m, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 11, borderRadius: 12, cursor: "pointer" }}>
-                <div style={{ width: 48, height: 48, borderRadius: "50%", background: `linear-gradient(135deg, #475A75, ${C.navy})`, color: "#fff", fontWeight: 800, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 8, borderRadius: 11, cursor: "pointer", minWidth: 0 }}>
+                <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, #475A75, ${C.navy})`, color: "#fff", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
                   {m.code}
                   <div style={{
-                    position: "absolute", bottom: 0, right: 0, width: 13, height: 13, borderRadius: "50%", border: "2px solid #fff",
+                    position: "absolute", bottom: 0, right: 0, width: 12, height: 12, borderRadius: "50%", border: "2px solid #fff",
                     background: m.status === "online" ? "#10B981" : m.status === "offline" ? C.subLight : "#F59E0B",
                   }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</div>
-                  <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.where}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</div>
+                  <div style={{ fontSize: 10, color: C.sub, fontWeight: 600, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.where}</div>
                 </div>
               </div>
             ))}
@@ -284,20 +270,20 @@ export default function DashboardTablet() {
         </Panel>
       </div>
 
-      {/* ============ ROW 2: SOLDI + PRODUZIONE ============ */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 22 }}>
+      {/* ROW 2: Soldi + Produzione */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 18, marginBottom: 22 }}>
 
         <Panel>
           <PanelHead title="Soldi · 7 giorni" link="Contabilità ›" iconBg={C.greenTint} iconColor={C.green} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>} />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
-            <div style={{ padding: 16, borderRadius: 13, background: C.greenTint, border: "1px solid #A7F3D0" }}>
+            <div style={{ padding: 14, borderRadius: 13, background: C.greenTint, border: "1px solid #A7F3D0" }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: C.green, letterSpacing: 0.6, textTransform: "uppercase" }}>Da incassare</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: C.green, letterSpacing: -0.5, lineHeight: 1, marginTop: 5 }}>€8.450</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: C.green, letterSpacing: -0.5, lineHeight: 1, marginTop: 5 }}>€8.450</div>
               <div style={{ fontSize: 11, color: "#475A75", fontWeight: 700, marginTop: 5 }}>3 fatture · ⌀ 4gg</div>
             </div>
-            <div style={{ padding: 16, borderRadius: 13, background: C.amberTint, border: "1px solid #FCD34D" }}>
+            <div style={{ padding: 14, borderRadius: 13, background: C.amberTint, border: "1px solid #FCD34D" }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: C.amber, letterSpacing: 0.6, textTransform: "uppercase" }}>Da pagare</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: C.amber, letterSpacing: -0.5, lineHeight: 1, marginTop: 5 }}>€3.220</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: C.amber, letterSpacing: -0.5, lineHeight: 1, marginTop: 5 }}>€3.220</div>
               <div style={{ fontSize: 11, color: "#475A75", fontWeight: 700, marginTop: 5 }}>2 fornitori · ⌀ 6gg</div>
             </div>
           </div>
@@ -305,13 +291,13 @@ export default function DashboardTablet() {
             {PAYMENTS.map((p, i) => (
               <div key={i} style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "11px 14px", borderRadius: 11, cursor: "pointer",
+                padding: "10px 12px", borderRadius: 11, cursor: "pointer", gap: 10, minWidth: 0,
                 background: p.urgent ? C.redTint : C.cardSoft,
                 border: p.urgent ? "1px solid #FCA5A5" : "none",
               }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginRight: 12 }}>{p.date}</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: p.type === "in" ? C.green : C.amber }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: C.sub, fontWeight: 600, flexShrink: 0 }}>{p.date}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: p.type === "in" ? C.green : C.amber, flexShrink: 0 }}>
                   {p.type === "in" ? "+" : "-"}€{p.eur.toLocaleString("it-IT")}
                 </div>
               </div>
@@ -323,16 +309,16 @@ export default function DashboardTablet() {
           <PanelHead title="Produzione · 5 attive" link="Reparto ›" iconBg={C.purpleTint} iconColor={C.purple} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {PRODUCTIONS.map((p, i) => (
-              <div key={i} style={{ padding: 14, background: C.cardSoft, borderRadius: 13, cursor: "pointer" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{p.name}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>{p.pct}%</div>
+              <div key={i} style={{ padding: 13, background: C.cardSoft, borderRadius: 13, cursor: "pointer", minWidth: 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 10 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{p.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.navy, flexShrink: 0 }}>{p.pct}%</div>
                 </div>
                 <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: "hidden" }}>
                   <div style={{ height: "100%", background: `linear-gradient(90deg, ${C.navy}, ${C.blue})`, borderRadius: 4, width: `${p.pct}%` }} />
                 </div>
-                <div style={{ fontSize: 11, color: C.sub, marginTop: 7, fontWeight: 600, display: "flex", justifyContent: "space-between" }}>
-                  <span>{p.phase}</span><span>{p.deadline}</span>
+                <div style={{ fontSize: 11, color: C.sub, marginTop: 7, fontWeight: 600, display: "flex", justifyContent: "space-between", gap: 10 }}>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.phase}</span><span style={{ flexShrink: 0 }}>{p.deadline}</span>
                 </div>
               </div>
             ))}
@@ -340,15 +326,15 @@ export default function DashboardTablet() {
         </Panel>
       </div>
 
-      {/* ============ ROW 3: FATTURATO + MESSAGGI + TOP CLIENTI ============ */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 20, marginBottom: 22 }}>
+      {/* ROW 3: Fatturato + Messaggi + Top clienti */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr)", gap: 18, marginBottom: 22 }}>
 
         <Panel>
           <PanelHead title="Fatturato 6 mesi" link="Report ›" iconBg={C.greenTint} iconColor={C.green} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>} />
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 9, height: 170, padding: "10px 0 6px" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 160, padding: "10px 0 6px" }}>
             {REVENUE_CHART.map((b, i) => (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: C.ink }}>€{b.v}k</div>
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: C.ink, whiteSpace: "nowrap" }}>€{b.v}k</div>
                 <div style={{ width: "100%", height: `${b.h}%`, background: b.current ? `linear-gradient(180deg, ${C.green}, #10B981)` : `linear-gradient(180deg, ${C.navy}, ${C.blue})`, borderRadius: "7px 7px 0 0", minHeight: 10 }} />
                 <div style={{ fontSize: 11, color: b.current ? C.green : C.sub, fontWeight: 700, textTransform: "uppercase" }}>{b.m}</div>
               </div>
@@ -360,16 +346,16 @@ export default function DashboardTablet() {
           <PanelHead title="Messaggi · 3" link="Talk ›" iconBg={C.blueTint} iconColor={C.blue} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {MESSAGES.map((m, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: C.cardSoft, borderRadius: 12, cursor: "pointer" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: C.cardSoft, borderRadius: 11, cursor: "pointer", minWidth: 0 }}>
                 <div style={{
-                  width: 40, height: 40, borderRadius: 11,
+                  width: 36, height: 36, borderRadius: 10,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#fff", flexShrink: 0, fontSize: 15, fontWeight: 800,
+                  color: "#fff", flexShrink: 0, fontSize: 14, fontWeight: 800,
                   background: m.ch === "wa" ? "#25D366" : m.ch === "email" ? C.blue : C.amber,
                 }}>{m.chLabel}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.from}</div>
-                  <div style={{ fontSize: 11, color: C.sub, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>{m.text}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.from}</div>
+                  <div style={{ fontSize: 10, color: C.sub, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>{m.text}</div>
                 </div>
                 <div style={{ fontSize: 10, color: C.subLight, fontWeight: 700, flexShrink: 0 }}>{m.time}</div>
               </div>
@@ -381,37 +367,37 @@ export default function DashboardTablet() {
           <PanelHead title="Top clienti mese" link="Tutti ›" iconBg={C.amberTint} iconColor={C.amber} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {TOP_CLIENTS.map((c, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: C.cardSoft, borderRadius: 12, cursor: "pointer" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: C.cardSoft, borderRadius: 11, cursor: "pointer", minWidth: 0 }}>
                 <div style={{
-                  width: 30, height: 30, borderRadius: "50%",
+                  width: 28, height: 28, borderRadius: "50%",
                   background: c.gold ? C.amberTint : C.navyTint,
                   color: c.gold ? C.amber : C.navy,
-                  fontSize: 14, fontWeight: 800,
+                  fontSize: 13, fontWeight: 800,
                   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>{c.rank}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-                  <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginTop: 3 }}>{c.meta}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
+                  <div style={{ fontSize: 10, color: C.sub, fontWeight: 600, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.meta}</div>
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: C.green }}>{c.eur}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: C.green, flexShrink: 0 }}>{c.eur}</div>
               </div>
             ))}
           </div>
         </Panel>
       </div>
 
-      {/* ============ ROW 4: MAGAZZINO + COMMESSE RECENTI ============ */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      {/* ROW 4: Magazzino + Commesse recenti */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 18 }}>
 
         <Panel>
           <PanelHead title="Magazzino sotto-scorta · 5" link="Riordina ›" iconBg={C.redTint} iconColor={C.red} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {STOCK_LOW.map((s, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: C.redSoft, borderRadius: 12, cursor: "pointer", border: "1px solid #FECACA" }}>
-                <div style={{ width: 40, height: 40, borderRadius: 11, background: C.red, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 800, fontSize: 15 }}>!</div>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 11, background: C.redSoft, borderRadius: 12, cursor: "pointer", border: "1px solid #FECACA", minWidth: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: C.red, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 800, fontSize: 14 }}>!</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#7F1D1D", lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
-                  <div style={{ fontSize: 11, color: C.red, fontWeight: 700, marginTop: 3 }}>{s.stock}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#7F1D1D", lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
+                  <div style={{ fontSize: 10, color: C.red, fontWeight: 700, marginTop: 3 }}>{s.stock}</div>
                 </div>
               </div>
             ))}
@@ -426,16 +412,16 @@ export default function DashboardTablet() {
               const pillBg = c.phaseClass === "prev" ? C.amberTint : c.phaseClass === "fatt" ? C.greenTint : C.navyTint;
               const pillColor = c.phaseClass === "prev" ? C.amber : c.phaseClass === "fatt" ? C.green : C.navy;
               return (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: C.cardSoft, borderRadius: 12, cursor: "pointer" }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, color: "#fff", fontWeight: 800, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: avatarBg }}>{c.code}</div>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: C.cardSoft, borderRadius: 11, cursor: "pointer", minWidth: 0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 11, color: "#fff", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: avatarBg }}>{c.code}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: C.sub, marginTop: 3, display: "flex", gap: 6, alignItems: "center" }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
+                    <div style={{ fontSize: 10, color: C.sub, marginTop: 3, display: "flex", gap: 6, alignItems: "center" }}>
                       <span style={{ fontWeight: 700, color: C.navy }}>{c.num}</span>
-                      <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 999, letterSpacing: 0.4, textTransform: "uppercase", background: pillBg, color: pillColor }}>{c.phase}</span>
+                      <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 999, letterSpacing: 0.4, textTransform: "uppercase", background: pillBg, color: pillColor }}>{c.phase}</span>
                     </div>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink }}>{c.eur}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, flexShrink: 0 }}>{c.eur}</div>
                 </div>
               );
             })}
@@ -447,13 +433,10 @@ export default function DashboardTablet() {
   );
 }
 
-// ============================================================
-// SUB-COMPONENTS
-// ============================================================
 const HeroStat: React.FC<{ num: string; lbl: string; alert?: boolean }> = ({ num, lbl, alert }) => (
   <div style={{ textAlign: "right" }}>
-    <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1, color: alert ? "#FCA5A5" : "#fff" }}>{num}</div>
-    <div style={{ fontSize: 12, fontWeight: 700, color: "#93B0CF", textTransform: "uppercase", letterSpacing: 0.7, marginTop: 5 }}>{lbl}</div>
+    <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1, color: alert ? "#FCA5A5" : "#fff", whiteSpace: "nowrap" }}>{num}</div>
+    <div style={{ fontSize: 11, fontWeight: 700, color: "#93B0CF", textTransform: "uppercase", letterSpacing: 0.7, marginTop: 5 }}>{lbl}</div>
   </div>
 );
 
@@ -471,7 +454,7 @@ const TLEvent: React.FC<{ left: string; color: string; time: string; tag: string
   </div>
 );
 
-const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "blue"; iconPath: React.ReactNode; value: string; unit?: string; label: string; delta?: string; deltaUp?: boolean }> = ({ color, iconPath, value, unit, label, delta, deltaUp }) => {
+const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "blue"; iconPath: React.ReactNode; value: string; label: string; delta?: string; deltaUp?: boolean; small?: boolean }> = ({ color, iconPath, value, label, delta, deltaUp, small }) => {
   const colorMap = {
     navy: { bd: C.navy, bg: C.navyTint, fg: C.navy },
     amber: { bd: C.amber, bg: C.amberTint, fg: C.amber },
@@ -483,23 +466,24 @@ const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "bl
   const m = colorMap[color];
   return (
     <div style={{
-      background: C.card, borderRadius: 18, padding: 22,
+      background: C.card, borderRadius: 16, padding: 16,
       boxShadow: "0 4px 16px rgba(15,23,42,0.18)", cursor: "pointer",
-      borderTop: `5px solid ${m.bd}`,
-      display: "flex", flexDirection: "column", gap: 10,
+      borderTop: `4px solid ${m.bd}`,
+      display: "flex", flexDirection: "column", gap: 8,
+      minWidth: 0, overflow: "hidden",
     }}>
-      <div style={{ width: 44, height: 44, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", background: m.bg, color: m.fg }}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>{iconPath}</svg>
+      <div style={{ width: 38, height: 38, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: m.bg, color: m.fg, flexShrink: 0 }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>{iconPath}</svg>
       </div>
-      <div>
-        <div style={{ fontSize: 34, fontWeight: 800, color: C.ink, letterSpacing: -0.7, lineHeight: 1 }}>
-          {value}{unit && <span style={{ fontSize: 18, color: C.sub, fontWeight: 700, marginLeft: 3 }}>{unit}</span>}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: small ? 22 : 28, fontWeight: 800, color: C.ink, letterSpacing: -0.5, lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {value}
         </div>
-        <div style={{ fontSize: 13, color: C.sub, fontWeight: 700, lineHeight: 1.2, marginTop: 6 }}>{label}</div>
+        <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, lineHeight: 1.2, marginTop: 5 }}>{label}</div>
       </div>
       {delta && (
         <div style={{
-          fontSize: 11, fontWeight: 800, padding: "3px 8px", borderRadius: 6,
+          fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 5,
           display: "inline-flex", width: "fit-content",
           background: deltaUp ? C.greenTint : C.redTint,
           color: deltaUp ? C.green : C.red,
@@ -511,11 +495,11 @@ const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "bl
 
 const PipStep: React.FC<{ grow: number; bg: string; num: string; lbl: string }> = ({ grow, bg, num, lbl }) => (
   <div style={{
-    flex: 1, flexGrow: grow,
+    flex: 1, flexGrow: grow, minWidth: 0,
     display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
-    background: bg, color: "#fff", fontWeight: 800, cursor: "pointer", padding: 10, textAlign: "center",
+    background: bg, color: "#fff", fontWeight: 800, cursor: "pointer", padding: 8, textAlign: "center",
   }}>
-    <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{num}</div>
-    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", opacity: 0.95, marginTop: 5 }}>{lbl}</div>
+    <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>{num}</div>
+    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", opacity: 0.95, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{lbl}</div>
   </div>
 );
