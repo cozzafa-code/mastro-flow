@@ -3064,6 +3064,42 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   };
 
   const creaFattura = async (c, tipo: "acconto" | "sal" | "saldo" | "unica", importoOverride?: number, scadenzaIso?: string, noteCustom?: string) => {
+    // [v-trafila-fix-FINAL] guard UUID + prompt importo + force totale_finale
+    const _UUID_RE_FF = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!c?.id || !_UUID_RE_FF.test(String(c.id))) {
+      alert('Errore: la commessa non e ancora salvata sul DB. Ricreala.');
+      return null;
+    }
+    let totaleStimato = 0;
+    try {
+      if (typeof calcolaTotaleCommessa === 'function') {
+        totaleStimato = Number(calcolaTotaleCommessa(c)) || 0;
+      }
+      if (!totaleStimato) {
+        totaleStimato = Number(c.totale_finale) || Number((c as any).totaleFinale) || 0;
+      }
+    } catch (e) { console.warn('[fix-FINAL] calcolo err:', e); }
+    if (!totaleStimato || totaleStimato <= 0) {
+      const ris = prompt('Totale commessa non calcolato. Inserisci totale lordo in euro (es. 1000):');
+      if (!ris) return null;
+      totaleStimato = Math.round(Number(String(ris).replace(',', '.')) * 100) / 100;
+      if (!totaleStimato || totaleStimato <= 0) { alert('Importo non valido'); return null; }
+    }
+    try {
+      const updPayload: any = { totale_finale: totaleStimato };
+      if (c.fase === 'conferma_ordine' || c.fase === 'confermata') {
+        updPayload.fase = 'confermata';
+      }
+      const upd = await supabase.from('commesse').update(updPayload).eq('id', c.id);
+      if (upd.error) console.warn('[fix-FINAL] update fail:', upd.error);
+      else console.log('[fix-FINAL] forzato totale_finale =', totaleStimato);
+    } catch (e) { console.warn('[fix-FINAL] update exc:', e); }
+    if (!importoOverride || importoOverride <= 0) {
+      if (tipo === 'acconto') importoOverride = Math.round(totaleStimato * 0.5);
+      else if (tipo === 'saldo') importoOverride = totaleStimato;
+      else importoOverride = totaleStimato;
+      console.log('[fix-FINAL] importoOverride forzato a', importoOverride);
+    }
     const num = nextNumFattura();
     const anno = new Date().getFullYear();
     // Calcola totale REALE dai vani + voci libere
