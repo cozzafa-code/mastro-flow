@@ -82,6 +82,13 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
               position: "relative" as any,
               zIndex: 1,
             }}>
+      {showOrdiniSheet && selectedCM ? (
+        <OrdiniSheet
+          commessa={selectedCM}
+          onClose={() => setShowOrdiniSheet(false)}
+          onCompletato={() => { setShowOrdiniSheet(false); if (typeof window !== 'undefined') window.location.reload(); }}
+        />
+      ) : null}
               {/* Bubble icona tipo */}
               <div style={{
                 width: 40, height: 40, borderRadius: 12,
@@ -202,14 +209,6 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
       
     </div>
     </>
-            {showOrdiniSheet && selectedCM ? (
-        <OrdiniSheet
-          commessa={selectedCM}
-          onClose={() => setShowOrdiniSheet(false)}
-          onCompletato={() => { setShowOrdiniSheet(false); if (typeof window !== 'undefined') window.location.reload(); }}
-        />
-      ) : null}
-
   );
 }
 
@@ -1865,7 +1864,7 @@ export default function CMDetailPanel() {
                             { txt: "IN ATTESA" + giorniLbl29, bg: inAttesaBg29, icon: "⏳" };
 
             // Prossima azione consigliata
-            const prossima = haFirmato29 ? { lbl: "AVVIA PRODUZIONE", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { setFaseTo(c29.id, "ordini"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "ordine" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "ordine" }) : p); } } :
+            const prossima = haFirmato29 ? { lbl: "AVVIA PRODUZIONE", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { setFaseTo(c29.id, "ordini"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "ordini" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "ordini" }) : p); } } :
                            (tipoRis29 === "accettato" && c29.fase === "conferma") ? { lbl: "INVIA LINK FIRMA AL CLIENTE", bg: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)", action: () => setShowModalFirma(true) } :
                            tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D\'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); setShowModalFirma(true); } } :
                            tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
@@ -2026,7 +2025,7 @@ export default function CMDetailPanel() {
                       { lbl: tipoRis29 === "modifiche" ? "Cliente vuole modifiche" : tipoRis29 === "chiamare" ? "Cliente vuole contatto" : "Cliente accettato", done: !!tipoRis29 && tipoRis29 !== "modifiche" && tipoRis29 !== "chiamare", warn: tipoRis29 === "modifiche" || tipoRis29 === "chiamare", ts: ris29?.risposta_at ? new Date(ris29.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : null },
                       { lbl: "Conferma firmata", done: haFirmato29, ts: dataFirmaFmt29 },
                       { lbl: "Acconto fatturato", done: !!(c29.fattureDB || []).find ? !!((c29.fattureDB || []).find((f: any) => f.cmId === c29.id && (f.tipo === "acconto" || f.tipo === "unica"))) : false, ts: null },
-                      { lbl: "Produzione / Montaggio", done: c29.fase === "ordine" || c29.fase === "produzione" || c29.fase === "montaggio" || c29.fase === "chiusura", ts: null },
+                      { lbl: "Produzione / Montaggio", done: c29.fase === "ordini" || c29.fase === "produzione" || c29.fase === "montaggio" || c29.fase === "chiusura", ts: null },
                       { lbl: "Saldo / Pagata", done: c29.fase === "chiusura" || c29.fase === "pagata", ts: null },
                     ];
                     const activeIdx = steps.findIndex((s: any) => !s.done);
