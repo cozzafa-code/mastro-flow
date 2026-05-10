@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import StepSource from "./StepSource"
 import StepTipo from "./StepTipo"
 import StepPreview from "./StepPreview"
@@ -64,7 +65,8 @@ export default function OrdiniSheet({ commessa, onClose, onCompletato }: Props) 
     } finally { setSubmitting(false) }
   }
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "flex-end", background: "rgba(15,31,51,0.65)", backdropFilter: "blur(4px)" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, margin: "0 auto", background: BG, borderRadius: "22px 22px 0 0", maxHeight: "92vh", overflow: "hidden", display: "flex", flexDirection: "column", animation: "slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
         <div style={{ width: 38, height: 4, background: "#C8D2DA", borderRadius: 2, margin: "8px auto 4px", flexShrink: 0 }} />
@@ -118,6 +120,7 @@ export default function OrdiniSheet({ commessa, onClose, onCompletato }: Props) 
         </div>
       </div>
       <style>{`@keyframes slideUpSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
-    </div>
+    </div>,
+    document.body
   )
 }
