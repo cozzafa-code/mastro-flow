@@ -1,386 +1,393 @@
 "use client";
+// MASTRO TABLET - Fiscale v1 con dati reali Supabase
+// Tabella: fin_fatture_emesse + fin_fatture_ricevute
 import * as React from "react";
-import { TT, cardStyle } from "../design-system";
-import { Icon, IconName } from "../icons";
-import { useDashboard } from "../dashboard-context";
-import { useMastroData, TipoBonus, StatoEnea } from "../store";
+import { supabase } from "../../../lib/supabase";
+import { getAziendaId } from "../../mastro-constants";
 
-const TINTS = {
-  green: TT.green, blue: TT.blue, amber: TT.amber,
-  violet: TT.violet, red: TT.red, pink: TT.pink,
-  teal: TT.teal, slate: TT.slate, orange: TT.orange,
-} as const;
-
-const BONUS_DEF: Record<TipoBonus, { label: string; perc: string; tint: keyof typeof TINTS }> = {
-  bonus_casa:     { label: "Bonus Casa",     perc: "50%", tint: "blue"   },
-  ecobonus_50:    { label: "Ecobonus",        perc: "50%", tint: "green"  },
-  ecobonus_65:    { label: "Ecobonus",        perc: "65%", tint: "teal"   },
-  bonus_mobili:   { label: "Bonus Mobili",    perc: "50%", tint: "amber"  },
-  superbonus_90:  { label: "Superbonus",      perc: "90%", tint: "violet" },
+type Fattura = {
+  id: string;
+  azienda_id: string;
+  numero: string;
+  data_emissione: string;
+  data_scadenza: string | null;
+  cliente: string;
+  cliente_piva: string | null;
+  imponibile: number;
+  iva: number;
+  totale: number;
+  stato: string;
+  pagato: number;
+  residuo: number;
+  commessa_code: string | null;
+  sdi_id: string | null;
+  sdi_stato: string | null;
+  pdf_url: string | null;
+  xml_url: string | null;
+  tipo: string | null;
 };
 
-const ENEA_DEF: Record<StatoEnea, { label: string; tint: keyof typeof TINTS }> = {
-  da_inviare:  { label: "Da inviare",  tint: "red"   },
-  inviato:     { label: "Inviato",     tint: "blue"  },
-  confermato:  { label: "Confermato",  tint: "green" },
+const C = {
+  bg: "#94A3B8",
+  card: "#FFFFFF",
+  cardSoft: "#F8FAFC",
+  ink: "#0A1628",
+  sub: "#64748B",
+  subLight: "#94A3B8",
+  border: "#E2E8F0",
+  navy: "#1E3A5F",
+  navyTint: "#DBE6F1",
+  amber: "#92400E",
+  amberTint: "#FEF3C7",
+  green: "#065F46",
+  greenTint: "#ECFDF5",
+  red: "#991B1B",
+  redTint: "#FEE2E2",
+  redSoft: "#FEF2F2",
+  blue: "#3B7FE0",
+  blueTint: "#DBEAFE",
+  purple: "#6D28D9",
+  purpleTint: "#EDE9FE",
 };
 
-type FiltroBonus = "tutti" | TipoBonus;
-type FiltroEnea = "tutti" | StatoEnea;
+function statoFatturaColor(stato: string): { bg: string; fg: string; label: string } {
+  const s = (stato || "").toLowerCase();
+  if (s === "pagata")     return { bg: C.greenTint,  fg: C.green,  label: "Pagata" };
+  if (s === "scaduta")    return { bg: C.redTint,    fg: C.red,    label: "Scaduta" };
+  if (s === "parziale")   return { bg: C.amberTint,  fg: C.amber,  label: "Parziale" };
+  if (s === "da_inviare") return { bg: C.amberTint,  fg: C.amber,  label: "Da inviare" };
+  if (s === "inviata")    return { bg: C.blueTint,   fg: C.blue,   label: "Inviata" };
+  if (s === "consegnata") return { bg: C.greenTint,  fg: C.green,  label: "Consegnata" };
+  if (s === "scartata")   return { bg: C.redTint,    fg: C.red,    label: "Scartata SDI" };
+  return { bg: C.navyTint, fg: C.navy, label: stato || "—" };
+}
 
-const FILTRI_BONUS: { id: FiltroBonus; label: string }[] = [
-  { id: "tutti",          label: "Tutti i bonus" },
-  { id: "bonus_casa",     label: "Bonus Casa 50%" },
-  { id: "ecobonus_50",    label: "Ecobonus 50%" },
-  { id: "ecobonus_65",    label: "Ecobonus 65%" },
-  { id: "bonus_mobili",   label: "Bonus Mobili 50%" },
-  { id: "superbonus_90",  label: "Superbonus 90%" },
-];
+function isScaduta(f: Fattura): boolean {
+  if (!f.data_scadenza) return false;
+  if (f.stato === "pagata") return false;
+  const today = new Date().toISOString().split("T")[0];
+  return f.data_scadenza < today && f.residuo > 0;
+}
 
-const FILTRI_ENEA: { id: FiltroEnea; label: string }[] = [
-  { id: "tutti",      label: "ENEA tutti" },
-  { id: "da_inviare", label: "Da inviare" },
-  { id: "inviato",    label: "Inviato" },
-  { id: "confermato", label: "Confermato" },
-];
+function fmtData(d: string | null): string {
+  if (!d) return "—";
+  const dt = new Date(d);
+  return dt.toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" });
+}
 
 export default function FiscaleTablet() {
-  const data = useMastroData();
-  const { openEntity } = useDashboard();
-  const [filtroBonus, setFiltroBonus] = React.useState<FiltroBonus>("tutti");
-  const [filtroEnea, setFiltroEnea] = React.useState<FiltroEnea>("tutti");
+  const [fatture, setFatture] = React.useState<Fattura[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [searchQ, setSearchQ] = React.useState("");
+  const [filtroStato, setFiltroStato] = React.useState<string>("tutte");
 
-  const all = data.getPratiche();
+  const loadFatture = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const aziendaId = await getAziendaId();
+      if (!aziendaId) {
+        setError("Azienda non identificata");
+        setFatture([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("fin_fatture_emesse")
+        .select("*")
+        .eq("azienda_id", aziendaId)
+        .order("data_emissione", { ascending: false });
+      if (error) throw error;
+      setFatture((data || []) as Fattura[]);
+    } catch (e: any) {
+      setError(e?.message || "Errore caricamento fatture");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  React.useEffect(() => { loadFatture(); }, [loadFatture]);
+
+  // Filtro
   const filtered = React.useMemo(() => {
-    return all.filter((p) => {
-      if (filtroBonus !== "tutti" && p.tipo !== filtroBonus) return false;
-      if (filtroEnea !== "tutti" && p.enea !== filtroEnea) return false;
+    return fatture.filter(f => {
+      if (filtroStato === "scadute" && !isScaduta(f)) return false;
+      else if (filtroStato !== "tutte" && filtroStato !== "scadute" && f.stato !== filtroStato) return false;
+      if (searchQ.trim()) {
+        const q = searchQ.toLowerCase();
+        const hay = `${f.numero} ${f.cliente || ""} ${f.commessa_code || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [all, filtroBonus, filtroEnea]);
+  }, [fatture, filtroStato, searchQ]);
 
-  const totDetr = all.reduce((s, p) => s + p.importoDetraibile, 0);
-  const totDetrFiltrato = filtered.reduce((s, p) => s + p.importoDetraibile, 0);
-  const eneaDaInviare = all.filter((p) => p.enea === "da_inviare").length;
-  const camRichiesto = all.filter((p) => p.cam).length;
+  // KPI
+  const kpiTotaleFatturato = fatture.reduce((s, f) => s + (Number(f.totale) || 0), 0);
+  const kpiIncassato = fatture.reduce((s, f) => s + (Number(f.pagato) || 0), 0);
+  const kpiResiduo = fatture.reduce((s, f) => s + (Number(f.residuo) || 0), 0);
+  const kpiScadute = fatture.filter(isScaduta).length;
+  const kpiDaInviare = fatture.filter(f => f.stato === "da_inviare").length;
+
+  const stati = React.useMemo(() => {
+    const set = new Set<string>();
+    fatture.forEach(f => { if (f.stato) set.add(f.stato); });
+    return Array.from(set).sort();
+  }, [fatture]);
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: TT.text1, letterSpacing: "-0.5px" }}>Fiscale</div>
-          <div style={{ fontSize: 12, color: TT.text3, marginTop: 2 }}>
-            {all.length} pratiche &middot; € {totDetr.toLocaleString("it-IT")} detraibili totali &middot; {eneaDaInviare} ENEA da inviare
-          </div>
-        </div>
-        <button style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          padding: "9px 14px",
-          background: TT.amber[400], color: "#fff",
-          border: "none", borderRadius: 10,
-          fontSize: 13, fontWeight: 700,
-          cursor: "pointer", fontFamily: TT.fontFamily,
-          boxShadow: `0 2px 8px ${TT.amber[300]}`,
-        }}>
-          <Icon name="plus" size={13} color="#fff" strokeWidth={2.4} />
-          Nuova pratica
-        </button>
-      </div>
+    <div style={{ background: C.bg, minHeight: "100%", padding: 20 }}>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
-        <KpiMini icon="fiscale"     label="Pratiche totali" value={String(all.length)} tint="amber" />
-        <KpiMini icon="contabilita" label="Detraibile" value={`€ ${(totDetr/1000).toFixed(1).replace(".", ",")}k`} tint="green" />
-        <KpiMini icon="bell"        label="ENEA da inviare" value={String(eneaDaInviare)} tint={eneaDaInviare > 0 ? "red" : "green"} />
-        <KpiMini icon="check"       label="CAM richiesto" value={String(camRichiesto)} tint="violet" />
-      </div>
-
-      {/* FILTRI TIPO BONUS */}
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, color: TT.text3, letterSpacing: "0.4px", textTransform: "uppercase", marginBottom: 6 }}>
-          Tipo agevolazione
+      {/* HEADER */}
+      <div style={{
+        background: `linear-gradient(135deg, ${C.navy} 0%, #0F1B2D 100%)`,
+        borderRadius: 16, padding: "20px 24px", color: "#fff",
+        marginBottom: 14, boxShadow: "0 8px 24px rgba(15,27,45,0.4)",
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#93B0CF", letterSpacing: 1.5, textTransform: "uppercase" }}>Fiscale</div>
+        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.1, marginTop: 4 }}>
+          {loading ? "Caricamento..." : `${fatture.length} fatture emesse`}
         </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {FILTRI_BONUS.map((f) => {
-            const isActive = f.id === filtroBonus;
-            const ramp = f.id !== "tutti" ? TINTS[BONUS_DEF[f.id as TipoBonus].tint] : null;
-            const count = f.id === "tutti" ? all.length : all.filter((p) => p.tipo === f.id).length;
-            return (
-              <FilterPill key={f.id}
-                label={f.label} count={count}
-                active={isActive}
-                onClick={() => setFiltroBonus(f.id)}
-                ramp={ramp}
-              />
-            );
-          })}
+        <div style={{ fontSize: 12, color: "#B5C8DD", fontWeight: 600, marginTop: 4 }}>
+          Fatturato: €{kpiTotaleFatturato.toLocaleString("it-IT", { maximumFractionDigits: 2 })} · Incassato: €{kpiIncassato.toLocaleString("it-IT", { maximumFractionDigits: 2 })}
         </div>
       </div>
 
-      {/* FILTRI ENEA */}
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, color: TT.text3, letterSpacing: "0.4px", textTransform: "uppercase", marginBottom: 6 }}>
-          Stato ENEA
-        </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {FILTRI_ENEA.map((f) => {
-            const isActive = f.id === filtroEnea;
-            const ramp = f.id !== "tutti" ? TINTS[ENEA_DEF[f.id as StatoEnea].tint] : null;
-            const count = f.id === "tutti" ? all.length : all.filter((p) => p.enea === f.id).length;
-            return (
-              <FilterPill key={f.id}
-                label={f.label} count={count}
-                active={isActive}
-                onClick={() => setFiltroEnea(f.id)}
-                ramp={ramp}
-              />
-            );
-          })}
-        </div>
+      {/* KPI */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
+        <Kpi label="Fatturato" value={`€${(kpiTotaleFatturato/1000).toFixed(1)}k`} color="navy" />
+        <Kpi label="Incassato" value={`€${(kpiIncassato/1000).toFixed(1)}k`} color="green" />
+        <Kpi label="Residuo" value={`€${(kpiResiduo/1000).toFixed(1)}k`} color="amber" alert={kpiResiduo > 0} />
+        <Kpi label="Scadute" value={String(kpiScadute)} color="red" alert={kpiScadute > 0} />
       </div>
 
-      {/* RISULTATI BANNER */}
-      {(filtroBonus !== "tutti" || filtroEnea !== "tutti") && (
+      {/* FILTRI */}
+      <div style={{
+        background: C.card, borderRadius: 14, padding: 14,
+        boxShadow: "0 4px 16px rgba(15,23,42,0.18)", marginBottom: 12,
+        display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+      }}>
         <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "8px 14px",
-          background: TT.teal[50],
-          border: `1px solid ${TT.teal[100]}`,
-          borderRadius: 9,
-          marginBottom: 10,
-          fontSize: 11,
+          flex: 1, minWidth: 200,
+          background: C.cardSoft, borderRadius: 10, padding: "9px 12px",
+          display: "flex", alignItems: "center", gap: 8,
         }}>
-          <div style={{ color: TT.text2 }}>
-            <strong style={{ color: TT.teal[700], fontVariantNumeric: "tabular-nums" }}>
-              {filtered.length}
-            </strong> pratich{filtered.length === 1 ? "a" : "e"} con i filtri attivi
-          </div>
-          <div style={{ color: TT.text2, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-            Detraibile filtrato: <span style={{ color: TT.teal[700] }}>€ {totDetrFiltrato.toLocaleString("it-IT")}</span>
-          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.subLight} strokeWidth={2.5}>
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            value={searchQ}
+            onChange={e => setSearchQ(e.target.value)}
+            placeholder="Cerca numero, cliente, commessa..."
+            style={{
+              flex: 1, border: "none", background: "transparent",
+              fontSize: 13, fontWeight: 600, color: C.ink, outline: "none",
+              fontFamily: "inherit", minWidth: 0,
+            }}
+          />
         </div>
-      )}
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+          <Pill label={`Tutte (${fatture.length})`} active={filtroStato === "tutte"} onClick={() => setFiltroStato("tutte")} />
+          {kpiScadute > 0 && (
+            <Pill label={`Scadute (${kpiScadute})`} active={filtroStato === "scadute"} onClick={() => setFiltroStato("scadute")} alert />
+          )}
+          {stati.map(s => {
+            const sc = statoFatturaColor(s);
+            return (
+              <Pill
+                key={s}
+                label={`${sc.label} (${fatture.filter(f => f.stato === s).length})`}
+                active={filtroStato === s}
+                onClick={() => setFiltroStato(s)}
+              />
+            );
+          })}
+        </div>
+      </div>
 
-      {/* PRATICHE GRID */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-        {filtered.map((p) => {
-          const cli = data.getCliente(p.clienteId);
-          const com = data.getCommessa(p.commessaId);
-          const bonus = BONUS_DEF[p.tipo];
-          const enea = ENEA_DEF[p.enea];
-          const bonusRamp = TINTS[bonus.tint];
-          const eneaRamp = TINTS[enea.tint];
-          if (!cli) return null;
-          return (
-            <div key={p.id}
-              onClick={() => openEntity("pratica", p.id)}
-              style={cardStyle({ padding: 0, cursor: "pointer", overflow: "hidden" })}>
-
-              {/* Header colorato */}
-              <div style={{
-                padding: "12px 16px",
-                background: `linear-gradient(135deg, ${bonusRamp[50]}, ${TT.bg})`,
-                borderBottom: `1px solid ${TT.border}`,
-                display: "flex", alignItems: "center", gap: 12,
-              }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 11,
-                  background: `linear-gradient(135deg, ${bonusRamp[300]}, ${bonusRamp[500]})`,
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                  boxShadow: `0 3px 10px ${bonusRamp[200]}`,
-                  color: "#fff",
-                  letterSpacing: "-0.5px",
-                }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
-                    {bonus.perc}
-                  </div>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                    <span style={{ fontFamily: "monospace", fontSize: 10, color: TT.text3, fontWeight: 700 }}>{p.numero}</span>
-                    {p.cam && (
-                      <span style={{
-                        padding: "1px 6px",
-                        background: TT.violet[100], color: TT.violet[600],
-                        borderRadius: 4, fontSize: 8, fontWeight: 800,
-                        letterSpacing: "0.4px", textTransform: "uppercase",
-                      }}>CAM</span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: TT.text1, letterSpacing: "-0.2px" }}>
-                    {bonus.label}
-                  </div>
-                  <div style={{ fontSize: 11, color: TT.text2, marginTop: 1 }}>
-                    {cli.nome} &middot; {com?.numero || ""}
-                  </div>
-                </div>
-                <span style={{
-                  padding: "3px 9px",
-                  background: eneaRamp[400], color: "#fff",
-                  borderRadius: 999, fontSize: 9, fontWeight: 800,
-                  letterSpacing: "0.4px", textTransform: "uppercase",
-                  whiteSpace: "nowrap",
-                  boxShadow: `0 2px 6px ${eneaRamp[200]}`,
-                }}>
-                  ENEA {enea.label}
-                </span>
-              </div>
-
-              {/* Body con dettagli */}
-              <div style={{ padding: "14px 16px" }}>
-                <div style={{
-                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8,
-                  marginBottom: 12,
-                }}>
-                  <Stat label="Importo lavori" value={`€ ${p.importoTotale.toLocaleString("it-IT")}`} tint="slate" />
-                  <Stat label="Detraibile" value={`€ ${p.importoDetraibile.toLocaleString("it-IT")}`} tint={bonus.tint} />
-                </div>
-
-                {/* Deadline ENEA */}
-                {p.enea === "da_inviare" && p.deadlineEnea && (
-                  <div style={{
-                    padding: "8px 12px",
-                    background: TT.red[50],
-                    border: `1px solid ${TT.red[100]}`,
-                    borderRadius: 8,
-                    display: "flex", alignItems: "center", gap: 9,
-                  }}>
-                    <Icon name="bell" size={14} color={TT.red[600]} strokeWidth={2.4} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: TT.red[600], letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 1 }}>
-                        Deadline ENEA
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: TT.text1 }}>
-                        Entro {p.deadlineEnea}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {p.enea === "inviato" && p.dataInvioEnea && (
-                  <div style={{
-                    padding: "8px 12px",
-                    background: TT.blue[50],
-                    border: `1px solid ${TT.blue[100]}`,
-                    borderRadius: 8,
-                    display: "flex", alignItems: "center", gap: 9,
-                  }}>
-                    <Icon name="check" size={14} color={TT.blue[600]} strokeWidth={2.4} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: TT.blue[600], letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 1 }}>
-                        Inviato il
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: TT.text1 }}>
-                        {p.dataInvioEnea} &middot; In attesa conferma
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {p.enea === "confermato" && (
-                  <div style={{
-                    padding: "8px 12px",
-                    background: TT.green[50],
-                    border: `1px solid ${TT.green[100]}`,
-                    borderRadius: 8,
-                    display: "flex", alignItems: "center", gap: 9,
-                  }}>
-                    <Icon name="check" size={14} color={TT.green[600]} strokeWidth={2.6} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: TT.green[600], letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 1 }}>
-                        ENEA Confermato
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: TT.text1 }}>
-                        Pratica completata
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+      {/* LISTA FATTURE */}
+      <div style={{ background: C.card, borderRadius: 14, boxShadow: "0 4px 16px rgba(15,23,42,0.18)", overflow: "hidden" }}>
+        {error && (
+          <div style={{ padding: 28, textAlign: "center", color: C.red, fontWeight: 700 }}>
+            ⚠ {error}
+            <div style={{ marginTop: 10 }}>
+              <button onClick={loadFatture} style={{
+                padding: "8px 16px", background: C.red, color: "#fff",
+                border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              }}>Riprova</button>
             </div>
-          );
-        })}
-        {filtered.length === 0 && (
-          <div style={{
-            gridColumn: "span 2",
-            padding: 30, textAlign: "center",
-            color: TT.text3, fontSize: 12,
-          }}>
-            Nessuna pratica con i filtri attivi.
+          </div>
+        )}
+        {!error && loading && (
+          <div style={{ padding: 50, textAlign: "center", color: C.sub, fontSize: 13, fontWeight: 600 }}>
+            Caricamento fatture...
+          </div>
+        )}
+        {!error && !loading && filtered.length === 0 && fatture.length === 0 && (
+          <div style={{ padding: 50, textAlign: "center" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.ink, marginBottom: 6 }}>Nessuna fattura emessa</div>
+            <div style={{ fontSize: 12, color: C.sub, fontWeight: 600 }}>Le fatture emesse compariranno qui</div>
+          </div>
+        )}
+        {!error && !loading && filtered.length === 0 && fatture.length > 0 && (
+          <div style={{ padding: 50, textAlign: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.sub }}>Nessuna fattura corrisponde ai filtri</div>
+          </div>
+        )}
+        {!error && !loading && filtered.length > 0 && (
+          <div>
+            {filtered.map((f, idx) => {
+              const stato = statoFatturaColor(f.stato);
+              const scaduta = isScaduta(f);
+              const finalStato = scaduta ? statoFatturaColor("scaduta") : stato;
+              return (
+                <div key={f.id} style={{
+                  padding: "14px 16px",
+                  borderBottom: idx < filtered.length - 1 ? `1px solid ${C.border}` : "none",
+                  cursor: "pointer",
+                  background: scaduta ? C.redSoft : "transparent",
+                }}>
+                  {/* RIGA 1: numero + stato + sdi */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{
+                        fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 7,
+                        background: C.navy, color: "#fff", letterSpacing: 0.4,
+                        fontVariantNumeric: "tabular-nums",
+                      }}>{f.numero}</span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 7,
+                        background: finalStato.bg, color: finalStato.fg,
+                      }}>{finalStato.label}</span>
+                      {f.sdi_stato && (
+                        <span style={{
+                          fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 7,
+                          background: C.blueTint, color: C.blue, textTransform: "uppercase", letterSpacing: 0.5,
+                        }}>SDI: {f.sdi_stato}</span>
+                      )}
+                      {f.commessa_code && (
+                        <span style={{ fontSize: 11, color: C.sub, fontWeight: 700 }}>· {f.commessa_code}</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" }}>
+                      €{Number(f.totale).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+
+                  {/* RIGA 2: cliente */}
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, lineHeight: 1.3, marginBottom: 4 }}>
+                    {f.cliente || "Cliente n/d"}
+                  </div>
+                  {f.cliente_piva && (
+                    <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginBottom: 8 }}>
+                      P.IVA {f.cliente_piva}
+                    </div>
+                  )}
+
+                  {/* RIGA 3: dati pagamento */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                    gap: 10,
+                    paddingTop: 10,
+                    borderTop: `1px dashed ${C.border}`,
+                  }}>
+                    <DataCell label="Emessa" value={fmtData(f.data_emissione)} />
+                    <DataCell label="Scadenza" value={fmtData(f.data_scadenza)} alert={scaduta} />
+                    <DataCell label="Pagato" value={`€${Number(f.pagato).toFixed(2)}`} accent="green" />
+                    <DataCell label="Residuo" value={`€${Number(f.residuo).toFixed(2)}`} accent={Number(f.residuo) > 0 ? "amber" : undefined} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
-    </div>
-  );
-}
 
-function FilterPill({ label, count, active, onClick, ramp }: { label: string; count: number; active: boolean; onClick: () => void; ramp: any }) {
-  return (
-    <div onClick={onClick} style={{
-      display: "inline-flex", alignItems: "center", gap: 6,
-      padding: "5px 11px",
-      background: active ? (ramp ? ramp[400] : TT.text1) : TT.surface,
-      color: active ? "#fff" : TT.text2,
-      border: `1px solid ${active ? "transparent" : TT.borderStrong}`,
-      borderRadius: 999,
-      fontSize: 11, fontWeight: 600,
-      cursor: "pointer", transition: "all 0.12s",
-    }}>
-      {label}
-      <span style={{
-        background: active ? "rgba(255,255,255,0.28)" : (ramp ? ramp[100] : TT.bgSoft),
-        color: active ? "#fff" : (ramp ? ramp[600] : TT.text3),
-        fontSize: 9, fontWeight: 700,
-        padding: "1px 6px", borderRadius: 999,
-        fontVariantNumeric: "tabular-nums",
-      }}>{count}</span>
-    </div>
-  );
-}
-
-function KpiMini({ icon, label, value, tint }: { icon: IconName; label: string; value: string; tint: keyof typeof TINTS }) {
-  const ramp = TINTS[tint];
-  return (
-    <div style={cardStyle({ padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 })}>
-      <div style={{
-        width: 38, height: 38, borderRadius: 10,
-        background: ramp[400],
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-      }}>
-        <Icon name={icon} size={18} color="#fff" strokeWidth={2.2} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 10, color: TT.text3, fontWeight: 600, letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 2 }}>
-          {label}
+      {kpiDaInviare > 0 && (
+        <div style={{
+          marginTop: 14,
+          background: C.amberTint,
+          border: `1px solid #FCD34D`,
+          borderRadius: 12,
+          padding: "14px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, background: C.amber, color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18, fontWeight: 800, flexShrink: 0,
+          }}>!</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: C.amber }}>
+              {kpiDaInviare} {kpiDaInviare === 1 ? "fattura" : "fatture"} in attesa di invio SDI
+            </div>
+            <div style={{ fontSize: 11, color: "#475A75", fontWeight: 600, marginTop: 2 }}>
+              Controlla e invia al Sistema di Interscambio per la trasmissione fiscale
+            </div>
+          </div>
         </div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: ramp[600], letterSpacing: "-0.5px", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
-          {value}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function Stat({ label, value, tint }: { label: string; value: string; tint: keyof typeof TINTS }) {
-  const ramp = TINTS[tint];
+const Kpi: React.FC<{ label: string; value: string; color: "navy" | "green" | "amber" | "red"; alert?: boolean }> = ({ label, value, color, alert }) => {
+  const colorMap = {
+    navy: { bd: C.navy, fg: C.navy },
+    green: { bd: C.green, fg: C.green },
+    amber: { bd: C.amber, fg: C.amber },
+    red: { bd: C.red, fg: C.red },
+  };
+  const m = colorMap[color];
   return (
     <div style={{
-      padding: "8px 10px",
-      background: ramp[50], border: `1px solid ${ramp[100]}`,
-      borderRadius: 7,
+      background: alert ? C.redSoft : C.card,
+      borderRadius: 12, padding: 12,
+      boxShadow: "0 4px 16px rgba(15,23,42,0.18)",
+      borderTop: `4px solid ${m.bd}`,
+      display: "flex", flexDirection: "column", gap: 3,
+      minWidth: 0, overflow: "hidden",
     }}>
-      <div style={{ fontSize: 9, fontWeight: 700, color: TT.text3, letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 2 }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color: m.fg, letterSpacing: -0.5, lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 10, color: C.sub, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 }}>
         {label}
       </div>
-      <div style={{
-        fontSize: 13, fontWeight: 800, color: ramp[600],
-        fontVariantNumeric: "tabular-nums", letterSpacing: "-0.2px",
-        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-      }}>
+    </div>
+  );
+};
+
+const Pill: React.FC<{ label: string; active: boolean; onClick: () => void; alert?: boolean }> = ({ label, active, onClick, alert }) => (
+  <div
+    onClick={onClick}
+    style={{
+      padding: "7px 12px",
+      borderRadius: 9,
+      background: active ? (alert ? C.red : C.navy) : (alert ? C.redTint : C.cardSoft),
+      color: active ? "#fff" : (alert ? C.red : C.ink),
+      fontSize: 11, fontWeight: 800,
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+      letterSpacing: 0.3,
+    }}
+  >{label}</div>
+);
+
+const DataCell: React.FC<{ label: string; value: string; alert?: boolean; accent?: "green" | "amber" }> = ({ label, value, alert, accent }) => {
+  const color = alert ? C.red : accent === "green" ? C.green : accent === "amber" ? C.amber : C.ink;
+  return (
+    <div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: C.sub, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 800, color, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
         {value}
       </div>
     </div>
   );
-}
+};
