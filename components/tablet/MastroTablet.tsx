@@ -1,7 +1,9 @@
 "use client";
-// MASTRO TABLET v10 - Delega panel mobile per sezioni con dati reali
-// 7 sezioni dei mobile riusate: commesse, agenda, clienti, contabilita, messaggi, materiali, settings
-// 7 sezioni tablet finte ancora attive: sopralluoghi, produzione, montaggi, magazzino, fiscale, team, ops
+// MASTRO TABLET v11 - Delega panel mobile + filtri fase preset
+// 10 sezioni dei mobile riusate:
+//   - commesse, agenda, clienti, contabilita, talk, ordini, settings (full panel)
+//   - sopralluoghi, produzione, montaggi (CommessePanel con filterFase preset)
+// 4 sezioni tablet finte ancora attive: magazzino, fiscale, team, ops
 import * as React from "react";
 import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
@@ -18,9 +20,6 @@ import MaterialiPanel from "../MaterialiPanel";
 import SettingsPanel from "../SettingsPanel";
 
 // ============ PANEL TABLET FINTI (RESTANO PER ORA) ============
-import SopralluoghiTablet from "./sopralluoghi/SopralluoghiTablet";
-import ProduzioneTablet from "./produzione/ProduzioneTablet";
-import MontaggiTablet from "./montaggi/MontaggiTablet";
 import MagazzinoTablet from "./magazzino/MagazzinoTablet";
 import FiscaleTablet from "./fiscale/FiscaleTablet";
 import TeamTablet from "./team/TeamTablet";
@@ -64,10 +63,13 @@ function useViewport(): { w: number; mode: "sm" | "md" | "lg" } {
   return size;
 }
 
-// Mappa sezione tablet -> tab MastroERP per sincronizzare context.tab quando serve
+// Mappa sezione tablet -> tab MastroERP per sincronizzare context.tab
 const SECTION_TO_TAB: Record<string, string> = {
   dashboard: "home",
   commesse: "commesse",
+  sopralluoghi: "commesse",
+  produzione: "commesse",
+  montaggi: "commesse",
   calendario: "agenda",
   clienti: "clienti",
   contabilita: "contabilita",
@@ -76,8 +78,16 @@ const SECTION_TO_TAB: Record<string, string> = {
   impostazioni: "settings",
 };
 
+// Mappa sezione -> filterFase da preselezionare in CommessePanel
+const SECTION_TO_FASE: Record<string, string | null> = {
+  commesse: null,            // tutte
+  sopralluoghi: "sopralluogo",
+  produzione: "produzione",
+  montaggi: "posa",
+};
+
 export default function MastroTablet() {
-  const { setTab } = useMastro();
+  const { setTab, setFilterFase } = useMastro();
   const [active, setActive] = React.useState<string>("dashboard");
   const [userCollapsed, setUserCollapsed] = React.useState(false);
   const [hasUserOverride, setHasUserOverride] = React.useState(false);
@@ -119,13 +129,17 @@ export default function MastroTablet() {
     try { window.localStorage.setItem(PRESET_KEY, p); } catch {}
   }, []);
 
-  // Sincronizza tab MastroERP quando cambio sezione (per i panel mobile che dipendono da ctx.tab)
+  // Sincronizza tab MastroERP + filterFase al cambio sezione
   React.useEffect(() => {
     const mappedTab = SECTION_TO_TAB[active];
     if (mappedTab && setTab) setTab(mappedTab);
-  }, [active, setTab]);
+    // Se la sezione richiede un filtro fase preset, applicalo
+    if (active in SECTION_TO_FASE && setFilterFase) {
+      const fase = SECTION_TO_FASE[active];
+      setFilterFase(fase || "");
+    }
+  }, [active, setTab, setFilterFase]);
 
-  // No-op handlers (richiesti da DashboardProvider, le sezioni reali navigano via setTab/store)
   const navigate = React.useCallback((sezione: string) => { setActive(sezione); }, []);
   const expand = React.useCallback(() => {}, []);
   const openCommessa = React.useCallback(() => { setActive("commesse"); }, []);
@@ -141,11 +155,9 @@ export default function MastroTablet() {
   }, []);
 
   const sidebarW = isCollapsed ? 88 : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
-  const isDashboard = active === "dashboard";
 
-  // Padding main: 0 quando deleghiamo a panel mobile (hanno proprio padding interno),
-  // 24px quando rendiamo il dashboard tablet o i panel tablet finti
-  const isMobilePanel = ["commesse", "calendario", "clienti", "contabilita", "ai", "ordini", "impostazioni"].includes(active);
+  // Sezioni delegate a panel mobile (no padding extra: hanno il loro)
+  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario", "clienti", "contabilita", "ai", "ordini", "impostazioni"].includes(active);
   const mainPad = isMobilePanel ? 0 : (mode === "sm" ? "16px 18px 20px" : "20px 24px 24px");
   const mainBg = isMobilePanel ? "#94A3B8" : BG;
 
@@ -198,11 +210,14 @@ export default function MastroTablet() {
           />
 
           <main style={{ gridArea: "main", overflowY: "auto", overflowX: "hidden", padding: mainPad, background: mainBg }}>
-            {/* DASHBOARD: home tablet v9 nostra */}
+            {/* DASHBOARD: home tablet v9 */}
             {active === "dashboard" && <DashboardTablet />}
 
             {/* SEZIONI MOBILE RIUSATE (DATI REALI) */}
             {active === "commesse"     && <CommessePanel />}
+            {active === "sopralluoghi" && <CommessePanel />}
+            {active === "produzione"   && <CommessePanel />}
+            {active === "montaggi"     && <CommessePanel />}
             {active === "calendario"   && <AgendaPanel />}
             {active === "clienti"      && <ClientiPanel />}
             {active === "contabilita"  && <ContabilitaPanel />}
@@ -210,10 +225,7 @@ export default function MastroTablet() {
             {active === "ordini"       && <MaterialiPanel onBack={() => setActive("dashboard")} />}
             {active === "impostazioni" && <SettingsPanel />}
 
-            {/* SEZIONI TABLET FINTE (DA FARE IN LOTTO SUCCESSIVO) */}
-            {active === "sopralluoghi" && <SopralluoghiTablet />}
-            {active === "produzione"   && <ProduzioneTablet />}
-            {active === "montaggi"     && <MontaggiTablet />}
+            {/* SEZIONI TABLET FINTE (DA RISCRIVERE IN LOTTO SUCCESSIVO) */}
             {active === "magazzino"    && <MagazzinoTablet />}
             {active === "fiscale"      && <FiscaleTablet />}
             {active === "team"         && <TeamTablet />}
