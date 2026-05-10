@@ -1,7 +1,8 @@
 "use client";
-// MASTRO TABLET v18
-// + OrdiniTablet custom con dati reali
-// + delega Impostazioni -> SettingsPanel mobile
+// MASTRO TABLET v19
+// FIX: filterFase non resetta più a "" (cancellava tutte le commesse non in fase)
+// Solo quando entro in Sopralluoghi/Produzione/Montaggi imposto la fase
+// Ripristino setSelectedCM per click su card commessa
 import * as React from "react";
 import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
@@ -76,6 +77,7 @@ const SECTION_TO_TAB: Record<string, string> = {
   impostazioni: "settings",
 };
 
+// Solo le sezioni che IMPOSTANO un filtro fase. Commesse usa null per resettare.
 const SECTION_TO_FASE: Record<string, string | null> = {
   commesse: null,
   sopralluoghi: "sopralluogo",
@@ -84,7 +86,9 @@ const SECTION_TO_FASE: Record<string, string | null> = {
 };
 
 export default function MastroTablet() {
-  const { setTab, setFilterFase } = useMastro();
+  const ctx = useMastro();
+  const { setTab, setFilterFase, setSelectedCM, setShowModal } = ctx as any;
+
   const [active, setActive] = React.useState<string>("dashboard");
   const [userCollapsed, setUserCollapsed] = React.useState(false);
   const [hasUserOverride, setHasUserOverride] = React.useState(false);
@@ -126,23 +130,33 @@ export default function MastroTablet() {
     try { window.localStorage.setItem(PRESET_KEY, p); } catch {}
   }, []);
 
+  // Sincronizza tab MastroERP + filterFase
+  // FIX: per "commesse" RESETTO filterFase a null (mostra tutte)
+  // Per Sopralluoghi/Produzione/Montaggi setto la fase specifica
   React.useEffect(() => {
     const mappedTab = SECTION_TO_TAB[active];
     if (mappedTab && setTab) setTab(mappedTab);
     if (active in SECTION_TO_FASE && setFilterFase) {
       const fase = SECTION_TO_FASE[active];
-      setFilterFase(fase || "");
+      // null per "commesse" = nessun filtro, mostra tutte
+      // string per le altre = filtro per quella fase
+      setFilterFase(fase as any);
     }
   }, [active, setTab, setFilterFase]);
 
   const navigate = React.useCallback((sezione: string) => { setActive(sezione); }, []);
   const expand = React.useCallback(() => {}, []);
-  const openCommessa = React.useCallback(() => { setActive("commesse"); }, []);
+  const openCommessa = React.useCallback((id?: string) => {
+    if (id && setSelectedCM) setSelectedCM(id);
+    setActive("commesse");
+  }, [setSelectedCM]);
   const openCliente = React.useCallback(() => { setActive("clienti"); }, []);
   const openEntity = React.useCallback((tipo: EntityType, id: string) => {
     setActiveEntity({ tipo, id });
   }, []);
-  const closeCommessa = React.useCallback(() => {}, []);
+  const closeCommessa = React.useCallback(() => {
+    if (setSelectedCM) setSelectedCM(null);
+  }, [setSelectedCM]);
 
   const handleSidebarSelect = React.useCallback((s: string) => {
     setActive(s);
@@ -151,7 +165,6 @@ export default function MastroTablet() {
 
   const sidebarW = isCollapsed ? 88 : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
 
-  // Sezioni che usano panel mobile (no padding extra)
   const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario", "clienti", "contabilita", "ai", "impostazioni"].includes(active);
   const mainPad = isMobilePanel ? 0 : (mode === "sm" ? "16px 18px 20px" : "20px 24px 24px");
   const mainBg = isMobilePanel ? "#94A3B8" : BG;
@@ -205,10 +218,8 @@ export default function MastroTablet() {
           />
 
           <main style={{ gridArea: "main", overflowY: "auto", overflowX: "hidden", padding: mainPad, background: mainBg }}>
-            {/* DASHBOARD: home tablet v9 */}
             {active === "dashboard" && <DashboardTablet />}
 
-            {/* SEZIONI MOBILE RIUSATE */}
             {active === "commesse"     && <CommessePanel />}
             {active === "sopralluoghi" && <CommessePanel />}
             {active === "produzione"   && <CommessePanel />}
@@ -219,12 +230,10 @@ export default function MastroTablet() {
             {active === "ai"           && <MessaggiPanel />}
             {active === "impostazioni" && <SettingsPanel />}
 
-            {/* CUSTOM TABLET CON DATI REALI SUPABASE */}
             {active === "magazzino"    && <MagazzinoTablet />}
             {active === "fiscale"      && <FiscaleTablet />}
             {active === "ordini"       && <OrdiniTablet />}
 
-            {/* TABLET FINTI (rimasti) */}
             {active === "team"         && <TeamTablet />}
             {active === "ops"          && <OpsTablet />}
           </main>
