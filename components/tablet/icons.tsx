@@ -4,7 +4,7 @@ import * as React from "react";
 export type IconName =
   | "dashboard" | "calendario" | "commesse" | "sopralluoghi"
   | "produzione" | "montaggi" | "ordini" | "magazzino"
-  | "clienti" | "contabilita" | "fiscale" | "team" | "ops" | "ai" | "impostazioni"
+  | "clienti" | "contabilita" | "fiscale" | "team" | "ops" | "ai" | "impostazioni" | "codici"
   | "search" | "bell" | "chat" | "task"
   | "kpiCommesse" | "kpiSopralluogo" | "kpiProduzione" | "kpiFatturato" | "kpiMargine"
   | "chevronRight" | "chevronLeft" | "chevronDown" | "chevronUp"
@@ -24,6 +24,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   contabilita: (<><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>),
   fiscale: (<><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 14l2 2 4-4" /></>),
   team: (<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
+  codici: (<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><line x1="14" y1="14" x2="14" y2="17" /><line x1="17" y1="14" x2="17" y2="21" /><line x1="20" y1="14" x2="20" y2="17" /><line x1="14" y1="20" x2="20" y2="20" /></>),
   ops: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />,
   ai: (<><circle cx="12" cy="12" r="3" /><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" /></>),
   impostazioni: (<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></>),

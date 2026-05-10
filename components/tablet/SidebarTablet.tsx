@@ -22,6 +22,7 @@ const MENU: MenuItem[] = [
   { id: "produzione",   label: "Produzione",      icon: "produzione"   },
   { id: "montaggi",     label: "Montaggi",        icon: "montaggi"     },
   { id: "ordini",       label: "Ordini",          icon: "ordini"       },
+  { id: "codici",       label: "Codici",          icon: "codici"       },
   { id: "magazzino",    label: "Magazzino",       icon: "magazzino",  badge: 5 },
   { id: "team",         label: "Team",            icon: "team"         },
   { id: "ops",          label: "OPS",             icon: "ops"          },
