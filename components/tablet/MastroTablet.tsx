@@ -31,9 +31,36 @@ import BackButton from "./BackButton";
 
 const PRESET_KEY = "mastro_tablet_preset";
 const COLLAPSE_KEY = "mastro_tablet_collapsed";
-
-// Sfondo grigio v9 (allineato a DashboardTablet)
 const BG = "#94A3B8";
+
+// Hook responsive: ritorna lo size corrente
+function useViewport() {
+  const [size, setSize] = React.useState<{ w: number; mode: "xs" | "sm" | "md" | "lg" }>({
+    w: typeof window !== "undefined" ? window.innerWidth : 1280,
+    mode: "lg",
+  });
+
+  React.useEffect(() => {
+    const calc = () => {
+      const w = window.innerWidth;
+      let mode: "xs" | "sm" | "md" | "lg" = "lg";
+      if (w < 900) mode = "xs";        // iPad mini portrait, telefoni grandi
+      else if (w < 1100) mode = "sm";  // iPad portrait
+      else if (w < 1280) mode = "md";  // iPad Pro 11"
+      else mode = "lg";                 // iPad Pro 12.9"+
+      setSize({ w, mode });
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    window.addEventListener("orientationchange", calc);
+    return () => {
+      window.removeEventListener("resize", calc);
+      window.removeEventListener("orientationchange", calc);
+    };
+  }, []);
+
+  return size;
+}
 
 export default function MastroTablet() {
   const [active, setActive] = React.useState<string>("dashboard");
@@ -44,21 +71,29 @@ export default function MastroTablet() {
   const [activeClienteId, setActiveClienteId] = React.useState<string | null>(null);
   const [activeEntity, setActiveEntity] = React.useState<{ tipo: EntityType; id: string } | null>(null);
 
-  // Persist collapsed state
+  const { mode } = useViewport();
+
+  // Auto-collapse su xs/sm, espandi su md/lg (a meno che user non abbia toggle)
+  const [hasUserOverride, setHasUserOverride] = React.useState(false);
+  const autoCollapsed = mode === "xs" || mode === "sm";
+  const isCollapsed = hasUserOverride ? userCollapsed : autoCollapsed;
+
   React.useEffect(() => {
     try {
       const saved = window.localStorage.getItem(COLLAPSE_KEY);
-      if (saved === "1") setUserCollapsed(true);
+      if (saved !== null) {
+        setUserCollapsed(saved === "1");
+        setHasUserOverride(true);
+      }
     } catch {}
   }, []);
 
   const toggleCollapsed = React.useCallback(() => {
-    setUserCollapsed(c => {
-      const next = !c;
-      try { window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0"); } catch {}
-      return next;
-    });
-  }, []);
+    const next = !isCollapsed;
+    setUserCollapsed(next);
+    setHasUserOverride(true);
+    try { window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0"); } catch {}
+  }, [isCollapsed]);
 
   React.useEffect(() => {
     try {
@@ -132,8 +167,14 @@ export default function MastroTablet() {
     setExpanded(null);
   }, []);
 
-  // Sidebar width: collassata 88px, espansa 280px
-  const sidebarW = userCollapsed ? 88 : 280;
+  // Sidebar width responsive
+  const sidebarW = isCollapsed
+    ? (mode === "xs" ? 72 : 88)
+    : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
+
+  // Padding main responsive
+  const mainPad = mode === "xs" ? "12px 14px 16px" : mode === "sm" ? "16px 18px 20px" : "20px 24px 24px";
+
   const isDashboard = active === "dashboard" && !selectedCommessaId;
   const currentUserId = "op-walter";
 
@@ -173,12 +214,14 @@ export default function MastroTablet() {
           <SidebarTablet
             active={active}
             onSelect={handleSidebarSelect}
-            collapsed={userCollapsed}
+            collapsed={isCollapsed}
+            mode={mode}
           />
           <TopbarTablet
             notificationCount={3}
-            collapsed={userCollapsed}
+            collapsed={isCollapsed}
             onToggleSidebar={toggleCollapsed}
+            mode={mode}
           />
 
           <main
@@ -186,7 +229,7 @@ export default function MastroTablet() {
               gridArea: "main",
               overflowY: "auto",
               overflowX: "hidden",
-              padding: "20px 24px 24px",
+              padding: mainPad,
               background: BG,
             }}
           >
