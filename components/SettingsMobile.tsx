@@ -33,6 +33,7 @@ import DocumentBuilderMobile from './DocumentBuilderMobile'
 import ApiKeysMobile from './mobile/settings/ApiKeysMobile'
 import GeneraApiKeyModal from './mobile/settings/GeneraApiKeyModal'
 import RevocaApiKeyModal from './mobile/settings/RevocaApiKeyModal'
+import IntegrazioniMobile from './mobile/settings/IntegrazioniMobile'
 
 const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29'
 
@@ -43,6 +44,7 @@ type Sezione =
   | 'tendaggi' | 'accessori_tendaggi' | 'colori_tendaggi' | 'fornitori_tendaggi'
   | 'pipeline' | 'branding' | 'docbuilder'
   | 'sviluppatori'
+  | 'integrazioni'
 
 export default function SettingsMobile() {
   const { azienda_id, tornaHome } = useMastro()
@@ -73,6 +75,9 @@ export default function SettingsMobile() {
   if (sezione === 'pipeline')   return <SettingsPipelineMobile  azienda_id={aId} onClose={torna} />
   if (sezione === 'branding')   return <SettingsBrandingMobile  azienda_id={aId} onClose={torna} />
   if (sezione === 'docbuilder') return <DocumentBuilderMobile   azienda_id={aId} onClose={torna} />
+
+  // INTEGRAZIONI
+  if (sezione === 'integrazioni') return <IntegrazioniMobile aziendaId={aId} onBack={torna} />
 
   // SVILUPPATORI
   if (sezione === 'sviluppatori') return (
