@@ -21,6 +21,7 @@ import OrdiniTablet from "./ordini/OrdiniTablet";
 import TeamTablet from "./team/TeamTablet";
 import OpsTablet from "./ops/OpsTablet";
 import CodiciHub from "../codici/CodiciHub";
+import CodiciHub from "../codici/CodiciHub";
 
 import EntityDetailPanel from "./EntityDetailPanel";
 import SideEffectsToaster from "./SideEffectsToaster";
@@ -225,6 +226,7 @@ export default function MastroTablet() {
             {active === "magazzino"    && <MagazzinoTablet />}
             {active === "fiscale"      && <FiscaleTablet />}
             {active === "ordini"       && <OrdiniTablet />}
+            {active === "codici"       && <CodiciHub />}
             {active === "codici"       && <CodiciHub />}
 
             {active === "team"         && <TeamTablet />}
