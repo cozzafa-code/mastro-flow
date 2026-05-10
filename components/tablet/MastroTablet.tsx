@@ -1,6 +1,6 @@
 "use client";
-// MASTRO TABLET v13
-// Aggiunto: delega Calendario -> AgendaPanel mobile (test isolato)
+// MASTRO TABLET v14
+// Aggiunto: delega Clienti -> ClientiPanel mobile
 import * as React from "react";
 import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
@@ -10,6 +10,7 @@ import DashboardTablet from "./dashboard/DashboardTablet";
 // Panel mobile riusati
 import CommessePanel from "../CommessePanel";
 import AgendaPanel from "../AgendaPanel";
+import ClientiPanel from "../ClientiPanel";
 
 // Custom tablet con dati reali Supabase
 import MagazzinoTablet from "./magazzino/MagazzinoTablet";
@@ -17,7 +18,6 @@ import FiscaleTablet from "./fiscale/FiscaleTablet";
 
 // Tablet finti (da delegare 1 alla volta)
 import OrdiniFornitoriTablet from "./ordini/OrdiniFornitoriTablet";
-import ClientiTablet from "./clienti/ClientiTablet";
 import ContabilitaTablet from "./contabilita/ContabilitaTablet";
 import TeamTablet from "./team/TeamTablet";
 import OpsTablet from "./ops/OpsTablet";
@@ -69,6 +69,7 @@ const SECTION_TO_TAB: Record<string, string> = {
   produzione: "commesse",
   montaggi: "commesse",
   calendario: "agenda",
+  clienti: "clienti",
 };
 
 const SECTION_TO_FASE: Record<string, string | null> = {
@@ -146,8 +147,7 @@ export default function MastroTablet() {
 
   const sidebarW = isCollapsed ? 88 : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
 
-  // Sezioni che usano panel mobile (no padding extra)
-  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario"].includes(active);
+  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario", "clienti"].includes(active);
   const mainPad = isMobilePanel ? 0 : (mode === "sm" ? "16px 18px 20px" : "20px 24px 24px");
   const mainBg = isMobilePanel ? "#94A3B8" : BG;
 
@@ -209,6 +209,7 @@ export default function MastroTablet() {
             {active === "produzione"   && <CommessePanel />}
             {active === "montaggi"     && <CommessePanel />}
             {active === "calendario"   && <AgendaPanel />}
+            {active === "clienti"      && <ClientiPanel />}
 
             {/* CUSTOM TABLET CON DATI REALI SUPABASE */}
             {active === "magazzino"    && <MagazzinoTablet />}
@@ -216,7 +217,6 @@ export default function MastroTablet() {
 
             {/* TABLET FINTI (DA DELEGARE 1 ALLA VOLTA) */}
             {active === "ordini"       && <OrdiniFornitoriTablet />}
-            {active === "clienti"      && <ClientiTablet />}
             {active === "contabilita"  && <ContabilitaTablet />}
             {active === "team"         && <TeamTablet />}
             {active === "ops"          && <OpsTablet />}
