@@ -1,9 +1,5 @@
 "use client";
-// MASTRO TABLET — Sidebar v9
-// Navy uniforme (#1E3A5F), voci con icone monocrome, badge notifiche.
-// Mantiene props identiche per non rompere MastroTablet.tsx
 import * as React from "react";
-import { TT } from "./design-system";
 import { Icon, IconName } from "./icons";
 
 interface MenuItem {
@@ -30,7 +26,6 @@ const MENU: MenuItem[] = [
 
 const C = {
   navy: "#1E3A5F",
-  navyDark: "#0F1B2D",
   navyLight: "#2D5A87",
   white60: "rgba(255,255,255,0.6)",
   white12: "rgba(255,255,255,0.12)",
@@ -67,7 +62,6 @@ export default function SidebarTablet({
         flexDirection: "column",
         height: "100vh",
         overflow: "hidden",
-        transition: "all 0.25s ease",
       }}
     >
       {/* LOGO */}
@@ -84,7 +78,7 @@ export default function SidebarTablet({
             width: 40, height: 40, borderRadius: 10,
             background: C.navyLight,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: -0.5,
+            fontSize: 18, fontWeight: 800, color: "#fff",
           }}>X</div>
         ) : (
           <div>
@@ -123,13 +117,6 @@ export default function SidebarTablet({
                 boxShadow: isActive ? `inset 4px 0 0 #fff` : "none",
                 justifyContent: collapsed ? "center" : "flex-start",
                 position: "relative",
-                transition: "background 0.15s",
-              }}
-              onMouseEnter={e => {
-                if (!isActive) (e.currentTarget as HTMLElement).style.background = C.white06;
-              }}
-              onMouseLeave={e => {
-                if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent";
               }}
             >
               <div style={{ width: 22, height: 22, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -155,7 +142,7 @@ export default function SidebarTablet({
               {collapsed && item.badge && (
                 <span style={{
                   position: "absolute",
-                  top: 8,
+                  top: 6,
                   right: 14,
                   background: C.red,
                   color: "#fff",

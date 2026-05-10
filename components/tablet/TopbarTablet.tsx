@@ -1,9 +1,5 @@
 "use client";
-// MASTRO TABLET — Topbar v9
-// Search permanente + bottoni notifica + CTA Nuova
-// Mantiene props identiche per non rompere MastroTablet.tsx
 import * as React from "react";
-import { TT } from "./design-system";
 
 const C = {
   bg: "#FFFFFF",
@@ -27,6 +23,8 @@ export interface TopbarTabletProps {
   onTaskClick?: () => void;
   onAvatarClick?: () => void;
   compact?: boolean;
+  collapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export default function TopbarTablet({
@@ -34,7 +32,8 @@ export default function TopbarTablet({
   searchPlaceholder = "Cerca commesse, clienti, vani, fatture, articoli...",
   onSearch,
   onBellClick,
-  compact = false,
+  collapsed = false,
+  onToggleSidebar,
 }: TopbarTabletProps) {
   const [value, setValue] = React.useState("");
   const [focused, setFocused] = React.useState(false);
@@ -50,12 +49,43 @@ export default function TopbarTablet({
         gridArea: "topbar",
         background: C.bg,
         borderBottom: `1px solid ${C.border}`,
-        padding: compact ? "12px 16px" : "14px 24px",
+        padding: "14px 24px",
         display: "flex",
         alignItems: "center",
         gap: 12,
       }}
     >
+      {/* TOGGLE SIDEBAR */}
+      <div
+        onClick={onToggleSidebar}
+        title={collapsed ? "Espandi menu" : "Comprimi menu"}
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 11,
+          background: C.bgSoft,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          color: C.navy,
+          flexShrink: 0,
+        }}
+      >
+        <svg
+          width="22" height="22" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"
+          style={{
+            transition: "transform 0.25s ease",
+            transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        >
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="15" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </div>
+
       {/* SEARCH PERMANENTE */}
       <div
         style={{
@@ -63,7 +93,7 @@ export default function TopbarTablet({
           background: focused ? C.bg : C.bgSoft,
           border: `2px solid ${focused ? C.navy : "transparent"}`,
           borderRadius: 13,
-          padding: compact ? "12px 14px" : "14px 18px",
+          padding: "12px 18px",
           display: "flex",
           alignItems: "center",
           gap: 12,
@@ -93,38 +123,36 @@ export default function TopbarTablet({
             minWidth: 0,
           }}
         />
-        {!compact && (
-          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-            <kbd style={{
-              background: C.bg,
-              border: `1px solid #CBD5E1`,
-              borderRadius: 5,
-              padding: "3px 7px",
-              fontSize: 11,
-              fontFamily: "inherit",
-              fontWeight: 700,
-              color: "#475A75",
-            }}>⌘</kbd>
-            <kbd style={{
-              background: C.bg,
-              border: `1px solid #CBD5E1`,
-              borderRadius: 5,
-              padding: "3px 7px",
-              fontSize: 11,
-              fontFamily: "inherit",
-              fontWeight: 700,
-              color: "#475A75",
-            }}>K</kbd>
-          </div>
-        )}
+        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+          <kbd style={{
+            background: C.bg,
+            border: `1px solid #CBD5E1`,
+            borderRadius: 5,
+            padding: "3px 7px",
+            fontSize: 11,
+            fontFamily: "inherit",
+            fontWeight: 700,
+            color: "#475A75",
+          }}>⌘</kbd>
+          <kbd style={{
+            background: C.bg,
+            border: `1px solid #CBD5E1`,
+            borderRadius: 5,
+            padding: "3px 7px",
+            fontSize: 11,
+            fontFamily: "inherit",
+            fontWeight: 700,
+            color: "#475A75",
+          }}>K</kbd>
+        </div>
       </div>
 
       {/* NOTIFICATIONS */}
       <div
         onClick={onBellClick}
         style={{
-          width: compact ? 44 : 48,
-          height: compact ? 44 : 48,
+          width: 48,
+          height: 48,
           borderRadius: 12,
           background: C.bgSoft,
           display: "flex",
@@ -163,8 +191,8 @@ export default function TopbarTablet({
       {/* CTA NUOVA */}
       <div
         style={{
-          height: compact ? 44 : 48,
-          padding: compact ? "0 16px" : "0 22px",
+          height: 48,
+          padding: "0 22px",
           borderRadius: 12,
           background: C.navy,
           color: "#fff",
@@ -184,7 +212,7 @@ export default function TopbarTablet({
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
-        {!compact && "Nuova"}
+        Nuova
       </div>
     </header>
   );
