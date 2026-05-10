@@ -2396,7 +2396,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     }
 
     // === ORDINI ===
-    if (c.fase === "ordini") {
+    if (c.fase === "ordine") {
       return (
         (() => {
           const ndone = [!c.ck_ordine_inviato,!c.ck_ordine_confermato,!c.ck_cliente_avvisato].filter(Boolean).length;
