@@ -1,4 +1,5 @@
 "use client";
+import OrdiniSheet from "./ordini-sheet/OrdiniSheet";
 import RilieviVaniPanel from "./RilieviVaniPanel";
 // @ts-nocheck
 // 
@@ -201,6 +202,14 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
       
     </div>
     </>
+            {showOrdiniSheet && selectedCM ? (
+        <OrdiniSheet
+          commessa={selectedCM}
+          onClose={() => setShowOrdiniSheet(false)}
+          onCompletato={() => { setShowOrdiniSheet(false); if (typeof window !== 'undefined') window.location.reload(); }}
+        />
+      ) : null}
+
   );
 }
 
@@ -460,6 +469,7 @@ export default function CMDetailPanel() {
 
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
+  const [showOrdiniSheet, setShowOrdiniSheet] = useState(false);
     const [showModalFirma, setShowModalFirma] = useState(false);
 
     // v43: se fase=conferma e firma non ancora ricevuta, apri ModalFirma automaticamente
@@ -1512,27 +1522,11 @@ export default function CMDetailPanel() {
               }
             } else if (_faseDb === "acconto_pagato") {
               eyebrow = "Fase corrente · Acconto pagato";
-              titolo = "Genera ordine fornitori";
-              desc = "Acconto incassato. Ora ordina materiali e profili al fornitore.";
-              tags = [{ lbl: "Acconto OK", bg: "#D1FAE5", fg: "#065F46" }];
-              primaryLbl = "CREA ORDINE FORNITORE";
-              primaryAction = async () => {
-                try {
-                  if (typeof creaOrdiniSplitFornitori === "function") {
-                    if (!confirm(`Generare ordini fornitori automatici per ${cZ3.code}?\n\nVerranno raggruppati per sistema/fornitore.`)) return;
-                    const ordini = await (creaOrdiniSplitFornitori as any)(cZ3, "");
-                    alert(`${(ordini || []).length} ordine/i creato/i. Apri preventivo per inviarli ai fornitori.`);
-                    setPrevWorkspace(true); setPrevTab("fiscale");
-                  } else if (typeof creaOrdineFornitore === "function") {
-                    if (!confirm(`Generare ordine fornitore per ${cZ3.code}?`)) return;
-                    (creaOrdineFornitore as any)(cZ3, cZ3.sistema?.split(" ")[0] || "");
-                    alert("Ordine creato. Apri preventivo per inviarlo.");
-                    setPrevWorkspace(true); setPrevTab("fiscale");
-                  } else {
-                    setPrevWorkspace(true); setPrevTab("fiscale");
-                  }
-                } catch (e) { console.warn(e); alert("Errore: " + (e as any)?.message); }
-              };
+              titolo = "Crea ordini fornitori";
+              desc = "Acconto incassato. Crea distinta materiali e invia ai fornitori.";
+              tags = [{ lbl: "Acconto OK", bg: "#D1FAE5", fg: "#065F46" }, { lbl: "Da ordinare", bg: "#FEF3C7", fg: "#92400E" }];
+              primaryLbl = "CREA ORDINI FORNITORI";
+              primaryAction = () => { setShowOrdiniSheet(true); };
             } else if (_faseDb === "ordine") {
               eyebrow = "Fase corrente · Ordine inviato";
               titolo = "In attesa consegna";
