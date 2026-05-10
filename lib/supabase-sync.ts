@@ -677,12 +677,39 @@ export async function markPreventivoInviato(cmId: string, totale?: number, fase?
   }
 }
 
+/** Mappa nomi UI legacy -> enum DB canonico
+ *  Pipeline DB: sopralluogo, preventivo, conferma_ordine, confermata, acconto_pagato, ordine, produzione, montaggio, fatturata, pagata, persa, annullata, chiusa
+ */
+function mapFaseToDb(fase: string): string | null {
+  if (!fase) return null;
+  const f = String(fase).trim().toLowerCase();
+  // Casi gia' DB-compatibili
+  const valid = ['sopralluogo','preventivo','conferma_ordine','confermata','acconto_pagato','ordine','produzione','montaggio','fatturata','pagata','persa','annullata','chiusa'];
+  if (valid.includes(f)) return f;
+  // Mapping legacy
+  switch (f) {
+    case 'conferma': return 'conferma_ordine';
+    case 'ordini': return 'ordine';
+    case 'chiusura': return 'chiusa';
+    case 'modifiche':       // non e' una fase DB: rimane invariato (non scrivere)
+    case 'da_contattare':   // idem
+      return null;
+    default: return null;
+  }
+}
+
 /** Avanza fase commessa (immediato) */
 export async function setFaseCommessa(cmId: string, fase: string): Promise<boolean> {
   if (!cmId || !fase) return false;
+  const faseDb = mapFaseToDb(fase);
+  if (!faseDb) {
+    // Fase non valida o legacy senza mapping (modifiche/da_contattare): skip silenzioso
+    console.warn('[setFaseCommessa] fase non valida per DB, skip:', fase);
+    return false;
+  }
   try {
     const { error } = await supabase.from("commesse").update({
-      fase,
+      fase: faseDb,
       ops_ultimo_avanzamento: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }).eq("id", cmId);

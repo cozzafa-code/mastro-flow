@@ -36,7 +36,20 @@ export async function POST(req: NextRequest) {
 
     const c = commessa;
     const isUUID = typeof c.id === 'string' && UUID_RE.test(c.id);
-    const faseTarget = c.fase || 'sopralluogo';
+    
+    // Mappa fase legacy -> enum DB canonico
+    const VALID_FASI = ['sopralluogo','preventivo','conferma_ordine','confermata','acconto_pagato','ordine','produzione','montaggio','fatturata','pagata','persa','annullata','chiusa'];
+    const mapFase = (f: string): string => {
+      const x = String(f || '').trim().toLowerCase();
+      if (VALID_FASI.includes(x)) return x;
+      if (x === 'conferma') return 'conferma_ordine';
+      if (x === 'ordini') return 'ordine';
+      if (x === 'chiusura') return 'chiusa';
+      if (x === 'modifiche' || x === 'da_contattare') return 'preventivo'; // legacy non-fase: tieni preventivo
+      return 'sopralluogo'; // fallback sicuro
+    };
+    
+    const faseTarget = mapFase(c.fase || 'sopralluogo');
 
     const baseRow: any = {
       azienda_id: aziendaId,

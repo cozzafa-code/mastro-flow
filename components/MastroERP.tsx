@@ -3057,6 +3057,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         body: JSON.stringify({
           aziendaId,
           commessaId: c.id,
+          commessaCode: c.code,
           tipo: tipoApi,
           importo,
           ivaPerc: iva,

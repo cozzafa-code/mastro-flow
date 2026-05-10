@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
     if (!aziendaId || !UUID_RE.test(aziendaId)) {
       return NextResponse.json({ error: 'aziendaId invalido' }, { status: 400 });
     }
-    if (!commessaId || !UUID_RE.test(commessaId)) {
-      return NextResponse.json({ error: 'commessaId invalido' }, { status: 400 });
+    if (!commessaId && !body.commessaCode) {
+      return NextResponse.json({ error: 'commessaId o commessaCode richiesto' }, { status: 400 });
     }
     if (!['acconto','saldo','altro'].includes(tipo)) {
       return NextResponse.json({ error: 'tipo invalido' }, { status: 400 });
@@ -33,16 +33,32 @@ export async function POST(req: NextRequest) {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // Carica commessa per cliente / code
-    const { data: cm } = await sb
-      .from('commesse')
-      .select('id, code, cliente, telefono, email, indirizzo, cf, piva')
-      .eq('id', commessaId)
-      .eq('azienda_id', aziendaId)
-      .maybeSingle();
+    // Carica commessa per cliente / code: prova per UUID, poi fallback per code se commessaCode passato
+    let cm: any = null;
+    if (UUID_RE.test(commessaId)) {
+      const { data } = await sb
+        .from('commesse')
+        .select('id, code, cliente, telefono, email, indirizzo, cf, piva')
+        .eq('id', commessaId)
+        .eq('azienda_id', aziendaId)
+        .maybeSingle();
+      cm = data;
+    }
+    // Fallback: cerca per code (campo aggiunto al body)
+    if (!cm && body.commessaCode) {
+      const { data } = await sb
+        .from('commesse')
+        .select('id, code, cliente, telefono, email, indirizzo, cf, piva')
+        .eq('code', body.commessaCode)
+        .eq('azienda_id', aziendaId)
+        .maybeSingle();
+      cm = data;
+    }
     if (!cm) {
       return NextResponse.json({ error: 'commessa non trovata' }, { status: 404 });
     }
+    // Override commessaId con quello DB reale
+    const commessaIdDb = cm.id;
 
     // Numero progressivo: ACC/SAL/FAT-YYYY-NNNN per azienda+tipo+anno
     const anno = new Date().getFullYear();
@@ -89,7 +105,7 @@ export async function POST(req: NextRequest) {
         stato: 'bozza',
         pagato: 0,
         residuo: totaleFat,
-        commessa_id: commessaId,
+        commessa_id: commessaIdDb,
         commessa_code: cm.code,
         note: note || (tipo === 'acconto' ? 'Acconto su ordine' : tipo === 'saldo' ? 'Saldo a completamento' : ''),
       })
