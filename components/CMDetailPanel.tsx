@@ -1436,26 +1436,80 @@ export default function CMDetailPanel() {
               primaryAction = () => { try { setShowModalFirma && setShowModalFirma(true); } catch (e) { console.warn(e); } };
             } else if (_faseDb === "confermata") {
               eyebrow = "Fase corrente · Confermata";
-              titolo = "Genera fattura acconto";
-              desc = "Cliente ha firmato. Procedi con la fattura di acconto e l\'ordine materiali.";
-              tags = [{ lbl: "Firmata", bg: "#D1FAE5", fg: "#065F46" }, { lbl: fmtEurV73(_totaleFinale), bg: "#DBEAFE", fg: "#1E40AF" }];
-              primaryLbl = "GENERA FATTURA ACCONTO";
-              primaryAction = () => {
-                try {
-                  if (typeof creaFattura === "function") {
-                    const importoAcconto = Math.round(_totaleFinale * 0.3);
-                    if (!confirm(`Generare fattura acconto del 30% (${fmtEurV73(importoAcconto)}) per ${cZ3.code}?`)) return;
-                    (creaFattura as any)(cZ3, "acconto", importoAcconto);
-                    if (typeof generaFatturaPDF === "function") {
-                      const fAcc = (cZ3.fattureDB || []).slice(-1)[0];
-                      if (fAcc) (generaFatturaPDF as any)(fAcc);
+              const _accFattId = (cZ3 as any).fattura_acconto_id || (cZ3 as any).fatturaAccontoId;
+              const _accPagataAt = (cZ3 as any).fattura_acconto_pagata_at || (cZ3 as any).fatturaAccontoPagataAt;
+
+              if (!_accFattId) {
+                // STEP A: nessuna fattura acconto -> GENERA FATTURA ACCONTO
+                titolo = "Genera fattura acconto";
+                desc = "Cliente ha firmato. Procedi con la fattura di acconto.";
+                tags = [{ lbl: "Firmata", bg: "#D1FAE5", fg: "#065F46" }, { lbl: fmtEurV73(_totaleFinale), bg: "#DBEAFE", fg: "#1E40AF" }];
+                primaryLbl = "GENERA FATTURA ACCONTO";
+                primaryAction = () => {
+                  try {
+                    if (typeof creaFattura === "function") {
+                      const importoAcconto = Math.round(_totaleFinale * 0.3);
+                      if (!confirm(`Generare fattura acconto del 30% (${fmtEurV73(importoAcconto)}) per ${cZ3.code}?`)) return;
+                      (creaFattura as any)(cZ3, "acconto", importoAcconto);
+                      if (typeof generaFatturaPDF === "function") {
+                        const fAcc = (cZ3.fattureDB || []).slice(-1)[0];
+                        if (fAcc) (generaFatturaPDF as any)(fAcc);
+                      }
+                      alert("Fattura acconto creata. Quando il cliente paga, marcala come pagata per avanzare.");
+                    } else {
+                      setPrevWorkspace(true); setPrevTab("fiscale");
                     }
-                    alert("Fattura acconto creata. Quando il cliente paga, marcala come pagata per avanzare.");
-                  } else {
-                    setPrevWorkspace(true); setPrevTab("fiscale");
-                  }
-                } catch (e) { console.warn(e); alert("Errore: " + (e as any)?.message); }
-              };
+                  } catch (e) { console.warn(e); alert("Errore: " + (e as any)?.message); }
+                };
+              } else if (!_accPagataAt) {
+                // STEP B: fattura acconto creata ma non pagata -> MARCA ACCONTO PAGATO
+                titolo = "Acconto da incassare";
+                desc = "Fattura acconto generata. Marca come pagata appena il cliente paga.";
+                tags = [{ lbl: "Fattura emessa", bg: "#FEF3C7", fg: "#92400E" }, { lbl: fmtEurV73(_totaleFinale), bg: "#DBEAFE", fg: "#1E40AF" }];
+                primaryLbl = "MARCA ACCONTO PAGATO";
+                primaryAction = async () => {
+                  try {
+                    if (!confirm(`Confermi che il cliente ha pagato l'acconto per ${cZ3.code}?\n\nLa commessa avanzerà a "acconto_pagato" e potrai creare l'ordine fornitori.`)) return;
+                    const aziendaId = (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId'))) || (selectedCM as any)?.aziendaId || (selectedCM as any)?.azienda_id;
+                    if (!aziendaId) { alert('Azienda non trovata'); return; }
+                    const r = await fetch('/api/commessa/avanza-fase', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        aziendaId,
+                        commessaId: (selectedCM as any).id,
+                        faseDa: 'confermata',
+                        faseA: 'acconto_pagato',
+                        payload: { fattura_acconto_pagata_at: new Date().toISOString() },
+                      }),
+                    });
+                    const j = await r.json();
+                    if (!r.ok) { alert(`Errore: ${j.error || 'sconosciuto'}`); return; }
+                    alert("Acconto incassato. Ora puoi creare l'ordine fornitori.");
+                    if (typeof window !== 'undefined') window.location.reload();
+                  } catch (e: any) { alert(`Errore: ${e?.message || e}`); }
+                };
+              } else {
+                // STEP C: edge case - acconto pagato ma fase ancora confermata
+                titolo = "Avanza a acconto pagato";
+                desc = "Acconto risulta pagato. Sblocca la fase per procedere.";
+                tags = [{ lbl: "Acconto OK", bg: "#D1FAE5", fg: "#065F46" }];
+                primaryLbl = "SBLOCCA FASE";
+                primaryAction = async () => {
+                  try {
+                    const aziendaId = (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId'))) || (selectedCM as any)?.aziendaId;
+                    if (!aziendaId) { alert('Azienda non trovata'); return; }
+                    const r = await fetch('/api/commessa/avanza-fase', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ aziendaId, commessaId: (selectedCM as any).id, faseDa: 'confermata', faseA: 'acconto_pagato' }),
+                    });
+                    const j = await r.json();
+                    if (!r.ok) { alert(`Errore: ${j.error || 'sconosciuto'}`); return; }
+                    if (typeof window !== 'undefined') window.location.reload();
+                  } catch (e: any) { alert(`Errore: ${e?.message || e}`); }
+                };
+              }
             } else if (_faseDb === "acconto_pagato") {
               eyebrow = "Fase corrente · Acconto pagato";
               titolo = "Genera ordine fornitori";
