@@ -7181,6 +7181,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
       )}
 {/* [v-final-fix] OrdiniSheet diretto */}
       {(() => { if (typeof window !== "undefined") (window as any).__DIAG_ORDINI = { showOrdiniSheet, hasCM: !!selectedCM, cmId: selectedCM?.id, fase: selectedCM?.fase }; if (showOrdiniSheet) console.log("[DIAG-RENDER] showOrdiniSheet=true selectedCM=", selectedCM?.id, "fase=", selectedCM?.fase); return null; })()}
+      {(() => { if (typeof window !== "undefined") (window as any).__DIAG_ORDINI = { showOrdiniSheet, hasCM: !!selectedCM, cmId: selectedCM?.id, fase: selectedCM?.fase }; if (showOrdiniSheet) console.log("[DIAG-RENDER] showOrdiniSheet=true selectedCM=", selectedCM?.id, "fase=", selectedCM?.fase); return null; })()}
       {showOrdiniSheet && selectedCM ? <OrdiniSheet commessa={selectedCM} onClose={() => setShowOrdiniSheet(false)} onCompletato={() => setShowOrdiniSheet(false)} /> : null}
       </div>
     );
