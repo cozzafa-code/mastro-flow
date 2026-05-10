@@ -30,9 +30,7 @@ export default function SideEffectsToaster() {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const item: ToastItem = { ...e, id, ts: Date.now() };
     setToasts((prev) => [...prev, item]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 5000);
+    // NESSUN auto-hide: il banner sparisce solo quando l'utente fa swipe via, click X o click Apri
   }, []);
 
   useMastroSideEffects(onSideEffect);
@@ -62,19 +60,79 @@ function ToastCard({ toast, onOpenEntity, onDismiss }: { toast: ToastItem; onOpe
   const def = TIPO_DEF[toast.tipo];
   const ramp = TINTS[def.tint];
 
+  // Swipe state
+  const [dragX, setDragX] = React.useState(0);
+  const [dragging, setDragging] = React.useState(false);
+  const startX = React.useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    setDragging(true);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - startX.current;
+    if (dx > 0) setDragX(dx); // solo swipe right
+  };
+  const handleTouchEnd = () => {
+    setDragging(false);
+    if (dragX > 100) {
+      // dismissed
+      onDismiss();
+    } else {
+      setDragX(0);
+    }
+  };
+
+  // Swipe via mouse drag (per desktop tablet)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    startX.current = e.clientX;
+    setDragging(true);
+  };
+  React.useEffect(() => {
+    if (!dragging) return;
+    const handleMove = (ev: MouseEvent) => {
+      const dx = ev.clientX - startX.current;
+      if (dx > 0) setDragX(dx);
+    };
+    const handleUp = () => {
+      setDragging(false);
+      if (dragX > 100) onDismiss();
+      else setDragX(0);
+    };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+  }, [dragging, dragX, onDismiss]);
+
+  const opacity = Math.max(0, 1 - dragX / 250);
+
   return (
-    <div style={{
-      pointerEvents: "auto",
-      width: 320,
-      padding: "12px 14px",
-      background: TT.surface,
-      borderRadius: 12,
-      border: `1px solid ${ramp[200]}`,
-      boxShadow: TT.shadowXl,
-      display: "flex", alignItems: "flex-start", gap: 11,
-      animation: "mastroSlideIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)",
-      borderLeft: `4px solid ${ramp[500]}`,
-    }}>
+    <div
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      style={{
+        pointerEvents: "auto",
+        width: 320,
+        padding: "12px 14px",
+        background: TT.surface,
+        borderRadius: 12,
+        border: `1px solid ${ramp[200]}`,
+        boxShadow: TT.shadowXl,
+        display: "flex", alignItems: "flex-start", gap: 11,
+        animation: dragging ? "none" : "mastroSlideIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        borderLeft: `4px solid ${ramp[500]}`,
+        transform: `translateX(${dragX}px)`,
+        opacity,
+        transition: dragging ? "none" : "transform 0.2s, opacity 0.2s",
+        cursor: dragging ? "grabbing" : "grab",
+        userSelect: "none",
+      }}>
       <style>{`
         @keyframes mastroSlideIn {
           from { opacity: 0; transform: translateX(80px) scale(0.95); }
