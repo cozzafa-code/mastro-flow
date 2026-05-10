@@ -1,26 +1,21 @@
 "use client";
-// MASTRO TABLET v12 - Conservativo
-// SOLO delega CommessePanel (già verificato VERDE per commesse/sopralluoghi/produzione/montaggi)
-// Magazzino e Fiscale = file tablet con dati reali Supabase
-// Tutto il resto = *Tablet finti (da delegare 1 alla volta in commit successivi)
+// MASTRO TABLET v13
+// Aggiunto: delega Calendario -> AgendaPanel mobile (test isolato)
 import * as React from "react";
 import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
 import TopbarTablet from "./TopbarTablet";
 import DashboardTablet from "./dashboard/DashboardTablet";
 
-// Solo CommessePanel mobile riusato (test confermato verde)
+// Panel mobile riusati
 import CommessePanel from "../CommessePanel";
+import AgendaPanel from "../AgendaPanel";
 
 // Custom tablet con dati reali Supabase
 import MagazzinoTablet from "./magazzino/MagazzinoTablet";
 import FiscaleTablet from "./fiscale/FiscaleTablet";
 
-// Tablet finti (da delegare 1 alla volta, non toccare)
-import CalendarioTablet from "./calendario/CalendarioTablet";
-import SopralluoghiTablet from "./sopralluoghi/SopralluoghiTablet";
-import ProduzioneTablet from "./produzione/ProduzioneTablet";
-import MontaggiTablet from "./montaggi/MontaggiTablet";
+// Tablet finti (da delegare 1 alla volta)
 import OrdiniFornitoriTablet from "./ordini/OrdiniFornitoriTablet";
 import ClientiTablet from "./clienti/ClientiTablet";
 import ContabilitaTablet from "./contabilita/ContabilitaTablet";
@@ -73,6 +68,7 @@ const SECTION_TO_TAB: Record<string, string> = {
   sopralluoghi: "commesse",
   produzione: "commesse",
   montaggi: "commesse",
+  calendario: "agenda",
 };
 
 const SECTION_TO_FASE: Record<string, string | null> = {
@@ -151,7 +147,7 @@ export default function MastroTablet() {
   const sidebarW = isCollapsed ? 88 : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
 
   // Sezioni che usano panel mobile (no padding extra)
-  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi"].includes(active);
+  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario"].includes(active);
   const mainPad = isMobilePanel ? 0 : (mode === "sm" ? "16px 18px 20px" : "20px 24px 24px");
   const mainBg = isMobilePanel ? "#94A3B8" : BG;
 
@@ -207,18 +203,18 @@ export default function MastroTablet() {
             {/* DASHBOARD: home tablet v9 */}
             {active === "dashboard" && <DashboardTablet />}
 
-            {/* SEZIONI MOBILE RIUSATE (DATI REALI) - SOLO CommessePanel verificato */}
+            {/* SEZIONI MOBILE RIUSATE */}
             {active === "commesse"     && <CommessePanel />}
             {active === "sopralluoghi" && <CommessePanel />}
             {active === "produzione"   && <CommessePanel />}
             {active === "montaggi"     && <CommessePanel />}
+            {active === "calendario"   && <AgendaPanel />}
 
             {/* CUSTOM TABLET CON DATI REALI SUPABASE */}
             {active === "magazzino"    && <MagazzinoTablet />}
             {active === "fiscale"      && <FiscaleTablet />}
 
             {/* TABLET FINTI (DA DELEGARE 1 ALLA VOLTA) */}
-            {active === "calendario"   && <CalendarioTablet />}
             {active === "ordini"       && <OrdiniFornitoriTablet />}
             {active === "clienti"      && <ClientiTablet />}
             {active === "contabilita"  && <ContabilitaTablet />}
