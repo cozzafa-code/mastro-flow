@@ -1525,7 +1525,7 @@ export default function CMDetailPanel() {
               desc = "Acconto incassato. Crea distinta materiali e invia ai fornitori.";
               tags = [{ lbl: "Acconto OK", bg: "#D1FAE5", fg: "#065F46" }, { lbl: "Da ordinare", bg: "#FEF3C7", fg: "#92400E" }];
               primaryLbl = "CREA ORDINI FORNITORI";
-              primaryAction = () => { setShowOrdiniSheet(true); };
+              primaryAction = () => { console.log("[v-ordini-fix] click CREA ORDINI FORNITORI (riga 1528)", { selectedCM_id: selectedCM?.id, fase: selectedCM?.fase }); setShowOrdiniSheet(true); };
             } else if (_faseDb === "ordine") {
               eyebrow = "Fase corrente · Ordine inviato";
               titolo = "In attesa consegna";
@@ -1867,7 +1867,7 @@ export default function CMDetailPanel() {
             // Stati DB: sopralluogo → preventivo → conferma_ordine → confermata → acconto_pagato → ordine → produzione → montaggio → fatturata → pagata
             const faseDb29 = (c29 as any).fase;
             const accontoOk29 = !!((c29 as any).fattura_acconto_pagata_at) || faseDb29 === 'acconto_pagato' || faseDb29 === 'ordine' || faseDb29 === 'produzione' || faseDb29 === 'montaggio';
-            const prossima = accontoOk29 ? { lbl: "CREA ORDINI FORNITORI", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { setShowOrdiniSheet(true); } } :
+            const prossima = accontoOk29 ? { lbl: "CREA ORDINI FORNITORI", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { console.log("[v-ordini-fix] click CREA ORDINI FORNITORI (riga 1870)", { selectedCM_id: selectedCM?.id, fase: selectedCM?.fase }); setShowOrdiniSheet(true); } } :
                            haFirmato29 ? { lbl: "EMETTI FATTURA ACCONTO", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { if (typeof creaFattura === "function") (creaFattura as any)(c29, "acconto", (Number((c29 as any).totale_finale) || 0) * 0.5, null, "Acconto 50%"); } } :
                            (tipoRis29 === "accettato" && c29.fase === "conferma_ordine") ? { lbl: "INVIA LINK FIRMA AL CLIENTE", bg: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)", action: () => setShowModalFirma(true) } :
                            tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D\'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma_ordine"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma_ordine" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma_ordine" }) : p); setShowModalFirma(true); } } :
