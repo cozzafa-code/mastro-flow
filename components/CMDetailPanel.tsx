@@ -54,17 +54,7 @@ function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S,
 
   return (
     <>
-      {/* [v-ordini-portal] render via createPortal - indipendente da branch prevWorkspace */}
-      {showOrdiniSheet && selectedCM && typeof document !== 'undefined' ? _createPortalCM(
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99999 }}>
-          <OrdiniSheet
-            commessa={selectedCM}
-            onClose={() => setShowOrdiniSheet(false)}
-            onCompletato={() => { setShowOrdiniSheet(false); }}
-          />
-        </div>,
-        document.body
-      ) : null}
+
       <div style={{ ...S.section, marginTop: 8 }}>
         <div style={S.sectionTitle}>Cronologia · {log.length}</div>
       </div>
@@ -7189,7 +7179,17 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           </div>
         </div>
       )}
-      </div>
+      {/* [v-ordini-final] OrdiniSheet via Portal - render finale nel componente padre */}
+      {showOrdiniSheet && selectedCM && typeof document !== 'undefined' ? _createPortalCM(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999 }}>
+          <OrdiniSheet
+            commessa={selectedCM}
+            onClose={() => setShowOrdiniSheet(false)}
+            onCompletato={() => { setShowOrdiniSheet(false); }}
+          />
+        </div>,
+        document.body
+      ) : null}      </div>
     );
 
 }
