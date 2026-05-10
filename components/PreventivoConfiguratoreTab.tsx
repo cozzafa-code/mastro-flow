@@ -2,7 +2,8 @@
 // @ts-nocheck
 // MASTRO ERP - PreventivoConfiguratoreTab v3 Mobile Wizard
 // Tab preventivo: wizard step-by-step per vano, inputMode numerico, encoding pulito
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { usePreventivoAutosave } from "@/hooks/usePreventivoAutosave";
 import { useMastro } from "./MastroContext";
 import { FM } from "./mastro-constants";
 import VanoConfiguratoreFullscreen from "./VanoConfiguratoreFullscreen";
@@ -837,6 +838,72 @@ export default function PreventivoConfiguratoreTab() {
   const acconto = parseFloat(c.accontoRicevuto || 0);
   const saldo = totIva - acconto;
 
+  // ── AUTOSAVE PREVENTIVO SU DB ──
+  // Mappa vani in-memory → input save layer (memoizzato per evitare re-render storm)
+  const autosaveInput = useMemo(() => {
+    if (!c?.id || !vani || vani.length === 0) return null;
+    const ultimoRilievoId = (c.rilievi && c.rilievi.length > 0)
+      ? c.rilievi[c.rilievi.length - 1].id
+      : null;
+    return {
+      commessaId: c.id,
+      rilievoOrigineId: ultimoRilievoId,
+      note: c.notePreventivo || c.note || null,
+      vani: vani.map((v: any, i: number) => {
+        const base = calcolaVanoPrezzo ? calcolaVanoPrezzo(v, c) : (v.prevPrezzoOverride ?? 0);
+        const prezzoU = v.prevPrezzoOverride !== undefined && v.prevPrezzoOverride !== null
+          ? v.prevPrezzoOverride : base;
+        const accCat = (v.accessoriCatalogo || []).reduce(
+          (sa: number, a: any) => sa + (a.prezzoUnitario || 0) * (a.quantita || 1), 0);
+        const posa = v.prevPosaPrezzo || 0;
+        const totaleVano = (prezzoU * (v.pezzi || 1)) + accCat + posa;
+        return {
+          id: v.id,
+          ordine: i,
+          nome: v.nome,
+          tipo: v.tipo,
+          pezzi: v.pezzi || 1,
+          stanza: v.stanza,
+          piano: v.piano,
+          misure: v.misure,
+          sistema: v.sistema,
+          sottosistema: v.sottosistema,
+          vetro: v.vetro,
+          vetroConfig: v.vetroConfig,
+          coloreInt: v.coloreInt,
+          coloreEst: v.coloreEst,
+          bicolore: v.bicolore,
+          coloreAcc: v.coloreAcc,
+          telaio: v.telaio,
+          controtelaioConfig: v.controtelaioConfig,
+          cassonettoConfig: v.cassonettoConfig,
+          persianaConfig: v.persianaConfig,
+          tapparellaConfig: v.tapparellaConfig,
+          zanzarieraConfig: v.zanzarieraConfig,
+          accessori: v.accessori,
+          accessoriCatalogo: v.accessoriCatalogo,
+          prevPrezzoOverride: v.prevPrezzoOverride,
+          prevPosaPrezzo: v.prevPosaPrezzo,
+          prevSmontaggioPrezzo: v.prevSmontaggioPrezzo,
+          vociLibere: v.vociLibere,
+          note: v.note,
+          prezzoCalcolato: base,
+          totaleVano,
+        };
+      }),
+      totali: {
+        netto: imponibile,
+        iva: ivaVal,
+        lordo: totIva,
+        ivaPerc,
+        scontoPerc,
+      },
+    };
+  }, [c?.id, vani, imponibile, ivaVal, totIva, ivaPerc, scontoPerc, calcolaVanoPrezzo, c]);
+
+  const autosave = usePreventivoAutosave(autosaveInput, true, 1500);
+  // ── FINE AUTOSAVE ──
+
   const inputStyle = {
     width: "100%", padding: "10px 12px", borderRadius: 8,
     border: `1px solid ${T.bdr}`, fontSize: 15, fontFamily: "Inter",
@@ -1031,6 +1098,35 @@ export default function PreventivoConfiguratoreTab() {
             <span style={{ fontSize: 18, fontWeight: 900, color: saldo > 0 ? RED : GRN, fontFamily: FM }}>€{fmt(saldo)}</span>
           </div>
         </div>
+      </div>
+
+      {/* ── STATO AUTOSAVE ── */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "10px 14px", borderRadius: 10, marginBottom: 10,
+        background:
+          autosave.stato === 'error' ? '#FEE2E2'
+          : autosave.stato === 'saving' ? '#FEF3C7'
+          : autosave.stato === 'saved' ? '#D1FAE5'
+          : T.bg,
+        border: `1px solid ${
+          autosave.stato === 'error' ? '#FCA5A5'
+          : autosave.stato === 'saving' ? '#FCD34D'
+          : autosave.stato === 'saved' ? '#6EE7B7'
+          : T.bdr}`,
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>
+          {autosave.stato === 'saving' && '⏳ Salvataggio in corso…'}
+          {autosave.stato === 'saved' && autosave.lastSavedAt && `✓ Salvato ore ${autosave.lastSavedAt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`}
+          {autosave.stato === 'error' && `⚠️ Errore: ${autosave.errorMsg}`}
+          {autosave.stato === 'idle' && (vani.length === 0 ? 'Nessun vano da salvare' : 'In attesa di modifiche…')}
+        </div>
+        {(autosave.stato === 'idle' || autosave.stato === 'error') && vani.length > 0 && (
+          <div onClick={() => autosave.salvaOra()}
+            style={{ padding: "6px 12px", borderRadius: 8, background: GRN, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>
+            💾 Salva ora
+          </div>
+        )}
       </div>
 
       {/* PDF */}

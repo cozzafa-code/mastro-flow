@@ -43,7 +43,7 @@ export default function PreventivoPanel({ commessaId }: PreventivoPanelProps) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: prev } = await supabase.from('preventivi').select('*').eq('commessa_id', commessaId).order('versione', { ascending: false }).limit(1).single();
+    const { data: prev } = await supabase.from('preventivi').select('*').eq('commessa_id', commessaId).order('versione', { ascending: false }).limit(1).maybeSingle();
     if (prev) {
       setPreventivo(prev);
       const { data: v } = await supabase.from('voci_preventivo').select('*').eq('preventivo_id', prev.id).order('ordine');
