@@ -2948,10 +2948,15 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
   }
 
 
+  const ordiniSheetPortal = showOrdiniSheet && selectedCM && typeof window !== "undefined"
+    ? _createPortalCM(<OrdiniSheet commessa={selectedCM} onClose={() => setShowOrdiniSheet(false)} onCompletato={() => setShowOrdiniSheet(false)} />, document.body)
+    : null;
+  const withGlobalSheets = (node: React.ReactNode) => (<React.Fragment>{node}{ordiniSheetPortal}</React.Fragment>);
+
   // · CAD DRAW FULLSCREEN ·
   if (showCadDraw) {
     const m = selectedCM?.misure || {};
-    return (
+    return withGlobalSheets(
       <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "#fff", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px", background: "#1A1A1C", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ color: "#1E3A5F", fontWeight: 700, fontSize: 14 }}><I d={ICO.ruler} /> {selectedCM?.nome || "Disegno"}</span>
@@ -4176,10 +4181,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
     );
 
     // == VISTA RILIEVO CON VANI ==
-    if (typeof window !== 'undefined' && showOrdiniSheet && selectedCM) {
-      return _createPortalCM(<OrdiniSheet commessa={selectedCM} onClose={() => setShowOrdiniSheet(false)} onCompletato={() => setShowOrdiniSheet(false)} />, document.body);
-    }
-    return (
+    return withGlobalSheets(
       <div style={{ paddingBottom: 80 }}>
         {/* HERO_TEAL_CM2_V2 - hero fliwoX + ripristino tutti gli elementi */}
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2" }}>
@@ -7028,7 +7030,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     const scaduto = new Date(fs.expires_at) < new Date();
                     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
                     const link = `${baseUrl}/fascicolo/${fs.token}`;
-                    return (
+                    return withGlobalSheets(
                       <div key={fs.token} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: T.card, borderRadius: 10, marginBottom: 6, border: `1px solid ${T.bdr}`, opacity: scaduto ? 0.5 : 1 }}>
                         <span style={{ fontSize: 12 }}>{scaduto ? "🔒" : "🔧"}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -7182,10 +7184,6 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           </div>
         </div>
       )}
-{/* [v-final-fix] OrdiniSheet diretto */}
-      {(() => { if (typeof window !== "undefined") (window as any).__DIAG_ORDINI = { showOrdiniSheet, hasCM: !!selectedCM, cmId: selectedCM?.id, fase: selectedCM?.fase }; if (showOrdiniSheet) console.log("[DIAG-RENDER] showOrdiniSheet=true selectedCM=", selectedCM?.id, "fase=", selectedCM?.fase); return null; })()}
-      {(() => { if (typeof window !== "undefined") (window as any).__DIAG_ORDINI = { showOrdiniSheet, hasCM: !!selectedCM, cmId: selectedCM?.id, fase: selectedCM?.fase }; if (showOrdiniSheet) console.log("[DIAG-RENDER] showOrdiniSheet=true selectedCM=", selectedCM?.id, "fase=", selectedCM?.fase); return null; })()}
-      {showOrdiniSheet && selectedCM ? <OrdiniSheet commessa={selectedCM} onClose={() => setShowOrdiniSheet(false)} onCompletato={() => setShowOrdiniSheet(false)} /> : null}
       </div>
     );
 
