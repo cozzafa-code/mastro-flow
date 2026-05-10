@@ -3,6 +3,7 @@
 import * as React from "react";
 import { supabase } from "../../../lib/supabase";
 import { getAziendaId } from "../../mastro-constants";
+import InviaSDIModal from "../modals/InviaSDIModal";
 
 type Fattura = {
   id: string;
