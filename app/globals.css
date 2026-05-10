@@ -98,54 +98,31 @@ body::before {
   pointer-events: none;
 }
 /* === MASTRO HD OVERSCROLL FIX END ===*/
-
-/* === TABLET 768-1023px: tasti DOPPI + colori fliwoX teal === */
+/* === TABLET 768-1023px: bottoni 72px + div cliccabili === */
 @media (min-width: 768px) and (max-width: 1023px) {
-  /* Sfondo body tablet fliwoX */
-  body {
-    background: #E8F4F4 !important;
-  }
-  /* Bottoni: DOPPIO di mobile (mobile ~44px → tablet 88px) */
+  /* Sfondo body fliwoX */
+  body { background: #E8F4F4 !important; }
+
+  /* BUTTON nativi: 72px */
   button {
-    min-height: 88px !important;
-    padding: 22px 28px !important;
-    font-size: 18px !important;
-    font-weight: 700 !important;
-    border-radius: 14px !important;
-  }
-  /* Bottoni piccoli icona-only restano quadrati ma grandi */
-  button[aria-label], button.icon-btn {
-    min-width: 88px !important;
-  }
-  /* Bottoni PRIMARY -> teal fliwoX */
-  button[type="submit"], button.primary, button[data-variant="primary"] {
-    background: #28A0A0 !important;
-    color: #FFFFFF !important;
-    border: none !important;
-    box-shadow: 0 5px 0 0 #156060 !important;
-  }
-  /* Tab/role=tab: doppio alto */
-  [role="tab"] {
     min-height: 72px !important;
-    padding: 18px 26px !important;
+    padding: 18px 24px !important;
     font-size: 17px !important;
     font-weight: 700 !important;
   }
-  /* Accordion/summary: doppio alto */
-  details > summary, [class*="accordion"], [data-row] {
-    min-height: 88px !important;
-    padding: 24px 22px !important;
-    font-size: 17px !important;
+
+  /* DIV cliccabili con cursor pointer (tab/toolbar/accordion) */
+  div[style*="cursor: pointer"], div[style*="cursor:pointer"],
+  div[role="button"], div[role="tab"] {
+    min-height: 64px !important;
+    padding: 16px 20px !important;
+    font-size: 16px !important;
   }
-  /* Input/select/textarea: doppio alto */
+
+  /* Input/select grandi */
   input, select, textarea {
-    min-height: 72px !important;
-    font-size: 18px !important;
-    padding: 18px 20px !important;
-    border-radius: 12px !important;
-  }
-  /* Cards/panel piu' arieggiati */
-  [class*="card"], [class*="panel"] {
-    border-radius: 16px !important;
+    min-height: 60px !important;
+    font-size: 17px !important;
+    padding: 14px 18px !important;
   }
 }
