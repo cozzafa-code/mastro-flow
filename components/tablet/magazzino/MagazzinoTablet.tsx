@@ -1,5 +1,5 @@
 "use client";
-// MASTRO TABLET - Magazzino v3 (fix layout colonne)
+// MASTRO TABLET - Magazzino v4 (leggibilità nomi articolo)
 import * as React from "react";
 import { supabase } from "../../../lib/supabase";
 import { getAziendaId } from "../../mastro-constants";
@@ -48,7 +48,7 @@ function catColor(cat: string | null): { bg: string; fg: string } {
   if (k.includes("profil") || k.includes("alluminio") || k.includes("barre")) return { bg: C.blueTint, fg: C.blue };
   if (k.includes("vetr"))   return { bg: C.purpleTint, fg: C.purple };
   if (k.includes("ferr") || k.includes("manig") || k.includes("cernier")) return { bg: C.amberTint, fg: C.amber };
-  if (k.includes("guarn") || k.includes("silicon"))  return { bg: C.greenTint, fg: C.green };
+  if (k.includes("guarn") || k.includes("silicon") || k.includes("minut"))  return { bg: C.greenTint, fg: C.green };
   return { bg: C.navyTint, fg: C.navy };
 }
 
@@ -117,40 +117,43 @@ export default function MagazzinoTablet() {
   const kpiEsauriti = articoli.filter(a => (a.qta_disponibile || 0) === 0).length;
 
   return (
-    <div style={{ background: C.bg, minHeight: "100%", padding: 24 }}>
+    <div style={{ background: C.bg, minHeight: "100%", padding: 20 }}>
 
+      {/* HEADER */}
       <div style={{
         background: `linear-gradient(135deg, ${C.navy} 0%, #0F1B2D 100%)`,
-        borderRadius: 18, padding: "22px 26px", color: "#fff",
-        marginBottom: 18, boxShadow: "0 8px 24px rgba(15,27,45,0.4)",
+        borderRadius: 16, padding: "20px 24px", color: "#fff",
+        marginBottom: 14, boxShadow: "0 8px 24px rgba(15,27,45,0.4)",
       }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: "#93B0CF", letterSpacing: 1.5, textTransform: "uppercase" }}>Magazzino</div>
-        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.1, marginTop: 4 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#93B0CF", letterSpacing: 1.5, textTransform: "uppercase" }}>Magazzino</div>
+        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.1, marginTop: 4 }}>
           {loading ? "Caricamento..." : `${kpiTotale} articoli`}
         </div>
-        <div style={{ fontSize: 13, color: "#B5C8DD", fontWeight: 600, marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: "#B5C8DD", fontWeight: 600, marginTop: 4 }}>
           Valore stock: €{kpiValore.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12, marginBottom: 18 }}>
-        <Kpi label="Articoli totali" value={String(kpiTotale)} color="navy" />
-        <Kpi label="Valore stock" value={`€${(kpiValore/1000).toFixed(1)}k`} color="green" />
+      {/* KPI */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
+        <Kpi label="Totali" value={String(kpiTotale)} color="navy" />
+        <Kpi label="Valore" value={`€${(kpiValore/1000).toFixed(1)}k`} color="green" />
         <Kpi label="Sotto soglia" value={String(kpiSottoSoglia)} color="amber" alert={kpiSottoSoglia > 0} />
         <Kpi label="Esauriti" value={String(kpiEsauriti)} color="red" alert={kpiEsauriti > 0} />
       </div>
 
+      {/* FILTRI */}
       <div style={{
-        background: C.card, borderRadius: 14, padding: 16,
-        boxShadow: "0 4px 16px rgba(15,23,42,0.18)", marginBottom: 14,
-        display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+        background: C.card, borderRadius: 14, padding: 14,
+        boxShadow: "0 4px 16px rgba(15,23,42,0.18)", marginBottom: 12,
+        display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
       }}>
         <div style={{
-          flex: 1, minWidth: 220,
-          background: C.cardSoft, borderRadius: 11, padding: "10px 14px",
-          display: "flex", alignItems: "center", gap: 10,
+          flex: 1, minWidth: 200,
+          background: C.cardSoft, borderRadius: 10, padding: "9px 12px",
+          display: "flex", alignItems: "center", gap: 8,
         }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.subLight} strokeWidth={2.5}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.subLight} strokeWidth={2.5}>
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
@@ -160,17 +163,17 @@ export default function MagazzinoTablet() {
             placeholder="Cerca articolo, codice, fornitore..."
             style={{
               flex: 1, border: "none", background: "transparent",
-              fontSize: 14, fontWeight: 600, color: C.ink, outline: "none",
+              fontSize: 13, fontWeight: 600, color: C.ink, outline: "none",
               fontFamily: "inherit", minWidth: 0,
             }}
           />
         </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
           <Pill label={`Tutte (${articoli.length})`} active={filtroCat === "tutte"} onClick={() => setFiltroCat("tutte")} />
           {categorie.map(cat => (
             <Pill
               key={cat}
-              label={`${cat} (${articoli.filter(a => a.categoria === cat).length})`}
+              label={`${cat.toLowerCase()} (${articoli.filter(a => a.categoria === cat).length})`}
               active={filtroCat === cat}
               onClick={() => setFiltroCat(cat)}
             />
@@ -178,9 +181,10 @@ export default function MagazzinoTablet() {
         </div>
       </div>
 
+      {/* LISTA ARTICOLI */}
       <div style={{ background: C.card, borderRadius: 14, boxShadow: "0 4px 16px rgba(15,23,42,0.18)", overflow: "hidden" }}>
         {error && (
-          <div style={{ padding: 32, textAlign: "center", color: C.red, fontWeight: 700 }}>
+          <div style={{ padding: 28, textAlign: "center", color: C.red, fontWeight: 700 }}>
             ⚠ {error}
             <div style={{ marginTop: 10 }}>
               <button onClick={loadArticoli} style={{
@@ -191,83 +195,94 @@ export default function MagazzinoTablet() {
           </div>
         )}
         {!error && loading && (
-          <div style={{ padding: 60, textAlign: "center", color: C.sub, fontSize: 14, fontWeight: 600 }}>
+          <div style={{ padding: 50, textAlign: "center", color: C.sub, fontSize: 13, fontWeight: 600 }}>
             Caricamento articoli...
           </div>
         )}
         {!error && !loading && filtered.length === 0 && articoli.length === 0 && (
-          <div style={{ padding: 60, textAlign: "center" }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, marginBottom: 6 }}>Magazzino vuoto</div>
-            <div style={{ fontSize: 13, color: C.sub, fontWeight: 600 }}>Nessun articolo registrato per questa azienda</div>
+          <div style={{ padding: 50, textAlign: "center" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.ink, marginBottom: 6 }}>Magazzino vuoto</div>
+            <div style={{ fontSize: 12, color: C.sub, fontWeight: 600 }}>Nessun articolo registrato</div>
           </div>
         )}
         {!error && !loading && filtered.length === 0 && articoli.length > 0 && (
-          <div style={{ padding: 60, textAlign: "center" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.sub }}>Nessun articolo corrisponde ai filtri</div>
+          <div style={{ padding: 50, textAlign: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.sub }}>Nessun articolo corrisponde ai filtri</div>
           </div>
         )}
         {!error && !loading && filtered.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column" }}>
+          <div>
             {filtered.map((a, idx) => {
               const cat = catColor(a.categoria);
               const stato = statoScorta(a.qta_disponibile || 0, a.qta_minima || 0);
               const valore = ((a.qta_disponibile || 0) * (a.prezzo_medio || 0));
               return (
                 <div key={a.id} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 16,
-                  padding: "16px 20px",
+                  padding: "14px 16px",
                   borderBottom: idx < filtered.length - 1 ? `1px solid ${C.border}` : "none",
                   cursor: "pointer",
-                  minWidth: 0,
                 }}>
-                  {/* COL 1: nome + categoria pill + fornitore */}
-                  <div style={{ flex: "1 1 320px", minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-                        {a.nome}
-                      </div>
-                      <span style={{
-                        fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999,
-                        background: cat.bg, color: cat.fg, textTransform: "uppercase", letterSpacing: 0.4,
-                        flexShrink: 0,
-                      }}>{a.categoria || "altro"}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {a.codice_interno || "—"} · {a.fornitore_principale || "Fornitore n/d"}
-                    </div>
-                  </div>
-
-                  {/* COL 2: disponibilità */}
-                  <div style={{ flex: "0 0 100px", textAlign: "right" }}>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                      {a.qta_disponibile}
-                      <span style={{ fontSize: 11, color: C.sub, fontWeight: 700, marginLeft: 4 }}>{a.unita || ""}</span>
-                    </div>
-                    <div style={{ fontSize: 10, color: C.sub, fontWeight: 600, marginTop: 3 }}>
-                      min: {a.qta_minima}
-                    </div>
-                  </div>
-
-                  {/* COL 3: prezzo + valore */}
-                  <div style={{ flex: "0 0 110px", textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                      €{(a.prezzo_medio || 0).toFixed(2)}
-                    </div>
-                    <div style={{ fontSize: 10, color: C.sub, fontWeight: 600, marginTop: 3 }}>
-                      val: €{valore.toFixed(0)}
-                    </div>
-                  </div>
-
-                  {/* COL 4: stato + ubicazione */}
-                  <div style={{ flex: "0 0 130px", textAlign: "center" }}>
+                  {/* RIGA 1: pill categoria + stato in alto a destra */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
                     <span style={{
-                      fontSize: 11, fontWeight: 800, padding: "5px 12px", borderRadius: 8,
-                      background: stato.bg, color: stato.fg, display: "inline-block",
+                      fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 999,
+                      background: cat.bg, color: cat.fg, textTransform: "uppercase", letterSpacing: 0.5,
+                    }}>{a.categoria || "altro"}</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 7,
+                      background: stato.bg, color: stato.fg,
                     }}>{stato.label}</span>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, marginTop: 4 }}>
-                      📍 {a.ubicazione || "—"}
+                  </div>
+
+                  {/* RIGA 2: NOME completo (può andare a capo) */}
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, lineHeight: 1.3, marginBottom: 4 }}>
+                    {a.nome}
+                  </div>
+
+                  {/* RIGA 3: codice + fornitore */}
+                  <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginBottom: 10 }}>
+                    {a.codice_interno || "—"} · {a.fornitore_principale || "Fornitore n/d"}
+                  </div>
+
+                  {/* RIGA 4: dati numerici allineati */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: 10,
+                    paddingTop: 10,
+                    borderTop: `1px dashed ${C.border}`,
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 }}>
+                        Disponib.
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                        {a.qta_disponibile} <span style={{ fontSize: 11, color: C.sub, fontWeight: 700 }}>{a.unita || ""}</span>
+                      </div>
+                      <div style={{ fontSize: 10, color: C.sub, fontWeight: 600, marginTop: 2 }}>
+                        min: {a.qta_minima}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 }}>
+                        Prezzo
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                        €{(a.prezzo_medio || 0).toFixed(2)}
+                      </div>
+                      <div style={{ fontSize: 10, color: C.sub, fontWeight: 600, marginTop: 2 }}>
+                        val: €{valore.toFixed(0)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 }}>
+                        Ubicazione
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: C.navy, lineHeight: 1, marginTop: 1 }}>
+                        📍 {a.ubicazione || "—"}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -292,16 +307,16 @@ const Kpi: React.FC<{ label: string; value: string; color: "navy" | "green" | "a
   return (
     <div style={{
       background: alert ? C.redSoft : C.card,
-      borderRadius: 14, padding: 16,
+      borderRadius: 12, padding: 12,
       boxShadow: "0 4px 16px rgba(15,23,42,0.18)",
       borderTop: `4px solid ${m.bd}`,
-      display: "flex", flexDirection: "column", gap: 4,
+      display: "flex", flexDirection: "column", gap: 3,
       minWidth: 0, overflow: "hidden",
     }}>
-      <div style={{ fontSize: 24, fontWeight: 800, color: m.fg, letterSpacing: -0.5, lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color: m.fg, letterSpacing: -0.5, lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {value}
       </div>
-      <div style={{ fontSize: 11, color: C.sub, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 }}>
+      <div style={{ fontSize: 10, color: C.sub, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 }}>
         {label}
       </div>
     </div>
@@ -312,11 +327,11 @@ const Pill: React.FC<{ label: string; active: boolean; onClick: () => void }> = 
   <div
     onClick={onClick}
     style={{
-      padding: "8px 14px",
-      borderRadius: 10,
+      padding: "7px 12px",
+      borderRadius: 9,
       background: active ? C.navy : C.cardSoft,
       color: active ? "#fff" : C.ink,
-      fontSize: 12, fontWeight: 800,
+      fontSize: 11, fontWeight: 800,
       cursor: "pointer",
       whiteSpace: "nowrap",
       letterSpacing: 0.3,
