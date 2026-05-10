@@ -1,38 +1,33 @@
 "use client";
-// MASTRO TABLET v11 - Delega panel mobile + filtri fase preset
-// 10 sezioni dei mobile riusate:
-//   - commesse, agenda, clienti, contabilita, talk, ordini, settings (full panel)
-//   - sopralluoghi, produzione, montaggi (CommessePanel con filterFase preset)
-// 4 sezioni tablet finte ancora attive: magazzino, fiscale, team, ops
 import * as React from "react";
 import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
 import TopbarTablet from "./TopbarTablet";
 import DashboardTablet from "./dashboard/DashboardTablet";
-
-// ============ PANEL MOBILE (DATI REALI) ============
-import CommessePanel from "../CommessePanel";
-import AgendaPanel from "../AgendaPanel";
-import ClientiPanel from "../ClientiPanel";
-import ContabilitaPanel from "../ContabilitaPanel";
-import MessaggiPanel from "../MessaggiPanel";
-import MaterialiPanel from "../MaterialiPanel";
-import SettingsPanel from "../SettingsPanel";
-
-// ============ PANEL TABLET FINTI (RESTANO PER ORA) ============
-import MagazzinoTablet from "./magazzino/MagazzinoTablet";
-import FiscaleTablet from "./fiscale/FiscaleTablet";
-import TeamTablet from "./team/TeamTablet";
-import OpsTablet from "./ops/OpsTablet";
-
-// Servizi
+import CommesseListaTablet from "./commesse/CommesseListaTablet";
+import CommessaDettaglioTablet from "./commesse/CommessaDettaglioTablet";
+import ClienteDettaglioTablet from "./clienti/ClienteDettaglioTablet";
 import EntityDetailPanel from "./EntityDetailPanel";
 import SideEffectsToaster from "./SideEffectsToaster";
 import { EntityType } from "./dashboard-context";
 import { RuoloProvider } from "./store";
 import BannerRuolo from "./BannerRuolo";
+import CalendarioTablet from "./calendario/CalendarioTablet";
+import SopralluoghiTablet from "./sopralluoghi/SopralluoghiTablet";
+import ProduzioneTablet from "./produzione/ProduzioneTablet";
+import MontaggiTablet from "./montaggi/MontaggiTablet";
+import OrdiniFornitoriTablet from "./ordini/OrdiniFornitoriTablet";
+import MagazzinoTablet from "./magazzino/MagazzinoTablet";
+import ClientiTablet from "./clienti/ClientiTablet";
+import ContabilitaTablet from "./contabilita/ContabilitaTablet";
+import FiscaleTablet from "./fiscale/FiscaleTablet";
+import TeamTablet from "./team/TeamTablet";
+import OpsTablet from "./ops/OpsTablet";
+import AiMastroTablet from "./ai/AiMastroTablet";
+import ImpostazioniTablet from "./impostazioni/ImpostazioniTablet";
 import { DashboardProvider, Preset } from "./dashboard-context";
-import { useMastro } from "../MastroContext";
+import ExpandModal from "./ExpandModal";
+import BackButton from "./BackButton";
 
 const PRESET_KEY = "mastro_tablet_preset";
 const COLLAPSE_KEY = "mastro_tablet_collapsed";
@@ -63,35 +58,14 @@ function useViewport(): { w: number; mode: "sm" | "md" | "lg" } {
   return size;
 }
 
-// Mappa sezione tablet -> tab MastroERP per sincronizzare context.tab
-const SECTION_TO_TAB: Record<string, string> = {
-  dashboard: "home",
-  commesse: "commesse",
-  sopralluoghi: "commesse",
-  produzione: "commesse",
-  montaggi: "commesse",
-  calendario: "agenda",
-  clienti: "clienti",
-  contabilita: "contabilita",
-  ai: "messaggi",
-  ordini: "materiali",
-  impostazioni: "settings",
-};
-
-// Mappa sezione -> filterFase da preselezionare in CommessePanel
-const SECTION_TO_FASE: Record<string, string | null> = {
-  commesse: null,            // tutte
-  sopralluoghi: "sopralluogo",
-  produzione: "produzione",
-  montaggi: "posa",
-};
-
 export default function MastroTablet() {
-  const { setTab, setFilterFase } = useMastro();
   const [active, setActive] = React.useState<string>("dashboard");
   const [userCollapsed, setUserCollapsed] = React.useState(false);
   const [hasUserOverride, setHasUserOverride] = React.useState(false);
   const [preset, setPresetState] = React.useState<Preset>("titolare");
+  const [expanded, setExpanded] = React.useState<string | null>(null);
+  const [selectedCommessaId, setSelectedCommessaId] = React.useState<string | null>(null);
+  const [activeClienteId, setActiveClienteId] = React.useState<string | null>(null);
   const [activeEntity, setActiveEntity] = React.useState<{ tipo: EntityType; id: string } | null>(null);
 
   const { mode } = useViewport();
@@ -129,38 +103,58 @@ export default function MastroTablet() {
     try { window.localStorage.setItem(PRESET_KEY, p); } catch {}
   }, []);
 
-  // Sincronizza tab MastroERP + filterFase al cambio sezione
-  React.useEffect(() => {
-    const mappedTab = SECTION_TO_TAB[active];
-    if (mappedTab && setTab) setTab(mappedTab);
-    // Se la sezione richiede un filtro fase preset, applicalo
-    if (active in SECTION_TO_FASE && setFilterFase) {
-      const fase = SECTION_TO_FASE[active];
-      setFilterFase(fase || "");
-    }
-  }, [active, setTab, setFilterFase]);
+  const openCommessa = React.useCallback((id: string) => {
+    setSelectedCommessaId(id);
+    setActiveClienteId(null);
+    setActiveEntity(null);
+    setActive("commesse");
+    setExpanded(null);
+  }, []);
 
-  const navigate = React.useCallback((sezione: string) => { setActive(sezione); }, []);
-  const expand = React.useCallback(() => {}, []);
-  const openCommessa = React.useCallback(() => { setActive("commesse"); }, []);
-  const openCliente = React.useCallback(() => { setActive("clienti"); }, []);
+  const openCliente = React.useCallback((id: string) => {
+    setActiveClienteId(id);
+    setSelectedCommessaId(null);
+    setActiveEntity(null);
+    setActive("clienti");
+    setExpanded(null);
+  }, []);
+
   const openEntity = React.useCallback((tipo: EntityType, id: string) => {
     setActiveEntity({ tipo, id });
   }, []);
-  const closeCommessa = React.useCallback(() => {}, []);
+
+  const closeCommessa = React.useCallback(() => {
+    setSelectedCommessaId(null);
+  }, []);
+
+  const navigate = React.useCallback((sezione: string, params?: any) => {
+    if (params?.commessaId) { openCommessa(params.commessaId); return; }
+    setActive(sezione);
+    setSelectedCommessaId(null);
+    setActiveClienteId(null);
+    setActiveEntity(null);
+    setExpanded(null);
+  }, [openCommessa]);
+
+  const expand = React.useCallback((blocco: string) => { setExpanded(blocco); }, []);
+  const closeExpand = React.useCallback(() => setExpanded(null), []);
+  const goBack = React.useCallback(() => {
+    if (selectedCommessaId) { setSelectedCommessaId(null); return; }
+    navigate("dashboard");
+  }, [selectedCommessaId, navigate]);
 
   const handleSidebarSelect = React.useCallback((s: string) => {
     setActive(s);
+    setSelectedCommessaId(null);
+    setActiveClienteId(null);
     setActiveEntity(null);
+    setExpanded(null);
   }, []);
 
+  // Sidebar width: aperta = 280 (lg) / 240 (md) / 220 (sm). Chiusa = 88 sempre.
   const sidebarW = isCollapsed ? 88 : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
-
-  // Sezioni delegate a panel mobile (no padding extra: hanno il loro)
-  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario", "clienti", "contabilita", "ai", "ordini", "impostazioni"].includes(active);
-  const mainPad = isMobilePanel ? 0 : (mode === "sm" ? "16px 18px 20px" : "20px 24px 24px");
-  const mainBg = isMobilePanel ? "#94A3B8" : BG;
-
+  const mainPad = mode === "sm" ? "16px 18px 20px" : "20px 24px 24px";
+  const isDashboard = active === "dashboard" && !selectedCommessaId;
   const currentUserId = "op-walter";
 
   return (
@@ -172,7 +166,7 @@ export default function MastroTablet() {
         onExpand={expand}
         preset={preset}
         setPreset={setPreset}
-        selectedCommessaId={null}
+        selectedCommessaId={selectedCommessaId}
         openCommessa={openCommessa}
         openCliente={openCliente}
         openEntity={openEntity}
@@ -209,28 +203,36 @@ export default function MastroTablet() {
             mode={mode}
           />
 
-          <main style={{ gridArea: "main", overflowY: "auto", overflowX: "hidden", padding: mainPad, background: mainBg }}>
-            {/* DASHBOARD: home tablet v9 */}
-            {active === "dashboard" && <DashboardTablet />}
-
-            {/* SEZIONI MOBILE RIUSATE (DATI REALI) */}
-            {active === "commesse"     && <CommessePanel />}
-            {active === "sopralluoghi" && <CommessePanel />}
-            {active === "produzione"   && <CommessePanel />}
-            {active === "montaggi"     && <CommessePanel />}
-            {active === "calendario"   && <AgendaPanel />}
-            {active === "clienti"      && <ClientiPanel />}
-            {active === "contabilita"  && <ContabilitaPanel />}
-            {active === "ai"           && <MessaggiPanel />}
-            {active === "ordini"       && <MaterialiPanel onBack={() => setActive("dashboard")} />}
-            {active === "impostazioni" && <SettingsPanel />}
-
-            {/* SEZIONI TABLET FINTE (DA RISCRIVERE IN LOTTO SUCCESSIVO) */}
-            {active === "magazzino"    && <MagazzinoTablet />}
-            {active === "fiscale"      && <FiscaleTablet />}
-            {active === "team"         && <TeamTablet />}
-            {active === "ops"          && <OpsTablet />}
+          <main style={{ gridArea: "main", overflowY: "auto", overflowX: "hidden", padding: mainPad, background: BG }}>
+            {!isDashboard && <BackButton active={active} onBack={goBack} />}
+            {selectedCommessaId ? (
+              <CommessaDettaglioTablet commessaId={selectedCommessaId} />
+            ) : (
+              <>
+                {active === "dashboard"     && <DashboardTablet />}
+                {active === "commesse"      && <CommesseListaTablet />}
+                {active === "calendario"    && <CalendarioTablet />}
+                {active === "sopralluoghi"  && <SopralluoghiTablet />}
+                {active === "produzione"    && <ProduzioneTablet />}
+                {active === "montaggi"      && <MontaggiTablet />}
+                {active === "ordini"        && <OrdiniFornitoriTablet />}
+                {active === "magazzino"     && <MagazzinoTablet />}
+                {active === "clienti"       && (activeClienteId ? <ClienteDettaglioTablet clienteId={activeClienteId} onBack={() => setActiveClienteId(null)} /> : <ClientiTablet />)}
+                {active === "contabilita"   && <ContabilitaTablet />}
+                {active === "fiscale"       && <FiscaleTablet />}
+                {active === "team"          && <TeamTablet />}
+                {active === "ops"           && <OpsTablet />}
+                {active === "ai"            && <AiMastroTablet />}
+                {active === "impostazioni"  && <ImpostazioniTablet />}
+              </>
+            )}
           </main>
+
+          <ExpandModal open={expanded === "agenda"} onClose={closeExpand} title="Agenda" subtitle="" icon="calendario" tint="violet"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
+          <ExpandModal open={expanded === "scadenze"} onClose={closeExpand} title="Scadenze" subtitle="" icon="bell" tint="amber"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
+          <ExpandModal open={expanded === "produzione"} onClose={closeExpand} title="Produzione" subtitle="" icon="produzione" tint="blue"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
+          <ExpandModal open={expanded === "commesse"} onClose={closeExpand} title="Commesse" subtitle="" icon="commesse" tint="orange"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
+          <ExpandModal open={expanded === "team"} onClose={closeExpand} title="Team" subtitle="" icon="team" tint="teal"><div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div></ExpandModal>
         </div>
         <SideEffectsToaster />
         <EntityDetailPanel
