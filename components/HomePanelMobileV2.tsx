@@ -22,6 +22,8 @@ const ALL_CARDS = [
   { id: 'cassa', title: 'CASSA' },
   { id: 'squadra', title: 'SQUADRA' },
   { id: 'produzione', title: 'PRODUZIONE' },
+  { id: 'gestione-materiali', title: 'GESTIONE MATERIALI' },
+  { id: 'clienti', title: 'CLIENTI' },
   { id: 'magazzino', title: 'MAGAZZINO' },
   { id: 'statistiche', title: 'STATISTICHE' },
 ]
@@ -256,6 +258,8 @@ export default function HomePanelMobileV2(props: any) {
         {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => goto('contabilita')} />}
         {id === 'squadra' && <CardSquadra team={team} cantieri={cantieri} onClick={() => goto('team')} />}
         {id === 'produzione' && <CardProduzione cantieri={cantieri} apri={apriCM} />}
+        {id === 'gestione-materiali' && <CardGestioneMateriali ordini={ctx?.ordiniFornDB || []} magazzino={ctx?.magazzinoArticoli || []} onClick={() => goto('materiali')} />}
+        {id === 'clienti' && <CardClienti contatti={ctx?.contatti || ctx?.clienti || []} cantieri={cantieri} onClick={() => goto('clienti')} />}
         {id === 'magazzino' && <CardMagazzino onClick={() => goto('magazzino')} />}
         {id === 'statistiche' && <CardStatistiche cantieri={cantieri} onClick={() => goto('contabilita')} />}
       </div>
@@ -830,6 +834,89 @@ function CardMagazzino({ onClick }: any) {
     </>
   )
 }
+
+// ====== CARD GESTIONE MATERIALI ======
+function CardGestioneMateriali({ ordini, magazzino, onClick }: any) {
+  const ordiniAttivi = (ordini || []).filter((o: any) => o?.stato && !['arrivato','completato','annullato'].includes(o.stato))
+  const inTransito = (ordini || []).filter((o: any) => o?.stato === 'in_transito' || o?.stato === 'inviato' || o?.stato === 'confermato').length
+  const sottoScorta = (magazzino || []).filter((a: any) => Number(a?.qta_disponibile || 0) < Number(a?.qta_minima || 0)).length
+  const valoreMag = (magazzino || []).reduce((s: number, a: any) => s + (Number(a?.qta_disponibile || 0) * Number(a?.prezzo_medio || 0)), 0)
+  const valoreLabel = valoreMag >= 1000 ? `${(valoreMag / 1000).toFixed(1)}k€` : `${Math.round(valoreMag)}€`
+
+  return (
+    <>
+      <CardHead title="Gestione materiali" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>} />
+      <div onClick={onClick} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4, cursor: 'pointer' }}>
+        <div style={{ background: '#F2FAFA', borderRadius: 10, padding: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth={2}><rect x={1} y={3} width={15} height={13}/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx={5.5} cy={18.5} r={2.5}/><circle cx={18.5} cy={18.5} r={2.5}/></svg>
+            <span style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>IN TRANSITO</span>
+          </div>
+          <div style={{ fontSize: 18, color: TEXT, fontWeight: 700, lineHeight: 1, fontFeatureSettings: '"tnum"' }}>{inTransito}</div>
+          <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>{ordiniAttivi.length} ordini attivi</div>
+        </div>
+        <div style={{ background: sottoScorta > 0 ? '#FEF3C7' : '#F2FAFA', borderRadius: 10, padding: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={sottoScorta > 0 ? '#BA7517' : '#1E3A5F'} strokeWidth={2}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span style={{ fontSize: 9, color: sottoScorta > 0 ? '#92400E' : MUTED, fontWeight: 600 }}>SOTTO-SCORTA</span>
+          </div>
+          <div style={{ fontSize: 18, color: sottoScorta > 0 ? '#92400E' : TEXT, fontWeight: 700, lineHeight: 1, fontFeatureSettings: '"tnum"' }}>{sottoScorta}</div>
+          <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>val. mag. {valoreLabel}</div>
+        </div>
+      </div>
+      {sottoScorta > 0 ? (
+        <div onClick={onClick} style={{ marginTop: 8, padding: '8px 10px', background: '#FEF3C7', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#BA7517" strokeWidth={2.2}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span style={{ fontSize: 10, color: '#92400E', fontWeight: 600, flex: 1 }}>{sottoScorta} articoli da riordinare</span>
+          <span style={{ fontSize: 10, color: '#1E3A5F', fontWeight: 700 }}>RIORDINA →</span>
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+// ====== CARD CLIENTI ======
+function CardClienti({ contatti, cantieri, onClick }: any) {
+  const totale = (contatti || []).length
+  // Ordina per ultimo aggiornamento (updated_at o created_at)
+  const recenti = (contatti || []).slice().sort((a: any, b: any) => {
+    const ta = new Date(a?.updated_at || a?.created_at || 0).getTime()
+    const tb = new Date(b?.updated_at || b?.created_at || 0).getTime()
+    return tb - ta
+  }).slice(0, 3)
+  // Conta commesse attive per cliente
+  const commessePerCliente = (cliId: string) => cantieri.filter((c: any) => c?.cliente_id === cliId || c?.contatto_id === cliId).length
+
+  return (
+    <>
+      <CardHead title="Clienti" badge={totale} link="vedi tutti" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>} />
+      {recenti.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun cliente</div> : null}
+      {recenti.map((c: any, i: number) => {
+        const numCM = commessePerCliente(c?.id)
+        const iniziali = String(c?.nome || c?.ragione_sociale || '?').split(' ').map((s: string) => s[0]).join('').slice(0, 2).toUpperCase()
+        return (
+          <div key={i} onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < recenti.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 50, background: '#E5EAF0', color: '#1E3A5F', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0 }}>{iniziali}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.nome || c?.ragione_sociale || 'Senza nome'}{c?.cognome ? ` ${c.cognome}` : ''}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.telefono || c?.email || c?.indirizzo || '—'}</div>
+            </div>
+            {numCM > 0 ? (
+              <div style={{ flexShrink: 0, padding: '2px 8px', background: '#E5EAF0', borderRadius: 5 }}>
+                <span style={{ fontSize: 10, color: '#1E3A5F', fontWeight: 700 }}>{numCM} CM</span>
+              </div>
+            ) : null}
+          </div>
+        )
+      })}
+      <div onClick={onClick} style={{ marginTop: 8, padding: '8px 10px', background: '#F2FAFA', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+        <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>STORIA · DIARIO · COMMESSE</span>
+        <span style={{ fontSize: 10, color: '#1E3A5F', fontWeight: 700 }}>APRI →</span>
+      </div>
+    </>
+  )
+}
+
 
 function CardStatistiche({ cantieri, onClick }: any) {
   const sopr = cantieri.filter((c: any) => c?.fase === 'sopralluogo').length
