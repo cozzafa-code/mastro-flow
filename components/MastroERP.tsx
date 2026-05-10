@@ -1187,182 +1187,220 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   // #23: retroattivo clienteId una tantum
   useEffect(() => { if (contatti?.length) fixClienteIdRetroattivo(); }, [contatti.length]);
 
-  const addCommessa = async () => {
-    const v = validateCommessa(newCM);
-    if (!v.valid) { setFormErrors(v.errors); toast(v.errors[0], "error"); return; }
-    setFormErrors([]);
-    if (!canDo("commessa")) return;
-    const maxNum = Math.max(0, ...cantieri.map((cm: any) => parseInt(String(cm.code || "S-0").replace(/[^0-9]/g, "")) || 0));
-    const code = "S-" + String(maxNum + 1).padStart(4, "0");
-    const _ctMatch = contatti?.find((ct:any) => ct.id === newCM.clienteId || ((ct.nome||"").toLowerCase()+(ct.cognome?" "+ct.cognome:"").toLowerCase()).trim() === ([newCM.cliente,newCM.cognome].filter(Boolean).join(" ").toLowerCase()));
+// [v-trafila-fix-3] lock anti doppio-click
+    const addCommessaLockRef = React.useRef(false);
 
-    // FIX: fallback su UUID Walter Cozza se aziendaInfo non popolato
-    const azId = aziendaInfo?.id || aziendaInfo?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29";
-    const oggi = new Date().toISOString().split("T")[0];
+    const addCommessa = async () => {
+      const v = validateCommessa(newCM);
+      if (!v.valid) { setFormErrors(v.errors); toast(v.errors[0], "error"); return; }
+      setFormErrors([]);
+      if (!canDo("commessa")) return;
 
-    // 1) Insert commessa su Supabase
-    let cmDB: any = null;
-    let rilDB: any = null;
-    try {
-      const insertData: any = {
-        code,
-        cliente: newCM.cliente,
-        cognome: newCM.cognome || null,
-        indirizzo: newCM.indirizzo || null,
-        telefono: newCM.telefono || null,
-        email: newCM.email || null,
-        contatto_id: _ctMatch?.id || newCM.clienteId || null,
-        tipo: newCM.tipo || "nuova",
-        fase: "sopralluogo",
-        sistema: newCM.sistema || null,
-        difficolta_salita: newCM.difficoltaSalita || null,
-        mezzo_salita: newCM.mezzoSalita || null,
-        piano_edificio: newCM.pianoEdificio || null,
-        foro_scale: newCM.foroScale || null,
-        tipo_edificio: newCM.tipoEdificio || null,
-        note: newCM.note || null,
-      };
-      if (azId) insertData.azienda_id = azId;
-
-      const { data, error } = await supabase
-        .from("commesse")
-        .insert(insertData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("[addCommessa] errore insert commessa:", error);
-        toast("Errore creazione commessa: " + error.message, "error");
+      // [v-trafila-fix-3] LOCK
+      if (addCommessaLockRef.current) {
+        console.warn('[addCommessa] gia in corso, skip');
         return;
       }
-      cmDB = data;
+      addCommessaLockRef.current = true;
 
-      // 2) Insert RILIEVO R1 BOZZA AUTOMATICO
-      const { data: rData, error: errR } = await supabase
-        .from("rilievi")
-        .insert({
-          commessa_id: cmDB.id,
-          azienda_id: azId,
+      try {
+        const azId = aziendaInfo?.id || aziendaInfo?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29";
+        const oggi = new Date().toISOString().split("T")[0];
+
+        // [v-trafila-fix-3] maxNum dal DB
+        let maxNum = 0;
+        try {
+          const { data: lastRows } = await supabase
+            .from("commesse")
+            .select("code")
+            .eq("azienda_id", azId)
+            .ilike("code", "S-%")
+            .order("created_at", { ascending: false })
+            .limit(50);
+          const dbNums = (lastRows || []).map((r: any) => parseInt(String(r.code || "S-0").replace(/[^0-9]/g, "")) || 0);
+          const stateNums = cantieri.map((cm: any) => parseInt(String(cm.code || "S-0").replace(/[^0-9]/g, "")) || 0);
+          maxNum = Math.max(0, ...dbNums, ...stateNums);
+        } catch (e) {
+          console.warn('[addCommessa] read maxNum DB fail:', e);
+          maxNum = Math.max(0, ...cantieri.map((cm: any) => parseInt(String(cm.code || "S-0").replace(/[^0-9]/g, "")) || 0));
+        }
+
+        let code = "S-" + String(maxNum + 1).padStart(4, "0");
+        const _ctMatch = contatti?.find((ct:any) => ct.id === newCM.clienteId || ((ct.nome||"").toLowerCase()+(ct.cognome?" "+ct.cognome:"").toLowerCase()).trim() === ([newCM.cliente,newCM.cognome].filter(Boolean).join(" ").toLowerCase()));
+
+        let cmDB: any = null;
+        let rilDB: any = null;
+
+        try {
+          const insertData: any = {
+            cliente: newCM.cliente,
+            cognome: newCM.cognome || null,
+            indirizzo: newCM.indirizzo || null,
+            telefono: newCM.telefono || null,
+            email: newCM.email || null,
+            contatto_id: _ctMatch?.id || newCM.clienteId || null,
+            tipo: newCM.tipo || "nuova",
+            fase: "sopralluogo",
+            sistema: newCM.sistema || null,
+            difficolta_salita: newCM.difficoltaSalita || null,
+            mezzo_salita: newCM.mezzoSalita || null,
+            piano_edificio: newCM.pianoEdificio || null,
+            foro_scale: newCM.foroScale || null,
+            tipo_edificio: newCM.tipoEdificio || null,
+            note: newCM.note || null,
+          };
+          if (azId) insertData.azienda_id = azId;
+
+          // [v-trafila-fix-3] retry loop su 23505
+          const MAX_RETRY = 5;
+          let lastError: any = null;
+          for (let attempt = 0; attempt < MAX_RETRY; attempt++) {
+            insertData.code = code;
+            const res = await supabase
+              .from("commesse")
+              .insert(insertData)
+              .select()
+              .single();
+
+            if (!res.error) {
+              cmDB = res.data;
+              lastError = null;
+              break;
+            }
+            lastError = res.error;
+            if (String(res.error.code) === '23505' && attempt < MAX_RETRY - 1) {
+              const cur = parseInt(code.replace(/[^0-9]/g, '')) || 0;
+              code = "S-" + String(cur + 1).padStart(4, "0");
+              console.warn('[addCommessa] retry', attempt + 1, 'con code', code);
+              continue;
+            }
+            break;
+          }
+
+          if (!cmDB) {
+            console.error("[addCommessa] errore insert commessa:", lastError);
+            toast("Errore creazione commessa: " + (lastError?.message || 'fallita'), "error");
+            return;
+          }
+
+          const { data: rData, error: errR } = await supabase
+            .from("rilievi")
+            .insert({
+              commessa_id: cmDB.id,
+              azienda_id: azId,
+              numero: 1,
+              tipo: "rilievo",
+              nome: "Rilievo iniziale",
+              data: oggi,
+              completato: false,
+            })
+            .select()
+            .single();
+
+          if (errR) {
+            console.warn("[addCommessa] errore insert rilievo R1:", errR);
+          } else {
+            rilDB = rData;
+          }
+
+          if (azId) {
+            try {
+              await logEvento({
+                modulo: "commessa",
+                entitaId: cmDB.id,
+                aziendaId: azId,
+                tipo: TL_TIPI.COMMESSA_CREATA,
+                titolo: "Commessa " + code + " creata",
+                descrizione: newCM.cliente + (newCM.indirizzo ? " - " + newCM.indirizzo : ""),
+                autore_nome: aziendaInfo?.nome || "Fabio",
+                autore_ruolo: "titolare",
+                stato: "info",
+                commessa_id: cmDB.id,
+                metadata: { tipo: newCM.tipo, telefono: newCM.telefono, email: newCM.email },
+              });
+            } catch (e) { console.warn("[timeline log commessa] err:", e); }
+
+            if (rilDB?.id) {
+              try {
+                await logEvento({
+                  modulo: "commessa",
+                  entitaId: cmDB.id,
+                  aziendaId: azId,
+                  tipo: TL_TIPI.NOTA_AGGIUNTA,
+                  titolo: "Rilievo R1 creato (Rilievo iniziale)",
+                  descrizione: "Rilievo bozza pronto per inserire vani e misure",
+                  autore_nome: aziendaInfo?.nome || "Fabio",
+                  autore_ruolo: "titolare",
+                  stato: "in_corso",
+                  commessa_id: cmDB.id,
+                  metadata: { rilievo_id: rilDB.id, numero: 1, nome: "Rilievo iniziale" },
+                });
+              } catch (e) { console.warn("[timeline log rilievo] err:", e); }
+            }
+          }
+        } catch (e: any) {
+          console.error("[addCommessa] eccezione:", e);
+          toast("Errore: " + (e?.message || "sconosciuto"), "error");
+          return;
+        }
+
+        const rilievoLocal = rilDB ? {
+          id: rilDB.id,
+          n: 1,
           numero: 1,
-          tipo: "rilievo",
           nome: "Rilievo iniziale",
+          tipo: "rilievo",
           data: oggi,
           completato: false,
-        })
-        .select()
-        .single();
+          vani: [],
+          rilevatore: aziendaInfo?.nome || "Fabio",
+        } : null;
 
-      if (errR) {
-        console.warn("[addCommessa] errore insert rilievo R1:", errR);
-      } else {
-        rilDB = rData;
-      }
+        const nc: any = {
+          id: cmDB?.id || Date.now(),
+          code,
+          clienteId: _ctMatch?.id || newCM.clienteId || null,
+          cliente: newCM.cliente,
+          cognome: newCM.cognome || "",
+          indirizzo: newCM.indirizzo,
+          telefono: newCM.telefono,
+          email: newCM.email || "",
+          fase: "sopralluogo",
+          rilievi: rilievoLocal ? [rilievoLocal] : [],
+          sistema: newCM.sistema,
+          tipo: newCM.tipo,
+          difficoltaSalita: newCM.difficoltaSalita,
+          mezzoSalita: newCM.mezzoSalita,
+          foroScale: newCM.foroScale,
+          pianoEdificio: newCM.pianoEdificio,
+          tipoEdificio: newCM.tipoEdificio || "",
+          livello1Label: newCM.livello1Label || "",
+          livello2Label: newCM.livello2Label || "",
+          livello3Label: newCM.livello3Label || "",
+          note: newCM.note,
+          allegati: [],
+          creato: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
+          aggiornato: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
+          log: [{ chi: aziendaInfo?.nome || "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }],
+        };
 
-      // 3) Log timeline: commessa_creata
-      if (azId) {
-        try {
-          await logEvento({
-            modulo: "commessa",
-            entitaId: cmDB.id,
-            aziendaId: azId,
-            tipo: TL_TIPI.COMMESSA_CREATA,
-            titolo: "Commessa " + code + " creata",
-            descrizione: newCM.cliente + (newCM.indirizzo ? " - " + newCM.indirizzo : ""),
-            autore_nome: aziendaInfo?.nome || "Fabio",
-            autore_ruolo: "titolare",
-            stato: "info",
-            commessa_id: cmDB.id,
-            metadata: {
-              tipo: newCM.tipo,
-              telefono: newCM.telefono,
-              email: newCM.email,
-            },
-          });
-        } catch (e) { console.warn("[timeline log commessa] err:", e); }
-
-        // 4) Log timeline: rilievo R1 creato
-        if (rilDB?.id) {
-          try {
-            await logEvento({
-              modulo: "commessa",
-              entitaId: cmDB.id,
-              aziendaId: azId,
-              tipo: TL_TIPI.NOTA_AGGIUNTA,
-              titolo: "Rilievo R1 creato (Rilievo iniziale)",
-              descrizione: "Rilievo bozza pronto per inserire vani e misure",
-              autore_nome: aziendaInfo?.nome || "Fabio",
-              autore_ruolo: "titolare",
-              stato: "in_corso",
-              commessa_id: cmDB.id,
-              metadata: {
-                rilievo_id: rilDB.id,
-                numero: 1,
-                nome: "Rilievo iniziale",
-              },
-            });
-          } catch (e) { console.warn("[timeline log rilievo] err:", e); }
+        setCantieri(cs => [nc, ...cs]);
+        setNewCM({ cliente: "", cognome: "", indirizzo: "", telefono: "", email: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", tipoEdificio: "", livello1Label: "", livello2Label: "", livello3Label: "", note: "" });
+        setShowModal(null);
+        setSelectedCM(nc);
+        if (rilievoLocal) {
+          setSelectedRilievo(rilievoLocal);
         }
+        setTab("commesse");
+        toast("Commessa " + code + " creata \u00b7 Rilievo R1 pronto", "success");
+      } finally {
+        // [v-trafila-fix-3] release lock SEMPRE
+        addCommessaLockRef.current = false;
       }
-    } catch (e: any) {
-      console.error("[addCommessa] eccezione:", e);
-      toast("Errore: " + (e?.message || "sconosciuto"), "error");
-      return;
-    }
-
-    // 5) Aggiorna stato locale
-    const rilievoLocal = rilDB ? {
-      id: rilDB.id,
-      n: 1,
-      numero: 1,
-      nome: "Rilievo iniziale",
-      tipo: "rilievo",
-      data: oggi,
-      completato: false,
-      vani: [],
-      rilevatore: aziendaInfo?.nome || "Fabio",
-    } : null;
-
-    const nc: any = {
-      id: cmDB?.id || Date.now(),
-      code,
-      clienteId: _ctMatch?.id || newCM.clienteId || null,
-      cliente: newCM.cliente,
-      cognome: newCM.cognome || "",
-      indirizzo: newCM.indirizzo,
-      telefono: newCM.telefono,
-      email: newCM.email || "",
-      fase: "sopralluogo",
-      rilievi: rilievoLocal ? [rilievoLocal] : [],
-      sistema: newCM.sistema,
-      tipo: newCM.tipo,
-      difficoltaSalita: newCM.difficoltaSalita,
-      mezzoSalita: newCM.mezzoSalita,
-      foroScale: newCM.foroScale,
-      pianoEdificio: newCM.pianoEdificio,
-      tipoEdificio: newCM.tipoEdificio || "",
-      livello1Label: newCM.livello1Label || "",
-      livello2Label: newCM.livello2Label || "",
-      livello3Label: newCM.livello3Label || "",
-      note: newCM.note,
-      allegati: [],
-      creato: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
-      aggiornato: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
-      log: [{ chi: aziendaInfo?.nome || "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }],
     };
 
-    setCantieri(cs => [nc, ...cs]);
-    setNewCM({ cliente: "", cognome: "", indirizzo: "", telefono: "", email: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", tipoEdificio: "", livello1Label: "", livello2Label: "", livello3Label: "", note: "" });
-    setShowModal(null);
-    setSelectedCM(nc);
-    if (rilievoLocal) {
-      setSelectedRilievo(rilievoLocal);
-    }
-    setTab("commesse");
-    toast("Commessa " + code + " creata · Rilievo R1 pronto", "success");
-  };
 
-
-  // #23 FIX: popola clienteId retroattivo sulle commesse che non ce l'hanno
+      // #23 FIX: popola clienteId retroattivo sulle commesse che non ce l'hanno
   const fixClienteIdRetroattivo = () => {
     if (!contatti?.length) return;
     setCantieri(cs => cs.map(c => {
