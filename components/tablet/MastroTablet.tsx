@@ -1,15 +1,13 @@
 "use client";
-// MASTRO TABLET v19
-// FIX: filterFase non resetta più a "" (cancellava tutte le commesse non in fase)
-// Solo quando entro in Sopralluoghi/Produzione/Montaggi imposto la fase
-// Ripristino setSelectedCM per click su card commessa
+// MASTRO TABLET v20
+// FIX: filterFase = "tutte" per Commesse (default che mostra tutte)
+// Per Sopralluoghi/Produzione/Montaggi resta la fase specifica
 import * as React from "react";
 import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
 import TopbarTablet from "./TopbarTablet";
 import DashboardTablet from "./dashboard/DashboardTablet";
 
-// Panel mobile riusati
 import CommessePanel from "../CommessePanel";
 import AgendaPanel from "../AgendaPanel";
 import ClientiPanel from "../ClientiPanel";
@@ -17,16 +15,13 @@ import ContabilitaPanel from "../ContabilitaPanel";
 import MessaggiPanel from "../MessaggiPanel";
 import SettingsPanel from "../SettingsPanel";
 
-// Custom tablet con dati reali Supabase
 import MagazzinoTablet from "./magazzino/MagazzinoTablet";
 import FiscaleTablet from "./fiscale/FiscaleTablet";
 import OrdiniTablet from "./ordini/OrdiniTablet";
 
-// Tablet finti (rimasti)
 import TeamTablet from "./team/TeamTablet";
 import OpsTablet from "./ops/OpsTablet";
 
-// Servizi
 import EntityDetailPanel from "./EntityDetailPanel";
 import SideEffectsToaster from "./SideEffectsToaster";
 import { EntityType } from "./dashboard-context";
@@ -77,9 +72,9 @@ const SECTION_TO_TAB: Record<string, string> = {
   impostazioni: "settings",
 };
 
-// Solo le sezioni che IMPOSTANO un filtro fase. Commesse usa null per resettare.
-const SECTION_TO_FASE: Record<string, string | null> = {
-  commesse: null,
+// FIX v20: "tutte" per Commesse (CommessePanel riga 794 usa "tutte" come default no-filtro)
+const SECTION_TO_FASE: Record<string, string> = {
+  commesse: "tutte",
   sopralluoghi: "sopralluogo",
   produzione: "produzione",
   montaggi: "posa",
@@ -87,7 +82,7 @@ const SECTION_TO_FASE: Record<string, string | null> = {
 
 export default function MastroTablet() {
   const ctx = useMastro();
-  const { setTab, setFilterFase, setSelectedCM, setShowModal } = ctx as any;
+  const { setTab, setFilterFase, setSelectedCM } = ctx as any;
 
   const [active, setActive] = React.useState<string>("dashboard");
   const [userCollapsed, setUserCollapsed] = React.useState(false);
@@ -130,17 +125,11 @@ export default function MastroTablet() {
     try { window.localStorage.setItem(PRESET_KEY, p); } catch {}
   }, []);
 
-  // Sincronizza tab MastroERP + filterFase
-  // FIX: per "commesse" RESETTO filterFase a null (mostra tutte)
-  // Per Sopralluoghi/Produzione/Montaggi setto la fase specifica
   React.useEffect(() => {
     const mappedTab = SECTION_TO_TAB[active];
     if (mappedTab && setTab) setTab(mappedTab);
     if (active in SECTION_TO_FASE && setFilterFase) {
-      const fase = SECTION_TO_FASE[active];
-      // null per "commesse" = nessun filtro, mostra tutte
-      // string per le altre = filtro per quella fase
-      setFilterFase(fase as any);
+      setFilterFase(SECTION_TO_FASE[active]);
     }
   }, [active, setTab, setFilterFase]);
 
