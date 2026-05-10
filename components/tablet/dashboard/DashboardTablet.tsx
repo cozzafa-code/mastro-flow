@@ -497,9 +497,9 @@ const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "bl
   const m = colorMap[color];
   const valueSize = mode === "xs" ? 22 : mode === "sm" ? 24 : (small ? 22 : 28);
   return (
-    <div style={{
+    <div onClick={onClick} style={{
       background: C.card, borderRadius: 14, padding: mode === "xs" ? 12 : 14,
-      boxShadow: "0 4px 16px rgba(15,23,42,0.18)", cursor: "pointer",
+      boxShadow: "0 4px 16px rgba(15,23,42,0.18)", cursor: onClick ? "pointer" : "default",
       borderTop: `4px solid ${m.bd}`,
       display: "flex", flexDirection: "column", gap: 6,
       minWidth: 0, overflow: "hidden",
@@ -526,7 +526,7 @@ const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "bl
 };
 
 const PipStep: React.FC<{ grow: number; bg: string; num: string; lbl: string; size: number; onClick?: () => void }> = ({ grow, bg, num, lbl, size, onClick }) => (
-  <div style={{
+  <div onClick={onClick} style={{
     flex: 1, flexGrow: grow, minWidth: 0,
     display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
     background: bg, color: "#fff", fontWeight: 800, cursor: "pointer", padding: 6, textAlign: "center",
