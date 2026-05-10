@@ -1,9 +1,9 @@
 "use client";
-// MASTRO TABLET - Ordini fornitori v1 con dati reali Supabase
-// Tabella: ordini_fornitore (filter by azienda_id)
+// MASTRO TABLET - Ordini fornitori v2 con Trasformatore
 import * as React from "react";
 import { supabase } from "../../../lib/supabase";
 import { getAziendaId } from "../../mastro-constants";
+import TrasformatoreOrdiniModalTablet from "../modals/TrasformatoreOrdiniModalTablet";
 
 type Ordine = {
   id: string;
@@ -86,6 +86,7 @@ export default function OrdiniTablet() {
   const [error, setError] = React.useState<string | null>(null);
   const [searchQ, setSearchQ] = React.useState("");
   const [filtroStato, setFiltroStato] = React.useState<string>("tutti");
+  const [trasformatoreOpen, setTrasformatoreOpen] = React.useState(false);
 
   const loadOrdini = React.useCallback(async () => {
     setLoading(true);
@@ -137,23 +138,51 @@ export default function OrdiniTablet() {
     return Array.from(set).sort();
   }, [ordini]);
 
+  const handleOrdiniCreati = (ids: string[]) => {
+    // Refetch dopo creazione
+    setTimeout(() => loadOrdini(), 500);
+  };
+
   return (
     <div style={{ background: C.bg, minHeight: "100%", padding: 20 }}>
 
+      {/* HEADER */}
       <div style={{
         background: `linear-gradient(135deg, ${C.navy} 0%, #0F1B2D 100%)`,
         borderRadius: 16, padding: "20px 24px", color: "#fff",
         marginBottom: 14, boxShadow: "0 8px 24px rgba(15,27,45,0.4)",
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap",
       }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: "#93B0CF", letterSpacing: 1.5, textTransform: "uppercase" }}>Ordini fornitori</div>
-        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.1, marginTop: 4 }}>
-          {loading ? "Caricamento..." : `${kpiTotale} ordini`}
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "#93B0CF", letterSpacing: 1.5, textTransform: "uppercase" }}>Ordini fornitori</div>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.1, marginTop: 4 }}>
+            {loading ? "Caricamento..." : `${kpiTotale} ordini`}
+          </div>
+          <div style={{ fontSize: 12, color: "#B5C8DD", fontWeight: 600, marginTop: 4 }}>
+            Valore totale: €{kpiValore.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: "#B5C8DD", fontWeight: 600, marginTop: 4 }}>
-          Valore totale: €{kpiValore.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
-        </div>
+        <button
+          onClick={() => setTrasformatoreOpen(true)}
+          style={{
+            padding: "12px 20px",
+            background: "rgba(255,255,255,0.15)",
+            color: "#fff", border: "none", borderRadius: 11,
+            fontSize: 13, fontWeight: 800,
+            cursor: "pointer", letterSpacing: 0.4,
+            display: "flex", alignItems: "center", gap: 8,
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Genera da commessa
+        </button>
       </div>
 
+      {/* KPI */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
         <Kpi label="Totali" value={String(kpiTotale)} color="navy" />
         <Kpi label="Valore" value={`€${(kpiValore/1000).toFixed(1)}k`} color="green" />
@@ -161,6 +190,7 @@ export default function OrdiniTablet() {
         <Kpi label="In ritardo" value={String(kpiInRitardo)} color="red" alert={kpiInRitardo > 0} />
       </div>
 
+      {/* FILTRI */}
       <div style={{
         background: C.card, borderRadius: 14, padding: 14,
         boxShadow: "0 4px 16px rgba(15,23,42,0.18)", marginBottom: 12,
@@ -178,6 +208,7 @@ export default function OrdiniTablet() {
             value={searchQ}
             onChange={e => setSearchQ(e.target.value)}
             placeholder="Cerca numero, fornitore, categoria..."
+            autoComplete="off"
             style={{
               flex: 1, border: "none", background: "transparent",
               fontSize: 13, fontWeight: 600, color: C.ink, outline: "none",
@@ -204,6 +235,7 @@ export default function OrdiniTablet() {
         </div>
       </div>
 
+      {/* LISTA */}
       <div style={{ background: C.card, borderRadius: 14, boxShadow: "0 4px 16px rgba(15,23,42,0.18)", overflow: "hidden" }}>
         {error && (
           <div style={{ padding: 28, textAlign: "center", color: C.red, fontWeight: 700 }}>
@@ -224,7 +256,18 @@ export default function OrdiniTablet() {
         {!error && !loading && filtered.length === 0 && ordini.length === 0 && (
           <div style={{ padding: 50, textAlign: "center" }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: C.ink, marginBottom: 6 }}>Nessun ordine</div>
-            <div style={{ fontSize: 12, color: C.sub, fontWeight: 600 }}>Gli ordini ai fornitori compariranno qui</div>
+            <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 14 }}>
+              Genera ordini fornitore automaticamente da una commessa
+            </div>
+            <button
+              onClick={() => setTrasformatoreOpen(true)}
+              style={{
+                padding: "11px 22px", background: C.navy, color: "#fff",
+                border: "none", borderRadius: 10, fontSize: 13, fontWeight: 800,
+                cursor: "pointer", letterSpacing: 0.4,
+                boxShadow: "0 2px 8px rgba(30,58,95,0.25)",
+              }}
+            >+ Genera ordini da commessa</button>
           </div>
         )}
         {!error && !loading && filtered.length === 0 && ordini.length > 0 && (
@@ -252,7 +295,6 @@ export default function OrdiniTablet() {
                       <span style={{
                         fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 7,
                         background: C.navy, color: "#fff", letterSpacing: 0.4,
-                        fontVariantNumeric: "tabular-nums",
                       }}>{o.numero}</span>
                       <span style={{
                         fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 7,
@@ -271,7 +313,7 @@ export default function OrdiniTablet() {
                         }}>Bozza</span>
                       )}
                     </div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>
                       €{totale.toLocaleString("it-IT", { maximumFractionDigits: 2 })}
                     </div>
                   </div>
@@ -286,11 +328,8 @@ export default function OrdiniTablet() {
                   </div>
 
                   <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr 1fr",
-                    gap: 10,
-                    paddingTop: 10,
-                    borderTop: `1px dashed ${C.border}`,
+                    display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: 10, paddingTop: 10, borderTop: `1px dashed ${C.border}`,
                   }}>
                     <DataCell label="Inviato" value={fmtData(o.data_invio)} />
                     <DataCell label="Consegna" value={fmtData(o.consegna_prevista)} alert={ritardo} />
@@ -302,6 +341,13 @@ export default function OrdiniTablet() {
           </div>
         )}
       </div>
+
+      {/* MODAL TRASFORMATORE */}
+      <TrasformatoreOrdiniModalTablet
+        open={trasformatoreOpen}
+        onClose={() => setTrasformatoreOpen(false)}
+        onCreated={handleOrdiniCreati}
+      />
     </div>
   );
 }
