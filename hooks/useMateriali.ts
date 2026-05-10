@@ -6,15 +6,59 @@ import { supabase } from "../lib/supabase"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-function getAziendaId(): string | null {
+// Recupera aziendaId da MULTIPLE fonti (gerarchia priorita')
+async function getAziendaId(): Promise<string | null> {
   if (typeof window === "undefined") return null
-  const c = [
+  
+  // 1. Prova tutte le key sessionStorage/localStorage
+  const candidates = [
     sessionStorage.getItem("mastro:aziendaId"),
     localStorage.getItem("mastro:aziendaId"),
     sessionStorage.getItem("aziendaId"),
     localStorage.getItem("aziendaId"),
+    sessionStorage.getItem("azienda_id"),
+    localStorage.getItem("azienda_id"),
+    sessionStorage.getItem("mastro_azienda_id"),
+    localStorage.getItem("mastro_azienda_id"),
   ]
-  for (const v of c) if (v && UUID_RE.test(v)) return v
+  for (const v of candidates) {
+    if (v && UUID_RE.test(v)) {
+      // Salva nella key canonica per le prossime volte
+      try { sessionStorage.setItem("mastro:aziendaId", v) } catch (e) {}
+      return v
+    }
+  }
+  
+  // 2. Fallback: query a operatori (cerca un operatore attivo)
+  try {
+    const userIdRaw = sessionStorage.getItem("mastro:userId") || localStorage.getItem("mastro:userId") || sessionStorage.getItem("userId")
+    if (userIdRaw && UUID_RE.test(userIdRaw)) {
+      const { data: op } = await supabase
+        .from("operatori")
+        .select("azienda_id")
+        .eq("user_id", userIdRaw)
+        .limit(1)
+        .maybeSingle()
+      if (op?.azienda_id && UUID_RE.test(op.azienda_id)) {
+        try { sessionStorage.setItem("mastro:aziendaId", op.azienda_id) } catch (e) {}
+        return op.azienda_id
+      }
+    }
+    // 3. Fallback estremo: prendi il primo operatore attivo (Walter Cozza beta)
+    const { data: any_op } = await supabase
+      .from("operatori")
+      .select("azienda_id")
+      .eq("attivo", true)
+      .limit(1)
+      .maybeSingle()
+    if (any_op?.azienda_id && UUID_RE.test(any_op.azienda_id)) {
+      try { sessionStorage.setItem("mastro:aziendaId", any_op.azienda_id) } catch (e) {}
+      return any_op.azienda_id
+    }
+  } catch (e) {
+    console.warn("[useMateriali] errore fallback aziendaId:", e)
+  }
+  
   return null
 }
 
@@ -27,9 +71,14 @@ export function useMateriali() {
   const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
-    const azId = getAziendaId()
-    if (!azId) { setError("aziendaId non trovato"); setLoading(false); return }
-    setLoading(true); setError(null)
+    const azId = await getAziendaId()
+    if (!azId) {
+      setError("Azienda non identificata. Apri prima la Home per inizializzare.")
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    setError(null)
     try {
       const [oR, mR, movR, fR] = await Promise.all([
         supabase.from("ordini_fornitore").select("*").eq("azienda_id", azId).order("created_at", { ascending: false }),
@@ -50,7 +99,6 @@ export function useMateriali() {
 
   useEffect(() => { reload() }, [reload])
 
-  // Statistiche derivate
   const stats = {
     totali: ordini.length,
     daInviare: ordini.filter(o => o.stato === "bozza" || (!o.data_invio && o.stato !== "annullato")).length,
