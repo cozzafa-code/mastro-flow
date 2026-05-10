@@ -4176,6 +4176,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
     );
 
     // == VISTA RILIEVO CON VANI ==
+    if (typeof window !== 'undefined' && showOrdiniSheet && selectedCM) {
+      return _createPortalCM(<OrdiniSheet commessa={selectedCM} onClose={() => setShowOrdiniSheet(false)} onCompletato={() => setShowOrdiniSheet(false)} />, document.body);
+    }
     return (
       <div style={{ paddingBottom: 80 }}>
         {/* HERO_TEAL_CM2_V2 - hero fliwoX + ripristino tutti gli elementi */}
