@@ -1,8 +1,20 @@
 "use client";
+// MASTRO TABLET — Topbar v9
+// Search permanente + bottoni notifica + CTA Nuova
+// Mantiene props identiche per non rompere MastroTablet.tsx
 import * as React from "react";
 import { TT } from "./design-system";
-import { Icon } from "./icons";
-import AvatarGradient from "./AvatarGradient";
+
+const C = {
+  bg: "#FFFFFF",
+  bgSoft: "#F2F4F8",
+  border: "#E2E8F0",
+  ink: "#0A1628",
+  sub: "#64748B",
+  subLight: "#94A3B8",
+  navy: "#1E3A5F",
+  red: "#DC2626",
+};
 
 export interface TopbarTabletProps {
   greeting?: string;
@@ -17,190 +29,163 @@ export interface TopbarTabletProps {
   compact?: boolean;
 }
 
-const formatDateIT = (d: Date): string => {
-  const giorni = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
-  const mesi = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
-  const g = giorni[d.getDay()];
-  const dd = d.getDate();
-  const m = mesi[d.getMonth()];
-  const y = d.getFullYear();
-  return `${g.charAt(0).toUpperCase()}${g.slice(1)} ${dd} ${m} ${y}`;
-};
-
 export default function TopbarTablet({
-  greeting = "Buongiorno, Fabio Cozza",
-  subtitle,
   notificationCount = 3,
-  searchPlaceholder = "Cerca clienti, commesse, documenti...",
+  searchPlaceholder = "Cerca commesse, clienti, vani, fatture, articoli...",
   onSearch,
   onBellClick,
-  onChatClick,
-  onTaskClick,
-  onAvatarClick,
   compact = false,
 }: TopbarTabletProps) {
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
-  const sub = subtitle || (mounted ? formatDateIT(new Date()) : " ");
+  const [value, setValue] = React.useState("");
+  const [focused, setFocused] = React.useState(false);
+
+  const handleChange = (v: string) => {
+    setValue(v);
+    onSearch?.(v);
+  };
 
   return (
     <header
       style={{
         gridArea: "topbar",
-        background: TT.surfaceGlass,
-        borderBottom: `1px solid ${TT.border}`,
+        background: C.bg,
+        borderBottom: `1px solid ${C.border}`,
+        padding: compact ? "12px 16px" : "14px 24px",
         display: "flex",
         alignItems: "center",
-        padding: compact ? "0 16px" : "0 28px",
-        gap: compact ? 12 : 20,
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+        gap: 12,
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <div style={{
-          fontSize: compact ? 14 : 16,
-          fontWeight: 700,
-          color: TT.text1,
-          letterSpacing: "-0.4px",
-          lineHeight: 1.1,
-        }}>
-          {greeting}
-        </div>
-        <div style={{
-          fontSize: 12,
-          color: TT.text3,
-          marginTop: 3,
-          letterSpacing: "-0.05px",
-        }}>
-          {sub}
-        </div>
-      </div>
-
-      {!compact && (
-        <div style={{ flex: 1, maxWidth: 480, position: "relative", marginLeft: 28 }}>
-          <div style={{
-            position: "absolute",
-            left: 14,
-            top: "50%",
-            transform: "translateY(-50%)",
-            color: TT.text3,
-            display: "flex",
-          }}>
-            <Icon name="search" size={14} color={TT.text3} strokeWidth={2} />
-          </div>
-          <input
-            type="text"
-            placeholder={searchPlaceholder}
-            onChange={(e) => onSearch?.(e.target.value)}
-            style={{
-              width: "100%",
-              height: 42,
-              padding: "0 14px 0 42px",
-              background: TT.bgSoft,
-              border: `1px solid ${TT.border}`,
-              borderRadius: TT.rMd,
-              fontSize: 13,
-              fontFamily: TT.fontFamily,
-              color: TT.text1,
-              outline: "none",
-              letterSpacing: "-0.1px",
-              boxSizing: "border-box",
-              transition: "all 0.15s",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = TT.teal[300];
-              e.currentTarget.style.background = TT.surface;
-              e.currentTarget.style.boxShadow = `0 0 0 3px ${TT.teal[100]}`;
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = TT.border;
-              e.currentTarget.style.background = TT.bgSoft;
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          />
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }}>
-        {compact && (
-          <IcButton onClick={() => {}}>
-            <Icon name="search" size={17} color={TT.text2} strokeWidth={2} />
-          </IcButton>
-        )}
-        <IcButton onClick={onBellClick} badge={notificationCount}>
-          <Icon name="bell" size={17} color={TT.text2} strokeWidth={2} />
-        </IcButton>
-        {!compact && (
-          <>
-            <IcButton onClick={onChatClick}>
-              <Icon name="chat" size={17} color={TT.text2} strokeWidth={2} />
-            </IcButton>
-            <IcButton onClick={onTaskClick}>
-              <Icon name="task" size={17} color={TT.text2} strokeWidth={2} />
-            </IcButton>
-          </>
-        )}
-        <div onClick={onAvatarClick} style={{ cursor: "pointer", marginLeft: 4 }}>
-          <AvatarGradient size={36} preset="b" />
-        </div>
-      </div>
-    </header>
-  );
-}
-
-interface IcButtonProps {
-  children: React.ReactNode;
-  badge?: number;
-  onClick?: () => void;
-}
-
-function IcButton({ children, badge, onClick }: IcButtonProps) {
-  const [hover, setHover] = React.useState(false);
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        width: 38,
-        height: 38,
-        borderRadius: 11,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        position: "relative",
-        background: hover ? TT.bgSoft : "transparent",
-        transition: "background 0.12s",
-      }}
-    >
-      {children}
-      {badge !== undefined && badge > 0 && (
-        <span
+      {/* SEARCH PERMANENTE */}
+      <div
+        style={{
+          flex: 1,
+          background: focused ? C.bg : C.bgSoft,
+          border: `2px solid ${focused ? C.navy : "transparent"}`,
+          borderRadius: 13,
+          padding: compact ? "12px 14px" : "14px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          transition: "all 0.15s",
+          minWidth: 0,
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.subLight} strokeWidth={2.5} style={{ flexShrink: 0 }}>
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          value={value}
+          onChange={e => handleChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={searchPlaceholder}
           style={{
+            flex: 1,
+            border: "none",
+            background: "transparent",
+            fontSize: 15,
+            fontWeight: 600,
+            color: C.ink,
+            outline: "none",
+            fontFamily: "inherit",
+            minWidth: 0,
+          }}
+        />
+        {!compact && (
+          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+            <kbd style={{
+              background: C.bg,
+              border: `1px solid #CBD5E1`,
+              borderRadius: 5,
+              padding: "3px 7px",
+              fontSize: 11,
+              fontFamily: "inherit",
+              fontWeight: 700,
+              color: "#475A75",
+            }}>⌘</kbd>
+            <kbd style={{
+              background: C.bg,
+              border: `1px solid #CBD5E1`,
+              borderRadius: 5,
+              padding: "3px 7px",
+              fontSize: 11,
+              fontFamily: "inherit",
+              fontWeight: 700,
+              color: "#475A75",
+            }}>K</kbd>
+          </div>
+        )}
+      </div>
+
+      {/* NOTIFICATIONS */}
+      <div
+        onClick={onBellClick}
+        style={{
+          width: compact ? 44 : 48,
+          height: compact ? 44 : 48,
+          borderRadius: 12,
+          background: C.bgSoft,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          color: C.navy,
+          position: "relative",
+          flexShrink: 0,
+        }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 01-3.46 0"/>
+        </svg>
+        {notificationCount > 0 && (
+          <span style={{
             position: "absolute",
-            top: 4,
-            right: 4,
-            background: `linear-gradient(135deg, ${TT.red[400]}, ${TT.red[500]})`,
+            top: 6,
+            right: 6,
+            width: 20,
+            height: 20,
+            background: C.red,
             color: "#fff",
-            fontSize: 9,
+            borderRadius: "50%",
+            fontSize: 11,
             fontWeight: 800,
-            borderRadius: 10,
-            padding: "1px 5px",
-            minWidth: 16,
-            height: 16,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            border: "2px solid #fff",
-            lineHeight: 1,
-            boxShadow: `0 2px 4px ${TT.red[300]}`,
-          }}
-        >
-          {badge > 9 ? "9+" : badge}
-        </span>
-      )}
-    </div>
+            border: `2px solid ${C.bgSoft}`,
+          }}>{notificationCount}</span>
+        )}
+      </div>
+
+      {/* CTA NUOVA */}
+      <div
+        style={{
+          height: compact ? 44 : 48,
+          padding: compact ? "0 16px" : "0 22px",
+          borderRadius: 12,
+          background: C.navy,
+          color: "#fff",
+          fontSize: 13,
+          fontWeight: 800,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          cursor: "pointer",
+          letterSpacing: 0.4,
+          textTransform: "uppercase",
+          boxShadow: `0 3px 10px rgba(30,58,95,0.3)`,
+          flexShrink: 0,
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        {!compact && "Nuova"}
+      </div>
+    </header>
   );
 }
