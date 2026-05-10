@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-// SVG Icons inline — stesso stile dell'app (Lucide-like)
 const Icon = ({ d, size = 18, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d={d} />
@@ -22,6 +21,7 @@ const ICO = {
   leaf: "M2 22 16 8 M16.5 15.5l-4-4 M6 18l4-4M22 2s-5 0-10 5-5 10-5 10",
   check: "M20 6L9 17l-5-5",
   arrow: "M5 12h14M12 5l7 7-7 7",
+  qr: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h3v3h-3z M14 18h3v3h-3z M18 14h3v3h-3z M18 18h3v3h-3z",
 };
 
 const FliwoxIcon = ({ size = 36 }: { size?: number }) => (
@@ -68,12 +68,13 @@ export default function LandingPage() {
     { name: "FIELD", desc: "App installatori per montaggi e collaudi", ico: ICO.wrench },
     { name: "RETE", desc: "Gestione agenti e rete commerciale", ico: ICO.network },
     { name: "CNC", desc: "Ottimizzazione tagli per macchine Emmegi", ico: ICO.settings },
+    { name: "CODICI", desc: "QR e Code128 per ogni vano, collo, articolo", ico: ICO.qr },
     { name: "SPESE", desc: "Note spese operatori con foto scontrino", ico: ICO.receipt },
   ];
 
   const features = [
     { title: "Preventivi in 3 minuti", desc: "Calcolo automatico da misure reali. Nessun Excel.", ico: ICO.zap },
-    { title: "Pipeline S→P→O→M→F", desc: "Ogni commessa segue un flusso guidato. Zero dimenticanze.", ico: ICO.clipboard },
+    { title: "Pipeline guidata", desc: "Sopralluogo \u2192 Preventivo \u2192 Ordine \u2192 Montaggio \u2192 Fattura. Zero dimenticanze.", ico: ICO.clipboard },
     { title: "PDF professionali", desc: "Preventivo, contratto, tavola tecnica. Tutto automatico.", ico: ICO.file },
     { title: "Firma digitale cliente", desc: "Il cliente firma sul telefono. Niente carta.", ico: ICO.pen },
     { title: "AI tecnico integrato", desc: "Risponde a domande tecniche su sistemi e normative.", ico: ICO.bot },
@@ -81,13 +82,13 @@ export default function LandingPage() {
   ];
 
   const pricing = [
-    { name: "BASE", price: 9, desc: "1 utente · 20 commesse", features: ["ERP base", "PDF preventivi", "20 commesse"], col: "#6B7280" },
-    { name: "START", price: 29, desc: "3 utenti · Illimitate", features: ["ERP completo", "TALK + MISURE", "Commesse illimitate", "3 operatori"], col: T.teal, best: true },
-    { name: "PRO", price: 59, desc: "10 utenti · Add-on settore", features: ["Tutto START", "RETE agenti", "Assistente AI", "10 operatori"], col: T.orange },
-    { name: "TITAN", price: 89, desc: "Illimitati · CNC incluso", features: ["Tutto PRO", "CNC", "API access", "Priorita supporto"], col: T.dark },
+    { name: "BASE",  price: 9,  desc: "1 utente \u00b7 20 commesse",  features: ["ERP base", "PDF preventivi", "20 commesse"], col: "#6B7280" },
+    { name: "START", price: 29, desc: "3 utenti \u00b7 Illimitate",   features: ["ERP completo", "TALK + MISURE", "Commesse illimitate", "3 operatori"], col: T.teal, best: true },
+    { name: "PRO",   price: 59, desc: "10 utenti \u00b7 Add-on settore", features: ["Tutto START", "RETE agenti", "Assistente AI", "10 operatori"], col: T.orange },
+    { name: "TITAN", price: 89, desc: "Illimitati \u00b7 CNC incluso", features: ["Tutto PRO", "CNC", "API access", "Priorit\u00e0 supporto"], col: T.dark },
   ];
 
-  const settori = ["Serramentisti","Fabbri","Falegnami","Tendaggi","Pergole","Cancelli","Box doccia","Zanzariere","Mobili su misura"];
+  const settori = ["Serramentisti", "Fabbri", "Falegnami", "Tendaggi", "Pergole", "Cancelli", "Box doccia", "Zanzariere", "Mobili su misura"];
 
   return (
     <main style={{ fontFamily: "system-ui,-apple-system,sans-serif", background: T.bg, color: T.dark, minHeight: "100vh" }}>
@@ -101,8 +102,8 @@ export default function LandingPage() {
           </span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/app" style={{ padding: "7px 14px", borderRadius: 8, color: "#8BBCBC", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Accedi</Link>
-          <Link href="/app" style={{ padding: "7px 16px", borderRadius: 8, background: T.teal, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", boxShadow: `0 4px 0 0 ${T.tealDark}` }}>
+          <Link href="/login" style={{ padding: "7px 14px", borderRadius: 8, color: "#8BBCBC", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Accedi</Link>
+          <Link href="/register" style={{ padding: "7px 16px", borderRadius: 8, background: T.teal, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", boxShadow: `0 4px 0 0 ${T.tealDark}` }}>
             Prova gratis
           </Link>
         </div>
@@ -111,21 +112,21 @@ export default function LandingPage() {
       {/* HERO */}
       <section style={{ padding: "72px 20px 56px", textAlign: "center", maxWidth: 640, margin: "0 auto" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: `${T.teal}18`, border: `1px solid ${T.teal}40`, borderRadius: 20, padding: "5px 14px", marginBottom: 24, fontSize: 11, fontWeight: 700, color: T.teal }}>
-          15 giorni gratis · Nessuna carta di credito
+          30 giorni gratis &middot; Nessuna carta di credito
         </div>
         <h1 style={{ fontSize: "clamp(30px,6vw,50px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 18, color: T.dark }}>
           Fatto per chi<br />
           <span style={{ color: T.teal }}>lavora con le mani</span>
         </h1>
         <p style={{ fontSize: 17, color: T.sub, lineHeight: 1.6, marginBottom: 32, maxWidth: 500, margin: "0 auto 32px" }}>
-          Preventivi, commesse, montaggi e clienti — tutto in un&apos;unica cassetta. Nato per serramentisti, fabbri, falegnami e tutti gli artigiani del serramento.
+          Preventivi, commesse, montaggi e clienti &mdash; tutto in un&apos;unica cassetta. Nato per serramentisti, fabbri, falegnami e tutti gli artigiani del serramento.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link href="/app" style={{ padding: "13px 26px", borderRadius: 12, background: T.teal, color: "#fff", fontSize: 15, fontWeight: 800, textDecoration: "none", boxShadow: `0 5px 0 0 ${T.tealDark}`, display: "flex", alignItems: "center", gap: 8 }}>
+          <Link href="/register" style={{ padding: "13px 26px", borderRadius: 12, background: T.teal, color: "#fff", fontSize: 15, fontWeight: 800, textDecoration: "none", boxShadow: `0 5px 0 0 ${T.tealDark}`, display: "flex", alignItems: "center", gap: 8 }}>
             Inizia gratis <Icon d={ICO.arrow} size={16} color="#fff" />
           </Link>
           <a href="#features" style={{ padding: "13px 22px", borderRadius: 12, background: T.card, color: T.dark, fontSize: 15, fontWeight: 700, textDecoration: "none", border: `1px solid ${T.bdr}`, boxShadow: "0 4px 0 0 #A8CCCC" }}>
-            Scopri di piu
+            Scopri di pi&ugrave;
           </a>
         </div>
       </section>
@@ -133,7 +134,11 @@ export default function LandingPage() {
       {/* STATS */}
       <section style={{ padding: "0 20px 56px", maxWidth: 760, margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
-          {[{ n:"3 min",l:"Preventivo completo" },{ n:"0 €",l:"Costo attivazione" },{ n:"15 gg",l:"Trial gratuito" }].map(s => (
+          {[
+            { n: "3 min", l: "Preventivo completo" },
+            { n: "0 \u20ac", l: "Costo attivazione" },
+            { n: "30 gg", l: "Trial gratuito" },
+          ].map(s => (
             <div key={s.n} style={{ background: T.card, border: `1px solid ${T.bdr}`, borderRadius: 14, padding: "22px 14px", textAlign: "center", boxShadow: "0 4px 0 0 #A8CCCC" }}>
               <div style={{ fontSize: 28, fontWeight: 900, color: T.teal, fontVariantNumeric: "tabular-nums", fontFamily: "JetBrains Mono,monospace" }}>{s.n}</div>
               <div style={{ fontSize: 11, color: T.sub, marginTop: 4, fontWeight: 700 }}>{s.l}</div>
@@ -146,7 +151,7 @@ export default function LandingPage() {
       <section id="features" style={{ padding: "56px 20px", background: T.dark }}>
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <h2 style={{ fontSize: 26, fontWeight: 900, color: "#fff", textAlign: "center", marginBottom: 6 }}>Tutto quello che ti serve</h2>
-          <p style={{ color: "#8BBCBC", textAlign: "center", marginBottom: 36, fontSize: 14 }}>Nessun altro software ti da questo</p>
+          <p style={{ color: "#8BBCBC", textAlign: "center", marginBottom: 36, fontSize: 14 }}>Nessun altro software ti d&agrave; questo</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 14 }}>
             {features.map(f => (
               <div key={f.title} style={{ background: "#122020", border: "1px solid #1E3A3A", borderRadius: 12, padding: "18px 16px" }}>
@@ -186,14 +191,14 @@ export default function LandingPage() {
       <section style={{ padding: "56px 20px", background: T.dark }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           <h2 style={{ fontSize: 26, fontWeight: 900, color: "#fff", textAlign: "center", marginBottom: 6 }}>Prezzi chiari</h2>
-          <p style={{ color: "#8BBCBC", textAlign: "center", marginBottom: 36, fontSize: 14 }}>15 giorni gratis · Disdici quando vuoi</p>
+          <p style={{ color: "#8BBCBC", textAlign: "center", marginBottom: 36, fontSize: 14 }}>30 giorni gratis &middot; Disdici quando vuoi</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
             {pricing.map(p => (
               <div key={p.name} style={{ background: p.best ? T.teal : "#122020", border: `2px solid ${p.best ? T.teal : "#1E3A3A"}`, borderRadius: 14, padding: "22px 16px", position: "relative" }}>
                 {p.best && <div style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", background: T.orange, color: "#fff", fontSize: 9, fontWeight: 800, padding: "3px 10px", borderRadius: 10, whiteSpace: "nowrap" }}>BEST SELLER</div>}
                 <div style={{ fontSize: 12, fontWeight: 800, color: p.best ? "#fff" : "#8BBCBC", marginBottom: 4, letterSpacing: 0.5 }}>{p.name}</div>
                 <div style={{ fontSize: 30, fontWeight: 900, color: "#fff", fontFamily: "JetBrains Mono,monospace" }}>
-                  {"€"}{p.price}<span style={{ fontSize: 12, fontWeight: 400 }}>/mese</span>
+                  &euro;{p.price}<span style={{ fontSize: 12, fontWeight: 400 }}>/mese</span>
                 </div>
                 <div style={{ fontSize: 11, color: p.best ? "rgba(255,255,255,0.7)" : "#8BBCBC", marginBottom: 14 }}>{p.desc}</div>
                 {p.features.map(f => (
@@ -202,11 +207,14 @@ export default function LandingPage() {
                     {f}
                   </div>
                 ))}
-                <Link href="/app" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 18, padding: "10px", borderRadius: 10, background: p.best ? "#fff" : T.teal, color: p.best ? T.teal : "#fff", fontSize: 12, fontWeight: 800, textDecoration: "none" }}>
+                <Link href="/register" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 18, padding: "10px", borderRadius: 10, background: p.best ? "#fff" : T.teal, color: p.best ? T.teal : "#fff", fontSize: 12, fontWeight: 800, textDecoration: "none" }}>
                   Inizia gratis <Icon d={ICO.arrow} size={12} color={p.best ? T.teal : "#fff"} />
                 </Link>
               </div>
             ))}
+          </div>
+          <div style={{ marginTop: 18, textAlign: "center", color: "#8BBCBC", fontSize: 12, fontWeight: 600 }}>
+            Aggiungi il tuo settore specifico per <span style={{ color: T.teal, fontWeight: 800 }}>+&euro;10/mese</span> &middot; Pagamenti annuali con sconto 15%
           </div>
         </div>
       </section>
@@ -230,8 +238,8 @@ export default function LandingPage() {
       <section style={{ padding: "56px 20px 72px", textAlign: "center", background: T.teal }}>
         <FliwoxIcon size={48} />
         <h2 style={{ fontSize: 28, fontWeight: 900, color: "#fff", marginBottom: 10, marginTop: 16 }}>Pronto a semplificare il tuo lavoro?</h2>
-        <p style={{ color: "rgba(255,255,255,0.8)", marginBottom: 28, fontSize: 15 }}>15 giorni gratis · Nessuna carta di credito · Setup in 5 minuti</p>
-        <Link href="/app" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 32px", borderRadius: 14, background: "#fff", color: T.teal, fontSize: 16, fontWeight: 900, textDecoration: "none", boxShadow: `0 5px 0 0 ${T.tealDark}` }}>
+        <p style={{ color: "rgba(255,255,255,0.85)", marginBottom: 28, fontSize: 15 }}>30 giorni gratis &middot; Nessuna carta di credito &middot; Setup in 5 minuti</p>
+        <Link href="/register" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 32px", borderRadius: 14, background: "#fff", color: T.teal, fontSize: 16, fontWeight: 900, textDecoration: "none", boxShadow: `0 5px 0 0 ${T.tealDark}` }}>
           Inizia gratis <Icon d={ICO.arrow} size={18} color={T.teal} />
         </Link>
       </section>
@@ -247,7 +255,7 @@ export default function LandingPage() {
           <a href="/termini" style={{ color: "#8BBCBC", fontSize: 11, textDecoration: "none" }}>Termini di Servizio</a>
           <a href="mailto:info@fliwox.com" style={{ color: "#8BBCBC", fontSize: 11, textDecoration: "none" }}>info@fliwox.com</a>
         </div>
-        <p style={{ color: "#4A7070", fontSize: 10 }}>{"©"} 2026 fliwoX {"·"} Tutti i diritti riservati {"·"} P.IVA registrata in Italia</p>
+        <p style={{ color: "#4A7070", fontSize: 10 }}>&copy; 2026 fliwoX &middot; Tutti i diritti riservati &middot; P.IVA registrata in Italia</p>
       </footer>
 
     </main>
