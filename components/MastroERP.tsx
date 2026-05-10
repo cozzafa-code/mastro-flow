@@ -3125,30 +3125,52 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         || (c as any).azienda_id
         || 'ccca51c1-656b-4e7c-a501-55753e20da29';
       const tipoApi = tipo === 'acconto' ? 'acconto' : (tipo === 'saldo' ? 'saldo' : 'altro');
-      const r = await fetch('/api/fatture/crea-acconto', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          aziendaId,
-          commessaId: c.id,
-          commessaCode: c.code,
-          tipo: tipoApi,
-          importo,
-          ivaPerc: iva,
-          scadenzaGiorni: 30,
-          note: noteCustom || (tipo === "acconto" ? "Acconto 50% su ordine"
-                              : tipo === "sal" ? "SAL stato avanzamento lavori"
-                              : tipo === "saldo" ? "Saldo a completamento lavori"
-                              : ""),
-        }),
-      });
-      const j = await r.json();
-      if (r.ok && j.fattura) {
-        dbId = j.fattura.id;
-        dbNumero = j.fattura.numero;
-        dbStato = j.fattura.stato || 'bozza';
-      } else {
-        console.warn('[creaFattura DB] fail:', j.error);
+      // [v-trafila-DIRECT] bypass route 404 - insert diretto Supabase
+      const _annoF = new Date().getFullYear();
+      // Calcolo numero progressivo dalla DB
+      const _maxQ = await supabase
+        .from('fin_fatture_emesse')
+        .select('numero')
+        .eq('azienda_id', aziendaId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      let _nextN = 1;
+      if (_maxQ.data && _maxQ.data.length > 0) {
+        for (const _f of _maxQ.data) {
+          const _m = String(_f.numero || '').match(/^(\d+)\/(\d+)$/);
+          if (_m && Number(_m[2]) === _annoF) {
+            const _n = Number(_m[1]);
+            if (_n >= _nextN) _nextN = _n + 1;
+          }
+        }
+      }
+      const _numDoc = _nextN + '/' + _annoF;
+      const _scadIso = scadenzaIso || (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; })();
+      const _ins = await supabase.from('fin_fatture_emesse').insert({
+        azienda_id: aziendaId,
+        numero: _numDoc,
+        data_emissione: new Date().toISOString().split('T')[0],
+        data_scadenza: _scadIso,
+        cliente: c.cliente || 'Cliente',
+        imponibile: imponibile,
+        iva_percent: iva,
+        iva: ivaAmt,
+        totale: importo,
+        stato: 'emessa',
+        pagato: 0,
+        residuo: importo,
+        commessa_id: c.id,
+        commessa_code: c.code,
+        tipo: tipoApi === 'altro' ? (tipo === 'sal' ? 'sal' : 'unica') : tipoApi,
+        note: noteCustom || (tipo === 'acconto' ? 'Acconto 50% su ordine' : tipo === 'sal' ? 'SAL stato avanzamento lavori' : tipo === 'saldo' ? 'Saldo a completamento lavori' : ''),
+      }).select().single();
+      if (_ins.error) {
+        console.warn('[creaFattura DIRECT] insert fail:', _ins.error.message);
+      } else if (_ins.data) {
+        dbId = _ins.data.id;
+        dbNumero = _ins.data.numero;
+        dbStato = _ins.data.stato || 'emessa';
+        console.log('[creaFattura DIRECT] insert OK', _numDoc, 'id:', dbId);
       }
     } catch (e) {
       console.warn('[creaFattura DB] exception:', e);
