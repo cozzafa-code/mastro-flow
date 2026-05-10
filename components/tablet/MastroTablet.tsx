@@ -1,6 +1,7 @@
 "use client";
-// MASTRO TABLET v16
-// Aggiunto: delega Talk -> MessaggiPanel mobile
+// MASTRO TABLET v18
+// + OrdiniTablet custom con dati reali
+// + delega Impostazioni -> SettingsPanel mobile
 import * as React from "react";
 import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
@@ -13,16 +14,16 @@ import AgendaPanel from "../AgendaPanel";
 import ClientiPanel from "../ClientiPanel";
 import ContabilitaPanel from "../ContabilitaPanel";
 import MessaggiPanel from "../MessaggiPanel";
+import SettingsPanel from "../SettingsPanel";
 
 // Custom tablet con dati reali Supabase
 import MagazzinoTablet from "./magazzino/MagazzinoTablet";
 import FiscaleTablet from "./fiscale/FiscaleTablet";
+import OrdiniTablet from "./ordini/OrdiniTablet";
 
-// Tablet finti (da delegare 1 alla volta)
-import OrdiniFornitoriTablet from "./ordini/OrdiniFornitoriTablet";
+// Tablet finti (rimasti)
 import TeamTablet from "./team/TeamTablet";
 import OpsTablet from "./ops/OpsTablet";
-import ImpostazioniTablet from "./impostazioni/ImpostazioniTablet";
 
 // Servizi
 import EntityDetailPanel from "./EntityDetailPanel";
@@ -72,6 +73,7 @@ const SECTION_TO_TAB: Record<string, string> = {
   clienti: "clienti",
   contabilita: "contabilita",
   ai: "messaggi",
+  impostazioni: "settings",
 };
 
 const SECTION_TO_FASE: Record<string, string | null> = {
@@ -149,7 +151,8 @@ export default function MastroTablet() {
 
   const sidebarW = isCollapsed ? 88 : (mode === "lg" ? 280 : mode === "md" ? 240 : 220);
 
-  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario", "clienti", "contabilita", "ai"].includes(active);
+  // Sezioni che usano panel mobile (no padding extra)
+  const isMobilePanel = ["commesse", "sopralluoghi", "produzione", "montaggi", "calendario", "clienti", "contabilita", "ai", "impostazioni"].includes(active);
   const mainPad = isMobilePanel ? 0 : (mode === "sm" ? "16px 18px 20px" : "20px 24px 24px");
   const mainBg = isMobilePanel ? "#94A3B8" : BG;
 
@@ -214,16 +217,16 @@ export default function MastroTablet() {
             {active === "clienti"      && <ClientiPanel />}
             {active === "contabilita"  && <ContabilitaPanel />}
             {active === "ai"           && <MessaggiPanel />}
+            {active === "impostazioni" && <SettingsPanel />}
 
             {/* CUSTOM TABLET CON DATI REALI SUPABASE */}
             {active === "magazzino"    && <MagazzinoTablet />}
             {active === "fiscale"      && <FiscaleTablet />}
+            {active === "ordini"       && <OrdiniTablet />}
 
-            {/* TABLET FINTI (DA DELEGARE 1 ALLA VOLTA) */}
-            {active === "ordini"       && <OrdiniFornitoriTablet />}
+            {/* TABLET FINTI (rimasti) */}
             {active === "team"         && <TeamTablet />}
             {active === "ops"          && <OpsTablet />}
-            {active === "impostazioni" && <ImpostazioniTablet />}
           </main>
         </div>
         <SideEffectsToaster />
