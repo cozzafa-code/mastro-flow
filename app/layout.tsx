@@ -2,6 +2,7 @@ import { DayProvider } from "@/components/day/DayProvider";
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata, Viewport } from 'next'
 import { CookieBanner } from '@/components/mastro/ui/CookieBanner'
+import OrdiniSheetGlobalMount from '@/components/OrdiniSheetGlobalMount'
 
 export const themeColor = '#0F1B2D';
 
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <DayProvider>{children}</DayProvider>
         </div>
         <CookieBanner />
+        <OrdiniSheetGlobalMount />
         <script dangerouslySetInnerHTML={{ __html: "if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));if(window.caches){caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));}}" }} />
         <script dangerouslySetInnerHTML={{ __html: "if(typeof window!=='undefined' && new URLSearchParams(location.search).get('debug')==='1'){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init();};document.body.appendChild(s);}" }} />
       </body>
