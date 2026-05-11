@@ -54,6 +54,7 @@ export interface ClienteEvento {
   data_evento: string;
   autore: string | null;
   pinnato: boolean;
+  foto_urls?: string[];
 }
 
 export interface CommessaCliente {

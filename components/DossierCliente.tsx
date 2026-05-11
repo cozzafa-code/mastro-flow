@@ -10,6 +10,7 @@ import TabImmobili from "./centro/TabImmobili";
 import TabCommesse from "./centro/TabCommesse";
 import TabPagamenti from "./centro/TabPagamenti";
 import TabRete from "./centro/TabRete";
+import TabDocumenti from "./centro/TabDocumenti";
 import { useClienteAI } from "../hooks/useClienteAI";
 import { useComunicazioni } from "../hooks/useComunicazioni";
 import { usePagamentiCliente } from "../hooks/useDossierExtra";
@@ -62,7 +63,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
   const [search, setSearch] = useState('');
   const [showNota, setShowNota] = useState(false);
   const [showAuto, setShowAuto] = useState(false);
-  const [view, setView] = useState<'timeline' | 'comunicazioni' | 'immobili' | 'commesse' | 'pagamenti' | 'rete'>('timeline');
+  const [view, setView] = useState<'timeline' | 'comunicazioni' | 'immobili' | 'commesse' | 'pagamenti' | 'rete' | 'documenti'>('timeline');
 
   const eventiFiltered = useMemo(() => {
     let arr = eventi;
@@ -251,6 +252,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         <ViewTabBtn active={view === 'pagamenti'} onClick={() => setView('pagamenti')} label="💰 Pagamenti" />
         <ViewTabBtn active={view === 'immobili'} onClick={() => setView('immobili')} label="🏠 Immobili" />
         <ViewTabBtn active={view === 'rete'} onClick={() => setView('rete')} label="🤝 Rete" />
+        <ViewTabBtn active={view === 'documenti'} onClick={() => setView('documenti')} label="📂 Doc" />
       </div>
 
       {/* CONTENT in base a view */}
@@ -273,6 +275,10 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
       ) : view === 'rete' ? (
         <div style={{ padding: 14 }}>
           <TabRete clienteId={cliente.id} />
+        </div>
+      ) : view === 'documenti' ? (
+        <div style={{ padding: 14 }}>
+          <TabDocumenti clienteId={cliente.id} onApriCommessa={onApriCommessa} />
         </div>
       ) : (
       <div style={{ padding: 14 }}>
@@ -421,6 +427,16 @@ function EventoCard({ ev, onApriCommessa, onPin, onUnpin, timeline }: any) {
             <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, lineHeight: 1.3 }}>{ev.titolo}</div>
             {ev.descrizione && (
               <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.4, marginTop: 4 }}>{ev.descrizione}</div>
+            )}
+            {ev.foto_urls && Array.isArray(ev.foto_urls) && ev.foto_urls.length > 0 && (
+              <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                {ev.foto_urls.slice(0, 4).map((url: string, i: number) => (
+                  <img key={i} src={url} alt="" onClick={(e) => { e.stopPropagation(); window.open(url, '_blank'); }} style={{ width: 56, height: 56, objectFit: 'cover' as const, borderRadius: 6, cursor: 'pointer', border: '1px solid #E5EAF0' }} />
+                ))}
+                {ev.foto_urls.length > 4 && (
+                  <div style={{ width: 56, height: 56, borderRadius: 6, background: '#F1F4F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: MUTED }}>+{ev.foto_urls.length - 4}</div>
+                )}
+              </div>
             )}
             <div style={{ fontSize: 9, color: MUTED, marginTop: 6, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span>📅 {dataFmt} · {oraFmt}</span>

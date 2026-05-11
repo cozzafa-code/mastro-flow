@@ -165,6 +165,26 @@ function CardCom({ c, onApriCommessa, clienteTelefono, clienteEmail }: any) {
             <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>⏱ {Math.floor(c.durata_secondi / 60)}:{(c.durata_secondi % 60).toString().padStart(2, '0')}</div>
           )}
           
+          {/* FOTO INLINE */}
+          {c.foto_url && (
+            <img src={c.foto_url} alt="" onClick={() => window.open(c.foto_url, '_blank')} style={{ marginTop: 6, maxWidth: 200, maxHeight: 200, borderRadius: 7, cursor: 'pointer', border: '1px solid #E5EAF0' }} />
+          )}
+          
+          {/* ALLEGATI */}
+          {c.allegati && c.allegati.length > 0 && (
+            <div style={{ marginTop: 6, display: 'flex', gap: 5, flexWrap: 'wrap' as const }}>
+              {c.allegati.map((a: any, i: number) => (
+                <a key={i} href={typeof a === 'string' ? a : a.url} target="_blank" rel="noopener noreferrer" style={{
+                  background: '#F1F4F7', color: TEXT, padding: '4px 9px', borderRadius: 5,
+                  fontSize: 10, fontWeight: 700, textDecoration: 'none',
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                }}>
+                  📎 {typeof a === 'string' ? `Allegato ${i+1}` : (a.nome || `Allegato ${i+1}`)}
+                </a>
+              ))}
+            </div>
+          )}
+          
           <div style={{ fontSize: 9, color: MUTED, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
             <span>📅 {dataFmt}</span>
             {c.autore && <span>· {c.autore}</span>}

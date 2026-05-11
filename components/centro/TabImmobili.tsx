@@ -4,6 +4,9 @@
 
 import React, { useState } from "react";
 import { useImmobiliCliente, useInfissiImmobile, type Immobile, type InfissoInstallato } from "../../hooks/useImmobili";
+import { uploadFile } from "../../lib/uploadStorage";
+import { supabase } from "@/lib/supabase";
+import FotoGrid from "../FotoGrid";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -243,22 +246,55 @@ function CardInfisso({ inf, onApriCommessa }: { inf: InfissoInstallato; onApriCo
 
 // =============== VIEW PLANIMETRIA ===============
 function ViewPlanimetria({ immobile }: any) {
-  if (!immobile.planimetria_url) {
-    return (
-      <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const }}>
-        <div style={{ fontSize: 48, marginBottom: 10 }}>📐</div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 4 }}>Planimetria non caricata</div>
-        <div style={{ fontSize: 11, color: MUTED, marginBottom: 16 }}>Carica la planimetria per visualizzare la disposizione dei vani</div>
-        <button style={{ padding: '10px 18px', background: TEAL_DEEP, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-          📤 Carica planimetria
-        </button>
-      </div>
-    );
+  const [uploading, setUploading] = React.useState(false);
+  const [planimetria, setPlanimetria] = React.useState<string | null>(immobile.planimetria_url);
+  const [galleria, setGalleria] = React.useState<string[]>(Array.isArray(immobile.galleria) ? immobile.galleria : []);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  async function handlePlanim(file: File | null) {
+    if (!file) return;
+    setUploading(true);
+    const r = await uploadFile(`immobili/${immobile.id}/planimetria`, file);
+    if (r) {
+      await supabase.from('clienti_immobili').update({ planimetria_url: r.url }).eq('id', immobile.id);
+      setPlanimetria(r.url);
+    }
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = '';
   }
+
+  async function handleGalleria(urls: string[]) {
+    setGalleria(urls);
+    await supabase.from('clienti_immobili').update({ galleria: urls }).eq('id', immobile.id);
+  }
+
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: 8 }}>
-      <img src={immobile.planimetria_url} alt="Planimetria" style={{ width: '100%', borderRadius: 8 }} />
-    </div>
+    <>
+      {/* PLANIMETRIA */}
+      <div style={{ background: '#fff', borderRadius: 12, padding: 10, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8 }}>📐 PLANIMETRIA</div>
+        {planimetria ? (
+          <>
+            <img src={planimetria} alt="Planimetria" style={{ width: '100%', borderRadius: 8, marginBottom: 8, cursor: 'pointer' }} onClick={() => window.open(planimetria)} />
+            <button onClick={() => inputRef.current?.click()} disabled={uploading} style={{ width: '100%', padding: 8, background: '#F1F4F7', color: TEXT, border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+              {uploading ? '⏳ Upload...' : '🔄 Sostituisci planimetria'}
+            </button>
+          </>
+        ) : (
+          <button onClick={() => inputRef.current?.click()} disabled={uploading} style={{ width: '100%', padding: '24px 12px', background: '#F8FAFA', color: TEAL_DEEP, border: `2px dashed ${TEAL}`, borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: uploading ? 'wait' : 'pointer', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 32 }}>📐</span>
+            <span>{uploading ? 'Upload in corso...' : 'Carica planimetria'}</span>
+          </button>
+        )}
+        <input ref={inputRef} type="file" accept="image/*,application/pdf" onChange={e => handlePlanim(e.target.files?.[0] || null)} style={{ display: 'none' }} />
+      </div>
+
+      {/* GALLERIA FOTO */}
+      <div style={{ background: '#fff', borderRadius: 12, padding: 12 }}>
+        <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8 }}>🖼️ GALLERIA FOTO IMMOBILE · {galleria.length}</div>
+        <FotoGrid foto={galleria} onChange={handleGalleria} uploadFolder={`immobili/${immobile.id}/galleria`} size="lg" maxFoto={20} />
+      </div>
+    </>
   );
 }
 

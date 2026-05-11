@@ -4,6 +4,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { creaEvento } from "../hooks/useDossierCliente";
+import FotoGrid from "./FotoGrid";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -52,6 +53,7 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
   const [pinnato, setPinnato] = useState(false);
   const [recording, setRecording] = useState(false);
   const [trascrizione, setTrascrizione] = useState('');
+  const [fotoUrls, setFotoUrls] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
   const recognitionRef = useRef<any>(null);
 
@@ -131,6 +133,7 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
       autore: typeof window !== 'undefined' ? (localStorage.getItem('mastro:nome_operatore') || 'Walter') : 'Walter',
       pinnato,
       metadata: { tag_emozionali: tagSel },
+      foto_urls: fotoUrls,
     });
     
     setSalvando(false);
@@ -230,6 +233,12 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
                 );
               })}
             </div>
+          </div>
+
+          {/* FOTO */}
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, marginBottom: 6, letterSpacing: 0.5 }}>FOTO ALLEGATE · {fotoUrls.length}</div>
+          <div style={{ background: '#fff', borderRadius: 10, padding: 10, marginBottom: 14 }}>
+            <FotoGrid foto={fotoUrls} onChange={setFotoUrls} uploadFolder="notes" size="md" maxFoto={6} />
           </div>
 
           {/* PIN */}
