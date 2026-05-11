@@ -32,7 +32,7 @@ export default function CardPianificazione({ aziendaId, onClick }: Props) {
   const [commesse, setCommesse] = useState<CmRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const initial = aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || '') : '');
+  const initial = aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '');
   const [resolvedAziendaId, setResolvedAziendaId] = useState(initial);
 
   // Fallback estremo: se non c'e' aziendaId, lo prendo da user_data via session loggata

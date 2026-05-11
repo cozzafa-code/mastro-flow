@@ -23,7 +23,7 @@ const TEXT = "#0F1F33";
 const MUTED = "#5C6B7A";
 
 export default function CardAzioniVeloci(props: Props) {
-  const initial = props.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || '') : '');
+  const initial = props.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '');
   const [resolvedAziendaId, setResolvedAziendaId] = useState(initial);
 
   useEffect(() => {
@@ -59,13 +59,13 @@ export default function CardAzioniVeloci(props: Props) {
           supabase.from("commesse").select("id", { count: 'exact', head: true }).eq("azienda_id", resolvedAziendaId).eq("fase", "produzione"),
           supabase.from("montaggi").select("id", { count: 'exact', head: true }).eq("azienda_id", resolvedAziendaId),
           supabase.from("ordini_fornitore").select("id", { count: 'exact', head: true }).eq("azienda_id", resolvedAziendaId).in("stato", ["bozza","inviato","confermato","in_transito"]),
-          supabase.from("catalogo_galassia").select("id", { count: 'exact', head: true }).eq("azienda_id", resolvedAziendaId),
-          supabase.from("clienti").select("id", { count: 'exact', head: true }).eq("azienda_id", resolvedAziendaId),
-          supabase.from("events").select("id", { count: 'exact', head: true }).eq("azienda_id", resolvedAziendaId).gte("date", new Date().toISOString().slice(0,10)),
+          supabase.from("catalogo_galassia").select("id", { count: 'exact', head: true }),
+          supabase.from("contatti").select("id", { count: 'exact', head: true }).eq("azienda_id", resolvedAziendaId),
+          supabase.from("events").select("id", { count: 'exact', head: true }).eq("azienda_id", resolvedAziendaId),
           supabase.from("operatori").select("id", { count: 'exact', head: true }).eq("azienda_id", resolvedAziendaId),
-          supabase.from("fin_fatture_emesse").select("totale_eur").eq("azienda_id", resolvedAziendaId).gte("created_at", new Date(new Date().setDate(1)).toISOString()),
+          supabase.from("fin_fatture_emesse").select("totale").eq("azienda_id", resolvedAziendaId).gte("created_at", new Date(new Date().setDate(1)).toISOString()),
         ]);
-        const fatturato = (fatRes.data || []).reduce((s: number, f: any) => s + Number(f.totale_eur || 0), 0);
+        const fatturato = (fatRes.data || []).reduce((s: number, f: any) => s + Number(f.totale || 0), 0);
         setCounts({
           produzione: prodRes.count || 0,
           montaggi: montRes.count || 0,

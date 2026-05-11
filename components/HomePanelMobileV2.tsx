@@ -272,7 +272,7 @@ export default function HomePanelMobileV2(props: any) {
         {id === 'pianificazione' && <CardPianificazione aziendaId={ctx?.aziendaId || ''} onClick={(cmId) => { const cm = (cantieri||[]).find((c:any)=>c.id===cmId); if(cm) setOrganizzaCm(cm); }} />}
           {id === 'statistiche' && <CardStatistiche cantieri={cantieri} onClick={() => goto('contabilita')} />}
           {id === 'azioni-veloci' && <CardAzioniVeloci
-            aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || '') : '')}
+            aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
             onProduzione={() => setShowCentroProduzione(true)}
             onMontaggi={() => setShowCentroMontaggi(true)}
             onMateriali={() => goto('materiali')}
