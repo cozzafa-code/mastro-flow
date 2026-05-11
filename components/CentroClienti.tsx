@@ -5,6 +5,8 @@
 import React, { useState, useMemo } from "react";
 import { useClienti, type ClienteDossier } from "../hooks/useDossierCliente";
 import DossierCliente from "./DossierCliente";
+import ModalCliente from "./ModalCliente";
+import { IcoUser, IcoUsers, IcoCheck, IcoCrown, IcoEuro } from "./IconLib";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -25,8 +27,8 @@ function resolveAziendaId(propId: string | null): string {
 const STATO_COL: Record<string, string> = {
   attivo: TEAL_DEEP, storico: BLUE, dormiente: AMBER, prospect: PURPLE, perso: RED,
 };
-const PRIORITA_ICO: Record<string, string> = {
-  premium: '👑', alto: '⭐', medio: '•', basso: '·',
+const PRIORITA_HASLABEL: Record<string, boolean> = {
+  premium: true, alto: true, medio: false, basso: false,
 };
 
 type Filtro = 'tutti' | 'attivi' | 'premium' | 'problemi';
@@ -37,6 +39,7 @@ export default function CentroClienti({ aziendaId, onClose, onApriCommessa }: an
   const [search, setSearch] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('tutti');
   const [clienteAperto, setClienteAperto] = useState<string | null>(null);
+  const [showNuovoCliente, setShowNuovoCliente] = useState(false);
 
   const filtered = useMemo(() => {
     let arr = clienti;
@@ -77,15 +80,15 @@ export default function CentroClienti({ aziendaId, onClose, onApriCommessa }: an
           </button>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 9, letterSpacing: 1.2, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>CENTRO</div>
-            <div style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>👥 Clienti & Dossier</div>
+            <div style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>Clienti & Dossier</div>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-          <KpiHero icon="👥" label="TOTALI" val={stats.totale} color={TEAL} />
-          <KpiHero icon="🟢" label="ATTIVI" val={stats.attivi} color={TEAL_DEEP} />
-          <KpiHero icon="👑" label="PREMIUM" val={stats.premium} color={PURPLE} />
-          <KpiHero icon="💰" label="VALORE" val={`€${Math.round(stats.valore / 1000)}k`} color={GREEN} small />
+          <KpiHero Ico={IcoUsers} label="TOTALI" val={stats.totale} color={TEAL} />
+          <KpiHero Ico={IcoCheck} label="ATTIVI" val={stats.attivi} color={TEAL_DEEP} />
+          <KpiHero Ico={IcoCrown} label="PREMIUM" val={stats.premium} color={PURPLE} />
+          <KpiHero Ico={IcoEuro} label="VALORE" val={`€${Math.round(stats.valore / 1000)}k`} color={GREEN} small />
         </div>
       </div>
 
@@ -123,13 +126,35 @@ export default function CentroClienti({ aziendaId, onClose, onApriCommessa }: an
           onApriCommessa={(cmId: string) => { setClienteAperto(null); onApriCommessa?.(cmId); }}
         />
       )}
+
+      {/* FAB + Nuovo cliente */}
+      <button onClick={() => setShowNuovoCliente(true)} style={{
+        position: 'fixed', bottom: 90, right: 18, zIndex: 9850,
+        height: 54, padding: '0 20px', borderRadius: 27,
+        background: `linear-gradient(135deg, ${TEAL_DEEP}, #047857)`,
+        color: '#fff', border: 'none', cursor: 'pointer',
+        boxShadow: '0 6px 20px rgba(15,110,86,0.4)',
+        display: 'flex', alignItems: 'center', gap: 8,
+        fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
+      }}>
+        <IcoUser size={18} color="#fff" />
+        <span>NUOVO CLIENTE</span>
+      </button>
+
+      {showNuovoCliente && (
+        <ModalCliente
+          aziendaId={resolved}
+          onClose={() => setShowNuovoCliente(false)}
+          onSaved={(id: string) => { if (id) setClienteAperto(id); }}
+        />
+      )}
     </div>
   );
 }
 
 function CardCliente({ c, onClick }: { c: ClienteDossier; onClick: () => void }) {
   const statoCol = STATO_COL[c.stato_cliente] || MUTED;
-  const prioIcon = PRIORITA_ICO[c.livello_priorita] || '·';
+  const prioBadge = PRIORITA_HASLABEL[c.livello_priorita];
   const affidCol = c.affidabilita_pct >= 85 ? TEAL_DEEP : c.affidabilita_pct >= 60 ? AMBER : RED;
   const ultContatto = c.ultimo_contatto_at ? Math.floor((Date.now() - new Date(c.ultimo_contatto_at).getTime()) / 86400000) : null;
 
@@ -146,14 +171,14 @@ function CardCliente({ c, onClick }: { c: ClienteDossier; onClick: () => void })
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{c.nome} {c.cognome}</span>
-            <span style={{ fontSize: 12 }}>{prioIcon}</span>
+            {prioBadge && <IcoCrown size={12} color={'#D97706'} />}
           </div>
           <div style={{ fontSize: 10, color: MUTED }}>
-            📍 {c.citta || '—'} {c.telefono && `· 📞 ${c.telefono}`}
+            {c.citta || '—'} {c.telefono && `· ${c.telefono}`}
           </div>
           {c.prossima_azione && (
             <div style={{ marginTop: 4, padding: '3px 7px', background: '#FEF3C7', color: '#92400E', borderRadius: 4, fontSize: 9, fontWeight: 700, display: 'inline-block' }}>
-              ➜ {c.prossima_azione}
+              {c.prossima_azione}
             </div>
           )}
         </div>
@@ -169,10 +194,12 @@ function CardCliente({ c, onClick }: { c: ClienteDossier; onClick: () => void })
   );
 }
 
-function KpiHero({ icon, label, val, color, small }: any) {
+function KpiHero({ icon, Ico, label, val, color, small }: any) {
   return (
     <div style={{ background: 'rgba(255,255,255,0.08)', border: `1px solid ${color}55`, padding: '8px 6px', borderRadius: 10, textAlign: 'center' as const }}>
-      <div style={{ fontSize: 14, marginBottom: 3 }}>{icon}</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4, height: 14 }}>
+        {Ico ? <Ico size={13} color={color} /> : icon ? <span style={{ fontSize: 14 }}>{icon}</span> : null}
+      </div>
       <div style={{ fontSize: small ? 14 : 20, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{val}</div>
       <div style={{ fontSize: 7, color, fontWeight: 700, letterSpacing: 0.6, marginTop: 4 }}>{label}</div>
     </div>

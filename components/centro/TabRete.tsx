@@ -1,8 +1,13 @@
 "use client";
 // components/centro/TabRete.tsx - Rete relazionale + referral + decisori
 
-import React from "react";
+import React, { useState } from "react";
 import { useReteCliente, type Decisore } from "../../hooks/useDossierExtra";
+import ModalDecisore from "../ModalDecisore";
+import { rimuoviDecisore } from "../../hooks/useClienteCRUD";
+import { IcoTrash, IcoUsers, IcoCrown, IcoStar, IcoUser } from "../IconLib";
+
+function IcoPlus({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}><line x1={12} y1={5} x2={12} y2={19}/><line x1={5} y1={12} x2={19} y2={12}/></svg>;}
 
 const NAVY = "#1E3A5F";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -22,7 +27,14 @@ interface Props {
 }
 
 export default function TabRete({ clienteId, onApriCliente }: Props) {
-  const { decisori, settore_lavorativo, professione, circolo_sociale, portato_da, referenziati, loading } = useReteCliente(clienteId);
+  const { decisori, settore_lavorativo, professione, circolo_sociale, portato_da, referenziati, loading, reload } = useReteCliente(clienteId);
+  const [showAddDecisore, setShowAddDecisore] = useState(false);
+
+  async function deleteDecisore(idx: number) {
+    if (!confirm('Eliminare questo decisore?')) return;
+    await rimuoviDecisore(clienteId, idx);
+    reload();
+  }
 
   if (loading) return <div style={{ padding: 30, textAlign: 'center' as const, color: MUTED }}>Caricamento...</div>;
 
@@ -33,19 +45,15 @@ export default function TabRete({ clienteId, onApriCliente }: Props) {
       {/* PROFILO LAVORATIVO */}
       {(professione || settore_lavorativo || circolo_sociale) && (
         <div style={{ background: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderLeft: `5px solid ${PURPLE}` }}>
-          <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 800 }}>👔 PROFILO LAVORATIVO</div>
+          <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 800 }}>PROFILO LAVORATIVO</div>
           {professione && (
             <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{professione}</div>
           )}
           {settore_lavorativo && (
-            <div style={{ fontSize: 11, color: MUTED, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 14 }}>🏢</span>{settore_lavorativo}
-            </div>
+            <div style={{ fontSize: 11, color: MUTED, marginBottom: 4 }}>{settore_lavorativo}</div>
           )}
           {circolo_sociale && (
-            <div style={{ fontSize: 11, color: MUTED, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 14 }}>👥</span>{circolo_sociale}
-            </div>
+            <div style={{ fontSize: 11, color: MUTED }}>{circolo_sociale}</div>
           )}
         </div>
       )}
@@ -53,7 +61,7 @@ export default function TabRete({ clienteId, onApriCliente }: Props) {
       {/* PORTATO DA */}
       {portato_da && (
         <div style={{ background: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderLeft: `5px solid ${TEAL_DEEP}` }}>
-          <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 6, fontWeight: 800 }}>🤝 PORTATO DA</div>
+          <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 6, fontWeight: 800 }}>PORTATO DA</div>
           <button onClick={() => onApriCliente?.(portato_da.id)} style={{ width: '100%', background: TEAL + '15', border: `1.5px solid ${TEAL}`, borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg, ${TEAL}, ${TEAL_DEEP})`, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800 }}>
               {(portato_da.nome[0] || '') + (portato_da.cognome[0] || '')}
@@ -67,34 +75,47 @@ export default function TabRete({ clienteId, onApriCliente }: Props) {
       )}
 
       {/* DECISORI / NETWORK FAMILIARE */}
-      {decisori.length > 0 && (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderLeft: `5px solid ${AMBER}` }}>
-          <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 800 }}>👥 NETWORK DECISORI · {decisori.length}</div>
-          {decisori.map((d: Decisore, i: number) => {
-            const pm = PESO_META[d.peso_decisionale] || PESO_META.basso;
-            return (
-              <div key={i} style={{ background: '#F8FAFA', padding: 10, borderRadius: 8, marginBottom: i < decisori.length - 1 ? 6 : 0, borderLeft: `3px solid ${pm.col}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 22 }}>{d.peso_decisionale === 'alto' ? '👑' : d.peso_decisionale === 'medio' ? '⭐' : '👤'}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{d.nome}</div>
-                    <div style={{ fontSize: 10, color: MUTED, fontStyle: 'italic' as const, marginTop: 1 }}>{d.ruolo}</div>
-                  </div>
-                  <span style={{ background: pm.bg, color: pm.col, padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 800 }}>{pm.label}</span>
-                </div>
-                {d.note && (
-                  <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.4, paddingLeft: 30 }}>💡 {d.note}</div>
-                )}
-              </div>
-            );
-          })}
+      <div style={{ background: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderLeft: `5px solid ${AMBER}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, fontWeight: 800, flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <IcoUsers size={11} color={MUTED} />NETWORK DECISORI · {decisori.length}
+          </div>
+          <button onClick={() => setShowAddDecisore(true)} style={{ padding: '6px 11px', background: AMBER, color: '#fff', border: 'none', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <IcoPlus size={11} color="#fff" />AGGIUNGI
+          </button>
         </div>
-      )}
+        {decisori.length === 0 ? (
+          <div style={{ textAlign: 'center' as const, padding: 14, color: MUTED, fontSize: 11 }}>Nessun decisore. Aggiungi moglie / figli / consulenti che influenzano le scelte.</div>
+        ) : decisori.map((d: Decisore, i: number) => {
+          const pm = PESO_META[d.peso_decisionale] || PESO_META.basso;
+          const Ico = d.peso_decisionale === 'alto' ? IcoCrown : d.peso_decisionale === 'medio' ? IcoStar : IcoUser;
+          return (
+            <div key={i} style={{ background: '#F8FAFA', padding: 10, borderRadius: 8, marginBottom: i < decisori.length - 1 ? 6 : 0, borderLeft: `3px solid ${pm.col}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: pm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Ico size={16} color={pm.col} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{d.nome}</div>
+                  <div style={{ fontSize: 10, color: MUTED, fontStyle: 'italic' as const, marginTop: 1 }}>{d.ruolo}</div>
+                </div>
+                <span style={{ background: pm.bg, color: pm.col, padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 800 }}>{pm.label}</span>
+                <button onClick={() => deleteDecisore(i)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
+                  <IcoTrash size={14} color={MUTED} />
+                </button>
+              </div>
+              {d.note && (
+                <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.4, paddingLeft: 42 }}>{d.note}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* CLIENTI REFERENZIATI */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderLeft: `5px solid ${GREEN}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, fontWeight: 800, flex: 1 }}>🌟 HA REFERENZIATO · {referenziati.length}</div>
+          <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, fontWeight: 800, flex: 1 }}>HA REFERENZIATO · {referenziati.length}</div>
           {valoreReferenziati > 0 && (
             <span style={{ background: '#D1FAE5', color: TEAL_DEEP, padding: '3px 8px', borderRadius: 4, fontSize: 10, fontWeight: 800 }}>
               €{Math.round(valoreReferenziati / 1000)}k generati
@@ -129,11 +150,8 @@ export default function TabRete({ clienteId, onApriCliente }: Props) {
         )}
       </div>
 
-      {/* CTA Chiedi referenza */}
-      {referenziati.length === 0 && (
-        <button style={{ width: '100%', padding: '12px 0', background: `linear-gradient(90deg, ${TEAL}, ${TEAL_DEEP})`, color: '#fff', border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: 'pointer', letterSpacing: 0.3 }}>
-          🤝 SEGNA CHE HA REFERENZIATO QUALCUNO
-        </button>
+      {showAddDecisore && (
+        <ModalDecisore clienteId={clienteId} onClose={() => setShowAddDecisore(false)} onSaved={reload} />
       )}
     </div>
   );

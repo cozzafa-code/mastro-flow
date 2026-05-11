@@ -3,6 +3,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useCommesseCliente, type CommessaCliente } from "../../hooks/useDossierExtra";
+import { IcoLayout, IcoFile, IcoUsers, IcoEuro, IcoTool, IcoBox, IcoCheck, IcoClose, IcoBuilding, IcoAlertTriangle, IcoCalendar } from "../IconLib";
 
 const NAVY = "#1E3A5F";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -10,16 +11,16 @@ const AMBER = "#D97706", RED = "#DC2626";
 const GREEN = "#10B981", BLUE = "#1E40AF", PURPLE = "#7E22CE";
 const TEXT = "#0F1F33", MUTED = "#5C6B7A";
 
-const FASE_META: Record<string, { col: string; bg: string; label: string; icon: string }> = {
-  rilievo:         { col: MUTED,     bg: '#F1F4F7', label: 'RILIEVO',         icon: '📐' },
-  preventivo:      { col: BLUE,      bg: '#DBEAFE', label: 'PREVENTIVO',      icon: '📄' },
-  ordine:          { col: PURPLE,    bg: '#F3E8FF', label: 'ORDINE',          icon: '🤝' },
-  acconto_pagato:  { col: AMBER,     bg: '#FEF3C7', label: 'ACCONTO PAGATO',  icon: '💰' },
-  produzione:      { col: TEAL,      bg: '#E1F5EE', label: 'PRODUZIONE',      icon: '🏭' },
-  montaggio:       { col: '#0EA5E9', bg: '#E0F2FE', label: 'MONTAGGIO',       icon: '🔧' },
-  consegnato:      { col: TEAL_DEEP, bg: '#D1FAE5', label: 'CONSEGNATO',      icon: '📦' },
-  completato:      { col: GREEN,     bg: '#D1FAE5', label: 'COMPLETATO',      icon: '✅' },
-  annullato:       { col: RED,       bg: '#FEE2E2', label: 'ANNULLATO',       icon: '🚫' },
+const FASE_META: Record<string, { col: string; bg: string; label: string; Ico: any }> = {
+  rilievo:         { col: MUTED,     bg: '#F1F4F7', label: 'RILIEVO',         Ico: IcoLayout },
+  preventivo:      { col: BLUE,      bg: '#DBEAFE', label: 'PREVENTIVO',      Ico: IcoFile },
+  ordine:          { col: '#1E40AF', bg: '#DBEAFE', label: 'ORDINE',          Ico: IcoUsers },
+  acconto_pagato:  { col: AMBER,     bg: '#FEF3C7', label: 'ACCONTO PAGATO',  Ico: IcoEuro },
+  produzione:      { col: TEAL,      bg: '#E1F5EE', label: 'PRODUZIONE',      Ico: IcoBuilding },
+  montaggio:       { col: '#0EA5E9', bg: '#E0F2FE', label: 'MONTAGGIO',       Ico: IcoTool },
+  consegnato:      { col: TEAL_DEEP, bg: '#D1FAE5', label: 'CONSEGNATO',      Ico: IcoBox },
+  completato:      { col: GREEN,     bg: '#D1FAE5', label: 'COMPLETATO',      Ico: IcoCheck },
+  annullato:       { col: RED,       bg: '#FEE2E2', label: 'ANNULLATO',       Ico: IcoClose },
 };
 
 type Filtro = 'tutte' | 'attive' | 'completate' | 'problemi';
@@ -79,18 +80,18 @@ function CardCommessa({ c, onClick }: { c: CommessaCliente; onClick: () => void 
     <div onClick={onClick} style={{ background: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderLeft: `5px solid ${fm.col}`, cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 10, background: fm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{fm.icon}</div>
+        <div style={{ width: 44, height: 44, borderRadius: 10, background: fm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><fm.Ico size={22} color={fm.col} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3, flexWrap: 'wrap' as const }}>
             <span style={{ background: NAVY, color: '#fff', padding: '3px 9px', borderRadius: 4, fontSize: 11, fontWeight: 800 }}>{c.code}</span>
             <span style={{ background: fm.bg, color: fm.col, padding: '2px 7px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>{fm.label}</span>
             {c.num_problemi > 0 && (
-              <span style={{ background: '#FEE2E2', color: '#991B1B', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>⚠ {c.num_problemi} PROB.</span>
+              <span style={{ background: '#FEE2E2', color: '#991B1B', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>{c.num_problemi} PROB.</span>
             )}
           </div>
           <div style={{ fontSize: 11, color: MUTED }}>
-            🏗️ {c.materiale || 'Serramenti'} · 🪟 {c.num_vani} vani
-            {c.indirizzo && ` · 📍 ${c.indirizzo}`}
+            {c.materiale || 'Serramenti'} · {c.num_vani} vani
+            {c.indirizzo && ` · ${c.indirizzo}`}
           </div>
         </div>
         <div style={{ textAlign: 'right' as const }}>
@@ -124,8 +125,8 @@ function CardCommessa({ c, onClick }: { c: CommessaCliente; onClick: () => void 
       {/* Dates */}
       {(c.data_inizio || c.data_consegna_prevista) && (
         <div style={{ marginTop: 8, fontSize: 10, color: MUTED, display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
-          {c.data_inizio && <span>📅 Iniziata {new Date(c.data_inizio).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</span>}
-          {c.data_consegna_prevista && <span style={{ marginLeft: 'auto' }}>🎯 Consegna {new Date(c.data_consegna_prevista).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</span>}
+          {c.data_inizio && <span>Iniziata {new Date(c.data_inizio).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</span>}
+          {c.data_consegna_prevista && <span style={{ marginLeft: 'auto' }}>Consegna {new Date(c.data_consegna_prevista).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</span>}
         </div>
       )}
     </div>

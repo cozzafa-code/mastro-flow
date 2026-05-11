@@ -16,7 +16,8 @@ import { useComunicazioni } from "../hooks/useComunicazioni";
 import { usePagamentiCliente } from "../hooks/useDossierExtra";
 import { useImmobiliCliente } from "../hooks/useImmobili";
 import { BannerAIInsights, PillSintesi, BottoneAscolta, ModalitaAuto } from "./AIClienteUI";
-import { IcoFile, IcoChevronLeft } from "./IconLib";
+import { IcoFile, IcoChevronLeft, IcoSettings, IcoEuro, IcoBuilding, IcoAlertTriangle, IcoMap, IcoPhone, IcoChat, IcoMail, IcoSparkles, IcoTrendingUp, IcoCalendar, IcoPin } from "./IconLib";
+import ModalCliente from "./ModalCliente";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -33,11 +34,11 @@ const STATO_META: Record<string, { col: string; bg: string; label: string }> = {
   perso:     { col: RED,       bg: '#FEE2E2', label: 'PERSO' },
 };
 
-const PRIORITA_META: Record<string, { col: string; bg: string; label: string; icon: string }> = {
-  premium: { col: '#7E22CE', bg: '#F3E8FF', label: 'PREMIUM', icon: '👑' },
-  alto:    { col: AMBER,     bg: '#FEF3C7', label: 'ALTO',    icon: '⭐' },
-  medio:   { col: '#5C6B7A', bg: '#F1F4F7', label: 'MEDIO',   icon: '•' },
-  basso:   { col: '#5C6B7A', bg: '#F8FAFA', label: 'BASSO',   icon: '·' },
+const PRIORITA_META: Record<string, { col: string; bg: string; label: string }> = {
+  premium: { col: NAVY,      bg: '#E5EAF0', label: 'PREMIUM' },
+  alto:    { col: AMBER,     bg: '#FEF3C7', label: 'ALTO'    },
+  medio:   { col: TEAL,      bg: '#E1F5EE', label: 'MEDIO'   },
+  basso:   { col: '#5C6B7A', bg: '#F8FAFA', label: 'BASSO'   },
 };
 
 const CATEGORIA_META: Record<string, { col: string; bg: string; label: string }> = {
@@ -64,6 +65,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
   const [search, setSearch] = useState('');
   const [showNota, setShowNota] = useState(false);
   const [showAuto, setShowAuto] = useState(false);
+  const [showModificaCliente, setShowModificaCliente] = useState(false);
   const [view, setView] = useState<'timeline' | 'comunicazioni' | 'immobili' | 'commesse' | 'pagamenti' | 'rete' | 'documenti'>('timeline');
 
   const eventiFiltered = useMemo(() => {
@@ -122,7 +124,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
   const prioMeta = PRIORITA_META[cliente.livello_priorita] || PRIORITA_META.medio;
   const affidabilita = cliente.affidabilita_pct;
   const affidColore = affidabilita >= 85 ? TEAL_DEEP : affidabilita >= 60 ? AMBER : RED;
-  const affidIcona = affidabilita >= 85 ? '🟢' : affidabilita >= 60 ? '🟠' : '🔴';
+  
 
   const conteggiCat: Record<string, number> = {};
   eventi.forEach(e => { conteggiCat[e.categoria] = (conteggiCat[e.categoria] || 0) + 1; });
@@ -139,6 +141,9 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
             <div style={{ fontSize: 9, letterSpacing: 1.2, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>DOSSIER CLIENTE</div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>Memoria storica viva</div>
           </div>
+          <button onClick={() => setShowModificaCliente(true)} style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IcoSettings size={16} color="#fff" />
+          </button>
         </div>
 
         {/* Identità: avatar + nome + badges */}
@@ -152,12 +157,13 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.2 }}>{cliente.nome} {cliente.cognome}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 3 }}>
-              📍 {cliente.citta || '—'} {cliente.provincia ? `(${cliente.provincia})` : ''}
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <IcoMap size={11} color="rgba(255,255,255,0.7)" />
+              <span>{cliente.citta || '—'}{cliente.provincia ? ` (${cliente.provincia})` : ''}</span>
             </div>
             <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' as const }}>
               <span style={{ background: statoMeta.bg, color: statoMeta.col, padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 800 }}>{statoMeta.label}</span>
-              <span style={{ background: prioMeta.bg, color: prioMeta.col, padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 800 }}>{prioMeta.icon} {prioMeta.label}</span>
+              <span style={{ background: prioMeta.bg, color: prioMeta.col, padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 800 }}>{prioMeta.label}</span>
               {cliente.tipologia_relazione.slice(0, 2).map(t => (
                 <span key={t} style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>{t.replace('_', ' ')}</span>
               ))}
@@ -167,10 +173,10 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
 
         {/* 4 KPI HERO */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-          <KpiHero icon="💰" label="VALORE" val={`€${Math.round(cliente.valore_storico_eur / 1000)}k`} color={GREEN} small />
-          <KpiHero icon={affidIcona} label="AFFID." val={`${affidabilita}%`} color={affidColore} />
-          <KpiHero icon="🏗️" label="ATTIVE" val={num_commesse_attive} color={TEAL} />
-          <KpiHero icon="⚠️" label="PROBL." val={num_problemi_aperti} color={num_problemi_aperti > 0 ? RED : MUTED} />
+          <KpiHero Ico={IcoEuro} label="VALORE" val={`€${Math.round(cliente.valore_storico_eur / 1000)}k`} color={GREEN} small />
+          <KpiHero label="AFFID." val={`${affidabilita}%`} color={affidColore} affidStatus={affidabilita >= 85 ? 'ok' : affidabilita >= 60 ? 'warn' : 'bad'} />
+          <KpiHero Ico={IcoBuilding} label="ATTIVE" val={num_commesse_attive} color={TEAL} />
+          <KpiHero Ico={IcoAlertTriangle} label="PROBL." val={num_problemi_aperti} color={num_problemi_aperti > 0 ? RED : MUTED} />
         </div>
 
         {/* Ultimo contatto + prossima azione */}
@@ -183,7 +189,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
           </div>
           {cliente.prossima_azione && (
             <div style={{ flex: 1.4, borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: 10 }}>
-              <div style={{ color: AMBER, fontWeight: 700, letterSpacing: 0.4 }}>➜ PROSSIMA AZIONE</div>
+              <div style={{ color: AMBER, fontWeight: 700, letterSpacing: 0.4 }}>PROSSIMA AZIONE</div>
               <div style={{ color: '#fff', fontWeight: 700, marginTop: 2 }}>{cliente.prossima_azione}</div>
             </div>
           )}
@@ -192,16 +198,16 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
 
       {/* 4 BOTTONI AZIONE RAPIDA */}
       <div style={{ background: '#fff', margin: '-10px 14px 0', padding: 8, borderRadius: 12, display: 'flex', gap: 6, position: 'relative' as const, zIndex: 2, boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
-        <AzioneBtn icon="📞" label="Chiama" col={TEAL} onClick={() => cliente.telefono && window.open(`tel:${cliente.telefono}`)} disabled={!cliente.telefono} />
-        <AzioneBtn icon="💬" label="WhatsApp" col={GREEN} onClick={() => cliente.telefono && window.open(`https://wa.me/${cliente.telefono.replace(/[^\d]/g, '')}`)} disabled={!cliente.telefono} />
-        <AzioneBtn icon="✉️" label="Email" col={BLUE} onClick={() => cliente.email && window.open(`mailto:${cliente.email}`)} disabled={!cliente.email} />
-        <AzioneBtn icon="📝" label="Nota" col={PURPLE} onClick={() => setShowNota(true)} />
+        <AzioneBtn Ico={IcoPhone} label="Chiama" col={TEAL_DEEP} onClick={() => cliente.telefono && window.open(`tel:${cliente.telefono}`)} disabled={!cliente.telefono} />
+        <AzioneBtn Ico={IcoChat} label="WhatsApp" col={TEAL_DEEP} onClick={() => cliente.telefono && window.open(`https://wa.me/${cliente.telefono.replace(/[^\d]/g, '')}`)} disabled={!cliente.telefono} />
+        <AzioneBtn Ico={IcoMail} label="Email" col={BLUE} onClick={() => cliente.email && window.open(`mailto:${cliente.email}`)} disabled={!cliente.email} />
+        <AzioneBtn Ico={IcoFile} label="Nota" col={NAVY} onClick={() => setShowNota(true)} />
       </div>
 
       {/* TAG EMOZIONALI */}
       {cliente.tag_emozionali.length > 0 && (
         <div style={{ background: '#fff', margin: '10px 14px 0', padding: '10px 12px', borderRadius: 10 }}>
-          <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.8, fontWeight: 700, marginBottom: 6 }}>💡 PROFILO CLIENTE</div>
+          <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.8, fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}><IcoSparkles size={10} color={MUTED} />PROFILO CARATTERIALE</div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const }}>
             {cliente.tag_emozionali.map(t => (
               <span key={t} style={{ background: '#F3E8FF', color: '#7E22CE', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
@@ -211,7 +217,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
           </div>
           {cliente.preferenze_contatto?.no_dopo && (
             <div style={{ marginTop: 8, padding: '6px 10px', background: '#FEF3C7', borderRadius: 5, fontSize: 10, color: '#92400E', fontWeight: 700 }}>
-              ⏰ Non chiamare dopo le {cliente.preferenze_contatto.no_dopo}
+              Non chiamare dopo le {cliente.preferenze_contatto.no_dopo}
             </div>
           )}
         </div>
@@ -247,19 +253,19 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
 
       {/* TAB SWITCHER 6 viste */}
       <div style={{ background: '#fff', margin: '10px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, overflowX: 'auto' as const }}>
-        <ViewTabBtn active={view === 'timeline'} onClick={() => setView('timeline')} label="📅 Timeline" badge={eventi.length} />
-        <ViewTabBtn active={view === 'comunicazioni'} onClick={() => setView('comunicazioni')} label="💬 Messaggi" />
-        <ViewTabBtn active={view === 'commesse'} onClick={() => setView('commesse')} label="🏗️ Commesse" badge={commesse.length} />
-        <ViewTabBtn active={view === 'pagamenti'} onClick={() => setView('pagamenti')} label="💰 Pagamenti" />
-        <ViewTabBtn active={view === 'immobili'} onClick={() => setView('immobili')} label="🏠 Immobili" />
-        <ViewTabBtn active={view === 'rete'} onClick={() => setView('rete')} label="🤝 Rete" />
+        <ViewTabBtn active={view === 'timeline'} onClick={() => setView('timeline')} label="Timeline" badge={eventi.length} />
+        <ViewTabBtn active={view === 'comunicazioni'} onClick={() => setView('comunicazioni')} label="Messaggi" />
+        <ViewTabBtn active={view === 'commesse'} onClick={() => setView('commesse')} label="Commesse" badge={commesse.length} />
+        <ViewTabBtn active={view === 'pagamenti'} onClick={() => setView('pagamenti')} label="Pagamenti" />
+        <ViewTabBtn active={view === 'immobili'} onClick={() => setView('immobili')} label="Immobili" />
+        <ViewTabBtn active={view === 'rete'} onClick={() => setView('rete')} label="Rete" />
         <ViewTabBtn active={view === 'documenti'} onClick={() => setView('documenti')} label="Documenti" />
       </div>
 
       {/* CONTENT in base a view */}
       {view === 'comunicazioni' ? (
         <div style={{ padding: 14 }}>
-          <TabComunicazioni clienteId={cliente.id} clienteTelefono={cliente.telefono} clienteEmail={cliente.email} onApriCommessa={onApriCommessa} />
+          <TabComunicazioni clienteId={cliente.id} aziendaId={cliente.azienda_id || ''} clienteTelefono={cliente.telefono} clienteEmail={cliente.email} onApriCommessa={onApriCommessa} />
         </div>
       ) : view === 'commesse' ? (
         <div style={{ padding: 14 }}>
@@ -271,7 +277,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         </div>
       ) : view === 'immobili' ? (
         <div style={{ padding: 14 }}>
-          <TabImmobili clienteId={cliente.id} onApriCommessa={onApriCommessa} />
+          <TabImmobili clienteId={cliente.id} aziendaId={cliente.azienda_id || ''} onApriCommessa={onApriCommessa} />
         </div>
       ) : view === 'rete' ? (
         <div style={{ padding: 14 }}>
@@ -286,7 +292,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <div style={{ width: 4, height: 22, background: NAVY, borderRadius: 2 }} />
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>📅 STORIA CLIENTE</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>STORIA CLIENTE</div>
             <div style={{ fontSize: 10, color: MUTED }}>{eventi.length} eventi in cronologia</div>
           </div>
         </div>
@@ -315,7 +321,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         {/* Pinnati */}
         {pinnati.length > 0 && (
           <>
-            <div style={{ fontSize: 9, color: AMBER, letterSpacing: 1, marginBottom: 6, fontWeight: 800 }}>📌 DA RICORDARE SEMPRE</div>
+            <div style={{ fontSize: 9, color: AMBER, letterSpacing: 1, marginBottom: 6, fontWeight: 800, display: "flex", alignItems: "center", gap: 5 }}><IcoPin size={10} color={AMBER} />DA RICORDARE SEMPRE</div>
             {pinnati.map(e => <EventoCard key={e.id} ev={e} onApriCommessa={onApriCommessa} onUnpin={() => togglePin(e.id, false)} />)}
             <div style={{ height: 1, background: '#E5EAF0', margin: '12px 0' }} />
           </>
@@ -349,6 +355,15 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         <IcoFile size={17} color="#fff" />
         <span>NOTA</span>
       </button>
+
+      {showModificaCliente && (
+        <ModalCliente
+          aziendaId={cliente.azienda_id || ''}
+          cliente={cliente}
+          onClose={() => setShowModificaCliente(false)}
+          onSaved={(id: string) => { if (!id) onClose(); }}
+        />
+      )}
 
       {showAuto && (
         <ModalitaAuto cliente={cliente} testo={ai.riassuntoVocale} onClose={() => setShowAuto(false)} />
@@ -440,13 +455,13 @@ function EventoCard({ ev, onApriCommessa, onPin, onUnpin, timeline }: any) {
               </div>
             )}
             <div style={{ fontSize: 9, color: MUTED, marginTop: 6, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>📅 {dataFmt} · {oraFmt}</span>
+              <span>{dataFmt} · {oraFmt}</span>
               {ev.autore && <span>· {ev.autore}</span>}
             </div>
           </div>
           {(onPin || onUnpin) && (
-            <button onClick={(e) => { e.stopPropagation(); onPin?.(); onUnpin?.(); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16, color: ev.pinnato ? AMBER : MUTED, opacity: ev.pinnato ? 1 : 0.4 }} title={ev.pinnato ? 'Rimuovi pin' : 'Pinna'}>
-              📌
+            <button onClick={(e) => { e.stopPropagation(); onPin?.(); onUnpin?.(); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', opacity: ev.pinnato ? 1 : 0.4 }} title={ev.pinnato ? 'Rimuovi pin' : 'Pinna'}>
+              <IcoPin size={14} color={ev.pinnato ? AMBER : MUTED} />
             </button>
           )}
         </div>
@@ -456,26 +471,30 @@ function EventoCard({ ev, onApriCommessa, onPin, onUnpin, timeline }: any) {
 }
 
 // =============== HELPERS ===============
-function KpiHero({ icon, label, val, color, small }: any) {
+function KpiHero({ Ico, label, val, color, small, affidStatus }: any) {
   return (
     <div style={{ background: 'rgba(255,255,255,0.08)', border: `1px solid ${color}55`, padding: '8px 6px', borderRadius: 10, textAlign: 'center' as const }}>
-      <div style={{ fontSize: 12, marginBottom: 2 }}>{icon}</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 3, height: 14 }}>
+        {Ico ? <Ico size={13} color={color} /> : affidStatus ? (
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: affidStatus === 'ok' ? '#10B981' : affidStatus === 'warn' ? '#D97706' : '#DC2626' }} />
+        ) : null}
+      </div>
       <div style={{ fontSize: small ? 14 : 18, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{val}</div>
       <div style={{ fontSize: 7, color, fontWeight: 700, letterSpacing: 0.4, marginTop: 3 }}>{label}</div>
     </div>
   );
 }
 
-function AzioneBtn({ icon, label, col, onClick, disabled }: any) {
+function AzioneBtn({ Ico, label, col, onClick, disabled }: any) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      flex: 1, padding: '10px 0', background: disabled ? '#F8FAFA' : col + '15',
+      flex: 1, padding: '11px 0', background: disabled ? '#F8FAFA' : col + '12',
       border: `1.5px solid ${disabled ? '#E5EAF0' : col}`,
       borderRadius: 10, cursor: disabled ? 'not-allowed' : 'pointer',
-      display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 3,
-      opacity: disabled ? 0.4 : 1,
+      display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
+      opacity: disabled ? 0.4 : 1, fontFamily: 'inherit',
     }}>
-      <span style={{ fontSize: 18 }}>{icon}</span>
+      <Ico size={18} color={disabled ? MUTED : col} />
       <span style={{ fontSize: 9, fontWeight: 800, color: disabled ? MUTED : col, letterSpacing: 0.3 }}>{label}</span>
     </button>
   );

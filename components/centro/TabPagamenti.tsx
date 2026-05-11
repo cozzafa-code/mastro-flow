@@ -3,6 +3,7 @@
 
 import React from "react";
 import { usePagamentiCliente, type FatturaCliente } from "../../hooks/useDossierExtra";
+import { IcoEuro, IcoCheck, IcoAlertTriangle, IcoCalendar, IcoFile } from "../IconLib";
 
 const NAVY = "#1E3A5F";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -23,8 +24,6 @@ export default function TabPagamenti({ clienteId, onApriCommessa }: Props) {
   // Affidabilità interpretation
   const affCol = stats.affidabilita_calcolata >= 85 ? TEAL_DEEP : 
                   stats.affidabilita_calcolata >= 60 ? AMBER : RED;
-  const affIcon = stats.affidabilita_calcolata >= 85 ? '🟢' : 
-                   stats.affidabilita_calcolata >= 60 ? '🟠' : '🔴';
   const affLabel = stats.affidabilita_calcolata >= 85 ? 'AFFIDABILE' :
                     stats.affidabilita_calcolata >= 60 ? 'LENTO' : 'PROBLEMATICO';
 
@@ -45,7 +44,9 @@ export default function TabPagamenti({ clienteId, onApriCommessa }: Props) {
       {/* HERO AFFIDABILITÀ */}
       <div style={{ background: `linear-gradient(135deg, ${affCol}, ${affCol}cc)`, color: '#fff', borderRadius: 14, padding: 14, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ fontSize: 40 }}>{affIcon}</div>
+          <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid rgba(255,255,255,0.4)' }}>
+            <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#fff' }} />
+          </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 9, letterSpacing: 1, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>INDICATORE AFFIDABILITÀ</div>
             <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1 }}>{stats.affidabilita_calcolata}%</div>
@@ -62,15 +63,15 @@ export default function TabPagamenti({ clienteId, onApriCommessa }: Props) {
 
       {/* 3 KPI */}
       <div style={{ background: '#fff', borderRadius: 10, padding: 10, marginBottom: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-        <KpiBox icon="💰" label="FATTURATO" val={`€${Math.round(stats.totale_fatturato).toLocaleString('it-IT')}`} col={NAVY} />
-        <KpiBox icon="✅" label="PAGATO" val={`€${Math.round(stats.totale_pagato).toLocaleString('it-IT')}`} col={TEAL_DEEP} />
-        <KpiBox icon="⏳" label="APERTO" val={`€${Math.round(stats.saldo_aperto).toLocaleString('it-IT')}`} col={stats.saldo_aperto > 0 ? AMBER : MUTED} />
+        <KpiBox Ico={IcoEuro} label="FATTURATO" val={`€${Math.round(stats.totale_fatturato).toLocaleString('it-IT')}`} col={NAVY} />
+        <KpiBox Ico={IcoCheck} label="PAGATO" val={`€${Math.round(stats.totale_pagato).toLocaleString('it-IT')}`} col={TEAL_DEEP} />
+        <KpiBox Ico={IcoAlertTriangle} label="APERTO" val={`€${Math.round(stats.saldo_aperto).toLocaleString('it-IT')}`} col={stats.saldo_aperto > 0 ? AMBER : MUTED} />
       </div>
 
       {/* SCADENZE IMMINENTI */}
       {scadenzeImminenti.length > 0 && (
         <div style={{ background: 'linear-gradient(135deg, ' + AMBER + '15, ' + AMBER + '05)', border: `2px solid ${AMBER}`, borderRadius: 12, padding: 12, marginBottom: 10 }}>
-          <div style={{ fontSize: 10, color: '#92400E', letterSpacing: 1, marginBottom: 8, fontWeight: 800 }}>⏰ SCADENZE IMMINENTI</div>
+          <div style={{ fontSize: 10, color: '#92400E', letterSpacing: 1, marginBottom: 8, fontWeight: 800 }}>SCADENZE IMMINENTI</div>
           {scadenzeImminenti.map(f => {
             const giorni = Math.floor((new Date(f.data_scadenza!).getTime() - today.getTime()) / 86400000);
             const inRitardo = giorni < 0;
@@ -80,7 +81,7 @@ export default function TabPagamenti({ clienteId, onApriCommessa }: Props) {
                 {f.commessa_code && <span style={{ background: '#F1F4F7', color: TEXT, padding: '2px 7px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}>{f.commessa_code}</span>}
                 <span style={{ flex: 1, fontSize: 11, color: TEXT, fontWeight: 700 }}>€{f.totale.toFixed(2)}</span>
                 <span style={{ fontSize: 10, color: inRitardo ? RED : AMBER, fontWeight: 800 }}>
-                  {inRitardo ? `⚠ +${Math.abs(giorni)}g RITARDO` : giorni === 0 ? '🔥 OGGI' : `📅 ${giorni}g`}
+                  {inRitardo ? `+${Math.abs(giorni)}g RITARDO` : giorni === 0 ? 'OGGI' : `tra ${giorni}g`}
                 </span>
               </div>
             );
@@ -90,7 +91,7 @@ export default function TabPagamenti({ clienteId, onApriCommessa }: Props) {
 
       {/* STORICO FATTURE */}
       <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>
-        📋 STORICO FATTURE · {fatture.length} totali · {stats.num_pagate} pagate
+        STORICO FATTURE · {fatture.length} totali · {stats.num_pagate} pagate
       </div>
       {fatture.length === 0 ? (
         <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const, color: MUTED, fontSize: 13 }}>
@@ -112,7 +113,7 @@ function CardFattura({ f, onApriCommessa }: { f: FatturaCliente; onApriCommessa?
     <div style={{ background: '#fff', borderRadius: 10, padding: 12, marginBottom: 6, borderLeft: `4px solid ${col}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ width: 38, height: 38, borderRadius: 9, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-          {f.pagata ? '✅' : isScad ? '⚠️' : '⏳'}
+          <><FattIco pagata={f.pagata} scad={isScad} col={col} /></>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3, flexWrap: 'wrap' as const }}>
@@ -125,11 +126,11 @@ function CardFattura({ f, onApriCommessa }: { f: FatturaCliente; onApriCommessa?
             <span style={{ background: bg, color: col, padding: '2px 7px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>{stato}</span>
           </div>
           <div style={{ fontSize: 10, color: MUTED, display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-            <span>📅 Emessa {new Date(f.data_emissione).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
-            {f.data_scadenza && <span>· 🎯 Scad. {new Date(f.data_scadenza).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</span>}
+            <span>Emessa {new Date(f.data_emissione).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+            {f.data_scadenza && <span>· Scad. {new Date(f.data_scadenza).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</span>}
             {f.pagata && f.pagata_at && (
               <span style={{ color: f.giorni_ritardo > 0 ? AMBER : TEAL_DEEP, fontWeight: 700 }}>
-                · 💰 Pagata {new Date(f.pagata_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
+                · Pagata {new Date(f.pagata_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
                 {f.giorni_ritardo > 0 && ` (+${f.giorni_ritardo}g)`}
               </span>
             )}
@@ -143,12 +144,21 @@ function CardFattura({ f, onApriCommessa }: { f: FatturaCliente; onApriCommessa?
   );
 }
 
-function KpiBox({ icon, label, val, col }: any) {
+function KpiBox({ icon, Ico, label, val, col }: any) {
   return (
     <div style={{ background: '#F8FAFA', padding: '8px 6px', borderRadius: 7, textAlign: 'center' as const }}>
-      <div style={{ fontSize: 13, marginBottom: 2 }}>{icon}</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 3, height: 14 }}>
+        {Ico ? <Ico size={13} color={col} /> : icon ? <span style={{ fontSize: 13 }}>{icon}</span> : null}
+      </div>
       <div style={{ fontSize: 12, fontWeight: 800, color: col, lineHeight: 1.1 }}>{val}</div>
       <div style={{ fontSize: 7, color: MUTED, fontWeight: 700, letterSpacing: 0.4, marginTop: 3 }}>{label}</div>
     </div>
   );
+}
+
+
+function FattIco({ pagata, scad, col }: any) {
+  if (pagata) return <IcoCheck size={18} color={col} />;
+  if (scad) return <IcoAlertTriangle size={18} color={col} />;
+  return <IcoCalendar size={18} color={col} />;
 }

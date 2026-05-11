@@ -4,7 +4,9 @@
 
 import React, { useState, useMemo } from "react";
 import { useComunicazioni, toggleRispondere, marcaLetto, type Comunicazione } from "../../hooks/useComunicazioni";
-import { IcoPaperclip } from "../IconLib";
+import { IcoPaperclip, IcoChat, IcoMail, IcoPhone, IcoMic, IcoFile } from "../IconLib";
+import ModalComunicazione from "../ModalComunicazione";
+function IcoPlusC({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}><line x1={12} y1={5} x2={12} y2={19}/><line x1={5} y1={12} x2={19} y2={12}/></svg>;}
 
 const NAVY = "#1E3A5F";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -12,28 +14,30 @@ const AMBER = "#D97706", RED = "#DC2626";
 const GREEN = "#10B981", BLUE = "#1E40AF", PURPLE = "#7E22CE";
 const TEXT = "#0F1F33", MUTED = "#5C6B7A";
 
-const CANALE_META: Record<string, { icon: string; col: string; bg: string; label: string }> = {
-  whatsapp: { icon: '💬', col: '#25D366', bg: '#DCFCE7', label: 'WhatsApp' },
-  email:    { icon: '✉️', col: BLUE,      bg: '#DBEAFE', label: 'Email' },
-  chiamata: { icon: '📞', col: TEAL,      bg: '#E1F5EE', label: 'Chiamata' },
-  vocale:   { icon: '🎙️', col: PURPLE,    bg: '#F3E8FF', label: 'Vocale' },
-  sms:      { icon: '📱', col: AMBER,     bg: '#FEF3C7', label: 'SMS' },
-  manuale:  { icon: '📝', col: MUTED,     bg: '#F1F4F7', label: 'Nota' },
+const CANALE_META: Record<string, { Ico: any; col: string; bg: string; label: string }> = {
+  whatsapp: { Ico: IcoChat,  col: '#0F6E56', bg: '#DCFCE7', label: 'WhatsApp' },
+  email:    { Ico: IcoMail,  col: BLUE,      bg: '#DBEAFE', label: 'Email' },
+  chiamata: { Ico: IcoPhone, col: TEAL,      bg: '#E1F5EE', label: 'Chiamata' },
+  vocale:   { Ico: IcoMic,   col: '#1E40AF', bg: '#DBEAFE', label: 'Vocale' },
+  sms:      { Ico: IcoChat,  col: AMBER,     bg: '#FEF3C7', label: 'SMS' },
+  manuale:  { Ico: IcoFile,  col: MUTED,     bg: '#F1F4F7', label: 'Nota' },
 };
 
 type FiltroCanale = 'tutti' | 'da_rispondere' | keyof typeof CANALE_META;
 
 interface Props {
   clienteId: string;
+  aziendaId: string;
   clienteTelefono?: string | null;
   clienteEmail?: string | null;
   onApriCommessa?: (cmId: string) => void;
 }
 
-export default function TabComunicazioni({ clienteId, clienteTelefono, clienteEmail, onApriCommessa }: Props) {
-  const { com, loading } = useComunicazioni(clienteId);
+export default function TabComunicazioni({ clienteId, aziendaId, clienteTelefono, clienteEmail, onApriCommessa }: Props) {
+  const { com, loading, reload } = useComunicazioni(clienteId);
   const [filtro, setFiltro] = useState<FiltroCanale>('tutti');
   const [search, setSearch] = useState('');
+  const [showAdd, setShowAdd] = useState(false);
 
   const filtered = useMemo(() => {
     let arr = com;
@@ -65,12 +69,16 @@ export default function TabComunicazioni({ clienteId, clienteTelefono, clienteEm
 
   return (
     <div>
-      {/* Stats bar */}
+      {/* Stats bar + bottone aggiungi */}
       <div style={{ background: '#fff', borderRadius: 10, padding: 10, marginBottom: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
         <StatBox label="TOTALE" val={stats.tot} col={NAVY} />
         <StatBox label="DA RISPONDERE" val={stats.da_rispondere} col={stats.da_rispondere > 0 ? AMBER : MUTED} />
         <StatBox label="NON LETTI" val={stats.non_letti} col={stats.non_letti > 0 ? RED : MUTED} />
       </div>
+      
+      <button onClick={() => setShowAdd(true)} style={{ width: '100%', padding: '10px 14px', background: NAVY, color: '#fff', border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 800, cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+        <IcoPlusC size={13} color="#fff" />REGISTRA COMUNICAZIONE
+      </button>
 
       {/* Search */}
       <div style={{ background: '#fff', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -87,12 +95,12 @@ export default function TabComunicazioni({ clienteId, clienteTelefono, clienteEm
       <div style={{ background: '#fff', padding: 8, borderRadius: 10, display: 'flex', gap: 5, overflowX: 'auto' as const, marginBottom: 12 }}>
         <Chip active={filtro === 'tutti'} onClick={() => setFiltro('tutti')} label="TUTTI" n={stats.tot} col={NAVY} />
         {stats.da_rispondere > 0 && (
-          <Chip active={filtro === 'da_rispondere'} onClick={() => setFiltro('da_rispondere')} label="🔴 DA RISPONDERE" n={stats.da_rispondere} col={AMBER} bg="#FEF3C7" />
+          <Chip active={filtro === 'da_rispondere'} onClick={() => setFiltro('da_rispondere')} label="DA RISPONDERE" n={stats.da_rispondere} col={AMBER} bg="#FEF3C7" />
         )}
         {Object.entries(CANALE_META).map(([k, v]) => {
           const n = stats.byCh[k] || 0;
           if (n === 0) return null;
-          return <Chip key={k} active={filtro === k} onClick={() => setFiltro(k as FiltroCanale)} label={v.icon + ' ' + v.label} n={n} col={v.col} bg={v.bg} />;
+          return <Chip key={k} active={filtro === k} onClick={() => setFiltro(k as FiltroCanale)} label={v.label} n={n} col={v.col} bg={v.bg} />;
         })}
       </div>
 
@@ -103,6 +111,10 @@ export default function TabComunicazioni({ clienteId, clienteTelefono, clienteEm
         </div>
       ) : (
         filtered.map(c => <CardCom key={c.id} c={c} onApriCommessa={onApriCommessa} clienteTelefono={clienteTelefono} clienteEmail={clienteEmail} />)
+      )}
+
+      {showAdd && (
+        <ModalComunicazione aziendaId={aziendaId} clienteId={clienteId} onClose={() => setShowAdd(false)} onSaved={reload} />
       )}
     </div>
   );
@@ -136,8 +148,8 @@ function CardCom({ c, onApriCommessa, clienteTelefono, clienteEmail }: any) {
       boxShadow: c.rispondere ? `0 0 0 2px ${AMBER}55` : '0 1px 3px rgba(0,0,0,0.04)',
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 9, background: m.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-          {m.icon}
+        <div style={{ width: 36, height: 36, borderRadius: 9, background: m.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <m.Ico size={17} color={m.col} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4, flexWrap: 'wrap' as const }}>
@@ -150,20 +162,20 @@ function CardCom({ c, onApriCommessa, clienteTelefono, clienteEmail }: any) {
                 {c.commessa_code}
               </button>
             )}
-            {c.rispondere && <span style={{ background: '#FEE2E2', color: '#991B1B', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>🔴 DA RISPONDERE</span>}
+            {c.rispondere && <span style={{ background: '#FEE2E2', color: '#991B1B', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>DA RISPONDERE</span>}
             {!c.letto && c.direzione === 'in' && <span style={{ background: BLUE, color: '#fff', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>NUOVO</span>}
           </div>
           
           {c.oggetto && <div style={{ fontSize: 12, fontWeight: 800, color: TEXT, marginBottom: 3 }}>{c.oggetto}</div>}
           <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.45, fontStyle: c.canale === 'vocale' ? 'italic' as const : 'normal' as const }}>
-            {c.canale === 'vocale' && '🎙️ '}
+            
             {c.contenuto}
           </div>
           {c.durata_secondi && c.canale === 'vocale' && (
-            <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>⏱ {c.durata_secondi}s</div>
+            <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>{c.durata_secondi}s</div>
           )}
           {c.durata_secondi && c.canale === 'chiamata' && (
-            <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>⏱ {Math.floor(c.durata_secondi / 60)}:{(c.durata_secondi % 60).toString().padStart(2, '0')}</div>
+            <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>{Math.floor(c.durata_secondi / 60)}:{(c.durata_secondi % 60).toString().padStart(2, '0')}</div>
           )}
           
           {/* FOTO INLINE */}
@@ -188,7 +200,7 @@ function CardCom({ c, onApriCommessa, clienteTelefono, clienteEmail }: any) {
           )}
           
           <div style={{ fontSize: 9, color: MUTED, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
-            <span>📅 {dataFmt}</span>
+            <span>{dataFmt}</span>
             {c.autore && <span>· {c.autore}</span>}
             {!c.letto && c.direzione === 'in' && (
               <button onClick={() => marcaLetto(c.id, true)} style={{ marginLeft: 'auto', background: '#F1F4F7', color: TEXT, border: 'none', borderRadius: 4, padding: '3px 7px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>
@@ -204,7 +216,7 @@ function CardCom({ c, onApriCommessa, clienteTelefono, clienteEmail }: any) {
               fontSize: 11, fontWeight: 800, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}>
-              {m.icon} RISPONDI ORA
+              <m.Ico size={13} color="#fff" /> RISPONDI ORA
             </button>
           )}
         </div>

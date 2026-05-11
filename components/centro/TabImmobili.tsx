@@ -7,7 +7,11 @@ import { useImmobiliCliente, useInfissiImmobile, type Immobile, type InfissoInst
 import { uploadFile } from "../../lib/uploadStorage";
 import { supabase } from "@/lib/supabase";
 import FotoGrid from "../FotoGrid";
-import { IcoLayout, IcoCamera, IcoUpload, IcoRefresh, IcoMap } from "../IconLib";
+import { IcoLayout, IcoCamera, IcoUpload, IcoRefresh, IcoMap, IcoSettings, IcoHome, IcoBuilding, IcoCalendar } from "../IconLib";
+import ModalImmobile from "../ModalImmobile";
+
+// Inline IcoPlus
+function IcoPlus({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}><line x1={12} y1={5} x2={12} y2={19}/><line x1={5} y1={12} x2={19} y2={12}/></svg>;}
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -17,50 +21,63 @@ const TEXT = "#0F1F33", MUTED = "#5C6B7A";
 const BG = "#F4F1EA";
 
 const TIPO_IMMOBILE: Record<string, { icon: string; label: string; col: string }> = {
-  villa:        { icon: '🏡', label: 'Villa',        col: TEAL_DEEP },
-  casa:         { icon: '🏠', label: 'Casa',         col: TEAL },
-  appartamento: { icon: '🏢', label: 'Appartamento', col: BLUE },
-  ufficio:      { icon: '🏢', label: 'Ufficio',      col: PURPLE },
-  negozio:      { icon: '🏪', label: 'Negozio',      col: AMBER },
-  capannone:    { icon: '🏭', label: 'Capannone',    col: '#6B21A8' },
-  altro:        { icon: '🏚️',  label: 'Altro',        col: MUTED },
+  villa:        { col: TEAL_DEEP, label: 'Villa' },
+  casa:         { col: TEAL, label: 'Casa' },
+  appartamento: { col: BLUE, label: 'Appartamento' },
+  ufficio:      { col: '#1E40AF', label: 'Ufficio' },
+  negozio:      { col: AMBER, label: 'Negozio' },
+  capannone:    { col: NAVY_DEEP, label: 'Capannone' },
+  altro:        { col: MUTED, label: 'Altro' },
 };
 
 const TIPO_INFISSO: Record<string, { icon: string; col: string }> = {
-  finestra:   { icon: '🪟', col: BLUE },
-  porta:      { icon: '🚪', col: '#7E22CE' },
-  scorrevole: { icon: '↔️',  col: TEAL },
-  persiana:   { icon: '🗂️',  col: AMBER },
+  finestra:   { col: BLUE },
+  porta:      { col: NAVY },
+  scorrevole: { col: TEAL },
+  persiana:   { col: AMBER },
 };
 
 interface Props {
   clienteId: string;
+  aziendaId: string;
   onApriCommessa?: (cmId: string) => void;
 }
 
-export default function TabImmobili({ clienteId, onApriCommessa }: Props) {
-  const { immobili, loading } = useImmobiliCliente(clienteId);
+export default function TabImmobili({ clienteId, aziendaId, onApriCommessa }: Props) {
+  const { immobili, loading, reload } = useImmobiliCliente(clienteId);
   const [immobileAperto, setImmobileAperto] = useState<Immobile | null>(null);
+  const [showNuovo, setShowNuovo] = useState(false);
+  const [immobileEdit, setImmobileEdit] = useState<Immobile | null>(null);
 
   if (loading) return <div style={{ padding: 30, textAlign: 'center' as const, color: MUTED }}>Caricamento immobili...</div>;
   
   if (immobili.length === 0) {
     return (
-      <div style={{ background: '#fff', borderRadius: 12, padding: 40, textAlign: 'center' as const }}>
-        <div style={{ fontSize: 48, marginBottom: 10 }}>🏠</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 4 }}>Nessun immobile registrato</div>
-        <div style={{ fontSize: 11, color: MUTED, marginBottom: 16 }}>Aggiungi il primo immobile per costruire lo storico tecnico</div>
-        <button style={{ padding: '10px 18px', background: TEAL_DEEP, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-          + Aggiungi immobile
-        </button>
-      </div>
+      <>
+        <div style={{ background: '#fff', borderRadius: 12, padding: 40, textAlign: 'center' as const }}>
+          <div style={{ width: 64, height: 64, borderRadius: 16, background: '#F1F4F7', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IcoLayout size={32} color={MUTED} />
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 4 }}>Nessun immobile registrato</div>
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 16 }}>Aggiungi il primo immobile per costruire lo storico tecnico</div>
+          <button onClick={() => setShowNuovo(true)} style={{ padding: '11px 18px', background: `linear-gradient(90deg, ${TEAL_DEEP}, #047857)`, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+            <IcoPlus size={14} color="#fff" />Aggiungi immobile
+          </button>
+        </div>
+        {showNuovo && <ModalImmobile aziendaId={aziendaId} clienteId={clienteId} onClose={() => setShowNuovo(false)} onSaved={reload} />}
+      </>
     );
   }
 
   return (
     <>
-      <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>
-        🏠 {immobili.length} IMMOBIL{immobili.length === 1 ? 'E' : 'I'} REGISTRAT{immobili.length === 1 ? 'O' : 'I'}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, fontWeight: 700, flex: 1 }}>
+          {immobili.length} IMMOBIL{immobili.length === 1 ? 'E' : 'I'} REGISTRAT{immobili.length === 1 ? 'O' : 'I'}
+        </div>
+        <button onClick={() => setShowNuovo(true)} style={{ padding: '7px 12px', background: TEAL_DEEP, color: '#fff', border: 'none', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <IcoPlus size={12} color="#fff" />AGGIUNGI
+        </button>
       </div>
       {immobili.map(i => <CardImmobile key={i.id} i={i} onClick={() => setImmobileAperto(i)} />)}
 
@@ -68,9 +85,12 @@ export default function TabImmobili({ clienteId, onApriCommessa }: Props) {
         <DrawerImmobile
           immobile={immobileAperto}
           onClose={() => setImmobileAperto(null)}
+          onEdit={(im: any) => { setImmobileAperto(null); setImmobileEdit(im); }}
           onApriCommessa={(cmId) => { setImmobileAperto(null); onApriCommessa?.(cmId); }}
         />
       )}
+      {showNuovo && <ModalImmobile aziendaId={aziendaId} clienteId={clienteId} onClose={() => setShowNuovo(false)} onSaved={reload} />}
+      {immobileEdit && <ModalImmobile aziendaId={aziendaId} clienteId={clienteId} immobile={immobileEdit} onClose={() => setImmobileEdit(null)} onSaved={reload} />}
     </>
   );
 }
@@ -85,8 +105,8 @@ function CardImmobile({ i, onClick }: { i: Immobile; onClick: () => void }) {
         {i.foto_url ? (
           <img src={i.foto_url} alt={i.nome} style={{ width: 64, height: 64, borderRadius: 10, objectFit: 'cover' as const }} />
         ) : (
-          <div style={{ width: 64, height: 64, borderRadius: 10, background: `linear-gradient(135deg, ${meta.col}, ${meta.col}aa)`, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30 }}>
-            {meta.icon}
+          <div style={{ width: 64, height: 64, borderRadius: 10, background: `linear-gradient(135deg, ${meta.col}, ${meta.col}aa)`, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IcoHome size={28} color='#fff' />
           </div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -98,11 +118,11 @@ function CardImmobile({ i, onClick }: { i: Immobile; onClick: () => void }) {
             <span style={{ background: meta.col + '22', color: meta.col, padding: '2px 7px', borderRadius: 4, fontSize: 9, fontWeight: 800 }}>{meta.label.toUpperCase()}</span>
             {i.anno_costruzione && <span style={{ background: '#F1F4F7', color: MUTED, padding: '2px 7px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>{i.anno_costruzione}</span>}
           </div>
-          <div style={{ fontSize: 10, color: MUTED }}>📍 {i.indirizzo}, {i.citta} ({i.provincia})</div>
+          <div style={{ fontSize: 10, color: MUTED }}>{i.indirizzo}, {i.citta} ({i.provincia})</div>
           <div style={{ display: 'flex', gap: 10, marginTop: 6, fontSize: 10, color: MUTED }}>
-            {i.mq_totali && <span>📐 <strong style={{ color: TEXT }}>{i.mq_totali}m²</strong></span>}
-            <span>🏗️ <strong style={{ color: TEXT }}>{i.num_piani}p</strong></span>
-            <span style={{ marginLeft: 'auto' }}>🪟 <strong style={{ color: TEAL_DEEP }}>{i.num_infissi || 0} infiss{(i.num_infissi || 0) === 1 ? 'o' : 'i'}</strong></span>
+            {i.mq_totali && <span><strong style={{ color: TEXT }}>{i.mq_totali}m²</strong></span>}
+            <span><strong style={{ color: TEXT }}>{i.num_piani} piani</strong></span>
+            <span style={{ marginLeft: 'auto' }}><strong style={{ color: TEAL_DEEP }}>{i.num_infissi || 0} infiss{(i.num_infissi || 0) === 1 ? 'o' : 'i'}</strong></span>
           </div>
         </div>
       </div>
@@ -111,7 +131,7 @@ function CardImmobile({ i, onClick }: { i: Immobile; onClick: () => void }) {
 }
 
 // =============== DRAWER IMMOBILE ===============
-function DrawerImmobile({ immobile, onClose, onApriCommessa }: any) {
+function DrawerImmobile({ immobile, onClose, onApriCommessa, onEdit }: any) {
   const { infissi, modifiche, loading } = useInfissiImmobile(immobile.id);
   const [tab, setTab] = useState<'infissi' | 'planimetria' | 'modifiche'>('infissi');
   const meta = TIPO_IMMOBILE[immobile.tipo] || TIPO_IMMOBILE.altro;
@@ -132,29 +152,34 @@ function DrawerImmobile({ immobile, onClose, onApriCommessa }: any) {
           {immobile.foto_url ? (
             <img src={immobile.foto_url} alt="" style={{ width: 60, height: 60, borderRadius: 12, objectFit: 'cover' as const, border: '2px solid rgba(255,255,255,0.3)' }} />
           ) : (
-            <div style={{ width: 60, height: 60, borderRadius: 12, background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>{meta.icon}</div>
+            <div style={{ width: 60, height: 60, borderRadius: 12, background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IcoHome size={28} color='#fff' /></div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 9, letterSpacing: 1, color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>IMMOBILE</div>
             <div style={{ fontSize: 18, fontWeight: 800 }}>{immobile.nome}</div>
             <div style={{ fontSize: 11, opacity: 0.9, marginTop: 2 }}>{immobile.indirizzo}, {immobile.citta}</div>
           </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.25)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, fontWeight: 700 }}>×</button>
+          <button onClick={() => onEdit?.(immobile)} style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(255,255,255,0.25)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IcoSettings size={16} color="#fff" />
+          </button>
+          <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(255,255,255,0.25)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 18, fontWeight: 700 }}>×</span>
+          </button>
         </div>
 
         {/* KPI */}
         <div style={{ background: 'rgba(255,255,255,0.5)', padding: 10, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-          <StatBox icon="📐" label="MQ" val={immobile.mq_totali || '—'} col={TEAL_DEEP} />
-          <StatBox icon="🏗️" label="PIANI" val={immobile.num_piani} col={NAVY} />
-          <StatBox icon="🪟" label="INFISSI" val={infissi.reduce((s, i) => s + Number(i.pezzi || 1), 0)} col={BLUE} />
-          <StatBox icon="📅" label="ANNO" val={immobile.anno_costruzione || '—'} col={PURPLE} />
+          <StatBox Ico={IcoLayout} label="MQ" val={immobile.mq_totali || '—'} col={TEAL_DEEP} />
+          <StatBox Ico={IcoBuilding} label="PIANI" val={immobile.num_piani} col={NAVY} />
+          <StatBox Ico={IcoLayout} label="INFISSI" val={infissi.reduce((s, i) => s + Number(i.pezzi || 1), 0)} col={BLUE} />
+          <StatBox Ico={IcoCalendar} label="ANNO" val={immobile.anno_costruzione || '—'} col={NAVY} />
         </div>
 
         {/* Tab switcher */}
         <div style={{ background: '#fff', margin: '8px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2 }}>
-          <TabBtn active={tab === 'infissi'} onClick={() => setTab('infissi')} label="🪟 Infissi" badge={infissi.length} />
-          <TabBtn active={tab === 'planimetria'} onClick={() => setTab('planimetria')} label="📐 Planimetria" />
-          <TabBtn active={tab === 'modifiche'} onClick={() => setTab('modifiche')} label="🔧 Modifiche" badge={modifiche.length} />
+          <TabBtn active={tab === 'infissi'} onClick={() => setTab('infissi')} label="Infissi" badge={infissi.length} />
+          <TabBtn active={tab === 'planimetria'} onClick={() => setTab('planimetria')} label="Planimetria" />
+          <TabBtn active={tab === 'modifiche'} onClick={() => setTab('modifiche')} label="Modifiche" badge={modifiche.length} />
         </div>
 
         {/* Body */}
@@ -169,7 +194,7 @@ function DrawerImmobile({ immobile, onClose, onApriCommessa }: any) {
             ) : Object.entries(byPiano).map(([piano, lista]) => (
               <div key={piano} style={{ marginBottom: 14 }}>
                 <div style={{ background: NAVY, color: '#fff', padding: '7px 12px', borderRadius: '8px 8px 0 0', fontSize: 11, fontWeight: 800, letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>🏗️</span>{piano.toUpperCase()}
+                  <IcoBuilding size={11} color="#fff" /><span>{piano.toUpperCase()}</span>
                   <span style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.2)', padding: '2px 7px', borderRadius: 3, fontSize: 10 }}>{lista.length}</span>
                 </div>
                 {lista.map(inf => <CardInfisso key={inf.id} inf={inf} onApriCommessa={onApriCommessa} />)}
@@ -188,7 +213,7 @@ function DrawerImmobile({ immobile, onClose, onApriCommessa }: any) {
 
 // =============== CARD INFISSO STORICO ===============
 function CardInfisso({ inf, onApriCommessa }: { inf: InfissoInstallato; onApriCommessa?: any }) {
-  const tipoMeta = TIPO_INFISSO[inf.tipo || ''] || { icon: '📐', col: MUTED };
+  const tipoMeta = TIPO_INFISSO[inf.tipo || ''] || { col: MUTED };
   const inGaranzia = inf.garanzia_fino && new Date(inf.garanzia_fino) > new Date();
   const giorniDallaInstall = Math.floor((Date.now() - new Date(inf.data_installazione).getTime()) / 86400000);
   const anniInstall = (giorniDallaInstall / 365).toFixed(1);
@@ -196,14 +221,14 @@ function CardInfisso({ inf, onApriCommessa }: { inf: InfissoInstallato; onApriCo
   return (
     <div style={{ background: '#fff', padding: 12, borderRadius: '0 0 8px 8px', marginBottom: 0, borderBottom: '1px solid #F1F4F7', borderLeft: `3px solid ${tipoMeta.col}` }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
-        <div style={{ width: 38, height: 38, borderRadius: 9, background: tipoMeta.col + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{tipoMeta.icon}</div>
+        <div style={{ width: 38, height: 38, borderRadius: 9, background: tipoMeta.col + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IcoLayout size={18} color={tipoMeta.col} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2, flexWrap: 'wrap' as const }}>
             <span style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{inf.nome_vano || inf.stanza}</span>
             <span style={{ background: tipoMeta.col + '22', color: tipoMeta.col, padding: '1px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>{inf.tipo?.toUpperCase()}</span>
             {inf.pezzi > 1 && <span style={{ background: '#F1F4F7', color: TEXT, padding: '1px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}>×{inf.pezzi}</span>}
-            {inGaranzia && <span style={{ background: '#D1FAE5', color: TEAL_DEEP, padding: '1px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>🟢 IN GARANZIA</span>}
-            {inf.modificato && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '1px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>🔧 MODIFICATO</span>}
+            {inGaranzia && <span style={{ background: '#D1FAE5', color: TEAL_DEEP, padding: '1px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>IN GARANZIA</span>}
+            {inf.modificato && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '1px 6px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>MODIFICATO</span>}
           </div>
           <div style={{ fontSize: 11, color: MUTED }}>
             {inf.sistema} {inf.sottosistema && `· ${inf.sottosistema}`}
@@ -214,25 +239,25 @@ function CardInfisso({ inf, onApriCommessa }: { inf: InfissoInstallato; onApriCo
 
       {/* Specifiche tecniche */}
       <div style={{ background: '#F8FAFA', borderRadius: 7, padding: 9, fontSize: 10 }}>
-        <SpecRow label="🎨 COLORE" val={`${inf.colore_int}${inf.ral_int ? ` (RAL ${inf.ral_int})` : ''}${inf.bicolore ? ` int / ${inf.colore_est} est` : ''}`} />
-        {inf.marca_profilo && <SpecRow label="🔧 PROFILO" val={`${inf.marca_profilo} ${inf.serie_profilo || ''}`} />}
-        {inf.vetro_tipo && <SpecRow label="🪟 VETRO" val={`${inf.vetro_tipo}${inf.vetro_uw ? ` · Uw ${inf.vetro_uw}` : ''}${inf.vetro_ug ? ` · Ug ${inf.vetro_ug}` : ''}`} />}
-        {inf.ferramenta_marca && <SpecRow label="⚙️ FERRAM." val={`${inf.ferramenta_marca} ${inf.ferramenta_modello || ''}`} />}
-        {inf.motore_marca && <SpecRow label="⚡ MOTORE" val={`${inf.motore_marca} ${inf.motore_modello || ''}`} />}
+        <SpecRow label="COLORE" val={`${inf.colore_int}${inf.ral_int ? ` (RAL ${inf.ral_int})` : ''}${inf.bicolore ? ` int / ${inf.colore_est} est` : ''}`} />
+        {inf.marca_profilo && <SpecRow label="PROFILO" val={`${inf.marca_profilo} ${inf.serie_profilo || ''}`} />}
+        {inf.vetro_tipo && <SpecRow label="VETRO" val={`${inf.vetro_tipo}${inf.vetro_uw ? ` · Uw ${inf.vetro_uw}` : ''}${inf.vetro_ug ? ` · Ug ${inf.vetro_ug}` : ''}`} />}
+        {inf.ferramenta_marca && <SpecRow label="FERRAM." val={`${inf.ferramenta_marca} ${inf.ferramenta_modello || ''}`} />}
+        {inf.motore_marca && <SpecRow label="MOTORE" val={`${inf.motore_marca} ${inf.motore_modello || ''}`} />}
         <div style={{ display: 'flex', gap: 8, marginTop: 5, flexWrap: 'wrap' as const }}>
-          {inf.cassonetto && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}>📦 Cassonetto</span>}
-          {inf.persiana && <span style={{ background: '#F3E8FF', color: PURPLE, padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}>🗂️ Persiana</span>}
-          {inf.zanzariera && <span style={{ background: '#E1F5EE', color: TEAL_DEEP, padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}>🦟 Zanzariera</span>}
+          {inf.cassonetto && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}>Cassonetto</span>}
+          {inf.persiana && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}>Persiana</span>}
+          {inf.zanzariera && <span style={{ background: '#E1F5EE', color: TEAL_DEEP, padding: '2px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700 }}>Zanzariera</span>}
         </div>
       </div>
 
       {/* Data + commessa */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 10, color: MUTED, flexWrap: 'wrap' as const }}>
-        <span>📅 Installato {new Date(inf.data_installazione).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+        <span>Installato {new Date(inf.data_installazione).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
         <span>· <strong style={{ color: TEXT }}>{anniInstall} anni fa</strong></span>
         {inf.garanzia_fino && (
           <span style={{ color: inGaranzia ? TEAL_DEEP : MUTED, fontWeight: 700 }}>
-            🛡️ {inGaranzia ? `Garanzia fino ${new Date(inf.garanzia_fino).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}` : 'Garanzia scaduta'}
+            {inGaranzia ? `Garanzia fino ${new Date(inf.garanzia_fino).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}` : 'Garanzia scaduta'}
           </span>
         )}
         {inf.commessa_code && (
@@ -310,7 +335,7 @@ function ViewModifiche({ modifiche, infissi }: any) {
   if (modifiche.length === 0) {
     return (
       <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const }}>
-        <div style={{ fontSize: 48, marginBottom: 10 }}>🔧</div>
+        <div style={{ width: 64, height: 64, borderRadius: 16, background: "#F1F4F7", margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}><IcoRefresh size={32} color={MUTED} /></div>
         <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 4 }}>Nessuna modifica registrata</div>
         <div style={{ fontSize: 11, color: MUTED }}>Riparazioni, regolazioni o sostituzioni appariranno qui</div>
       </div>
@@ -320,21 +345,21 @@ function ViewModifiche({ modifiche, infissi }: any) {
   infissi.forEach((i: InfissoInstallato) => { infMap[i.id] = i; });
 
   const tipiMeta: Record<string, { icon: string; col: string; bg: string }> = {
-    sostituzione: { icon: '🔄', col: AMBER, bg: '#FEF3C7' },
-    riparazione:  { icon: '🔧', col: RED,   bg: '#FEE2E2' },
-    manutenzione: { icon: '🛠️',  col: BLUE,  bg: '#DBEAFE' },
-    regolazione:  { icon: '⚙️',  col: TEAL,  bg: '#E1F5EE' },
+    sostituzione: { col: AMBER, bg: '#FEF3C7' },
+    riparazione:  { col: RED,   bg: '#FEE2E2' },
+    manutenzione: { col: BLUE,  bg: '#DBEAFE' },
+    regolazione:  { col: TEAL,  bg: '#E1F5EE' },
   };
 
   return (
     <>
       {modifiche.map((m: any) => {
         const inf = infMap[m.infisso_id];
-        const tipo = tipiMeta[m.tipo_modifica] || { icon: '📝', col: MUTED, bg: '#F1F4F7' };
+        const tipo = tipiMeta[m.tipo_modifica] || { col: MUTED, bg: '#F1F4F7' };
         return (
           <div key={m.id} style={{ background: '#fff', borderRadius: 10, padding: 12, marginBottom: 6, borderLeft: `4px solid ${tipo.col}` }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 9, background: tipo.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{tipo.icon}</div>
+              <div style={{ width: 38, height: 38, borderRadius: 9, background: tipo.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IcoRefresh size={16} color={tipo.col} /></div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3, flexWrap: 'wrap' as const }}>
                   <span style={{ background: tipo.bg, color: tipo.col, padding: '2px 7px', borderRadius: 3, fontSize: 9, fontWeight: 800 }}>{m.tipo_modifica.toUpperCase()}</span>
@@ -342,7 +367,7 @@ function ViewModifiche({ modifiche, infissi }: any) {
                 </div>
                 <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.4 }}>{m.descrizione}</div>
                 <div style={{ fontSize: 10, color: MUTED, marginTop: 5, display: 'flex', gap: 10 }}>
-                  <span>📅 {new Date(m.data_modifica).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                  <span>{new Date(m.data_modifica).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                   {m.autore && <span>· {m.autore}</span>}
                   {m.costo && <span style={{ marginLeft: 'auto', color: TEXT, fontWeight: 700 }}>€{Number(m.costo).toFixed(2)}</span>}
                 </div>
@@ -365,10 +390,12 @@ function SpecRow({ label, val }: any) {
   );
 }
 
-function StatBox({ icon, label, val, col }: any) {
+function StatBox({ icon, Ico, label, val, col }: any) {
   return (
     <div style={{ background: '#fff', padding: '8px 6px', borderRadius: 7, textAlign: 'center' as const, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-      <div style={{ fontSize: 12, marginBottom: 2 }}>{icon}</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 3, height: 14 }}>
+        {Ico ? <Ico size={13} color={col} /> : icon ? <span style={{ fontSize: 12 }}>{icon}</span> : null}
+      </div>
       <div style={{ fontSize: 14, fontWeight: 800, color: col, lineHeight: 1 }}>{val}</div>
       <div style={{ fontSize: 7, color: MUTED, fontWeight: 700, letterSpacing: 0.4, marginTop: 3 }}>{label}</div>
     </div>

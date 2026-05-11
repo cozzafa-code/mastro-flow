@@ -214,7 +214,7 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
             </button>
           </div>
           <textarea value={descrizione} onChange={e => setDescrizione(e.target.value)}
-            placeholder={recording ? 'Sto ascoltando...' : 'Descrizione dettagliata (o premi 🎤 e detta a voce)'}
+            placeholder={recording ? 'Sto ascoltando...' : 'Descrizione dettagliata (o premi DETTA per dettare a voce)'}
             rows={5}
             style={{ width: '100%', padding: '11px 12px', fontSize: 12, lineHeight: 1.4, border: '1.5px solid ' + (recording ? RED : '#E5EAF0'), borderRadius: 8, marginBottom: 4, fontFamily: 'inherit', boxSizing: 'border-box' as const, resize: 'vertical' as const }} />
           {recording && trascrizione && (
