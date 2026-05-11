@@ -21,7 +21,6 @@ import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import { useMastro } from "./MastroContext";
 import SchedaFinanziariaCommessa from "./finanze/SchedaFinanziariaCommessa";
 import CardPLCommessa from "./finanze/CardPLCommessa";
-import CardPLCommessa from "./finanze/CardPLCommessa";
 import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey, markPreventivoInviato, setFaseCommessa } from "./mastro-constants";
 import { buildSnapshot, creaFascicolo, getFascicoliCommessa, revocaFascicolo } from "../lib/fascicolo-service";
 import { generaFascicoloGeometraPDF } from "../lib/pdf-fascicolo";
