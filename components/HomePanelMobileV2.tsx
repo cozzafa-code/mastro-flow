@@ -7,6 +7,7 @@ import CentroControlloMontaggi from "./CentroControlloMontaggi";
 import CentroControlloOrdini from "./CentroControlloOrdini";
 import CentroControlloMagazzino from "./CentroControlloMagazzino";
 import CentroPreparazioneFurgoni from "./CentroPreparazioneFurgoni";
+import CentroFatturazione from "./CentroFatturazione";
 import CentroControlloProduzione from "./CentroControlloProduzione";
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
@@ -115,6 +116,7 @@ export default function HomePanelMobileV2(props: any) {
   const [showCentroOrdini, setShowCentroOrdini] = React.useState(false);
   const [showCentroMagazzino, setShowCentroMagazzino] = React.useState(false);
   const [showCentroFurgoni, setShowCentroFurgoni] = React.useState(false);
+  const [showCentroFatturazione, setShowCentroFatturazione] = React.useState(false);
   const { data } = useHomeMobile()
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const [editMode, setEditMode] = useState(false)
@@ -284,6 +286,7 @@ export default function HomePanelMobileV2(props: any) {
             onOrdini={() => setShowCentroOrdini(true)}
             onMagazzino={() => setShowCentroMagazzino(true)}
             onFurgoni={() => setShowCentroFurgoni(true)}
+            onFatturazione={() => setShowCentroFatturazione(true)}
             onMateriali={() => goto('materiali')}
             onMagazzino={() => goto('materiali')}
             onClienti={() => goto('clienti')}
@@ -382,6 +385,13 @@ export default function HomePanelMobileV2(props: any) {
           aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
           onClose={() => setShowCentroFurgoni(false)}
           onApriCommessa={(cmCode: string) => { const cm = (cantieri||[]).find((c: any)=>c.code===cmCode); if(cm) { setShowCentroFurgoni(false); setOrganizzaCm(cm); } }}
+        />
+      )}
+      {showCentroFatturazione && (
+        <CentroFatturazione
+          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          onClose={() => setShowCentroFatturazione(false)}
+          onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroFatturazione(false); setOrganizzaCm(cm); } }}
         />
       )}
     </div>

@@ -11,6 +11,7 @@ interface Props {
   onMontaggi?: () => void;
   onOrdini?: () => void;
   onFurgoni?: () => void;
+  onFatturazione?: () => void;
   onMateriali?: () => void;
   onMagazzino?: () => void;
   onClienti?: () => void;
@@ -110,6 +111,7 @@ export default function CardAzioniVeloci(props: Props) {
         <Tile primary amber onClick={props.onOrdini || props.onMateriali} count={counts.materiali} label="Ordini" sub="Catena operativa" icon={<IB color="#fff" />} />
         <Tile primary purple onClick={props.onMagazzino} count={counts.magazzino} label="Magazzino" sub="Mappa scaffali" icon={<IA color="#fff" />} />
         <Tile onClick={props.onFurgoni} label="Furgoni" sub="Preparazione carichi" accent="#0E7490" accentBg="#CFFAFE" border icon={<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#0E7490" strokeWidth={2}><rect x={1} y={3} width={15} height={13}/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx={5.5} cy={18.5} r={2.5}/><circle cx={18.5} cy={18.5} r={2.5}/></svg>} />
+        <Tile onClick={props.onFatturazione} label="Fatture" sub="SDI elettronica" accent="#0F6E56" accentBg="#D1FAE5" border icon={<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth={2}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1={16} y1={13} x2={8} y2={13}/><line x1={16} y1={17} x2={8} y2={17}/><polyline points="10 9 9 9 8 9"/></svg>} />
         <Tile onClick={props.onClienti} count={counts.clienti} label="Clienti" sub="Anagrafica" accent="#9A3412" accentBg="#FFEDD5" icon={<IU color="#9A3412" />} />
         <Tile onClick={props.onAgenda} count={counts.agenda} label="Agenda" sub="Appuntamenti" accent="#155E75" accentBg="#CFFAFE" icon={<IC color="#155E75" />} />
         <Tile onClick={props.onTeam} count={counts.team} label="Team" sub="Operatori" accent="#9F1239" accentBg="#FCE7F3" icon={<IG color="#9F1239" />} />
