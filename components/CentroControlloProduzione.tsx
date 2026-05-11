@@ -1,8 +1,6 @@
 "use client";
 // components/CentroControlloProduzione.tsx
-// Centro Controllo Produzione - mockup approvato:
-// - Vista OVERVIEW: KPI + carico macchinari + lista commesse
-// - Vista KANBAN: 4 colonne Da avviare / In produzione / Pronto montaggio / Bloccato
+// Mockup approvato - 2 viste: OVERVIEW + KANBAN
 
 import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
@@ -14,7 +12,7 @@ const TEXT = "#0F1F33", MUTED = "#5C6B7A";
 const BG = "#F4F1EA";
 
 interface Commessa {
-  id: string; code: string; cliente: string; cognome: string | null; indirizzo: string | null;
+  id: string; code: string; cliente: string; cognome: string | null;
   fase: string; materiali_status: string; materiali_perc: number;
   produzione_iniziata_at: string | null; produzione_completata_at: string | null;
   totale_finale: number; total_vani?: number;
@@ -42,7 +40,7 @@ export default function CentroControlloProduzione({ aziendaId, onClose, onApriCo
     async function load() {
       const { data } = await supabase
         .from("commesse")
-        .select("id, code, cliente, cognome, indirizzo, fase, materiali_status, materiali_perc, produzione_iniziata_at, produzione_completata_at, totale_finale, total_vani")
+        .select("id, code, cliente, cognome, fase, materiali_status, materiali_perc, produzione_iniziata_at, produzione_completata_at, totale_finale, total_vani")
         .eq("azienda_id", resolved)
         .in("fase", ["ordine", "acconto_pagato", "produzione", "montaggio"])
         .order("created_at", { ascending: false });
@@ -66,48 +64,34 @@ export default function CentroControlloProduzione({ aziendaId, onClose, onApriCo
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 9800, overflowY: 'auto', paddingBottom: 80 }}>
-      <Header onClose={onClose} title="Produzione" subtitle="CENTRO CONTROLLO" stats={stats} />
-      <ViewSwitch view={view} setView={setView} options={[
-        { key: 'overview', label: 'Overview' },
-        { key: 'kanban', label: 'Kanban' },
-      ]} />
+      <div style={{ background: `linear-gradient(180deg, ${NAVY_DEEP} 0%, ${NAVY} 100%)`, padding: '14px 14px 18px', color: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9, letterSpacing: 1.2, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>CENTRO CONTROLLO</div>
+            <div style={{ fontSize: 17, fontWeight: 600, marginTop: 2 }}>Produzione</div>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
+          <Kpi color="rgba(40,160,160,0.22)" border={TEAL} fg="#A7E5E5" label="TEMPO" val={stats.tempo} />
+          <Kpi color="rgba(217,119,6,0.22)" border={AMBER} fg="#FBBF24" label="SOVR." val={stats.sovrac} />
+          <Kpi color="rgba(220,38,38,0.22)" border={RED} fg="#FCA5A5" label="RIT." val={stats.ritardo} />
+          <Kpi color="rgba(255,255,255,0.08)" fg="rgba(255,255,255,0.6)" label="STOP" val={stats.stop} />
+        </div>
+      </div>
+
+      <div style={{ background: '#fff', margin: '-8px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, position: 'relative', zIndex: 2 }}>
+        <button onClick={() => setView('overview')} style={{ flex: 1, padding: '9px 0', fontSize: 12, fontWeight: 500, color: view === 'overview' ? '#fff' : MUTED, background: view === 'overview' ? NAVY : 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer' }}>Overview</button>
+        <button onClick={() => setView('kanban')} style={{ flex: 1, padding: '9px 0', fontSize: 12, fontWeight: 500, color: view === 'kanban' ? '#fff' : MUTED, background: view === 'kanban' ? NAVY : 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer' }}>Kanban</button>
+      </div>
+
       <div style={{ padding: 14 }}>
         {loading ? <Empty label="Caricamento..." /> :
          view === 'overview' ? <Overview commesse={commesse} onApri={onApriCommessa} /> :
          <Kanban commesse={commesse} onApri={onApriCommessa} />}
       </div>
-    </div>
-  );
-}
-
-function Header({ onClose, title, subtitle, stats }: any) {
-  return (
-    <div style={{ background: `linear-gradient(180deg, ${NAVY_DEEP} 0%, ${NAVY} 100%)`, padding: '14px 14px 18px', color: '#fff' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 9, letterSpacing: 1.2, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{subtitle}</div>
-          <div style={{ fontSize: 17, fontWeight: 600, marginTop: 2 }}>{title}</div>
-        </div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
-        <Kpi color="rgba(40,160,160,0.22)" border={TEAL} fg="#A7E5E5" label="TEMPO" val={stats.tempo} />
-        <Kpi color="rgba(217,119,6,0.22)" border={AMBER} fg="#FBBF24" label="SOVR." val={stats.sovrac} />
-        <Kpi color="rgba(220,38,38,0.22)" border={RED} fg="#FCA5A5" label="RIT." val={stats.ritardo} />
-        <Kpi color="rgba(255,255,255,0.08)" fg="rgba(255,255,255,0.6)" label="STOP" val={stats.stop} />
-      </div>
-    </div>
-  );
-}
-
-function ViewSwitch({ view, setView, options }: any) {
-  return (
-    <div style={{ background: '#fff', margin: '-8px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, position: 'relative', zIndex: 2 }}>
-      {options.map((o: any) => (
-        <button key={o.key} onClick={() => setView(o.key)} style={{ flex: 1, padding: '9px 0', fontSize: 12, fontWeight: 500, color: view === o.key ? '#fff' : MUTED, background: view === o.key ? NAVY : 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer' }}>{o.label}</button>
-      ))}
     </div>
   );
 }
@@ -150,9 +134,9 @@ function Kanban({ commesse, onApri }: any) {
     { key: 'bloccato', title: 'BLOCCATO', color: RED, items: commesse.filter((c: Commessa) => c.materiali_status === 'in_attesa') },
   ];
   return (
-    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' as const }}>
+    <div style={{ display: 'flex', gap: 10, overflowX: 'auto' as const, paddingBottom: 8, scrollSnapType: 'x mandatory' as any }}>
       {cols.map(col => (
-        <div key={col.key} style={{ minWidth: 260, scrollSnapAlign: 'start' as const }}>
+        <div key={col.key} style={{ minWidth: 260, scrollSnapAlign: 'start' as any }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '0 4px' }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: col.color }} />
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: TEXT }}>{col.title}</div>
@@ -161,21 +145,17 @@ function Kanban({ commesse, onApri }: any) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {col.items.length === 0 ?
               <div style={{ background: 'rgba(255,255,255,0.5)', borderRadius: 10, padding: 20, textAlign: 'center' as const, fontSize: 10, color: MUTED, border: '1px dashed #E5EAF0' }}>Vuoto</div> :
-              col.items.map((c: Commessa) => <KanbanCard key={c.id} cm={c} onClick={() => onApri?.(c.id)} />)}
+              col.items.map((c: Commessa) => (
+                <div key={c.id} onClick={() => onApri?.(c.id)} style={{ background: '#fff', borderRadius: 10, padding: 10, cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, marginBottom: 3 }}>{c.code}</div>
+                  <div style={{ fontSize: 10, color: MUTED, marginBottom: 6 }}>{c.cliente} {c.cognome || ''}</div>
+                  <div style={{ fontSize: 9, color: MUTED, marginBottom: 4 }}>{c.total_vani || 0} vani · €{Number(c.totale_finale || 0).toFixed(0)}</div>
+                  <MatBar status={c.materiali_status} perc={c.materiali_perc} />
+                </div>
+              ))}
           </div>
         </div>
       ))}
-    </div>
-  );
-}
-
-function KanbanCard({ cm, onClick }: any) {
-  return (
-    <div onClick={onClick} style={{ background: '#fff', borderRadius: 10, padding: 10, cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, marginBottom: 3 }}>{cm.code}</div>
-      <div style={{ fontSize: 10, color: MUTED, marginBottom: 6 }}>{cm.cliente} {cm.cognome || ''}</div>
-      <div style={{ fontSize: 9, color: MUTED, marginBottom: 4 }}>{cm.total_vani || 0} vani · €{Number(cm.totale_finale || 0).toFixed(0)}</div>
-      <MatBar status={cm.materiali_status} perc={cm.materiali_perc} />
     </div>
   );
 }
