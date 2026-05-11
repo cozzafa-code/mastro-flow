@@ -287,8 +287,6 @@ export default function HomePanelMobileV2(props: any) {
             onMagazzino={() => setShowCentroMagazzino(true)}
             onFurgoni={() => setShowCentroFurgoni(true)}
             onFatturazione={() => setShowCentroFatturazione(true)}
-            onMateriali={() => goto('materiali')}
-            onMagazzino={() => goto('materiali')}
             onClienti={() => goto('clienti')}
             onAgenda={() => goto('agenda')}
             onTeam={() => goto('team')}
