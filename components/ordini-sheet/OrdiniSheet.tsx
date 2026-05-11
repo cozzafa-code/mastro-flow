@@ -43,7 +43,13 @@ export default function OrdiniSheet({ commessa, onClose, onCompletato }: Props) 
   async function inviaTutti(soloBozza: boolean) {
     setSubmitting(true)
     try {
-      const aziendaId = sessionStorage.getItem("mastro:aziendaId") || localStorage.getItem("mastro:aziendaId")
+      // [v-fix-azienda] Priorità: commessa.azienda_id → sessionStorage → localStorage
+      const aziendaId =
+        commessa?.azienda_id ||
+        commessa?.aziendaId ||
+        (typeof window !== "undefined" && sessionStorage.getItem("mastro:aziendaId")) ||
+        (typeof window !== "undefined" && localStorage.getItem("mastro:aziendaId"))
+      console.log("[OrdiniSheet] aziendaId risolto:", aziendaId, "da commessa:", commessa?.azienda_id)
       if (!aziendaId) { alert("Azienda non identificata"); return }
       const r = await fetch("/api/ordini/crea-bulk", {
         method: "POST",
