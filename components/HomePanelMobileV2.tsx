@@ -1,4 +1,4 @@
-// HomePanelMobileV2 V17 - aggancio Centro Finanze
+// HomePanelMobileV2 V18 - card Contabilità unica → CentroFinanze (legacy CentroFatturazione rimosso)
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
 import CardAzioniVeloci from "./home/CardAzioniVeloci";
@@ -7,7 +7,6 @@ import CentroControlloMontaggi from "./CentroControlloMontaggi";
 import CentroControlloOrdini from "./CentroControlloOrdini";
 import CentroControlloMagazzino from "./CentroControlloMagazzino";
 import CentroPreparazioneFurgoni from "./CentroPreparazioneFurgoni";
-import CentroFatturazione from "./CentroFatturazione";
 import CentroClienti from "./CentroClienti";
 import CentroControlloProduzione from "./CentroControlloProduzione";
 import CentroFinanze from "./CentroFinanze";
@@ -94,7 +93,6 @@ const parseEventDate = (e: any): Date => {
 const eventTitle = (e: any) => e?.text || e?.titolo || e?.title || ''
 const eventLuogo = (e: any) => e?.addr || e?.indirizzo || e?.luogo || ''
 
-// === Icone SVG inline (no emoji) ===
 const IcoCal = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
 const IcoClock = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>
 const IcoPin = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg>
@@ -113,7 +111,6 @@ export default function HomePanelMobileV2(props: any) {
   const [showCentroOrdini, setShowCentroOrdini] = React.useState(false);
   const [showCentroMagazzino, setShowCentroMagazzino] = React.useState(false);
   const [showCentroFurgoni, setShowCentroFurgoni] = React.useState(false);
-  const [showCentroFatturazione, setShowCentroFatturazione] = React.useState(false);
   const [showCentroClienti, setShowCentroClienti] = React.useState(false);
   const [showCentroFinanze, setShowCentroFinanze] = React.useState(false);
   const { data } = useHomeMobile()
@@ -278,9 +275,8 @@ export default function HomePanelMobileV2(props: any) {
             onOrdini={() => setShowCentroOrdini(true)}
             onMagazzino={() => setShowCentroMagazzino(true)}
             onFurgoni={() => setShowCentroFurgoni(true)}
-            onFatturazione={() => setShowCentroFatturazione(true)}
+            onFatturazione={() => setShowCentroFinanze(true)}
             onClienti={() => setShowCentroClienti(true)}
-            onContabilita={() => setShowCentroFinanze(true)}
             onAgenda={() => goto('agenda')}
             onTeam={() => goto('team')}
             onStatistiche={() => setShowCentroFinanze(true)}
@@ -376,13 +372,6 @@ export default function HomePanelMobileV2(props: any) {
           aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroFurgoni(false)}
           onApriCommessa={(cmCode: string) => { const cm = (cantieri||[]).find((c: any)=>c.code===cmCode); if(cm) { setShowCentroFurgoni(false); setOrganizzaCm(cm); } }}
-        />
-      )}
-      {showCentroFatturazione && (
-        <CentroFatturazione
-          aziendaId={aziendaIdResolved}
-          onClose={() => setShowCentroFatturazione(false)}
-          onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroFatturazione(false); setOrganizzaCm(cm); } }}
         />
       )}
       {showCentroClienti && (

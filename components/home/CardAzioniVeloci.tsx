@@ -15,7 +15,6 @@ const MUTED = "#5C6B7A";
 
 interface Props {
   aziendaId: string;
-  // CALLBACK che aprono i Centri Controllo (mai routing!)
   onProduzione?: () => void;
   onMontaggi?: () => void;
   onOrdini?: () => void;
@@ -23,7 +22,6 @@ interface Props {
   onFurgoni?: () => void;
   onFatturazione?: () => void;
   onAbbonamento?: () => void;
-  // Fallback legacy
   onClienti?: () => void;
   onAgenda?: () => void;
   onTeam?: () => void;
@@ -36,7 +34,6 @@ export default function CardAzioniVeloci(props: Props) {
     fatture: 0, clienti: 0, agenda: 0, team: 0,
   });
 
-  // Carica conteggi reali
   useEffect(() => {
     if (!props.aziendaId) return;
     (async () => {
@@ -46,7 +43,7 @@ export default function CardAzioniVeloci(props: Props) {
           supabase.from('montaggi').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId),
           supabase.from('ordini_fornitore').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId).not('stato', 'in', '(verificato,completato,annullato)'),
           supabase.from('articoli_magazzino').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId).eq('attivo', true),
-          supabase.from('fatture').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId).in('stato', ['bozza', 'pronta', 'scartata']),
+          supabase.from('fin_fatture_emesse').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId).gt('residuo', 0).not('stato', 'in', '(pagata,incassata,annullata)'),
           supabase.from('clienti').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId),
           supabase.from('appuntamenti').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId),
           supabase.from('operatori').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId),
@@ -81,30 +78,23 @@ export default function CardAzioniVeloci(props: Props) {
         </div>
       </div>
 
-      {/* GRIGLIA TILE - tutti via callback */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        {/* PRIMARY (grandi colorati) */}
         <Tile primary bg={NAVY} onClick={props.onProduzione} count={counts.produzione} label="Produzione" sub="In lavorazione" icon={<IT color="#fff" />} />
         <Tile primary bg={TEAL} onClick={props.onMontaggi} count={counts.montaggi} label="Montaggi" sub="Pianificati" icon={<IK color="#fff" />} />
         <Tile primary bg={AMBER} onClick={props.onOrdini} count={counts.materiali} label="Ordini" sub="Catena operativa" icon={<IB color="#fff" />} />
         <Tile primary bg={PURPLE} onClick={props.onMagazzino} count={counts.magazzino} label="Magazzino" sub="Mappa scaffali" icon={<IA color="#fff" />} />
 
-        {/* SECONDARY (bordo) */}
         <Tile onClick={props.onFurgoni} label="Furgoni" sub="Preparazione carichi" accent="#0E7490" accentBg="#CFFAFE" border
           icon={<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#0E7490" strokeWidth={2}>
             <rect x={1} y={3} width={15} height={13}/>
             <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
             <circle cx={5.5} cy={18.5} r={2.5}/><circle cx={18.5} cy={18.5} r={2.5}/>
           </svg>} />
-        <Tile onClick={props.onFatturazione} count={counts.fatture} label="Fatture" sub="SDI elettronica" accent={TEAL_DEEP} accentBg="#D1FAE5" border
+        <Tile onClick={props.onFatturazione} count={counts.fatture} label="Contabilità" sub="Finanze · Fatture · IVA" accent={TEAL_DEEP} accentBg="#D1FAE5" border
           icon={<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={TEAL_DEEP} strokeWidth={2}>
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1={16} y1={13} x2={8} y2={13}/>
-            <line x1={16} y1={17} x2={8} y2={17}/>
+            <path d="M4 10h12M4 14h9M19 5a7 7 0 1 0 0 14"/>
           </svg>} />
 
-        {/* OPZIONALI minori */}
         {props.onClienti && (
           <Tile onClick={props.onClienti} count={counts.clienti} label="Clienti" sub="Anagrafica" accent="#D97706" accentBg="#FEF3C7" border
             icon={<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth={2}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx={12} cy={7} r={4}/></svg>} />
@@ -130,7 +120,6 @@ export default function CardAzioniVeloci(props: Props) {
   );
 }
 
-// ICONE
 function IT({ color }: any) {
   return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}>
     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
@@ -157,7 +146,6 @@ function IA({ color }: any) {
   </svg>;
 }
 
-// TILE - bottone con callback diretto, ZERO routing
 function Tile({ primary, bg, onClick, count, countText, label, sub, accent, accentBg, border, icon }: any) {
   const isPrimary = primary;
   const background = isPrimary ? (bg || TEAL) : '#fff';
