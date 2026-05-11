@@ -9,6 +9,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCentroMontaggi, type MontaggioRow } from "../hooks/useCentroMontaggi";
+import { useSquadre, type SquadraDetail } from "../hooks/useSquadre";
 import CommessaCardOperativa from "./centro/CommessaCardOperativa";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
@@ -17,7 +18,7 @@ const AMBER = "#D97706", RED = "#DC2626";
 const TEXT = "#0F1F33", MUTED = "#5C6B7A";
 const BG = "#F4F1EA";
 
-type ViewMode = 'da-pianificare' | 'giorno' | 'settimana' | 'mese';
+type ViewMode = 'da-pianificare' | 'squadre' | 'giorno' | 'settimana' | 'mese';
 
 function resolveAziendaId(propId: string | null): string {
   if (propId) return propId;
@@ -95,6 +96,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
       <div style={{ background: '#fff', margin: '-10px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, position: 'relative' as const, zIndex: 2, overflowX: 'auto' as const }}>
         {([
           { k: 'da-pianificare' as ViewMode, l: 'Pianifica' },
+          { k: 'squadre' as ViewMode, l: 'Squadre' },
           { k: 'giorno' as ViewMode, l: 'Giorno' },
           { k: 'settimana' as ViewMode, l: 'Settimana' },
           { k: 'mese' as ViewMode, l: 'Mese' },
@@ -106,6 +108,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
       <div style={{ padding: 14 }}>
         {loading ? <Empty label="Caricamento..." /> :
          view === 'da-pianificare' ? <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} /> :
+         view === 'squadre' ? <ViewSquadre aziendaId={resolved} /> :
          view === 'giorno' ? <ViewGiorno montaggi={montaggi} onApri={onApriCommessa} /> :
          view === 'settimana' ? <ViewSettimana montaggi={montaggi} fromDate={from} onApri={onApriCommessa} /> :
          <ViewMese montaggi={montaggi} currentDate={currentDate} onClickDay={(d: Date) => { setCurrentDate(d); setView('giorno'); }} />}
@@ -431,6 +434,119 @@ function ViewMese({ montaggi, currentDate, onClickDay }: any) {
         <LegendDot color={RED} label="Ritardo" />
       </div>
     </>
+  );
+}
+
+
+// =============== VISTA SQUADRE - membri, mezzo, saturazione, km, prossimi ===============
+function ViewSquadre({ aziendaId }: any) {
+  const { squadre, loading } = useSquadre(aziendaId);
+
+  if (loading) return <Empty label="Caricamento squadre..." />;
+  if (squadre.length === 0) return <Empty label="Nessuna squadra attiva" />;
+
+  const totMembri = squadre.reduce((s, sq) => s + sq.membri.length, 0);
+  const totLibere = squadre.filter(s => s.stato === 'libero').length;
+  const totPiene = squadre.filter(s => s.stato === 'pieno').length;
+
+  return (
+    <>
+      <div style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 10 }}>
+        <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>STATO TEAM</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+          <StatoBadge n={squadre.length} label="SQUADRE" bg="#EFF6FF" border="#1E40AF" fg="#1E40AF" />
+          <StatoBadge n={totMembri} label="OPERATORI" bg="#E1F5EE" border={TEAL} fg={TEAL_DEEP} />
+          <StatoBadge n={totLibere} label="LIBERE" bg="#FEF3C7" border={AMBER} fg="#92400E" />
+        </div>
+      </div>
+
+      {squadre.map(sq => <CardSquadra key={sq.id} sq={sq} />)}
+    </>
+  );
+}
+
+function CardSquadra({ sq }: { sq: SquadraDetail }) {
+  const statoCol = sq.stato === 'libero' ? TEAL : sq.stato === 'carico' ? AMBER : RED;
+  const statoBg = sq.stato === 'libero' ? '#E1F5EE' : sq.stato === 'carico' ? '#FEF3C7' : '#FEE2E2';
+  const statoFg = sq.stato === 'libero' ? TEAL_DEEP : sq.stato === 'carico' ? '#92400E' : '#991B1B';
+  const statoL = sq.stato === 'libero' ? 'LIBERA' : sq.stato === 'carico' ? 'CARICA' : 'PIENA';
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderLeft: `5px solid ${sq.colore}`, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+      {/* Header: nome + zona + stato */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div style={{ width: 42, height: 42, borderRadius: '50%', background: sq.colore, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800 }}>{sq.nome.slice(0,3).toUpperCase()}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Sq. {sq.nome}</div>
+          <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{sq.zona || 'Zona n/a'} · {sq.specializzazione || ''}</div>
+        </div>
+        <span style={{ background: statoBg, color: statoFg, fontSize: 10, padding: '5px 10px', borderRadius: 6, fontWeight: 700 }}>{statoL}</span>
+      </div>
+
+      {/* Membri */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 5 }}>MEMBRI ({sq.membri.length})</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {sq.membri.length === 0 ?
+            <span style={{ fontSize: 10, color: MUTED, fontStyle: 'italic' }}>Nessun membro</span> :
+            sq.membri.map(m => (
+              <span key={m.id} style={{ background: m.ruolo === 'capo' ? sq.colore + '22' : '#F1F4F7', color: m.ruolo === 'capo' ? sq.colore : TEXT, fontSize: 10, padding: '3px 8px', borderRadius: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {m.ruolo === 'capo' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: sq.colore }} />}
+                {m.nome} {m.cognome.charAt(0)}.
+              </span>
+            ))}
+        </div>
+      </div>
+
+      {/* Mezzo */}
+      {sq.mezzo && (
+        <div style={{ background: '#F8FAFA', padding: '8px 10px', borderRadius: 8, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth={2}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: TEXT }}>{sq.mezzo.nome}</div>
+            <div style={{ fontSize: 9, color: MUTED }}>{sq.mezzo.targa} · {sq.mezzo.tipo}</div>
+          </div>
+          <span style={{ background: sq.mezzo.stato === 'libero' ? '#E1F5EE' : '#FEF3C7', color: sq.mezzo.stato === 'libero' ? TEAL_DEEP : '#92400E', fontSize: 9, padding: '3px 7px', borderRadius: 4, fontWeight: 600 }}>{(sq.mezzo.stato || '').toUpperCase()}</span>
+        </div>
+      )}
+
+      {/* Saturazione */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTED, marginBottom: 4 }}>
+          <span style={{ fontWeight: 600 }}>Saturazione settimana</span>
+          <span style={{ color: statoCol, fontWeight: 700 }}>{sq.ore_settimana_occupate}/{sq.capacita_settimana_h}h · {sq.saturazione_pct}%</span>
+        </div>
+        <div style={{ height: 10, background: '#F1F4F7', borderRadius: 5, overflow: 'hidden' }}>
+          <div style={{ width: `${Math.min(100, sq.saturazione_pct)}%`, height: '100%', background: `linear-gradient(90deg, ${statoCol}aa, ${statoCol})`, borderRadius: 5 }} />
+        </div>
+      </div>
+
+      {/* KM */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: '#F8FAFA', borderRadius: 6, marginBottom: 10, fontSize: 10 }}>
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span style={{ color: MUTED, fontWeight: 600 }}>Km settimana stimati:</span>
+        <span style={{ color: TEXT, fontWeight: 700, marginLeft: 'auto' }}>{sq.km_settimana} km</span>
+      </div>
+
+      {/* Prossimi montaggi */}
+      <div>
+        <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 5 }}>PROSSIMI 7 GIORNI ({sq.prossimi_montaggi.length})</div>
+        {sq.prossimi_montaggi.length === 0 ?
+          <div style={{ background: '#F8FAFA', padding: '8px 10px', borderRadius: 6, fontSize: 10, color: MUTED, fontStyle: 'italic', textAlign: 'center' as const }}>Nessun montaggio pianificato</div> :
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {sq.prossimi_montaggi.slice(0, 4).map(m => (
+              <div key={m.id} style={{ background: '#F8FAFA', padding: '6px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8, fontSize: 10 }}>
+                <span style={{ background: sq.colore, color: '#fff', padding: '2px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>{new Date(m.data).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</span>
+                <span style={{ flex: 1, color: TEXT, fontWeight: 600 }}>{m.commessa_code} · {m.cliente}</span>
+                <span style={{ color: MUTED, fontWeight: 600 }}>{m.ore}h</span>
+              </div>
+            ))}
+            {sq.prossimi_montaggi.length > 4 && (
+              <div style={{ fontSize: 9, color: MUTED, textAlign: 'center' as const, marginTop: 3 }}>+ {sq.prossimi_montaggi.length - 4} altri</div>
+            )}
+          </div>}
+      </div>
+    </div>
   );
 }
 
