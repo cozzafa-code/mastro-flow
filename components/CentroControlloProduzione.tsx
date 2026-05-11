@@ -1,6 +1,8 @@
 "use client";
-// components/CentroControlloProduzione.tsx  
-// Centro controllo produzione: KPI live + carico macchinari + lista in lavorazione
+// components/CentroControlloProduzione.tsx
+// Centro Controllo Produzione - mockup approvato:
+// - Vista OVERVIEW: KPI + carico macchinari + lista commesse
+// - Vista KANBAN: 4 colonne Da avviare / In produzione / Pronto montaggio / Bloccato
 
 import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
@@ -12,84 +14,168 @@ const TEXT = "#0F1F33", MUTED = "#5C6B7A";
 const BG = "#F4F1EA";
 
 interface Commessa {
-  id: string; code: string; cliente: string; cognome: string; fase: string;
-  materiali_status: string; materiali_perc: number;
+  id: string; code: string; cliente: string; cognome: string | null; indirizzo: string | null;
+  fase: string; materiali_status: string; materiali_perc: number;
   produzione_iniziata_at: string | null; produzione_completata_at: string | null;
-  totale_finale: number;
+  totale_finale: number; total_vani?: number;
+}
+
+type ViewMode = 'overview' | 'kanban';
+
+function resolveAziendaId(propId: string | null): string {
+  if (propId) return propId;
+  if (typeof window === 'undefined') return '';
+  return sessionStorage.getItem('mastro:aziendaId') 
+    || localStorage.getItem('mastro:aziendaId') 
+    || localStorage.getItem('mastro_azienda_id') 
+    || '';
 }
 
 export default function CentroControlloProduzione({ aziendaId, onClose, onApriCommessa }: any) {
+  const [view, setView] = useState<ViewMode>('overview');
   const [commesse, setCommesse] = useState<Commessa[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'tutte' | 'oggi' | 'critiche'>('tutte');
+  const resolved = resolveAziendaId(aziendaId);
 
   useEffect(() => {
-    if (!aziendaId) return;
+    if (!resolved) { setLoading(false); return; }
     async function load() {
       const { data } = await supabase
         .from("commesse")
-        .select("id, code, cliente, cognome, fase, materiali_status, materiali_perc, produzione_iniziata_at, produzione_completata_at, totale_finale")
-        .eq("azienda_id", aziendaId)
+        .select("id, code, cliente, cognome, indirizzo, fase, materiali_status, materiali_perc, produzione_iniziata_at, produzione_completata_at, totale_finale, total_vani")
+        .eq("azienda_id", resolved)
         .in("fase", ["ordine", "acconto_pagato", "produzione", "montaggio"])
         .order("created_at", { ascending: false });
-      setCommesse((data as Commessa[]) || []);
+      setCommesse((data as any) || []);
       setLoading(false);
     }
     load();
-    const ch = supabase.channel(`ccp-${aziendaId}`)
+    const ch = supabase.channel(`ccp-${resolved}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "commesse" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "lavorazioni_commessa" }, load)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [aziendaId]);
+  }, [resolved]);
 
   const stats = useMemo(() => {
     const inProd = commesse.filter(c => c.fase === 'produzione').length;
-    const inRitardo = commesse.filter(c => c.materiali_status === 'in_attesa' && c.fase === 'produzione').length;
+    const ritardo = commesse.filter(c => c.materiali_status === 'in_attesa' && c.fase === 'produzione').length;
     const sovrac = commesse.filter(c => c.materiali_status === 'parziale').length;
-    const bloccati = commesse.filter(c => c.materiali_status === 'in_attesa' && c.fase === 'ordine').length;
-    return { tempo: inProd - inRitardo, sovrac, ritardo: inRitardo, bloccati };
+    const stop = commesse.filter(c => c.materiali_status === 'in_attesa' && c.fase === 'ordine').length;
+    return { tempo: Math.max(0, inProd - ritardo), sovrac, ritardo, stop };
   }, [commesse]);
-
-  const filtered = useMemo(() => {
-    if (filter === 'critiche') return commesse.filter(c => c.materiali_status === 'in_attesa');
-    if (filter === 'oggi') return commesse.filter(c => c.fase === 'produzione');
-    return commesse;
-  }, [commesse, filter]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 9800, overflowY: 'auto', paddingBottom: 80 }}>
-      <div style={{ background: `linear-gradient(180deg, ${NAVY_DEEP} 0%, ${NAVY} 100%)`, padding: '14px 14px 16px', color: '#fff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, letterSpacing: 1.2, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>CENTRO CONTROLLO</div>
-            <div style={{ fontSize: 17, fontWeight: 600, marginTop: 2 }}>Produzione</div>
+      <Header onClose={onClose} title="Produzione" subtitle="CENTRO CONTROLLO" stats={stats} />
+      <ViewSwitch view={view} setView={setView} options={[
+        { key: 'overview', label: 'Overview' },
+        { key: 'kanban', label: 'Kanban' },
+      ]} />
+      <div style={{ padding: 14 }}>
+        {loading ? <Empty label="Caricamento..." /> :
+         view === 'overview' ? <Overview commesse={commesse} onApri={onApriCommessa} /> :
+         <Kanban commesse={commesse} onApri={onApriCommessa} />}
+      </div>
+    </div>
+  );
+}
+
+function Header({ onClose, title, subtitle, stats }: any) {
+  return (
+    <div style={{ background: `linear-gradient(180deg, ${NAVY_DEEP} 0%, ${NAVY} 100%)`, padding: '14px 14px 18px', color: '#fff' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 9, letterSpacing: 1.2, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{subtitle}</div>
+          <div style={{ fontSize: 17, fontWeight: 600, marginTop: 2 }}>{title}</div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
+        <Kpi color="rgba(40,160,160,0.22)" border={TEAL} fg="#A7E5E5" label="TEMPO" val={stats.tempo} />
+        <Kpi color="rgba(217,119,6,0.22)" border={AMBER} fg="#FBBF24" label="SOVR." val={stats.sovrac} />
+        <Kpi color="rgba(220,38,38,0.22)" border={RED} fg="#FCA5A5" label="RIT." val={stats.ritardo} />
+        <Kpi color="rgba(255,255,255,0.08)" fg="rgba(255,255,255,0.6)" label="STOP" val={stats.stop} />
+      </div>
+    </div>
+  );
+}
+
+function ViewSwitch({ view, setView, options }: any) {
+  return (
+    <div style={{ background: '#fff', margin: '-8px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, position: 'relative', zIndex: 2 }}>
+      {options.map((o: any) => (
+        <button key={o.key} onClick={() => setView(o.key)} style={{ flex: 1, padding: '9px 0', fontSize: 12, fontWeight: 500, color: view === o.key ? '#fff' : MUTED, background: view === o.key ? NAVY : 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer' }}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
+
+function Overview({ commesse, onApri }: any) {
+  const macchinari = [
+    { name: 'CNC Taglio', perc: 65, color: TEAL },
+    { name: 'Foratura', perc: 42, color: TEAL },
+    { name: 'Assemblaggio', perc: 78, color: AMBER },
+  ];
+  return (
+    <>
+      <div style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 10 }}>
+        <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>CARICO MACCHINARI OGGI</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {macchinari.map(m => (
+            <div key={m.name}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
+                <span>{m.name}</span><span style={{ color: m.color, fontWeight: 600 }}>{m.perc}%</span>
+              </div>
+              <div style={{ height: 5, background: '#F1F4F7', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ width: `${m.perc}%`, height: '100%', background: m.color }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, margin: '8px 0', fontWeight: 600 }}>COMMESSE ({commesse.length})</div>
+      {commesse.length === 0 ? <Empty label="Nessuna commessa attiva" /> :
+       commesse.map((c: Commessa) => <CommessaCard key={c.id} cm={c} onClick={() => onApri?.(c.id)} />)}
+    </>
+  );
+}
+
+function Kanban({ commesse, onApri }: any) {
+  const cols = [
+    { key: 'da-avviare', title: 'DA AVVIARE', color: MUTED, items: commesse.filter((c: Commessa) => c.fase === 'ordine' && c.materiali_status === 'completo') },
+    { key: 'in-prod', title: 'IN PRODUZIONE', color: TEAL, items: commesse.filter((c: Commessa) => c.fase === 'produzione' && c.materiali_status !== 'in_attesa') },
+    { key: 'pronto', title: 'PRONTO MONTAGGIO', color: TEAL_DEEP, items: commesse.filter((c: Commessa) => c.fase === 'montaggio') },
+    { key: 'bloccato', title: 'BLOCCATO', color: RED, items: commesse.filter((c: Commessa) => c.materiali_status === 'in_attesa') },
+  ];
+  return (
+    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' as const }}>
+      {cols.map(col => (
+        <div key={col.key} style={{ minWidth: 260, scrollSnapAlign: 'start' as const }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '0 4px' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: col.color }} />
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: TEXT }}>{col.title}</div>
+            <span style={{ marginLeft: 'auto', background: '#fff', color: col.color, fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{col.items.length}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {col.items.length === 0 ?
+              <div style={{ background: 'rgba(255,255,255,0.5)', borderRadius: 10, padding: 20, textAlign: 'center' as const, fontSize: 10, color: MUTED, border: '1px dashed #E5EAF0' }}>Vuoto</div> :
+              col.items.map((c: Commessa) => <KanbanCard key={c.id} cm={c} onClick={() => onApri?.(c.id)} />)}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
-          <Kpi color="rgba(40,160,160,0.22)" border={TEAL} fg="#A7E5E5" label="TEMPO" val={stats.tempo} />
-          <Kpi color="rgba(217,119,6,0.22)" border={AMBER} fg="#FBBF24" label="SOVR." val={stats.sovrac} />
-          <Kpi color="rgba(220,38,38,0.22)" border={RED} fg="#FCA5A5" label="RIT." val={stats.ritardo} />
-          <Kpi color="rgba(255,255,255,0.08)" fg="rgba(255,255,255,0.6)" label="STOP" val={stats.bloccati} />
-        </div>
-      </div>
+      ))}
+    </div>
+  );
+}
 
-      <div style={{ background: '#fff', margin: '-8px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, position: 'relative', zIndex: 2 }}>
-        <FilterTab active={filter === 'tutte'} onClick={() => setFilter('tutte')}>Tutte {commesse.length}</FilterTab>
-        <FilterTab active={filter === 'oggi'} onClick={() => setFilter('oggi')}>In produz. {commesse.filter(c => c.fase === 'produzione').length}</FilterTab>
-        <FilterTab active={filter === 'critiche'} onClick={() => setFilter('critiche')}>Critiche {stats.ritardo}</FilterTab>
-      </div>
-
-      <div style={{ padding: 14 }}>
-        <CaricoMacchinari />
-        <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, margin: '8px 0', fontWeight: 600 }}>COMMESSE</div>
-        {loading ? <div style={{ padding: 40, textAlign: 'center', color: MUTED }}>Caricamento...</div> :
-         filtered.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: MUTED, fontSize: 12 }}>Nessuna commessa nei filtri</div> :
-         filtered.map(c => <CommessaCard key={c.id} cm={c} onClick={() => onApriCommessa?.(c.id)} />)}
-      </div>
+function KanbanCard({ cm, onClick }: any) {
+  return (
+    <div onClick={onClick} style={{ background: '#fff', borderRadius: 10, padding: 10, cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, marginBottom: 3 }}>{cm.code}</div>
+      <div style={{ fontSize: 10, color: MUTED, marginBottom: 6 }}>{cm.cliente} {cm.cognome || ''}</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 4 }}>{cm.total_vani || 0} vani · €{Number(cm.totale_finale || 0).toFixed(0)}</div>
+      <MatBar status={cm.materiali_status} perc={cm.materiali_perc} />
     </div>
   );
 }
@@ -109,49 +195,29 @@ function CommessaCard({ cm, onClick }: any) {
         </div>
         <span style={{ background: badge.bg, color: badge.fg, fontSize: 9, padding: '3px 7px', borderRadius: 5, fontWeight: 600 }}>{badge.l}</span>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTED, marginBottom: 4 }}>
-        <span>Materiali</span><span style={{ fontWeight: 600 }}>{cm.materiali_perc}%</span>
+      <MatBar status={cm.materiali_status} perc={cm.materiali_perc} />
+    </div>
+  );
+}
+
+function MatBar({ status, perc }: { status: string; perc: number }) {
+  const col = status === 'completo' ? TEAL : status === 'parziale' ? AMBER : status === 'in_attesa' ? RED : MUTED;
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTED, marginBottom: 3 }}>
+        <span>Materiali</span><span style={{ fontWeight: 600 }}>{perc}%</span>
       </div>
       <div style={{ height: 5, background: '#F1F4F7', borderRadius: 3, overflow: 'hidden' }}>
-        <div style={{ width: `${cm.materiali_perc}%`, height: '100%', background: matCol }}></div>
+        <div style={{ width: `${perc}%`, height: '100%', background: col }} />
       </div>
-    </div>
+    </>
   );
 }
 
-function CaricoMacchinari() {
-  // Placeholder statico per ora (dati reali quando ci sarà macchinari table)
-  const macchinari = [
-    { name: 'CNC Taglio', perc: 65, color: TEAL },
-    { name: 'Foratura', perc: 42, color: TEAL },
-    { name: 'Assemblaggio', perc: 78, color: AMBER },
-  ];
-  return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 10 }}>
-      <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>CARICO MACCHINARI OGGI</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {macchinari.map(m => (
-          <div key={m.name}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}><span>{m.name}</span><span style={{ color: m.color, fontWeight: 600 }}>{m.perc}%</span></div>
-            <div style={{ height: 5, background: '#F1F4F7', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ width: `${m.perc}%`, height: '100%', background: m.color }}></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
+function Empty({ label }: any) { return <div style={{ padding: 40, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>{label}</div>; }
 function Kpi({ color, border, fg, label, val }: any) {
-  return (
-    <div style={{ background: color, border: border ? `1px solid ${border}` : 'none', padding: '7px 8px', borderRadius: 8 }}>
-      <div style={{ fontSize: 8, color: fg, fontWeight: 600 }}>{label}</div>
-      <div style={{ fontSize: 17, fontWeight: 600, color: '#fff' }}>{val}</div>
-    </div>
-  );
-}
-
-function FilterTab({ active, onClick, children }: any) {
-  return <button onClick={onClick} style={{ flex: 1, padding: '8px 0', fontSize: 11, fontWeight: 500, color: active ? '#fff' : MUTED, background: active ? NAVY : 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer' }}>{children}</button>;
+  return <div style={{ background: color, border: border ? `1px solid ${border}` : 'none', padding: '7px 8px', borderRadius: 8 }}>
+    <div style={{ fontSize: 8, color: fg, fontWeight: 600 }}>{label}</div>
+    <div style={{ fontSize: 17, fontWeight: 600, color: '#fff' }}>{val}</div>
+  </div>;
 }
