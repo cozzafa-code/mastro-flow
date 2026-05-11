@@ -1,5 +1,6 @@
 // Last update: 2026-05-02 force redeploy
 "use client";
+import { splitCellIntoAnte } from "@/lib/cad/anta-poly";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
@@ -927,10 +928,28 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   );
 }
 
+// DIAG: log elementi ad ogni render
+function _diagLogEls(els: any[]) {
+  if (typeof window === "undefined") return;
+  const counts: Record<string, number> = {};
+  els.forEach(e => { counts[e.type] = (counts[e.type] || 0) + 1; });
+  console.log("[DIAG-RENDER] count by type:", counts);
+  console.log("[DIAG-RENDER] freeLine list:", els.filter(e => e.type === "freeLine").map(e => ({
+    id: e.id, subType: e.subType || "TELAIO",
+    x1: Math.round(e.x1), y1: Math.round(e.y1), x2: Math.round(e.x2), y2: Math.round(e.y2)
+  })));
+  console.log("[DIAG-RENDER] altri tipi non-freeLine:", els.filter(e => e.type !== "freeLine").map(e => ({
+    type: e.type, id: e.id
+  })));
+}
+
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, vanoSistema, vanoColore, vanoProfilo, vanoTipologiaId, vanoTipologiaNome }) {
+  const [showPalliniAngoli, setShowPalliniAngoli] = React.useState(false);
+  const [showGradi, setShowGradi] = React.useState(true);
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
   const [telaioBatch, setTelaioBatch] = React.useState<{open: boolean, L: string, H: string, N: string} | null>(null);
+  const [shapePicker, setShapePicker] = React.useState<{open: boolean, shape: string | null, L: string, H: string, H2: string, H3: string, H4: string, N: string} | null>(null);
   const telaioTapRef = React.useRef<number>(0);
   const [savingTipologia, setSavingTipologia] = React.useState<{open: boolean, nome: string, categoria: string, n_ante: string, note: string} | null>(null);
   const [savingTipoStatus, setSavingTipoStatus] = React.useState<string>("");
@@ -1800,7 +1819,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 } else if (poly) {
                                   const cx = snap(mx);
                                   const ys = segIntersectV(cx, poly);
-                                  if (ys) setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: ys[0], y2: ys[1] }]);
+                                  if (ys) {
+                                    // FIX: il montante deve fermarsi tra i traversi adiacenti al click (se presenti)
+                                    let y1f = ys[0], y2f = ys[1];
+                                    const trAtX = els.filter((e: any) => {
+                                      if (e.type !== "traverso") return false;
+                                      const tx1 = e.x1 ?? -Infinity, tx2 = e.x2 ?? Infinity;
+                                      return cx >= Math.min(tx1, tx2) && cx <= Math.max(tx1, tx2);
+                                    });
+                                    // Trova traverso sopra e sotto il click
+                                    const above = trAtX.filter((t: any) => t.y < my).sort((a: any, b: any) => b.y - a.y)[0];
+                                    const below = trAtX.filter((t: any) => t.y > my).sort((a: any, b: any) => a.y - b.y)[0];
+                                    if (above) y1f = Math.max(y1f, above.y);
+                                    if (below) y2f = Math.min(y2f, below.y);
+                                    setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: y1f, y2: y2f }]);
+                                  }
                                 } else if (!frame) {
                                   setDW([...els, { id: Date.now(), type: "montante", x: snap(mx), y1: fY, y2: fY + fH }]);
                                 }
@@ -1820,7 +1853,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 } else if (poly) {
                                   const cy = snap(my);
                                   const xs = segIntersectH(cy, poly);
-                                  if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: cy, x1: xs[0], x2: xs[1] }]);
+                                  if (xs) {
+                                    // FIX: il traverso deve fermarsi tra i montanti adiacenti al click (se presenti)
+                                    let x1f = xs[0], x2f = xs[1];
+                                    const mtAtY = els.filter((e: any) => {
+                                      if (e.type !== "montante") return false;
+                                      const my1 = e.y1 ?? -Infinity, my2 = e.y2 ?? Infinity;
+                                      return cy >= Math.min(my1, my2) && cy <= Math.max(my1, my2);
+                                    });
+                                    // Trova montante a sinistra e a destra del click
+                                    const left = mtAtY.filter((m: any) => m.x < mx).sort((a: any, b: any) => b.x - a.x)[0];
+                                    const right = mtAtY.filter((m: any) => m.x > mx).sort((a: any, b: any) => a.x - b.x)[0];
+                                    if (left) x1f = Math.max(x1f, left.x);
+                                    if (right) x2f = Math.min(x2f, right.x);
+                                    setDW([...els, { id: Date.now(), type: "traverso", y: cy, x1: x1f, x2: x2f }]);
+                                  }
                                 } else if (!frame) {
                                   setDW([...els, { id: Date.now(), type: "traverso", y: snap(my), x1: fX, x2: fX + fW }]);
                                 }
@@ -2046,12 +2093,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   bx = anta.x + TK_ANTA; by = anta.y + TK_ANTA;
                                   bw = anta.w - TK_ANTA * 2; bh = anta.h - TK_ANTA * 2;
                                 } else if (polyAnta) {
-                                  const xs = polyAnta.poly.map((p: number[]) => p[0]);
-                                  const ys = polyAnta.poly.map((p: number[]) => p[1]);
-                                  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-                                  const yMin = Math.min(...ys), yMax = Math.max(...ys);
-                                  bx = xMin + TK_ANTA; by = yMin + TK_ANTA;
-                                  bw = (xMax - xMin) - TK_ANTA * 2; bh = (yMax - yMin) - TK_ANTA * 2;
+                                  // FIX: per polyAnta crea fermavetroPoly che segue la forma dell'anta
+                                  // Inseta il poligono dell'anta di TK_ANTA verso il centro
+                                  const _fxs = polyAnta.poly.map((p: number[]) => p[0]);
+                                  const _fys = polyAnta.poly.map((p: number[]) => p[1]);
+                                  const _fcx = _fxs.reduce((s: number, v: number) => s + v, 0) / _fxs.length;
+                                  const _fcy = _fys.reduce((s: number, v: number) => s + v, 0) / _fys.length;
+                                  const _innerPoly = polyAnta.poly.map((p: number[]) => {
+                                    const _dx = p[0] - _fcx, _dy = p[1] - _fcy;
+                                    const _d = Math.hypot(_dx, _dy) || 1;
+                                    return [p[0] - (_dx / _d) * TK_ANTA, p[1] - (_dy / _d) * TK_ANTA];
+                                  });
+                                  setDW([...els, {
+                                    id: Date.now(), type: "fermavetroPoly",
+                                    poly: polyAnta.poly,
+                                    polyInner: _innerPoly,
+                                  }], { drawMode: null });
+                                  return;
                                 } else {
                                   // 3. Cella telaio (parte fissa). Fermavetro aderente al telaio: offset minimo (1px).
                                   let cell = findCellAt(mx, my);
@@ -2287,17 +2345,167 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     [cellPoly[3][0], cpBot]
                                   ];
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
-                                    // Rimuovi solo le polyAnta nella stessa zona X
-                                    const subMinX = Math.min(...cellPoly.map(p => p[0]));
-                                    const subMaxX = Math.max(...cellPoly.map(p => p[0]));
-                                    const newEls = els.filter(e => {
-                                      if (e.type !== "polyAnta") return true;
-                                      const eMinX = Math.min(...e.poly.map(p => p[0]));
-                                      const eMaxX = Math.max(...e.poly.map(p => p[0]));
-                                      // Rimuovi se si sovrappone alla zona cliccata
-                                      return !(eMinX < subMaxX - 5 && eMaxX > subMinX + 5);
-                                    });
-                                    newEls.push({ id: Date.now(), type: "polyAnta", poly: cellPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
+                                    console.log("[ANTA-A] handler poly entrato");
+                                    // FIX: clippa cellPoly contro il poligono delle freeLine telaio
+                                    // (Sutherland-Hodgman) cosi' l'anta segue la forma del telaio (arco, casetta...)
+                                    const _telLines = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                    if (_telLines.length >= 3) {
+                                      // Costruisci poligono telaio: orderdo i punti seguendo le linee
+                                      // Algoritmo: parto da un punto, cerco la linea successiva che condivide quel punto
+                                      const _shapePts: number[][] = [];
+                                      const _used = new Set<number>();
+                                      const _eq = (a: number, b: number) => Math.abs(a - b) < 2;
+                                      const _matchEnd = (l: any, x: number, y: number) => {
+                                        if (_eq(l.x1, x) && _eq(l.y1, y)) return [l.x2, l.y2];
+                                        if (_eq(l.x2, x) && _eq(l.y2, y)) return [l.x1, l.y1];
+                                        return null;
+                                      };
+                                      // Parti dalla prima linea
+                                      _shapePts.push([_telLines[0].x1, _telLines[0].y1]);
+                                      _shapePts.push([_telLines[0].x2, _telLines[0].y2]);
+                                      _used.add(0);
+                                      let _curX = _telLines[0].x2, _curY = _telLines[0].y2;
+                                      let _safety = 0;
+                                      while (_used.size < _telLines.length && _safety < _telLines.length * 2) {
+                                        _safety++;
+                                        let _found = false;
+                                        for (let _i = 0; _i < _telLines.length; _i++) {
+                                          if (_used.has(_i)) continue;
+                                          const _next = _matchEnd(_telLines[_i], _curX, _curY);
+                                          if (_next) {
+                                            _shapePts.push(_next);
+                                            _curX = _next[0]; _curY = _next[1];
+                                            _used.add(_i);
+                                            _found = true;
+                                            break;
+                                          }
+                                        }
+                                        if (!_found) break;
+                                      }
+                                      // Se ho almeno un poligono valido (>=3 punti), clippo
+                                      if (_shapePts.length >= 3) {
+                                        // Sutherland-Hodgman: clippa cellPoly contro _shapePts
+                                        // Inseta il telaio di TK_FRAME verso interno per stare dentro il profilo
+                                        const _cx = _shapePts.reduce((s, p) => s + p[0], 0) / _shapePts.length;
+                                        const _cy = _shapePts.reduce((s, p) => s + p[1], 0) / _shapePts.length;
+                                        const _insetShape = _shapePts.map(p => {
+                                          const _dx = p[0] - _cx, _dy = p[1] - _cy;
+                                          const _d = Math.hypot(_dx, _dy) || 1;
+                                          return [p[0] - (_dx / _d) * TK_FRAME, p[1] - (_dy / _d) * TK_FRAME];
+                                        });
+                                        // S-H clipping. Calcolo orientamento del poligono (signed area).
+                                        // Se CCW (area > 0) inverto la condizione inside per coerenza con CW assunto.
+                                        let _signedArea = 0;
+                                        for (let _sa = 0; _sa < _insetShape.length; _sa++) {
+                                          const _p1 = _insetShape[_sa];
+                                          const _p2 = _insetShape[(_sa + 1) % _insetShape.length];
+                                          _signedArea += _p1[0] * _p2[1] - _p2[0] * _p1[1];
+                                        }
+                                        const _isCW = _signedArea < 0;
+                                        const _inside = (p: number[], a: number[], b: number[]) => {
+                                          const _val = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+                                          return _isCW ? _val <= 0 : _val >= 0;
+                                        };
+                                        const _intersect = (p1: number[], p2: number[], a: number[], b: number[]) => {
+                                          const x1=p1[0], y1=p1[1], x2=p2[0], y2=p2[1];
+                                          const x3=a[0], y3=a[1], x4=b[0], y4=b[1];
+                                          const denom = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
+                                          if (Math.abs(denom) < 0.001) return p2;
+                                          const t = ((x1-x3)*(y3-y4) - (y1-y3)*(x3-x4)) / denom;
+                                          return [x1 + t*(x2-x1), y1 + t*(y2-y1)];
+                                        };
+                                        let _output: number[][] = cellPoly.slice();
+                                        for (let _e = 0; _e < _insetShape.length; _e++) {
+                                          if (_output.length === 0) break;
+                                          const _a = _insetShape[_e];
+                                          const _b = _insetShape[(_e + 1) % _insetShape.length];
+                                          const _input = _output;
+                                          _output = [];
+                                          for (let _i2 = 0; _i2 < _input.length; _i2++) {
+                                            const _p = _input[_i2];
+                                            const _pPrev = _input[(_i2 - 1 + _input.length) % _input.length];
+                                            const _inP = _inside(_p, _a, _b);
+                                            const _inPrev = _inside(_pPrev, _a, _b);
+                                            if (_inP) {
+                                              if (!_inPrev) _output.push(_intersect(_pPrev, _p, _a, _b));
+                                              _output.push(_p);
+                                            } else if (_inPrev) {
+                                              _output.push(_intersect(_pPrev, _p, _a, _b));
+                                            }
+                                          }
+                                        }
+                                        // Aggiungi tutti i punti delle freeLine telaio che cadono dentro cellPoly
+                                        // Cosi' la curva viene catturata con tutti i suoi vertici
+                                        if (_output.length >= 3) {
+                                          // Confronta con cellPoly: solo se ho effettivamente clippato (output diverso da rect)
+                                          const _origArea = Math.abs((cellPoly[2][0]-cellPoly[0][0]) * (cellPoly[2][1]-cellPoly[0][1]));
+                                          let _newArea = 0;
+                                          for (let _i = 0; _i < _output.length; _i++) {
+                                            const _p1 = _output[_i], _p2 = _output[(_i+1) % _output.length];
+                                            _newArea += _p1[0] * _p2[1] - _p2[0] * _p1[1];
+                                          }
+                                          _newArea = Math.abs(_newArea / 2);
+                                          // Solo se area significativa (>5% rect originale) usa clip
+                                          if (_newArea > _origArea * 0.05) {
+                                            cellPoly = _output;
+                                          }
+                                        }
+                                      }
+                                    }
+                                    // Multi-click ANTA: leggo SEMPRE state corrente da dw.elements (no closure)
+                                    const _live: any[] = (dwRef.current && dwRef.current.elements) || els;
+                                    console.log("[ANTA] dw.elements vs els:", _live.length, "vs", els.length, "polyAnta in dw:", _live.filter((e: any) => e.type === "polyAnta").length);
+                                    let outerPoly: number[][] = cellPoly;
+                                    const flAll = _live.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                    if (flAll.length >= 3) {
+                                      const segs = flAll.map((l: any) => ({ a: [l.x1, l.y1], b: [l.x2, l.y2] }));
+                                      const ring: number[][] = [];
+                                      const used = new Set<number>();
+                                      let cur = segs[0].a; ring.push(cur);
+                                      let next = segs[0].b; ring.push(next); used.add(0);
+                                      let safety = 0;
+                                      while (used.size < segs.length && safety++ < 50) {
+                                        let found = -1;
+                                        for (let i = 0; i < segs.length; i++) {
+                                          if (used.has(i)) continue;
+                                          if (Math.hypot(segs[i].a[0] - next[0], segs[i].a[1] - next[1]) < 5) { found = i; next = segs[i].b; break; }
+                                          if (Math.hypot(segs[i].b[0] - next[0], segs[i].b[1] - next[1]) < 5) { found = i; next = segs[i].a; break; }
+                                        }
+                                        if (found < 0) break;
+                                        used.add(found);
+                                        if (Math.hypot(next[0] - ring[0][0], next[1] - ring[0][1]) < 5) break;
+                                        ring.push(next);
+                                      }
+                                      if (ring.length >= 3) outerPoly = ring;
+                                    }
+                                    const prevPolyAnta = _live.filter((e: any) => e.type === "polyAnta");
+                                    const prevCount = prevPolyAnta.length;
+                                    const newCount = prevCount + 1;
+                                    console.log("[ANTA-POLY] polyAnta esistenti:", prevCount, "split in", newCount);
+                                    // Cancello tutte polyAnta + montanti/traversi interni
+                                    const newEls = _live.filter((e: any) =>
+                                      e.type !== "polyAnta" &&
+                                      e.type !== "montante" &&
+                                      e.type !== "traverso"
+                                    );
+                                    if (newCount === 1) {
+                                      newEls.push({ id: Date.now(), type: "polyAnta", poly: outerPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
+                                    } else {
+                                      const cellVerts = outerPoly.map((p: number[]) => ({ x: p[0], y: p[1] }));
+                                      const slices = splitCellIntoAnte(cellVerts, "cell" + Date.now(), newCount);
+                                      slices.forEach((s, idx) => {
+                                        newEls.push({
+                                          id: Date.now() + idx,
+                                          type: "polyAnta",
+                                          poly: s.verts.map(v => [v.x, v.y]),
+                                          subType: drawMode === "place-porta" ? "porta" : undefined,
+                                          antaIdx: s.antaIdx,
+                                          antaCount: s.antaCount,
+                                          dir: s.dir,
+                                          riporto: s.riporto,
+                                        });
+                                      });
+                                    }
                                     setDW(newEls);
                                   } else if (drawMode === "place-vetro") {
                                     const newEls = els.filter(e => e.type !== "polyGlass");
@@ -2348,6 +2556,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 // Regular cell handling
                                 if (drawMode === "place-anta") {
+                                  console.log("[ANTA-B] handler innerRect entrato, ante esistenti:", els.filter(e => e.type === "innerRect" && !e.subType && inCell(e)).length);
                                   // Conta ante esistenti nella cella; ogni click ne aggiunge una.
                                   const existingAnte = els.filter(e => e.type === "innerRect" && !e.subType && inCell(e));
                                   const existingRiporti = els.filter(e => e.type === "profiloRiporto" && e.cellId === cell.id);
@@ -2913,9 +3122,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
 
                             // ══ Styles ══
-                            const bs = (active = false) => ({ padding: "3px 6px", borderRadius: 5, border: `1px solid ${active ? "#1A9E73" : T.bdr}`, background: active ? `${"#1A9E73"}12` : T.card, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? "#1A9E73" : T.text });
-                            const bAp = (active = false) => ({ padding: "3px 6px", borderRadius: 5, border: `1px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
-                            const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
+                            const bs = (active = false) => ({ padding: "10px 14px", borderRadius: 8, border: `1px solid ${active ? "#1A9E73" : T.bdr}`, background: active ? `${"#1A9E73"}12` : T.card, fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? "#1A9E73" : T.text, minHeight: 48 });
+                            const bAp = (active = false) => ({ padding: "10px 14px", borderRadius: 8, border: `1px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue, minHeight: 48 });
+                            const bDel = (c2 = T.red) => ({ padding: "14px 20px", borderRadius: 10, border: `2px solid ${c2}50`, background: `${c2}15`, fontSize: 16, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2, minHeight: 56 });
 
                             const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free" || drawMode === "place-fermavetro" || drawMode === "place-maniglione" || drawMode === "place-catalogo" || drawMode === "place-veloce" ? "crosshair" : drawMode ? "pointer" : "default";
 
@@ -3156,12 +3365,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     {id:"sensi",l:"Sensi",c:"#D08008"},
                                     {id:"strumenti",l:"Strumenti",c:"#6366f1"},
                                   ].map(mt => (
-                                    <div key={mt.id} onClick={() => setMenuTab(menuTab === mt.id ? null : mt.id as any)} style={{
-                                      flex: 1, padding: "5px 0", textAlign: "center", fontSize: 9, fontWeight: 800,
-                                      borderRadius: 6, cursor: "pointer",
+                                    <div key={mt.id} data-cad="tab" onClick={() => setMenuTab(menuTab === mt.id ? null : mt.id as any)} style={{
+                                      flex: 1, padding: "16px 4px", textAlign: "center", fontSize: 15, fontWeight: 800,
+                                      borderRadius: 10, cursor: "pointer",
                                       background: menuTab === mt.id ? mt.c : "white",
                                       color: menuTab === mt.id ? "white" : T.sub,
-                                      border: `1px solid ${menuTab === mt.id ? mt.c : T.bdr}`,
+                                      border: `2px solid ${menuTab === mt.id ? mt.c : T.bdr}`,
+                                      minHeight: 60,
                                     }}>{mt.l}</div>
                                   ))}
                                 </div>
@@ -3180,11 +3390,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     telaioTapRef.current = now;
                                     if (frames.length === 0) {
                                       setDW([...els, { id: Date.now(), type: "rect", x: fX, y: fY, w: fW, h: fH }]);
-                                    } else {
-                                      const lastF = frames[frames.length - 1];
-                                      const nw = lastF.w * 0.6, nh = lastF.h * 0.5;
-                                      setDW([...els, { id: Date.now(), type: "rect", x: snap(lastF.x + lastF.w - TK_FRAME), y: snap(lastF.y + lastF.h - nh), w: snap(nw), h: snap(nh) }]);
                                     }
+                                    // FIX: single tap non aggiunge piu un secondo rettangolo affiancato.
+                                    // Per modificare misura o creare telaio composto multi-pezzo: doppio tap.
                                   }} style={bs()} title="Tap singolo: aggiungi telaio · Doppio tap: pannello L×H×N pezzi"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="1"/></svg>Telaio</div>
                                   <div onClick={() => setProfileMode("telaio", { drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,8 21,17 12,22 3,17 3,8"/></svg>Tel.Lib.</div>
                                   {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine" && !e.subType).length >= 2 && (
@@ -3200,6 +3408,115 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   )}
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.</div>
+                                  <div onClick={() => {
+                                    // Calcolo frame virtuale: usa rect se esiste, altrimenti bounding box freeLine
+                                    let fbX, fbY, fbW, fbH;
+                                    if (frame) {
+                                      fbX = frame.x; fbY = frame.y; fbW = frame.w; fbH = frame.h;
+                                    } else {
+                                      const fls = els.filter((e: any) => e.type === "freeLine");
+                                      if (fls.length === 0) { alert("Crea prima un telaio o una forma"); return; }
+                                      let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+                                      for (const l of fls) {
+                                        xMin = Math.min(xMin, l.x1, l.x2);
+                                        xMax = Math.max(xMax, l.x1, l.x2);
+                                        yMin = Math.min(yMin, l.y1, l.y2);
+                                        yMax = Math.max(yMax, l.y1, l.y2);
+                                      }
+                                      fbX = xMin; fbY = yMin; fbW = xMax - xMin; fbH = yMax - yMin;
+                                    }
+                                    const inputN = prompt("Quanti montanti vuoi inserire? (es. 4)", "4");
+                                    if (!inputN) return;
+                                    const n = parseInt(inputN, 10);
+                                    if (!Number.isFinite(n) || n < 1 || n > 50) { alert("Numero non valido (1-50)"); return; }
+                                    const existing = els.filter(e => e.type === "montante");
+                                    let elsBase = els;
+                                    if (existing.length > 0) {
+                                      const r = confirm(`Ci sono gia' ${existing.length} montanti.\n\nOK = sostituisci con ${n} nuovi equidistanti\nAnnulla = aggiungi ${n} nuovi`);
+                                      if (r) elsBase = els.filter(e => e.type !== "montante");
+                                    }
+                                    const innerL = fbX + TK_FRAME;
+                                    const innerR = fbX + fbW - TK_FRAME;
+                                    const innerW = innerR - innerL;
+                                    const step = innerW / (n + 1);
+                                    const newMonts = [];
+                                    const t0 = Date.now();
+                                    for (let i = 1; i <= n; i++) {
+                                      newMonts.push({
+                                        id: t0 + i,
+                                        type: "montante",
+                                        x: Math.round(innerL + step * i),
+                                        y1: fbY + TK_FRAME,
+                                        y2: fbY + fbH - TK_FRAME,
+                                      });
+                                    }
+                                    setDW([...elsBase, ...newMonts]);
+                                  }} style={bs()} title="Inserisci N montanti equidistanti (anche dentro forme)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="6" y1="3" x2="6" y2="21"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="18" y1="3" x2="18" y2="21"/></svg>Mont.xN</div>
+                                  <div onClick={() => {
+                                    let fbX, fbY, fbW, fbH;
+                                    if (frame) {
+                                      fbX = frame.x; fbY = frame.y; fbW = frame.w; fbH = frame.h;
+                                    } else {
+                                      const fls = els.filter((e: any) => e.type === "freeLine");
+                                      if (fls.length === 0) { alert("Crea prima un telaio o una forma"); return; }
+                                      let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+                                      for (const l of fls) {
+                                        xMin = Math.min(xMin, l.x1, l.x2);
+                                        xMax = Math.max(xMax, l.x1, l.x2);
+                                        yMin = Math.min(yMin, l.y1, l.y2);
+                                        yMax = Math.max(yMax, l.y1, l.y2);
+                                      }
+                                      fbX = xMin; fbY = yMin; fbW = xMax - xMin; fbH = yMax - yMin;
+                                    }
+                                    const inputN = prompt("Quanti traversi vuoi inserire? (es. 3)", "3");
+                                    if (!inputN) return;
+                                    const n = parseInt(inputN, 10);
+                                    if (!Number.isFinite(n) || n < 1 || n > 50) { alert("Numero non valido (1-50)"); return; }
+                                    const existing = els.filter(e => e.type === "traverso");
+                                    let elsBase = els;
+                                    if (existing.length > 0) {
+                                      const r = confirm(`Ci sono gia' ${existing.length} traversi.\n\nOK = sostituisci con ${n} nuovi equidistanti\nAnnulla = aggiungi ${n} nuovi`);
+                                      if (r) elsBase = els.filter(e => e.type !== "traverso");
+                                    }
+                                    const innerT = fbY + TK_FRAME;
+                                    const innerB = fbY + fbH - TK_FRAME;
+                                    const innerH = innerB - innerT;
+                                    const step = innerH / (n + 1);
+                                    const newTravs = [];
+                                    const t0 = Date.now();
+                                    for (let i = 1; i <= n; i++) {
+                                      newTravs.push({
+                                        id: t0 + i,
+                                        type: "traverso",
+                                        y: Math.round(innerT + step * i),
+                                        x1: fbX + TK_FRAME,
+                                        x2: fbX + fbW - TK_FRAME,
+                                      });
+                                    }
+                                    setDW([...elsBase, ...newTravs]);
+                                  }} style={bs()} title="Inserisci N traversi equidistanti (anche dentro forme)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Trav.xN</div>
+                                  <div onClick={() => {
+                                    if (!frame) { alert("Crea prima un telaio"); return; }
+                                    const inputD = prompt("Crea 4 punti di riferimento a quanti mm dal centro?\n(usali come snap per disegnare il colmo casetta o altre forme)", "800");
+                                    if (!inputD) return;
+                                    const Dmm = parseFloat(inputD);
+                                    if (!Number.isFinite(Dmm) || Dmm < 1) { alert("Distanza non valida"); return; }
+                                    const pxPerMm = fW / (realW || 1200);
+                                    const Dpx = Math.round(Dmm * pxPerMm);
+                                    const cx = frame.x + frame.w / 2;
+                                    const cy = frame.y + frame.h / 2;
+                                    const t0 = Date.now();
+                                    // 4 marker: SOPRA, SOTTO, SX, DX (linee tratteggiate corte di 4px = visibili come marker, endpoints snap-target)
+                                    const refs = [
+                                      { id: t0 + 1, type: "freeLine", x1: cx, y1: cy - Dpx - 2, x2: cx, y2: cy - Dpx + 2, _isReference: true },
+                                      { id: t0 + 2, type: "freeLine", x1: cx, y1: cy + Dpx - 2, x2: cx, y2: cy + Dpx + 2, _isReference: true },
+                                      { id: t0 + 3, type: "freeLine", x1: cx - Dpx - 2, y1: cy, x2: cx - Dpx + 2, y2: cy, _isReference: true },
+                                      { id: t0 + 4, type: "freeLine", x1: cx + Dpx - 2, y1: cy, x2: cx + Dpx + 2, y2: cy, _isReference: true },
+                                    ];
+                                    setDW([...els, ...refs]);
+                                  }} style={bs()} title="Crea 4 punti di riferimento a distanza N mm dal centro telaio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><circle cx="12" cy="12" r="2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/><line x1="3" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="21" y2="12"/></svg>Rif.</div>
+                                  <div onClick={() => setShapePicker({ open: true, shape: null, L: "1500", H: "1400", H2: "800", H3: "400", H4: "1200", N: "16" })} style={bs()} title="Forme preset: casetta, arco, trapezio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,10 21,21 3,21 3,10"/></svg>Forme</div>
+                                  <div onClick={() => setProfileMode("telaio", { drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)} title="Casetta Live: tap punti notevoli per tracciare la forma a mano libera"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21 V11 L12 3 L21 11 V21 Z"/><circle cx="12" cy="14" r="2" fill="currentColor"/></svg>Casetta</div>
                                 </div>
                                 </>}
 
@@ -3385,10 +3702,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="9" x2="3" y2="15"/><line x1="21" y1="9" x2="21" y2="15"/></svg>Misure</div>
                                   {/* Righello / Metro */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "righello" ? null : "righello", _pendingLine: null })} style={{ ...bs(drawMode === "righello"), background: drawMode === "righello" ? "#3B7FE012" : undefined, color: drawMode === "righello" ? T.blue : undefined, border: `1px solid ${drawMode === "righello" ? T.blue : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21L21 3L21 9L3 21Z"/><line x1="7" y1="17" x2="9" y2="15"/><line x1="11" y1="13" x2="13" y2="11"/><line x1="15" y1="9" x2="17" y2="7"/></svg>Righello</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
+                                  <div onClick={() => setShowGradi(s => !s)} style={{ ...bs(showGradi), color: showGradi ? "#1A9E73" : undefined, border: `1.5px solid ${showGradi ? "#1A9E73" : T.bdr}` }}>📐 Gradi</div>
                                   <div onClick={() => {
                                     // Riattiva pallini angoli su tutte le ante (innerRect + polyAnta)
                                     // E rimuove anche i flag _hidden manuali sul telaio
@@ -3402,7 +3716,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       return e;
                                     });
                                     setDW(upd);
-                                  }} style={{ ...bs(), color: "#3B7FE0", border: `1.5px solid #3B7FE0` }}>● Pallini Angoli</div>
+                                    setShowPalliniAngoli((s: boolean) => !s);
+                                  }} style={{ ...bs(showPalliniAngoli), color: showPalliniAngoli ? "#3B7FE0" : undefined, border: `1.5px solid #3B7FE0` }}>● Pallini Angoli</div>
                                   <div onClick={() => {
                                     // Se il vano ha già una tipologia caricata, chiedi se sovrascrivere o salvare nuova
                                     if (vanoTipologiaId) {
@@ -4055,9 +4370,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                   {/* ══ ELEMENTS ══ */}
                                   {/* Render in z-order: montanti/traversi prima, freeLine in mezzo, zoccoloLibero ULTIMO (sopra a tutto) */}
+                                  {(() => { _diagLogEls(els); return null; })()}
                                   {[
+                                    ...els.filter(e => e.type === "freeLine"),
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
-                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso" && e.type !== "zoccoloLibero" && e.type !== "maniglione"),
+                                    ...els.filter(e => e.type !== "freeLine" && e.type !== "montante" && e.type !== "traverso" && e.type !== "zoccoloLibero" && e.type !== "maniglione"),
                                     ...els.filter(e => e.type === "zoccoloLibero"),
                                     ...els.filter(e => e.type === "maniglione"),
                                   ].map(el => {
@@ -4352,6 +4669,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {/* Lato dx */}
                                           <rect x={el.x + el.w - T} y={el.y} width={T} height={el.h} fill={sel ? "#1A9E73" : "#a8a89c"} />
                                           {sel && [[el.x,el.y],[el.x+el.w,el.y],[el.x,el.y+el.h],[el.x+el.w,el.y+el.h]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={3} fill="#1A9E73" />)}
+                                        </g>
+                                      );
+                                    }
+                                    if (el.type === "fermavetroPoly" && el.poly && el.polyInner) {
+                                      const _outerPts = el.poly.map((p: number[]) => p.join(",")).join(" ");
+                                      const _innerPts = el.polyInner.map((p: number[]) => p.join(",")).join(" ");
+                                      const _outerD = el.poly.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
+                                      const _innerD = el.polyInner.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
+                                      const _color = sel ? "#1A9E73" : "#a8a89c";
+                                      return (
+                                        <g key={el.id} {...dp} style={drawMode ? { pointerEvents: "none" } : undefined}>
+                                          <path d={`${_outerD} ${_innerD}`} fillRule="evenodd" fill={_color} />
+                                          {sel && el.poly.map((p: number[], pi: number) => <circle key={pi} cx={p[0]} cy={p[1]} r={3} fill="#1A9E73" />)}
                                         </g>
                                       );
                                     }
@@ -4764,11 +5094,67 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       else { innerPoly.push([ix2, iy1]); }
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-                                      const innerStr = innerPoly.map(p => p.join(",")).join(" ");
+                                      // FIX OMBRA: inner polygon segue il poly outer scalato verso centro (no bbox rect)
+                                      const _TK_POLY = el.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                      const _clrPoly = sel ? "#1A9E73" : "#1A1A1C";
+                                      const _fillPoly = sel ? "#1A9E7333" : "#e8e8e4";
+                                      // Polygon inset: per ogni vertice, sposta lungo bisettrice degli edge adiacenti
+                                      const _N = pts.length;
+                                      const _innerShrink: number[][] = [];
+                                      for (let _i = 0; _i < _N; _i++) {
+                                        const _prev = pts[(_i - 1 + _N) % _N];
+                                        const _curr = pts[_i];
+                                        const _next = pts[(_i + 1) % _N];
+                                        // Edge in (prev->curr) e edge out (curr->next), normali interne
+                                        const _e1x = _curr[0] - _prev[0], _e1y = _curr[1] - _prev[1];
+                                        const _e2x = _next[0] - _curr[0], _e2y = _next[1] - _curr[1];
+                                        const _l1 = Math.hypot(_e1x, _e1y) || 1;
+                                        const _l2 = Math.hypot(_e2x, _e2y) || 1;
+                                        // Normali interne (ruota -90° rispetto al verso CCW; se poly è CW si inverte segno)
+                                        let _n1x = -_e1y / _l1, _n1y = _e1x / _l1;
+                                        let _n2x = -_e2y / _l2, _n2y = _e2x / _l2;
+                                        // Test orientazione: usa il centroide come riferimento interno
+                                        const _midX = (_prev[0] + _curr[0]) / 2, _midY = (_prev[1] + _curr[1]) / 2;
+                                        if ((cx2 - _midX) * _n1x + (cy2 - _midY) * _n1y < 0) { _n1x = -_n1x; _n1y = -_n1y; _n2x = -_n2x; _n2y = -_n2y; }
+                                        // Bisettrice = somma normali, scala per 1/sin(angolo/2)
+                                        const _bx = _n1x + _n2x, _by = _n1y + _n2y;
+                                        const _bl = Math.hypot(_bx, _by) || 1;
+                                        const _cosHalf = (_n1x * _n2x + _n1y * _n2y);
+                                        const _sinHalf = Math.sqrt(Math.max(0.05, (1 + _cosHalf) / 2));
+                                        const _scale = Math.min(_TK_POLY / _sinHalf, _TK_POLY * 4);
+                                        _innerShrink.push([_curr[0] + (_bx / _bl) * _scale, _curr[1] + (_by / _bl) * _scale]);
+                                      }
+                                      const innerStr = _innerShrink.map(p => p.join(",")).join(" ");
+                                      const _outerD = pts.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
+                                      const _innerD = _innerShrink.map((p: number[], i: number) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join("") + "Z";
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
-                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
-                                          <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
+                                        <g key={el.id} onClick={(e3) => {
+                                          if (drawMode === "place-anta" || drawMode === "place-porta") return;
+                                          e3.stopPropagation();
+                                          if (!drawMode) setMode({ selectedId: el.id });
+                                        }}>
+                                          <polygon points={pts.map((p: number[]) => p.join(",")).join(" ")} fill={"#ffffff"} stroke="none" />
+                                          <polygon points={pts.map((p: number[]) => p.join(",")).join(" ")} fill="none" stroke={_clrPoly} strokeWidth={_TK_POLY * 2} strokeLinejoin="miter" strokeMiterlimit={20} />
+                                          <polygon points={_innerShrink.map((p: number[]) => p.join(",")).join(" ")} fill={_fillPoly} stroke="none" />
+                                          {(el.antaCount && el.antaIdx !== undefined && el.antaIdx < el.antaCount - 1) && (() => {
+                                            const _xs = pts.map((p: number[]) => p[0]);
+                                            const _maxX = Math.max(..._xs);
+                                            // Prendi solo Y dei punti SUL bordo destro (x ≈ _maxX)
+                                            const _edgeYs = pts.filter((p: number[]) => Math.abs(p[0] - _maxX) < 1.5).map((p: number[]) => p[1]);
+                                            console.log("[RIPORTO]", el.id, "maxX=", _maxX, "edgeYs=", _edgeYs, "antaIdx=", el.antaIdx, "/", el.antaCount);
+                                            if (_edgeYs.length < 2) return null;
+                                            const _minY = Math.min(..._edgeYs);
+                                            const _maxY = Math.max(..._edgeYs);
+                                            const _h = _maxY - _minY - _TK_POLY * 2;
+                                            if (_h <= 0) return null;
+                                            return (
+                                              <rect
+                                                x={_maxX - TK_MONT - 1} y={_minY + _TK_POLY}
+                                                width={TK_MONT} height={_h}
+                                                fill={sel ? "#1A9E7333" : "#e8e8e4"} stroke={"#1A1A1C"} strokeWidth={1.2}
+                                              />
+                                            );
+                                          })()}
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
@@ -4786,7 +5172,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         return [(p[0] + dx2 / dist * shrink), (p[1] + dy2 / dist * shrink)];
                                       });
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <g key={el.id} onClick={(e3) => {
+                                          if (drawMode === "place-anta" || drawMode === "place-porta") return;
+                                          e3.stopPropagation();
+                                          if (!drawMode) setMode({ selectedId: el.id });
+                                        }}>
                                           <polygon points={glassPts.map(p => p.join(",")).join(" ")} fill="#d8ecf8" fillOpacity={0.25} stroke={hc || "#8bb8e8"} strokeWidth={0.5} />
                                           <line x1={glassPts[0][0]} y1={glassPts[0][1]} x2={cx2} y2={cy2} stroke="#b0d4f0" strokeWidth={0.4} />
                                         </g>
@@ -4805,7 +5195,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const slats = [];
                                       for (let sy = minY2 + 10; sy < maxY2 - 4; sy += 8) slats.push(sy);
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <g key={el.id} onClick={(e3) => {
+                                          if (drawMode === "place-anta" || drawMode === "place-porta") return;
+                                          e3.stopPropagation();
+                                          if (!drawMode) setMode({ selectedId: el.id });
+                                        }}>
                                           <defs><clipPath id={clipId}><polygon points={outerPts} /></clipPath></defs>
                                           <polygon points={outerPts} fill="#f5f0e8" stroke={hc || "#8a7a60"} strokeWidth={1} />
                                           <g clipPath={`url(#${clipId})`}>
@@ -4895,8 +5289,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         ey2 = el.y2 - halfT + TK_FRAME;
                                       }
                                       // Taglio 45° sul profilo: usa cornerModes esplicito (non tocca el.corners legacy)
-                                      const cut45Start = _cm.start === '45';
-                                      const cut45End = _cm.end === '45';
+                                      // AUTO: se cornerMode = 'auto', calcola in base all'angolo
+                                      const _resolveAuto = (which: 'start' | 'end') => {
+                                        if (_cm[which] !== 'auto') return _cm[which];
+                                        // Trova linea adiacente che condivide il vertice
+                                        const vx = which === 'start' ? el.x1 : el.x2;
+                                        const vy = which === 'start' ? el.y1 : el.y2;
+                                        const others = (els || []).filter((o: any) => o.type === "freeLine" && !o.subType && o.id !== el.id);
+                                        const adj = others.find((o: any) =>
+                                          (Math.hypot(o.x1 - vx, o.y1 - vy) < 5) ||
+                                          (Math.hypot(o.x2 - vx, o.y2 - vy) < 5)
+                                        );
+                                        if (!adj) return '45';
+                                        // Calcola angolo tra le due linee al vertice
+                                        const a1 = Math.atan2((which === 'start' ? el.y2 : el.y1) - vy, (which === 'start' ? el.x2 : el.x1) - vx);
+                                        const adjStart = Math.hypot(adj.x1 - vx, adj.y1 - vy) < 5;
+                                        const a2 = Math.atan2((adjStart ? adj.y2 : adj.y1) - vy, (adjStart ? adj.x2 : adj.x1) - vx);
+                                        let diff = Math.abs(a1 - a2) * 180 / Math.PI;
+                                        if (diff > 180) diff = 360 - diff;
+                                        // 75-105 = angolo retto -> 45; altri = bisettrice (45 funziona generico)
+                                        return '45';
+                                      };
+                                      const cut45Start = _resolveAuto('start') === '45';
+                                      const cut45End = _resolveAuto('end') === '45';
                                       const flCorners = (cut45Start || cut45End) ? [] : (el.corners || []);
                                       // Per giunto 45° pulito: il lato ESTERNO (verso angolo telaio) ha lunghezza piena,
                                       // il lato INTERNO è accorciato di halfT*2 lato per ogni estremo a 45.
@@ -5011,7 +5426,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "apLabel") {
                                       const tw = String(el.label).length * 7 + 14;
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <g key={el.id} onClick={(e3) => {
+                                          if (drawMode === "place-anta" || drawMode === "place-porta") return;
+                                          e3.stopPropagation();
+                                          if (!drawMode) setMode({ selectedId: el.id });
+                                        }}>
                                           <rect x={el.x - tw / 2} y={el.y - 8} width={tw} height={16} fill={hc || T.blue} rx={3} fillOpacity={0.85} />
                                           <text x={el.x} y={el.y + 4} textAnchor="middle" fontSize={9} fontWeight={800} fill="#fff">{el.label}</text>
                                         </g>
@@ -5024,9 +5443,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const labelStr = String(el.label);
                                       // Inverse zoom: tutti gli elementi UI delle quote restano leggibili
                                       const iz = 1 / zoom;
-                                      const fs = 8 * iz;
-                                      const tw = (labelStr.length * 5.5 + 10) * iz;
-                                      const th = 13 * iz;
+                                      const fs = 18 * iz;
+                                      const tw = (labelStr.length * 9 + 16) * iz;
+                                      const th = 22 * iz;
                                       const DIM_C = "#1A1A1C";
                                       const tickL = 4 * iz;
                                       const sw = 0.5 * iz, sw2 = 0.7 * iz;
@@ -5044,7 +5463,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <line x1={el.x1-tickL} y1={el.y1-tickL} x2={el.x1+tickL} y2={el.y1+tickL} stroke={DIM_C} strokeWidth={sw2}/>
                                             <line x1={el.x2-tickL} y1={el.y2-tickL} x2={el.x2+tickL} y2={el.y2+tickL} stroke={DIM_C} strokeWidth={sw2}/>
                                           </>}
-                                          <rect x={mx2-tw/2} y={my2-th/2} width={tw} height={th} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={2*iz} stroke={dimEdit?.id === el.id ? "#1A9E73" : DIM_C} strokeWidth={0.4*iz} opacity={0.95}/>
+                                          <rect x={mx2-tw/2} y={my2-th/2} width={tw} height={th} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={2*iz} stroke={dimEdit?.id === el.id ? "#1A9E73" : DIM_C} strokeWidth={1*iz} opacity={0.95}/>
                                           <text x={mx2} y={my2+fs/3} textAnchor="middle" fontSize={fs} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : DIM_C} fontFamily="'SF Mono', 'Menlo', monospace" letterSpacing="0.3">{labelStr}</text>
                                         </g>
                                       );
@@ -5210,6 +5629,55 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     });
                                   })()}
 
+                                  {/* GRADI ANGOLO sui vertici telaio libero */}
+                                  {(() => {
+                                    const fls = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                                    if (fls.length < 2) return null;
+                                    // Trova vertici condivisi tra 2+ freeLine
+                                    const verts: any[] = [];
+                                    fls.forEach((l: any) => {
+                                      verts.push({ x: l.x1, y: l.y1, lineId: l.id, end: 'start' });
+                                      verts.push({ x: l.x2, y: l.y2, lineId: l.id, end: 'end' });
+                                    });
+                                    const groups: any[] = [];
+                                    const used = new Set();
+                                    verts.forEach((v, i) => {
+                                      if (used.has(i)) return;
+                                      const grp = [v];
+                                      used.add(i);
+                                      verts.forEach((v2, j) => {
+                                        if (i === j || used.has(j)) return;
+                                        if (Math.hypot(v.x-v2.x, v.y-v2.y) < 5) {
+                                          grp.push(v2);
+                                          used.add(j);
+                                        }
+                                      });
+                                      if (grp.length >= 2) groups.push(grp);
+                                    });
+                                    return groups.map((g: any, gi: number) => {
+                                      // Calcola angolo tra le 2 prime linee del gruppo
+                                      const v0 = g[0], v1 = g[1];
+                                      const l0 = fls.find((l: any) => l.id === v0.lineId);
+                                      const l1 = fls.find((l: any) => l.id === v1.lineId);
+                                      if (!l0 || !l1) return null;
+                                      const a0 = v0.end === 'start'
+                                        ? Math.atan2(l0.y2-l0.y1, l0.x2-l0.x1)
+                                        : Math.atan2(l0.y1-l0.y2, l0.x1-l0.x2);
+                                      const a1 = v1.end === 'start'
+                                        ? Math.atan2(l1.y2-l1.y1, l1.x2-l1.x1)
+                                        : Math.atan2(l1.y1-l1.y2, l1.x1-l1.x2);
+                                      let diff = Math.abs(a1 - a0) * 180 / Math.PI;
+                                      if (diff > 180) diff = 360 - diff;
+                                      const deg = Math.round(diff);
+                                      const iz3 = 1 / zoom;
+                                      return (
+                                        <g key={"deg-"+gi}>
+                                          <rect x={v0.x - 14*iz3} y={v0.y - 26*iz3} width={28*iz3} height={14*iz3} fill="#1A9E73" rx={3*iz3} />
+                                          <text x={v0.x} y={v0.y - 16*iz3} textAnchor="middle" fontSize={10*iz3} fontWeight={800} fill="#fff">{deg}°</text>
+                                        </g>
+                                      );
+                                    });
+                                  })()}
                                   {/* Pallini d'angolo: vertici condivisi da 2+ freeLine telaio */}
                                   {(() => {
                                     if (drawMode) return null;
@@ -5255,7 +5723,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           }}
                                           onTouchStart={(e3) => { e3.stopPropagation(); }}>
                                           <circle cx={v.x} cy={v.y} r={18} fill="transparent" />
-                                          {!isConfigured && <>
+                                          {showPalliniAngoli && !isConfigured && <>
                                             <circle cx={v.x} cy={v.y} r={14/zoom} fill="#fff" stroke="#888" strokeWidth={2/zoom} opacity={0.85} />
                                             <circle cx={v.x} cy={v.y} r={6/zoom} fill="#888" />
                                           </>}
@@ -5415,7 +5883,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             // Colore + simbolo per ogni tipo OSNAP (standard CAD)
                                             const osnapType = (snapped as any)._osnap || 'END';
                                             const osnapColors: any = { END:"#1A9E73", MID:"#D08008", INT:"#DC4444", PERP:"#3B7FE0", NEAR:"#999", EXT:"#9333EA", QUAD:"#0EA5E9" };
-                                            const osnapLabels: any = { END:"END", MID:"MID", INT:"INT", PERP:"PERP", NEAR:"NEAR", EXT:"EXT", QUAD:"QUAD" };
+                                            const osnapLabels: any = { END:"ANGOLO", MID:"CENTRO", INT:"INCROCIO", PERP:"PERP.", NEAR:"VICINO", EXT:"ESTENS.", QUAD:"QUAD." };
                                             const oc = osnapColors[osnapType] || "#1A9E73";
                                             const lbl = osnapLabels[osnapType] || "";
                                             const shape = osnapType;
@@ -5431,8 +5899,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               {/* Punto centrale */}
                                               <circle cx={gx} cy={gy} r={3*iz} fill={oc} />
                                               {/* Etichetta tipo OSNAP */}
-                                              <rect x={gx + 12*iz} y={gy - 8*iz} width={26*iz} height={11*iz} fill={oc} rx={2*iz} />
-                                              <text x={gx + 25*iz} y={gy + 0.5*iz} textAnchor="middle" fontSize={7*iz} fontWeight={800} fill="#fff" fontFamily="'SF Mono',monospace" letterSpacing="0.5">{lbl}</text>
+                                              <rect x={gx + 12*iz} y={gy - 9*iz} width={Math.max(32, lbl.length * 6.5)*iz} height={13*iz} fill={oc} rx={2.5*iz} />
+                                              <text x={gx + 12*iz + (Math.max(32, lbl.length * 6.5)*iz)/2} y={gy + 0.5*iz} textAnchor="middle" fontSize={7.5*iz} fontWeight={800} fill="#fff" fontFamily="'SF Mono',monospace" letterSpacing="0.3">{lbl}</text>
                                             </>;
                                           }
                                           if (drawMode === "place-mont-free" || drawMode === "place-trav-free") return null;
@@ -5719,10 +6187,711 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           newRects.push({ id: t0 + i, type: "rect", x: Math.round(curX), y: fY, w: wPx, h: hPx });
                                           curX += wPx + gap;
                                         }
-                                        setDW([...els, ...newRects]);
+                                        // FIX: sostituisce i telai esistenti invece di aggiungerne altri.
+                                        // Rimuovo anche montanti/traversi/zoccoli che finirebbero orfani fuori dal nuovo telaio.
+                                        const totalW = (wPx * Nv) + (gap * Math.max(0, Nv - 1));
+                                        const xMin = fX, xMax = fX + totalW;
+                                        const yMin = fY, yMax = fY + hPx;
+                                        const elsKept = els.filter((e: any) => {
+                                          if (e.type === "rect") return false; // tutti i vecchi telai via
+                                          // Tieni solo elementi che cadono dentro la nuova area complessiva
+                                          if (e.type === "montante") {
+                                            return e.x >= xMin && e.x <= xMax;
+                                          }
+                                          if (e.type === "traverso") {
+                                            return e.y >= yMin && e.y <= yMax;
+                                          }
+                                          // Tutto il resto (aperture, vetri, accessori) lo tengo: l'utente puo' rimuoverlo a mano
+                                          return true;
+                                        });
+                                        setDW([...elsKept, ...newRects]);
                                         setTelaioBatch(null);
                                       }} style={{ padding: "10px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>Crea {telaioBatch.N} telaio{parseInt(telaioBatch.N)>1?"i":""}</div>
                                     </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Modal FORME PRESET (Casetta / Arco / Trapezio) */}
+                              {shapePicker && shapePicker.open && (
+                                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}
+                                  onClick={() => setShapePicker(null)}>
+                                  <div style={{ background: "#fff", borderRadius: 12, padding: 18, maxWidth: 460, width: "100%", maxHeight: "90vh", overflowY: "auto" }}
+                                    onClick={(e) => e.stopPropagation()}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4, color: "#1A9E73" }}>FORME PRESET</div>
+                                    <div style={{ fontSize: 11, color: "#888", marginBottom: 14 }}>Scegli forma e inserisci le misure in mm</div>
+                                    {/* Step 1: scelta forma */}
+                                    {!shapePicker.shape && (
+                                      <div>
+                                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginBottom: 6, textTransform: "uppercase" }}>Tetti / Forme miste</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "casetta" })}
+                                            style={{ border: "2px solid #1A9E73", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#F0FDF4" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#1A9E73" strokeWidth="3">
+                                              <polygon points="10,40 50,10 90,40 90,80 10,80" fill="#1A9E7320"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#1A9E73" }}>CASETTA</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "trapezio" })}
+                                            style={{ border: "2px solid #D08008", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#FFFBEB" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#D08008" strokeWidth="3">
+                                              <polygon points="10,80 10,30 90,10 90,80" fill="#D0800820"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#D08008" }}>TRAPEZIO</div>
+                                          </div>
+                                        </div>
+                                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginBottom: 6, textTransform: "uppercase" }}>Archi base</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_tutto_sesto" })}
+                                            style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
+                                              <path d="M10,80 L10,50 Q10,10 50,10 Q90,10 90,50 L90,80 Z" fill="#2563EB20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#2563EB" }}>TUTTO SESTO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>semicerchio</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_ribassato" })}
+                                            style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
+                                              <path d="M10,80 L10,50 Q50,15 90,50 L90,80 Z" fill="#2563EB20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#2563EB" }}>RIBASSATO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>schiacciato</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_acuto" })}
+                                            style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
+                                              <path d="M10,80 L10,50 Q10,5 50,5 Q90,5 90,50 L90,80 Z M10,50 Q30,15 50,5 M50,5 Q70,15 90,50" fill="#2563EB20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#2563EB" }}>SESTO ACUTO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>gotico</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_rialzato" })}
+                                            style={{ border: "2px solid #2563EB", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#EFF6FF" }}>
+                                            <svg width="70" height="60" viewBox="0 0 100 90" fill="none" stroke="#2563EB" strokeWidth="3">
+                                              <path d="M10,80 L10,50 Q10,5 50,5 Q90,5 90,50 L90,80 Z" fill="#2563EB20" transform="scale(1,1.05) translate(0,-3)"/>
+                                            </svg>
+                                            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 2, color: "#2563EB" }}>RIALZATO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>oltre semicerchio</div>
+                                          </div>
+                                        </div>
+                                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginTop: 14, marginBottom: 6, textTransform: "uppercase" }}>Archi tecnici</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_3_centri" })}
+                                            style={{ border: "2px solid #7C3AED", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#F5F3FF" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#7C3AED" strokeWidth="3">
+                                              <path d="M10,80 L10,55 Q10,40 25,40 Q50,20 75,40 Q90,40 90,55 L90,80 Z" fill="#7C3AED20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#7C3AED" }}>3 CENTRI</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>cesto</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_ellittico" })}
+                                            style={{ border: "2px solid #7C3AED", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#F5F3FF" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#7C3AED" strokeWidth="3">
+                                              <path d="M10,80 L10,55 A 40,30 0 0 1 90,55 L90,80 Z" fill="#7C3AED20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#7C3AED" }}>ELLITTICO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>elegante</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_policentrico" })}
+                                            style={{ border: "2px solid #7C3AED", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#F5F3FF" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#7C3AED" strokeWidth="3">
+                                              <path d="M10,80 L10,55 Q10,42 22,38 Q35,28 50,25 Q65,28 78,38 Q90,42 90,55 L90,80 Z" fill="#7C3AED20"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#7C3AED" }}>POLICENTR.</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>5 archi</div>
+                                          </div>
+                                        </div>
+                                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginTop: 14, marginBottom: 6, textTransform: "uppercase" }}>Archi speciali</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_asimmetrico" })}
+                                            style={{ border: "2px solid #DC2626", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#FEF2F2" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#DC2626" strokeWidth="3">
+                                              <path d="M10,80 L10,55 Q10,15 50,15 Q90,15 90,40 L90,80 Z" fill="#DC262620"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#DC2626" }}>ASIMMETR.</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>spalle diverse</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_spezzato" })}
+                                            style={{ border: "2px solid #DC2626", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#FEF2F2" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#DC2626" strokeWidth="3">
+                                              <path d="M10,80 L10,40 L50,15 L90,40 L90,80 Z" fill="#DC262620"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#DC2626" }}>SPEZZATO</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>2 segmenti</div>
+                                          </div>
+                                          <div onClick={() => setShapePicker({ ...shapePicker, shape: "arco_ribassato_piedritti" })}
+                                            style={{ border: "2px solid #DC2626", borderRadius: 10, padding: 8, cursor: "pointer", textAlign: "center", background: "#FEF2F2" }}>
+                                            <svg width="60" height="55" viewBox="0 0 100 90" fill="none" stroke="#DC2626" strokeWidth="3">
+                                              <path d="M10,80 L10,30 Q50,18 90,30 L90,80 Z" fill="#DC262620"/>
+                                            </svg>
+                                            <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, color: "#DC2626" }}>RIB.+PIED.</div>
+                                            <div style={{ fontSize: 8, color: "#666" }}>piedritti alti</div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {/* Step 2: misure */}
+                                    {shapePicker.shape && (
+                                      <div>
+                                        <div onClick={() => setShapePicker({ ...shapePicker, shape: null })}
+                                          style={{ fontSize: 11, color: "#1A9E73", cursor: "pointer", marginBottom: 10, fontWeight: 700 }}>← Cambia forma</div>
+                                        {/* Anteprima grande */}
+                                        <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                                          {shapePicker.shape === "casetta" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#1A9E73" strokeWidth="2.5">
+                                              <polygon points="20,80 100,20 180,80 180,160 20,160" fill="#1A9E7315"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#1A9E73" fontWeight="700">L = base</text>
+                                              <text x="195" y="120" textAnchor="end" fontSize="11" fill="#1A9E73" fontWeight="700">H</text>
+                                              <text x="100" y="50" textAnchor="middle" fontSize="11" fill="#1A9E73" fontWeight="700">H2</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_tutto_sesto" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#2563EB" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q20,20 100,20 Q180,20 180,100 L180,160 Z" fill="#2563EB15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
+                                              <text x="100" y="50" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia = L/2</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_ribassato" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#2563EB" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q100,40 180,100 L180,160 Z" fill="#2563EB15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
+                                              <text x="100" y="65" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia (&lt; L/2)</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_acuto" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#2563EB" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q40,30 100,15 Q160,30 180,100 L180,160 Z" fill="#2563EB15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
+                                              <text x="100" y="45" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia (a punta)</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_rialzato" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#2563EB" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q20,5 100,5 Q180,5 180,100 L180,160 Z" fill="#2563EB15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#2563EB" fontWeight="700">H</text>
+                                              <text x="100" y="35" textAnchor="middle" fontSize="11" fill="#2563EB" fontWeight="700">freccia (&gt; L/2)</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_3_centri" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#7C3AED" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q20,75 50,72 Q100,40 150,72 Q180,75 180,100 L180,160 Z" fill="#7C3AED15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#7C3AED" fontWeight="700">H</text>
+                                              <text x="100" y="55" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">freccia</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_ellittico" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#7C3AED" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 A 80,55 0 0 1 180,100 L180,160 Z" fill="#7C3AED15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#7C3AED" fontWeight="700">H</text>
+                                              <text x="100" y="60" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">freccia (semi-asse)</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_policentrico" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#7C3AED" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q20,80 45,72 Q75,52 100,48 Q125,52 155,72 Q180,80 180,100 L180,160 Z" fill="#7C3AED15"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#7C3AED" fontWeight="700">H</text>
+                                              <text x="100" y="42" textAnchor="middle" fontSize="11" fill="#7C3AED" fontWeight="700">freccia</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_asimmetrico" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#DC2626" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 Q20,30 100,30 Q180,30 180,75 L180,160 Z" fill="#DC262615"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">L = base</text>
+                                              <text x="10" y="135" textAnchor="start" fontSize="11" fill="#DC2626" fontWeight="700">Hsx</text>
+                                              <text x="195" y="120" textAnchor="end" fontSize="11" fill="#DC2626" fontWeight="700">Hdx</text>
+                                              <text x="100" y="55" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">freccia</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_spezzato" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#DC2626" strokeWidth="2.5">
+                                              <path d="M20,160 L20,100 L100,30 L180,100 L180,160 Z" fill="#DC262615"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">L = base</text>
+                                              <text x="195" y="130" textAnchor="end" fontSize="11" fill="#DC2626" fontWeight="700">H</text>
+                                              <text x="100" y="55" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">altezza punta</text>
+                                              <text x="105" y="80" textAnchor="start" fontSize="9" fill="#DC2626" fontWeight="600">posiz.</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "arco_ribassato_piedritti" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#DC2626" strokeWidth="2.5">
+                                              <path d="M20,160 L20,55 Q100,25 180,55 L180,160 Z" fill="#DC262615"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">L = base</text>
+                                              <text x="195" y="120" textAnchor="end" fontSize="11" fill="#DC2626" fontWeight="700">H (alti)</text>
+                                              <text x="100" y="42" textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="700">freccia</text>
+                                            </svg>
+                                          )}
+                                          {shapePicker.shape === "trapezio" && (
+                                            <svg width="180" height="160" viewBox="0 0 200 180" fill="none" stroke="#D08008" strokeWidth="2.5">
+                                              <polygon points="20,160 20,80 180,30 180,160" fill="#D0800815"/>
+                                              <text x="100" y="178" textAnchor="middle" fontSize="11" fill="#D08008" fontWeight="700">L = base</text>
+                                              <text x="10" y="120" textAnchor="start" fontSize="11" fill="#D08008" fontWeight="700">H</text>
+                                              <text x="195" y="100" textAnchor="end" fontSize="11" fill="#D08008" fontWeight="700">H2</text>
+                                            </svg>
+                                          )}
+                                        </div>
+                                        {/* Caselle misure */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                                          <div>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>BASE L (mm)</div>
+                                            <input type="number" value={shapePicker.L} onChange={(e) => setShapePicker({ ...shapePicker, L: e.target.value })}
+                                              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                          </div>
+                                          <div>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>{shapePicker.shape === "trapezio" ? "ALT. SX H (mm)" : "ALTEZZA H (mm)"}</div>
+                                            <input type="number" value={shapePicker.H} onChange={(e) => setShapePicker({ ...shapePicker, H: e.target.value })}
+                                              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                          </div>
+                                          {/* Casella H2 dinamica: tutto sesto la nasconde */}
+                                          {shapePicker.shape !== "arco_tutto_sesto" && (
+                                            <div style={{ gridColumn: "1 / span 2" }}>
+                                              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
+                                                {shapePicker.shape === "casetta" && "ALT. COLMO H2 (mm dal punto piu alto dei lati)"}
+                                                {shapePicker.shape === "arco_ribassato" && `FRECCIA (mm) — deve essere < ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
+                                                {shapePicker.shape === "arco_acuto" && "ALTEZZA PUNTA (mm)"}
+                                                {shapePicker.shape === "arco_rialzato" && `FRECCIA (mm) — deve essere > ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
+                                                {shapePicker.shape === "arco_3_centri" && "FRECCIA totale (mm) = altezza dal piedritto al colmo"}
+                                                {shapePicker.shape === "arco_ellittico" && "SEMI-ASSE VERTICALE (mm)"}
+                                                {shapePicker.shape === "arco_policentrico" && "FRECCIA (mm)"}
+                                                {shapePicker.shape === "arco_asimmetrico" && "FRECCIA (mm) — colmo dal punto piu alto"}
+                                                {shapePicker.shape === "arco_spezzato" && "ALTEZZA PUNTA (mm) — dal punto piu alto dei lati"}
+                                                {shapePicker.shape === "arco_ribassato_piedritti" && `FRECCIA (mm) — deve essere < ${Math.round(parseFloat(shapePicker.L)/2) || "L/2"}`}
+                                                {shapePicker.shape === "trapezio" && "ALT. DX H2 (mm)"}
+                                              </div>
+                                              <input type="number" value={shapePicker.H2} onChange={(e) => setShapePicker({ ...shapePicker, H2: e.target.value })}
+                                                style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                              {/* Hint visivo per archi con vincoli */}
+                                              {shapePicker.shape === "arco_ribassato" && parseFloat(shapePicker.H2) >= parseFloat(shapePicker.L)/2 && (
+                                                <div style={{ fontSize: 10, color: "#DC4444", marginTop: 4, fontWeight: 700 }}>⚠ Per essere ribassato, freccia &lt; {Math.round(parseFloat(shapePicker.L)/2)} mm</div>
+                                              )}
+                                              {shapePicker.shape === "arco_rialzato" && parseFloat(shapePicker.H2) <= parseFloat(shapePicker.L)/2 && (
+                                                <div style={{ fontSize: 10, color: "#DC4444", marginTop: 4, fontWeight: 700 }}>⚠ Per essere rialzato, freccia &gt; {Math.round(parseFloat(shapePicker.L)/2)} mm</div>
+                                              )}
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_tutto_sesto" && (
+                                            <div style={{ gridColumn: "1 / span 2", padding: "10px 12px", background: "#EFF6FF", borderRadius: 8, fontSize: 11, color: "#2563EB", fontWeight: 700 }}>
+                                              ℹ Freccia automatica = {Math.round(parseFloat(shapePicker.L)/2) || "L/2"} mm (semicerchio perfetto)
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_3_centri" && (
+                                            <div style={{ gridColumn: "1 / span 2" }}>
+                                              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
+                                                RAGGIO ARCHI LATERALI Rl (mm) — quanto curvano i lati
+                                              </div>
+                                              <input type="number" value={shapePicker.H3} onChange={(e) => setShapePicker({ ...shapePicker, H3: e.target.value })}
+                                                style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                              <div style={{ fontSize: 10, color: "#7C3AED", marginTop: 4, fontWeight: 600 }}>ℹ Suggerito: ~{Math.round(parseFloat(shapePicker.H2 || "800") * 0.6)} mm (60% della freccia)</div>
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_ellittico" && (
+                                            <div style={{ gridColumn: "1 / span 2", padding: "10px 12px", background: "#F5F3FF", borderRadius: 8, fontSize: 11, color: "#7C3AED", fontWeight: 700 }}>
+                                              ℹ Ellisse: semi-asse orizz = L/2 = {Math.round(parseFloat(shapePicker.L)/2) || "L/2"} mm, semi-asse vert = freccia
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_policentrico" && (
+                                            <div style={{ gridColumn: "1 / span 2", padding: "10px 12px", background: "#F5F3FF", borderRadius: 8, fontSize: 11, color: "#7C3AED", fontWeight: 700 }}>
+                                              ℹ Curva super-ellittica armonica con 5 archi tangenti
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_asimmetrico" && (
+                                            <div style={{ gridColumn: "1 / span 2" }}>
+                                              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
+                                                ALTEZZA SPALLA DX (mm) — la H del campo sopra e' la sx
+                                              </div>
+                                              <input type="number" value={shapePicker.H4} onChange={(e) => setShapePicker({ ...shapePicker, H4: e.target.value })}
+                                                style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                              <div style={{ fontSize: 10, color: "#DC2626", marginTop: 4, fontWeight: 600 }}>ℹ Se Hsx = Hdx, l'arco e' simmetrico</div>
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_spezzato" && (
+                                            <div style={{ gridColumn: "1 / span 2" }}>
+                                              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 4 }}>
+                                                POSIZIONE PUNTA da SX (mm) — di solito = L/2 (centro)
+                                              </div>
+                                              <input type="number" value={shapePicker.H4} onChange={(e) => setShapePicker({ ...shapePicker, H4: e.target.value })}
+                                                style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 14, fontWeight: 700 }} />
+                                              <div style={{ fontSize: 10, color: "#DC2626", marginTop: 4, fontWeight: 600 }}>ℹ Centro = {Math.round(parseFloat(shapePicker.L || "1500") / 2)} mm. Sposta a sx/dx per asimmetria.</div>
+                                            </div>
+                                          )}
+                                          {shapePicker.shape === "arco_ribassato_piedritti" && (
+                                            <div style={{ gridColumn: "1 / span 2", padding: "10px 12px", background: "#FEF2F2", borderRadius: 8, fontSize: 11, color: "#DC2626", fontWeight: 700 }}>
+                                              ℹ Stesso arco ribassato ma usa piedritti H grandi (es. 1800-2500 mm tipici per ingressi)
+                                            </div>
+                                          )}
+                                        </div>
+                                        {/* Bottoni */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                                          <div onClick={() => setShapePicker(null)}
+                                            style={{ padding: "12px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#888" }}>Annulla</div>
+                                          <div onClick={() => {
+                                            const Lmm = parseFloat(shapePicker.L);
+                                            const Hmm = parseFloat(shapePicker.H);
+                                            let H2mm = parseFloat(shapePicker.H2);
+                                            if (!Lmm || !Hmm) { alert("Inserisci base e altezza"); return; }
+                                            // Tutto sesto: freccia automatica = L/2 (sovrascrive H2 se mancante)
+                                            if (shapePicker.shape === "arco_tutto_sesto") H2mm = Lmm / 2;
+                                            // Validazioni specifiche
+                                            if (shapePicker.shape === "casetta" && (!H2mm || H2mm <= 0)) { alert("Inserisci altezza colmo"); return; }
+                                            if (shapePicker.shape === "trapezio" && (!H2mm || H2mm <= 0)) { alert("Inserisci altezza DX"); return; }
+                                            if (shapePicker.shape === "arco_ribassato") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                              if (H2mm >= Lmm / 2) { alert("Per arco ribassato la freccia deve essere < L/2 = " + (Lmm/2) + " mm"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_rialzato") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                              if (H2mm <= Lmm / 2) { alert("Per arco rialzato la freccia deve essere > L/2 = " + (Lmm/2) + " mm"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_acuto") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci altezza punta"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_3_centri" || shapePicker.shape === "arco_ellittico" || shapePicker.shape === "arco_policentrico") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_asimmetrico") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                              const H4mm = parseFloat(shapePicker.H4);
+                                              if (!H4mm || H4mm <= 0) { alert("Inserisci altezza spalla DX"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_spezzato") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci altezza punta"); return; }
+                                              const H4mm = parseFloat(shapePicker.H4);
+                                              if (!H4mm || H4mm <= 0) { alert("Inserisci posizione punta"); return; }
+                                              if (H4mm >= Lmm) { alert("Posizione punta deve essere < L"); return; }
+                                            }
+                                            if (shapePicker.shape === "arco_ribassato_piedritti") {
+                                              if (!H2mm || H2mm <= 0) { alert("Inserisci freccia"); return; }
+                                              if (H2mm >= Lmm / 2) { alert("Freccia deve essere < L/2 = " + (Lmm/2) + " mm"); return; }
+                                            }
+                                            // Per casetta H2 puo essere anche 0 per fare un rettangolo, ma normalmente >0
+                                            const pxPerMm = fW / (realW || 1200);
+                                            const Lpx = Math.round(Lmm * pxPerMm);
+                                            const Hpx = Math.round(Hmm * pxPerMm);
+                                            const H2px = Math.round((H2mm || 0) * pxPerMm);
+                                            const x0 = fX, y0 = fY;
+                                            // Rimuovo rect/freeLine shape preesistenti
+                                            const elsKept = els.filter((e: any) => e.type !== "rect" && !e._isFromShape && e.type !== "freeLine");
+                                            const newEls: any[] = [];
+                                            const t0 = Date.now();
+                                            if (shapePicker.shape === "casetta") {
+                                              // Pentagono: SX-base, SX-spalla, COLMO, DX-spalla, DX-base
+                                              const xL = x0, xR = x0 + Lpx;
+                                              const yBase = y0 + H2px + Hpx;
+                                              const ySpalla = y0 + H2px;
+                                              const xColmo = x0 + Lpx / 2;
+                                              const yColmo = y0;
+                                              // 5 freeLine identiche a quelle utente Tel.Lib. (renderer applica TK_FRAME + miter)
+                                              const pts = [
+                                                { x: xL, y: yBase }, { x: xL, y: ySpalla }, { x: xColmo, y: yColmo },
+                                                { x: xR, y: ySpalla }, { x: xR, y: yBase }, { x: xL, y: yBase }
+                                              ];
+                                              for (let i = 0; i < pts.length - 1; i++) {
+                                                newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y });
+                                              }
+                                            } else if (shapePicker.shape && shapePicker.shape.startsWith("arco_")) {
+                                              // ARCHI BASE: piedritto SX -> curva top -> piedritto DX -> base
+                                              const xL = x0, xR = x0 + Lpx;
+                                              const cxA = x0 + Lpx / 2;
+                                              const SEGS = 24;
+                                              // Calcolo freccia in base al tipo
+                                              let frec = H2px;
+                                              if (shapePicker.shape === "arco_tutto_sesto") frec = Lpx / 2;
+                                              const yBase = y0 + frec + Hpx;
+                                              const ySpalla = y0 + frec;
+                                              // Piedritto SX
+                                              newEls.push({ id: t0, type: "freeLine", x1: xL, y1: yBase, x2: xL, y2: ySpalla });
+                                              if (shapePicker.shape === "arco_3_centri") {
+                                                // ARCO A 3 CENTRI: 2 archi piccoli ai lati + 1 arco centrale grande
+                                                // Raggio laterale: utente lo specifica via H3, default 60% freccia
+                                                const rlMm = parseFloat(shapePicker.H3) || frec * 0.6 / pxPerMm;
+                                                const rl = rlMm * pxPerMm;
+                                                const rc = frec * 1.5;
+                                                const yColmo = ySpalla - frec;
+                                                // Centri laterali: a quota ySpalla, a distanza rl da xL e xR
+                                                const cxLat1 = xL + rl;
+                                                const cxLat2 = xR - rl;
+                                                // Arco SX (90° -> tangente alla verticale)
+                                                const SEGS_LAT = 8;
+                                                for (let i = 0; i < SEGS_LAT; i++) {
+                                                  const t1 = i / SEGS_LAT, t2 = (i + 1) / SEGS_LAT;
+                                                  const a1 = Math.PI - (Math.PI / 4) * t1;
+                                                  const a2 = Math.PI - (Math.PI / 4) * t2;
+                                                  const x1a = cxLat1 + rl * Math.cos(a1);
+                                                  const y1a = ySpalla + rl * Math.sin(a1) - rl;
+                                                  const x2a = cxLat1 + rl * Math.cos(a2);
+                                                  const y2a = ySpalla + rl * Math.sin(a2) - rl;
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
+                                                }
+                                                // Arco centrale (riempie il gap tra i due archi laterali)
+                                                const xMidL = cxLat1 + rl * Math.cos(Math.PI - Math.PI/4);
+                                                const yMidL = ySpalla + rl * Math.sin(Math.PI - Math.PI/4) - rl;
+                                                const xMidR = cxLat2 + rl * Math.cos(Math.PI/4);
+                                                const yMidR = ySpalla + rl * Math.sin(Math.PI/4) - rl;
+                                                const SEGS_CTR = 12;
+                                                for (let i = 0; i < SEGS_CTR; i++) {
+                                                  const t1 = i / SEGS_CTR, t2 = (i + 1) / SEGS_CTR;
+                                                  const x1a = xMidL + (xMidR - xMidL) * t1;
+                                                  const x2a = xMidL + (xMidR - xMidL) * t2;
+                                                  // Curvatura quadratica passante per (cxA, yColmo)
+                                                  const tt1 = (x1a - xMidL) / (xMidR - xMidL);
+                                                  const tt2 = (x2a - xMidL) / (xMidR - xMidL);
+                                                  const interpY = (tt: number) => {
+                                                    const ya = (1-tt)*(1-tt)*yMidL + 2*(1-tt)*tt*yColmo + tt*tt*yMidR;
+                                                    return ya;
+                                                  };
+                                                  newEls.push({ id: t0 + 50 + i, type: "freeLine", x1: x1a, y1: interpY(tt1), x2: x2a, y2: interpY(tt2) });
+                                                }
+                                                // Arco DX
+                                                for (let i = 0; i < SEGS_LAT; i++) {
+                                                  const t1 = i / SEGS_LAT, t2 = (i + 1) / SEGS_LAT;
+                                                  const a1 = (Math.PI / 4) - (Math.PI / 4) * t1;
+                                                  const a2 = (Math.PI / 4) - (Math.PI / 4) * t2;
+                                                  const x1a = cxLat2 + rl * Math.cos(a1);
+                                                  const y1a = ySpalla + rl * Math.sin(a1) - rl;
+                                                  const x2a = cxLat2 + rl * Math.cos(a2);
+                                                  const y2a = ySpalla + rl * Math.sin(a2) - rl;
+                                                  newEls.push({ id: t0 + 100 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
+                                                }
+                                              } else if (shapePicker.shape === "arco_ellittico") {
+                                                // ELLISSE: semi-asse orizz = L/2, semi-asse vert = freccia
+                                                const a = Lpx / 2;
+                                                const b = frec;
+                                                const SEGS_E = 32;
+                                                for (let i = 0; i < SEGS_E; i++) {
+                                                  const ang1 = Math.PI - (Math.PI * i) / SEGS_E;
+                                                  const ang2 = Math.PI - (Math.PI * (i + 1)) / SEGS_E;
+                                                  const x1a = cxA + a * Math.cos(ang1);
+                                                  const y1a = ySpalla - b * Math.sin(ang1);
+                                                  const x2a = cxA + a * Math.cos(ang2);
+                                                  const y2a = ySpalla - b * Math.sin(ang2);
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
+                                                }
+                                              } else if (shapePicker.shape === "arco_policentrico") {
+                                                // POLICENTRICO 5 archi: come ellittico ma più armonico
+                                                // Uso una curva super-ellittica con n=2.5 (più "panciuta" di un'ellisse)
+                                                const a = Lpx / 2;
+                                                const b = frec;
+                                                const SEGS_P = 36;
+                                                for (let i = 0; i < SEGS_P; i++) {
+                                                  const ang1 = Math.PI - (Math.PI * i) / SEGS_P;
+                                                  const ang2 = Math.PI - (Math.PI * (i + 1)) / SEGS_P;
+                                                  const sgn = (v: number) => v >= 0 ? 1 : -1;
+                                                  const supX = (ang: number) => sgn(Math.cos(ang)) * Math.pow(Math.abs(Math.cos(ang)), 2/2.5) * a;
+                                                  const supY = (ang: number) => Math.pow(Math.abs(Math.sin(ang)), 2/2.5) * b;
+                                                  const x1a = cxA + supX(ang1);
+                                                  const y1a = ySpalla - supY(ang1);
+                                                  const x2a = cxA + supX(ang2);
+                                                  const y2a = ySpalla - supY(ang2);
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1a, y1: y1a, x2: x2a, y2: y2a });
+                                                }
+                                              } else if (shapePicker.shape === "arco_asimmetrico") {
+                                                // ARCO ASIMMETRICO: H = spalla SX, H4 = spalla DX, freccia da punto piu alto
+                                                const Hsx_px = Hpx; // gia calcolato
+                                                const Hdx_px = (parseFloat(shapePicker.H4) || 1200) * pxPerMm;
+                                                const xL = x0, xR = x0 + Lpx;
+                                                // Spalla piu alta determina il colmo
+                                                const ySpallaSX = y0 + frec + (Math.max(Hsx_px, Hdx_px) - Hsx_px);
+                                                const ySpallaDX = y0 + frec + (Math.max(Hsx_px, Hdx_px) - Hdx_px);
+                                                const yBaseSX = ySpallaSX + Hsx_px;
+                                                const yBaseDX = ySpallaDX + Hdx_px;
+                                                const yColmo = y0;
+                                                const xColmo = x0 + Lpx / 2;
+                                                // Curva ellittica asimmetrica: 2 archi quadratici verso il colmo
+                                                const SEGS_A = 16;
+                                                // Lato SX
+                                                for (let i = 0; i < SEGS_A; i++) {
+                                                  const t1 = i / SEGS_A, t2 = (i + 1) / SEGS_A;
+                                                  const interp = (t: number) => ({
+                                                    x: (1-t)*(1-t)*xL + 2*(1-t)*t*xL + t*t*xColmo,
+                                                    y: (1-t)*(1-t)*ySpallaSX + 2*(1-t)*t*yColmo + t*t*yColmo
+                                                  });
+                                                  const p1 = interp(t1), p2 = interp(t2);
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                                                }
+                                                // Lato DX
+                                                for (let i = 0; i < SEGS_A; i++) {
+                                                  const t1 = i / SEGS_A, t2 = (i + 1) / SEGS_A;
+                                                  const interp = (t: number) => ({
+                                                    x: (1-t)*(1-t)*xColmo + 2*(1-t)*t*xR + t*t*xR,
+                                                    y: (1-t)*(1-t)*yColmo + 2*(1-t)*t*yColmo + t*t*ySpallaDX
+                                                  });
+                                                  const p1 = interp(t1), p2 = interp(t2);
+                                                  newEls.push({ id: t0 + 50 + i, type: "freeLine", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                                                }
+                                                // Override piedritti e base perche asimmetrici
+                                                newEls.push({ id: t0 + 200, type: "freeLine", x1: xL, y1: ySpallaSX, x2: xL, y2: yBaseSX });
+                                                newEls.push({ id: t0 + 201, type: "freeLine", x1: xR, y1: ySpallaDX, x2: xR, y2: yBaseDX });
+                                                newEls.push({ id: t0 + 202, type: "freeLine", x1: xL, y1: yBaseSX, x2: xR, y2: yBaseDX });
+                                                // Skip piedritto/base default che venivano dopo - usiamo return implicito
+                                                setDW([...elsKept, ...newEls]);
+                                                setShapePicker(null);
+                                                return;
+                                              } else if (shapePicker.shape === "arco_spezzato") {
+                                                // SPEZZATO: 2 segmenti retti che formano la punta
+                                                const xL = x0, xR = x0 + Lpx;
+                                                const xPunta = x0 + (parseFloat(shapePicker.H4) || Lpx/pxPerMm/2) * pxPerMm;
+                                                const ySpalla = y0 + frec;
+                                                const yBase = ySpalla + Hpx;
+                                                const yPunta = y0;
+                                                // Lato spezzato SX (1 segmento)
+                                                newEls.push({ id: t0 + 1, type: "freeLine", x1: xL, y1: ySpalla, x2: xPunta, y2: yPunta });
+                                                // Lato spezzato DX (1 segmento)
+                                                newEls.push({ id: t0 + 2, type: "freeLine", x1: xPunta, y1: yPunta, x2: xR, y2: ySpalla });
+                                                // Piedritti DX e base
+                                                newEls.push({ id: t0 + 200, type: "freeLine", x1: xR, y1: ySpalla, x2: xR, y2: yBase });
+                                                newEls.push({ id: t0 + 201, type: "freeLine", x1: xR, y1: yBase, x2: xL, y2: yBase });
+                                                // Piedritto SX
+                                                newEls.unshift({ id: t0, type: "freeLine", x1: xL, y1: yBase, x2: xL, y2: ySpalla });
+                                                setDW([...elsKept, ...newEls]);
+                                                setShapePicker(null);
+                                                return;
+                                              } else if (shapePicker.shape === "arco_ribassato_piedritti") {
+                                                // RIBASSATO + PIEDRITTI ALTI: stesso algoritmo del ribassato standard, ma H grande
+                                                // Cade nella branch generica di sotto perche frec < L/2 e arco circolare
+                                                // Forzo trattamento come ribassato standard
+                                                shapePicker.shape = "arco_ribassato"; // hack: tratta come ribassato
+                                              } else if (shapePicker.shape === "arco_acuto") {
+                                                // 2 archi che si incontrano in punta. Centri ai piedritti opposti, raggio = L
+                                                const yPunta = y0;
+                                                // Arco SX: centro DX, raggio L
+                                                for (let i = 0; i < SEGS / 2; i++) {
+                                                  // Interpolo lineare tra (xL, ySpalla) e (cxA, yPunta) con curvatura
+                                                  const t1 = i / (SEGS / 2);
+                                                  const t2 = (i + 1) / (SEGS / 2);
+                                                  const interp = (t: number) => {
+                                                    // Quadratic Bezier verso il control point (xL, yPunta)
+                                                    const px = (1-t)*(1-t)*xL + 2*(1-t)*t*xL + t*t*cxA;
+                                                    const py = (1-t)*(1-t)*ySpalla + 2*(1-t)*t*yPunta + t*t*yPunta;
+                                                    return { x: px, y: py };
+                                                  };
+                                                  const p1 = interp(t1), p2 = interp(t2);
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                                                }
+                                                // Arco DX
+                                                for (let i = 0; i < SEGS / 2; i++) {
+                                                  const t1 = i / (SEGS / 2);
+                                                  const t2 = (i + 1) / (SEGS / 2);
+                                                  const interp = (t: number) => {
+                                                    const px = (1-t)*(1-t)*cxA + 2*(1-t)*t*xR + t*t*xR;
+                                                    const py = (1-t)*(1-t)*yPunta + 2*(1-t)*t*yPunta + t*t*ySpalla;
+                                                    return { x: px, y: py };
+                                                  };
+                                                  const p1 = interp(t1), p2 = interp(t2);
+                                                  newEls.push({ id: t0 + 50 + i, type: "freeLine", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                                                }
+                                              } else {
+                                                // arco_tutto_sesto / ribassato / rialzato: arco circolare con freccia variabile
+                                                const yColmo = ySpalla - frec;
+                                                // Calcolo centro e raggio del cerchio passante per (xL, ySpalla), (cxA, yColmo), (xR, ySpalla)
+                                                // Per simmetria: centro = (cxA, ySpalla + yc), dove yc si trova dalla equazione
+                                                // (Lpx/2)^2 + (yc)^2 = (frec + yc)^2 -> yc = (Lpx^2/4 - frec^2) / (2*frec)
+                                                const halfL = Lpx / 2;
+                                                if (frec <= 0) frec = 1; // safeguard
+                                                const yc = (halfL * halfL - frec * frec) / (2 * frec);
+                                                const cxC = cxA;
+                                                const cyC = ySpalla + yc;
+                                                const R = Math.sqrt(halfL * halfL + yc * yc);
+                                                // Angoli da xL (a sinistra del centro) a xR (a destra)
+                                                const angL = Math.atan2(ySpalla - cyC, xL - cxC);
+                                                const angR = Math.atan2(ySpalla - cyC, xR - cxC);
+                                                // Per archi rialzati (yc < 0) il centro e' SOTTO la spalla -> arco passa SOPRA
+                                                // per ribassati (yc > 0) il centro e' SOPRA la spalla -> arco corto
+                                                // L'arco DEVE passare per il colmo (cxA, yColmo)
+                                                // Per andare dalla spalla SX al colmo al spalla DX, l'angolo va da angL (Pi-something) attraverso Pi/2 verso angR
+                                                // Calcolo l'angolo del colmo
+                                                const angTop = Math.atan2(yColmo - cyC, cxC - cxC); // sempre verticale, ma cos(0)=1
+                                                // Genera punti in modo che attraversino il colmo
+                                                for (let i = 0; i < SEGS; i++) {
+                                                  const t1 = i / SEGS;
+                                                  const t2 = (i + 1) / SEGS;
+                                                  // Interpolo l'angolo: parto da angL e vado verso angR passando per angolo del colmo
+                                                  // Per un cerchio: angolo del colmo è -PI/2 (verso l'alto) se cyC > yColmo
+                                                  const aTop = -Math.PI / 2;
+                                                  // angL > aTop > angR di solito; vado in linea retta da angL a angR
+                                                  // Ma se l'arco va sopra il centro, devo fare percorso passante per aTop
+                                                  // Soluzione semplice: genero pt usando atan2 diretto
+                                                  const a1 = angL + (angR - angL) * t1;
+                                                  const a2 = angL + (angR - angL) * t2;
+                                                  // FIX: invece di interp lineare angoli, interpolo come il cerchio "naturale"
+                                                  // Uso il fatto che y deve raggiungere yColmo a t=0.5
+                                                  // Approccio diretto: param x da xL a xR, y dal cerchio
+                                                  const x1param = xL + (xR - xL) * t1;
+                                                  const x2param = xL + (xR - xL) * t2;
+                                                  const dx1 = x1param - cxC;
+                                                  const dy1sq = R * R - dx1 * dx1;
+                                                  const y1param = cyC - Math.sqrt(Math.max(0, dy1sq));
+                                                  const dx2 = x2param - cxC;
+                                                  const dy2sq = R * R - dx2 * dx2;
+                                                  const y2param = cyC - Math.sqrt(Math.max(0, dy2sq));
+                                                  newEls.push({ id: t0 + 1 + i, type: "freeLine", x1: x1param, y1: y1param, x2: x2param, y2: y2param });
+                                                }
+                                              }
+                                              // Piedritto DX
+                                              newEls.push({ id: t0 + 200, type: "freeLine", x1: xR, y1: ySpalla, x2: xR, y2: yBase });
+                                              // Base
+                                              newEls.push({ id: t0 + 201, type: "freeLine", x1: xR, y1: yBase, x2: xL, y2: yBase });
+                                            } else if (shapePicker.shape === "trapezio") {
+                                              const xL = x0, xR = x0 + Lpx;
+                                              const yBase = y0 + Math.max(Hpx, H2px);
+                                              const ySX = yBase - Hpx;
+                                              const yDX = yBase - H2px;
+                                              const pts = [
+                                                { x: xL, y: yBase }, { x: xL, y: ySX }, { x: xR, y: yDX }, { x: xR, y: yBase }, { x: xL, y: yBase }
+                                              ];
+                                              for (let i = 0; i < pts.length - 1; i++) {
+                                                newEls.push({ id: t0 + i, type: "freeLine", x1: pts[i].x, y1: pts[i].y, x2: pts[i+1].x, y2: pts[i+1].y });
+                                              }
+                                            }
+                                            // AUTO-QUOTE: calcola e aggiunge quote per ogni segmento freeLine generato
+                                            const _autoQuotes: any[] = [];
+                                            const _qT0 = Date.now() + 9000;
+                                            // Bounding box per calcolare offset esterno
+                                            const _allXq = newEls.flatMap((e: any) => [e.x1, e.x2]).filter((v: any) => Number.isFinite(v));
+                                            const _allYq = newEls.flatMap((e: any) => [e.y1, e.y2]).filter((v: any) => Number.isFinite(v));
+                                            const _bMinXq = Math.min(..._allXq), _bMaxXq = Math.max(..._allXq);
+                                            const _bMinYq = Math.min(..._allYq), _bMaxYq = Math.max(..._allYq);
+                                            const _bCx = (_bMinXq + _bMaxXq) / 2, _bCy = (_bMinYq + _bMaxYq) / 2;
+                                            // Solo per segmenti significativi (lunghezza > 30px) e non per archi (troppi piccoli segmenti)
+                                            const _isArc = shapePicker.shape && shapePicker.shape.startsWith("arco_");
+                                            // FIX: per gli archi NIENTE auto-quote (troppi segmenti = pallini sovrapposti)
+                                            // L'utente puo' usare il bottone "Aggiusta" per generare quote pulite
+                                            if (_isArc) {
+                                              setDW([...elsKept, ...newEls]);
+                                              setShapePicker(null);
+                                              return;
+                                            }
+                                            newEls.forEach((seg: any, idx: number) => {
+                                              if (seg.type !== "freeLine") return;
+                                              const _dxQ = seg.x2 - seg.x1, _dyQ = seg.y2 - seg.y1;
+                                              const _segPxQ = Math.hypot(_dxQ, _dyQ);
+                                              if (_segPxQ < 30) return;
+                                              const _segMM = Math.round(_segPxQ / pxPerMm);
+                                              if (_segMM < 50) return;
+                                              // Offset esterno: dal centro del segmento perpendicolare verso fuori del bounding box
+                                              const _midXq = (seg.x1 + seg.x2) / 2, _midYq = (seg.y1 + seg.y2) / 2;
+                                              const _outX = _midXq - _bCx, _outY = _midYq - _bCy;
+                                              const _outD = Math.hypot(_outX, _outY) || 1;
+                                              const _offDist = 45; // px fuori dal telaio (allargato per separare visivamente da profilo)
+                                              const _offX = (_outX / _outD) * _offDist;
+                                              const _offY = (_outY / _outD) * _offDist;
+                                              // FIX: skip auto-quote (utente le aggiunge se vuole)
+                                              // _autoQuotes.push omitted
+                                            });
+                                            // Rimuovi quote auto precedenti
+                                            const _elsKeptNoOldQuotes = elsKept.filter((e: any) => !(e.type === "dim" && e._autoFromShape));
+                                            setDW([..._elsKeptNoOldQuotes, ...newEls, ..._autoQuotes]);
+                                            setShapePicker(null);
+                                          }} style={{ padding: "12px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 800, color: "#fff" }}>Crea forma</div>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               )}
@@ -6098,7 +7267,49 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       <rect x="6" y="6" width="28" height={sw} fill={active ? "#fff" : BG} opacity="0.4"/>
                                       <rect x="6" y="6" width={sw} height="28" fill={active ? "#fff" : BG} opacity="0.4"/>
                                       <text x="20" y="28" textAnchor="middle" fontSize="14" fontWeight="900" fill={active ? "#fff" : BG}>?</text>
-                                    </svg>
+                                                                      {showGradi && (() => {
+                                    const fls = (els || []).filter((e) => e.type === "freeLine" && !e.subType);
+                                    if (fls.length < 2) return null;
+                                    const verts = [];
+                                    fls.forEach((l) => {
+                                      verts.push({ x: l.x1, y: l.y1, id: l.id, side: 's' });
+                                      verts.push({ x: l.x2, y: l.y2, id: l.id, side: 'e' });
+                                    });
+                                    const groups = [];
+                                    const used = new Set();
+                                    verts.forEach((v, i) => {
+                                      if (used.has(i)) return;
+                                      const grp = [v];
+                                      used.add(i);
+                                      verts.forEach((v2, j) => {
+                                        if (i === j || used.has(j)) return;
+                                        if (Math.hypot(v.x - v2.x, v.y - v2.y) < 5) {
+                                          grp.push(v2);
+                                          used.add(j);
+                                        }
+                                      });
+                                      if (grp.length >= 2) groups.push(grp);
+                                    });
+                                    const iz4 = 1 / zoom;
+                                    return groups.map((g, gi) => {
+                                      const v0 = g[0], v1 = g[1];
+                                      const l0 = fls.find((x) => x.id === v0.id);
+                                      const l1 = fls.find((x) => x.id === v1.id);
+                                      if (!l0 || !l1) return null;
+                                      const a0 = v0.side === 's' ? Math.atan2(l0.y2 - l0.y1, l0.x2 - l0.x1) : Math.atan2(l0.y1 - l0.y2, l0.x1 - l0.x2);
+                                      const a1 = v1.side === 's' ? Math.atan2(l1.y2 - l1.y1, l1.x2 - l1.x1) : Math.atan2(l1.y1 - l1.y2, l1.x1 - l1.x2);
+                                      let diff = Math.abs(a1 - a0) * 180 / Math.PI;
+                                      if (diff > 180) diff = 360 - diff;
+                                      const deg = Math.round(diff);
+                                      return (
+                                        <g key={"deg-" + gi} pointerEvents="none">
+                                          <rect x={v0.x - 18 * iz4} y={v0.y - 36 * iz4} width={36 * iz4} height={18 * iz4} fill="#1A9E73" rx={4 * iz4} />
+                                          <text x={v0.x} y={v0.y - 23 * iz4} textAnchor="middle" fontSize={12 * iz4} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono', monospace">{deg + "\u00B0"}</text>
+                                        </g>
+                                      );
+                                    });
+                                  })()}
+                                </svg>
                                   );
                                 };
                                 const Btn = ({ m, hint, color }: any) => (
