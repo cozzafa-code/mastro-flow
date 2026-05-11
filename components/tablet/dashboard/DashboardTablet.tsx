@@ -162,8 +162,9 @@ export default function DashboardTablet() {
     <div style={{ background: C.bg, minWidth: 0, width: "100%", overflow: "hidden" }}>
 
       {/* HERO */}
-      <div style={{
+      <div onClick={() => navigate("calendario")} style={{
         background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyDark} 100%)`,
+        cursor: "pointer",
         borderRadius: 20, padding: heroPad, color: "#fff",
         marginBottom: gap, boxShadow: "0 8px 24px rgba(15,27,45,0.4)",
         position: "relative", overflow: "hidden",
@@ -207,7 +208,7 @@ export default function DashboardTablet() {
 
       {/* KPI */}
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${kpiCols}, minmax(0, 1fr))`, gap: 12, marginBottom: gap }}>
-        <Kpi color="navy" mode={mode} iconPath={<><path d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></>} value="14" label="Attive" delta="▲ +2" deltaUp />
+        <Kpi color="navy" mode={mode} iconPath={<><path d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></>} value="14" label="Attive" delta="▲ +2" deltaUp onClick={() => navigate("commesse")} />
         <Kpi color="amber" mode={mode} iconPath={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></>} value="3" label="Sopra." />
         <Kpi color="purple" mode={mode} iconPath={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} value="5" label="Produz." delta="▲ +1" deltaUp />
         <Kpi color="red" mode={mode} iconPath={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} value="2" label="Ferme" delta="▲ +1" />
@@ -244,7 +245,7 @@ export default function DashboardTablet() {
           <PanelHead title="Agenda oggi" link="Tutti ›" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {TODAY_EVENTS.map((e, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 11, background: C.cardSoft, borderRadius: 12, cursor: "pointer", minWidth: 0 }}>
+              <div key={i} onClick={() => navigate(e.tag === "MONTAGGIO" ? "montaggi" : e.tag === "PREVENTIVO" ? "commesse" : "sopralluoghi")} style={{ display: "flex", alignItems: "center", gap: 12, padding: 11, background: C.cardSoft, borderRadius: 12, cursor: "pointer", minWidth: 0 }}>
                 <div style={{
                   width: 46, height: 46, borderRadius: "50%",
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -268,7 +269,7 @@ export default function DashboardTablet() {
           <PanelHead title="Urgenti" link="Tutte ›" iconBg={C.redTint} iconColor={C.red} icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {ALERTS.map((a, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 11, background: C.redSoft, borderRadius: 12, cursor: "pointer", border: "1px solid #FECACA", minWidth: 0 }}>
+              <div key={i} onClick={() => navigate("commesse")} style={{ display: "flex", alignItems: "center", gap: 10, padding: 11, background: C.redSoft, borderRadius: 12, cursor: "pointer", border: "1px solid #FECACA", minWidth: 0 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 11, background: C.red, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, flexShrink: 0 }}>{a.code}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: "#7F1D1D", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</div>
@@ -286,7 +287,7 @@ export default function DashboardTablet() {
           <PanelHead title="Team live" link="Tutti ›" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {TEAM.map((m, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 7, borderRadius: 10, cursor: "pointer", minWidth: 0 }}>
+              <div key={i} onClick={() => navigate("clienti")} style={{ display: "flex", alignItems: "center", gap: 10, padding: 7, borderRadius: 10, cursor: "pointer", minWidth: 0 }}>
                 <div style={{ width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, #475A75, ${C.navy})`, color: "#fff", fontWeight: 800, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
                   {m.code}
                   <div style={{
@@ -322,7 +323,7 @@ export default function DashboardTablet() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {PAYMENTS.map((p, i) => (
-              <div key={i} style={{
+              <div key={i} onClick={() => navigate("contabilita")} style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 padding: "9px 11px", borderRadius: 10, cursor: "pointer", gap: 10, minWidth: 0,
                 background: p.urgent ? C.redTint : C.cardSoft,
@@ -342,7 +343,7 @@ export default function DashboardTablet() {
           <PanelHead title="Produzione · 5 attive" link="Reparto ›" iconBg={C.purpleTint} iconColor={C.purple} icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {PRODUCTIONS.map((p, i) => (
-              <div key={i} style={{ padding: 12, background: C.cardSoft, borderRadius: 12, cursor: "pointer", minWidth: 0 }}>
+              <div key={i} onClick={() => navigate("produzione")} style={{ padding: 12, background: C.cardSoft, borderRadius: 12, cursor: "pointer", minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7, gap: 10 }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{p.name}</div>
                   <div style={{ fontSize: 13, fontWeight: 800, color: C.navy, flexShrink: 0 }}>{p.pct}%</div>
@@ -378,7 +379,7 @@ export default function DashboardTablet() {
           <PanelHead title="Messaggi · 3" link="Talk ›" iconBg={C.blueTint} iconColor={C.blue} icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
             {MESSAGES.map((m, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 9, background: C.cardSoft, borderRadius: 10, cursor: "pointer", minWidth: 0 }}>
+              <div key={i} onClick={() => navigate("ai")} style={{ display: "flex", alignItems: "center", gap: 10, padding: 9, background: C.cardSoft, borderRadius: 10, cursor: "pointer", minWidth: 0 }}>
                 <div style={{
                   width: 34, height: 34, borderRadius: 9,
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -399,7 +400,7 @@ export default function DashboardTablet() {
           <PanelHead title="Top clienti mese" link="Tutti ›" iconBg={C.amberTint} iconColor={C.amber} icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
             {TOP_CLIENTS.map((c, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 9, background: C.cardSoft, borderRadius: 10, cursor: "pointer", minWidth: 0 }}>
+              <div key={i} onClick={() => navigate("clienti")} style={{ display: "flex", alignItems: "center", gap: 10, padding: 9, background: C.cardSoft, borderRadius: 10, cursor: "pointer", minWidth: 0 }}>
                 <div style={{
                   width: 26, height: 26, borderRadius: "50%",
                   background: c.gold ? C.amberTint : C.navyTint,
@@ -424,7 +425,7 @@ export default function DashboardTablet() {
           <PanelHead title="Magazzino sotto-scorta · 5" link="Riordina ›" iconBg={C.redTint} iconColor={C.red} icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/></svg>} />
           <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
             {STOCK_LOW.map((s, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: C.redSoft, borderRadius: 11, cursor: "pointer", border: "1px solid #FECACA", minWidth: 0 }}>
+              <div key={i} onClick={() => navigate("magazzino")} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: C.redSoft, borderRadius: 11, cursor: "pointer", border: "1px solid #FECACA", minWidth: 0 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: C.red, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 800, fontSize: 13 }}>!</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: "#7F1D1D", lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
@@ -443,7 +444,7 @@ export default function DashboardTablet() {
               const pillBg = c.phaseClass === "prev" ? C.amberTint : c.phaseClass === "fatt" ? C.greenTint : C.navyTint;
               const pillColor = c.phaseClass === "prev" ? C.amber : c.phaseClass === "fatt" ? C.green : C.navy;
               return (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: 9, background: C.cardSoft, borderRadius: 10, cursor: "pointer", minWidth: 0 }}>
+                <div key={i} onClick={() => navigate("commesse")} style={{ display: "flex", alignItems: "center", gap: 10, padding: 9, background: C.cardSoft, borderRadius: 10, cursor: "pointer", minWidth: 0 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 10, color: "#fff", fontWeight: 800, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: avatarBg }}>{c.code}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
