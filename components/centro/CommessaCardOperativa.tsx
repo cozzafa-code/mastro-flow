@@ -35,9 +35,10 @@ interface Props {
   showIndirizzo?: boolean;
   conflitti?: Conflitto[];
   onAutoSchedule?: (id: string) => void;
+  onApriMateriali?: (id: string, code: string, cliente: string) => void;
 }
 
-export default function CommessaCardOperativa({ cm, onClick, compact, showIndirizzo, conflitti, onAutoSchedule }: Props) {
+export default function CommessaCardOperativa({ cm, onClick, compact, showIndirizzo, conflitti, onAutoSchedule, onApriMateriali }: Props) {
   const matCol = cm.materiali_status === 'completo' ? TEAL : cm.materiali_status === 'parziale' ? AMBER : cm.materiali_status === 'in_attesa' ? RED : MUTED;
   const rischio = computeRischio(cm);
 
@@ -145,6 +146,20 @@ export default function CommessaCardOperativa({ cm, onClick, compact, showIndiri
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth={2}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/><line x1={12} y1={17} x2={12.01} y2={17}/></svg>
           <span style={{ fontWeight: 600 }}>{rischio.warning}</span>
         </div>
+      )}
+
+      {!compact && onApriMateriali && (
+        <button onClick={(e) => {
+          e.stopPropagation();
+          onApriMateriali(cm.id, cm.code, `${cm.cliente || ''} ${cm.cognome || ''}`.trim());
+        }} style={{
+          marginTop: 10, width: '100%', padding: '9px 0',
+          background: '#fff', color: TEAL_DEEP, border: `1.5px solid ${TEAL}`,
+          borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        }}>
+          📦 VEDI MATERIALI
+        </button>
       )}
     </div>
   );

@@ -13,6 +13,7 @@ import { useSquadre, type SquadraDetail } from "../hooks/useSquadre";
 import { useConflitti } from "../hooks/useConflitti";
 import BannerPrevisioneCollassi from "./centro/BannerPrevisioneCollassi";
 import ModalAutoScheduling from "./centro/ModalAutoScheduling";
+import MaterialiCommessaDrawer from "./centro/MaterialiCommessaDrawer";
 import AIAssistantDrawer from "./centro/AIAssistantDrawer";
 import MappaCantieri from "./centro/MappaCantieri";
 
@@ -70,6 +71,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
   const isWide = useIsWideScreen(1024);
   const { conflitti, totBlock, totWarn } = useConflitti(resolved);
   const [autoSchedCm, setAutoSchedCm] = useState<{ id: string; code: string } | null>(null);
+  const [materialiCm, setMaterialiCm] = useState<{ id: string; code: string; cliente: string } | null>(null);
 
   const { from, to, label } = useMemo(() => {
     if (view === 'giorno') return { from: fmtDate(currentDate), to: fmtDate(currentDate), label: currentDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }) };
@@ -154,7 +156,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
           {/* COLONNA SX: Commesse da pianificare */}
           <div style={{ background: '#fff', borderRadius: 12, padding: 12, maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' as const, position: 'sticky' as const, top: 14 }}>
             <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 10, fontWeight: 700 }}>DA PIANIFICARE</div>
-            <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} conflitti={conflitti} onAutoSchedule={(id: string, code: string) => setAutoSchedCm({ id, code })} />
+            <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} conflitti={conflitti} onAutoSchedule={(id: string, code: string) => setAutoSchedCm({ id, code })} onApriMateriali={(id: string, code: string, cliente: string) => setMaterialiCm({ id, code, cliente })} />
           </div>
 
           {/* COLONNA CENTRO: Calendario */}
@@ -185,7 +187,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
         <div style={{ padding: 14 }}>
           <BannerPrevisioneCollassi aziendaId={resolved} />
           {loading ? <Empty label="Caricamento..." /> :
-           view === 'da-pianificare' ? <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} conflitti={conflitti} onAutoSchedule={(id: string, code: string) => setAutoSchedCm({ id, code })} /> :
+           view === 'da-pianificare' ? <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} conflitti={conflitti} onAutoSchedule={(id: string, code: string) => setAutoSchedCm({ id, code })} onApriMateriali={(id: string, code: string, cliente: string) => setMaterialiCm({ id, code, cliente })} /> :
            view === 'squadre' ? <ViewSquadre aziendaId={resolved} /> :
            view === 'giorno' ? <ViewGiorno montaggi={montaggi} onApri={onApriCommessa} /> :
            view === 'settimana' ? <ViewSettimana montaggi={montaggi} fromDate={from} onApri={onApriCommessa} /> :
@@ -202,13 +204,22 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
         />
       )}
 
+      {materialiCm && (
+        <MaterialiCommessaDrawer
+          commessaId={materialiCm.id}
+          commessaCode={materialiCm.code}
+          commessaCliente={materialiCm.cliente}
+          onClose={() => setMaterialiCm(null)}
+        />
+      )}
+
       {resolved && <AIAssistantDrawer aziendaId={resolved} onApriCommessa={onApriCommessa} />}
     </div>
   );
 }
 
 // =============== VISTA 1: DA PIANIFICARE + MAPPA ===============
-function ViewDaPianificare({ aziendaId, onApri, conflitti, onAutoSchedule }: any) {
+function ViewDaPianificare({ aziendaId, onApri, conflitti, onAutoSchedule, onApriMateriali }: any) {
   const [commesse, setCommesse] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'tutte'|'pronte'|'parziali'|'attesa'|'urgenti'>('tutte');
@@ -303,7 +314,7 @@ function ViewDaPianificare({ aziendaId, onApri, conflitti, onAutoSchedule }: any
 
       <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>COMMESSE ({filtered.length})</div>
       {filtered.map(c => (
-        <CommessaCardOperativa key={c.id} cm={c} onClick={() => onApri?.(c.id)} showIndirizzo conflitti={conflitti?.[c.id]} onAutoSchedule={(id: string) => onAutoSchedule?.(id, c.code)} />
+        <CommessaCardOperativa key={c.id} cm={c} onClick={() => onApri?.(c.id)} showIndirizzo conflitti={conflitti?.[c.id]} onAutoSchedule={(id: string) => onAutoSchedule?.(id, c.code)} onApriMateriali={onApriMateriali} />
       ))}
     </>
   );
