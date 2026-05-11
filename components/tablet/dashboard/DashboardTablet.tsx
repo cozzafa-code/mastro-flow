@@ -143,7 +143,7 @@ const RECENT_COMMESSE = [
 ];
 
 export default function DashboardTablet() {
-  const { preset } = useDashboard();
+  const { preset, navigate } = useDashboard();
   const mode = useViewport();
 
   // Responsive layout decisions
