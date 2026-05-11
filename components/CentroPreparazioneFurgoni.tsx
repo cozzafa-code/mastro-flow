@@ -5,6 +5,7 @@
 import React, { useState } from "react";
 import { useFurgoni, useCarico, toggleVerificato, toggleCaricato, verificaPartenza, type Carico, type CaricoArticolo } from "../hooks/useFurgoni";
 import { usePicking, useErrorEngine, type PickingStop, type ErroreBloccante } from "../hooks/usePicking";
+import ScannerQRModal from "./centro/ScannerQRModal";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -166,6 +167,7 @@ function CardCarico({ c, onClick }: { c: Carico; onClick: () => void }) {
 function DettaglioCarico({ caricoId, onClose, onApriCommessa }: any) {
   const { carico, articoli, loading } = useCarico(caricoId);
   const errori = useErrorEngine(carico, articoli);
+  const [showScanner, setShowScanner] = useState(false);
   const [tab, setTab] = useState<'percorso' | 'carico' | 'picking' | 'squadra'>('carico');
 
   if (loading || !carico) {
@@ -217,6 +219,31 @@ function DettaglioCarico({ caricoId, onClose, onApriCommessa }: any) {
         {tab === 'carico' && <ViewCarico articoli={articoli} carico={carico} />}
         {tab === 'squadra' && <ViewSquadra carico={carico} articoli={articoli} />}
       </div>
+
+      {/* Bottone floating SCAN - visibile su tab Carico e Picking */}
+      {(tab === 'carico' || tab === 'picking') && (
+        <button onClick={() => setShowScanner(true)} style={{
+          position: 'fixed', bottom: 90, right: 18, zIndex: 9850,
+          width: 64, height: 64, borderRadius: '50%',
+          background: `linear-gradient(135deg, ${TEAL}, ${TEAL_DEEP})`,
+          color: '#fff', border: 'none', cursor: 'pointer',
+          boxShadow: '0 6px 20px rgba(40,160,160,0.5)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 1,
+        }}>
+          <span style={{ fontSize: 24 }}>📷</span>
+          <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 0.5 }}>SCAN</span>
+        </button>
+      )}
+
+      {showScanner && (
+        <ScannerQRModal
+          caricoId={carico.id}
+          articoli={articoli}
+          defaultAction={tab === 'carico' ? 'carica' : 'verifica'}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   );
 }
