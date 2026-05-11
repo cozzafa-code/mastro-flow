@@ -7,6 +7,7 @@ import { useImmobiliCliente, useInfissiImmobile, type Immobile, type InfissoInst
 import { uploadFile } from "../../lib/uploadStorage";
 import { supabase } from "@/lib/supabase";
 import FotoGrid from "../FotoGrid";
+import { IcoLayout, IcoCamera, IcoUpload, IcoRefresh, IcoMap } from "../IconLib";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -271,19 +272,23 @@ function ViewPlanimetria({ immobile }: any) {
   return (
     <>
       {/* PLANIMETRIA */}
-      <div style={{ background: '#fff', borderRadius: 12, padding: 10, marginBottom: 10 }}>
-        <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8 }}>📐 PLANIMETRIA</div>
+      <div style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <IcoLayout size={11} color={MUTED} />PLANIMETRIA
+        </div>
         {planimetria ? (
           <>
-            <img src={planimetria} alt="Planimetria" style={{ width: '100%', borderRadius: 8, marginBottom: 8, cursor: 'pointer' }} onClick={() => window.open(planimetria)} />
-            <button onClick={() => inputRef.current?.click()} disabled={uploading} style={{ width: '100%', padding: 8, background: '#F1F4F7', color: TEXT, border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-              {uploading ? '⏳ Upload...' : '🔄 Sostituisci planimetria'}
+            <img src={planimetria} alt="Planimetria" style={{ width: '100%', borderRadius: 8, marginBottom: 8, cursor: 'pointer', border: '1px solid #E5EAF0' }} onClick={() => window.open(planimetria)} />
+            <button onClick={() => inputRef.current?.click()} disabled={uploading} style={{ width: '100%', padding: '9px 12px', background: '#F1F4F7', color: TEXT, border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <IcoRefresh size={13} color={TEXT} />
+              {uploading ? 'Upload...' : 'Sostituisci planimetria'}
             </button>
           </>
         ) : (
-          <button onClick={() => inputRef.current?.click()} disabled={uploading} style={{ width: '100%', padding: '24px 12px', background: '#F8FAFA', color: TEAL_DEEP, border: `2px dashed ${TEAL}`, borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: uploading ? 'wait' : 'pointer', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 32 }}>📐</span>
+          <button onClick={() => inputRef.current?.click()} disabled={uploading} style={{ width: '100%', padding: '28px 12px', background: '#F8FAFA', color: TEAL_DEEP, border: `2px dashed ${TEAL}`, borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: uploading ? 'wait' : 'pointer', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 8 }}>
+            <IcoLayout size={32} color={TEAL_DEEP} />
             <span>{uploading ? 'Upload in corso...' : 'Carica planimetria'}</span>
+            <span style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>JPG, PNG o PDF</span>
           </button>
         )}
         <input ref={inputRef} type="file" accept="image/*,application/pdf" onChange={e => handlePlanim(e.target.files?.[0] || null)} style={{ display: 'none' }} />
@@ -291,7 +296,9 @@ function ViewPlanimetria({ immobile }: any) {
 
       {/* GALLERIA FOTO */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 12 }}>
-        <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8 }}>🖼️ GALLERIA FOTO IMMOBILE · {galleria.length}</div>
+        <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <IcoCamera size={11} color={MUTED} />GALLERIA FOTO IMMOBILE · {galleria.length}
+        </div>
         <FotoGrid foto={galleria} onChange={handleGalleria} uploadFolder={`immobili/${immobile.id}/galleria`} size="lg" maxFoto={20} />
       </div>
     </>

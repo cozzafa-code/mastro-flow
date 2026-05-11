@@ -5,6 +5,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { creaEvento } from "../hooks/useDossierCliente";
 import FotoGrid from "./FotoGrid";
+import { IcoFile, IcoMic, IcoStop, IcoClose, IcoPin, IcoPin as IPin, IcoCheck, IcoTag, IcoCamera, IcoEye, IcoAlertTriangle, IcoSparkles, IcoRefresh, IcoTool } from "./IconLib";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -13,29 +14,35 @@ const GREEN = "#10B981", PURPLE = "#7E22CE";
 const TEXT = "#0F1F33", MUTED = "#5C6B7A";
 const BG = "#F4F1EA";
 
-const TAG_EMOZIONALI_PRESET = [
-  { val: 'preciso', icon: '🎯', col: BLUE_DARK() },
-  { val: 'puntuale', icon: '⏱️', col: TEAL_DEEP },
-  { val: 'ansioso', icon: '😰', col: AMBER },
-  { val: 'decisivo', icon: '💪', col: PURPLE },
-  { val: 'esigente', icon: '🔍', col: '#7E22CE' },
-  { val: 'attento_dettagli', icon: '🧐', col: '#1E40AF' },
-  { val: 'pagamento_lento', icon: '🐌', col: AMBER },
-  { val: 'problematico', icon: '⚠️', col: RED },
-  { val: 'fedele', icon: '💎', col: TEAL },
-  { val: 'referral_potenziale', icon: '🤝', col: GREEN },
+const TAG_EMOZIONALI_PRESET: { val: string; col: string }[] = [
+  { val: 'preciso',             col: '#1E40AF' },
+  { val: 'puntuale',            col: '#0F6E56' },
+  { val: 'ansioso',             col: '#D97706' },
+  { val: 'decisivo',            col: '#1E3A5F' },
+  { val: 'esigente',            col: '#1E40AF' },
+  { val: 'attento_dettagli',    col: '#1E40AF' },
+  { val: 'pagamento_lento',     col: '#D97706' },
+  { val: 'problematico',        col: '#DC2626' },
+  { val: 'fedele',              col: '#0F6E56' },
+  { val: 'referral_potenziale', col: '#0F6E56' },
 ];
 
 function BLUE_DARK() { return '#1E40AF'; }
 
-const TIPI_NOTA = [
-  { val: 'memo', icon: '📌', label: 'Memo importante', col: PURPLE },
-  { val: 'osservazione', icon: '👁️', label: 'Osservazione', col: BLUE_DARK() },
-  { val: 'problema', icon: '⚠️', label: 'Problema', col: RED, categoria: 'problema' },
-  { val: 'preferenza', icon: '💡', label: 'Preferenza cliente', col: AMBER },
-  { val: 'follow_up', icon: '🔁', label: 'Da ricontattare', col: TEAL },
-  { val: 'tecnico', icon: '🔧', label: 'Nota tecnica', col: '#1E40AF', categoria: 'tecnico' },
+const TIPI_NOTA_RAW = [
+  { val: 'memo', label: 'Memo importante', col: NAVY_LOC() },
+  { val: 'osservazione', label: 'Osservazione', col: BLUE_DARK() },
+  { val: 'problema', label: 'Problema', col: RED, categoria: 'problema' as const },
+  { val: 'preferenza', label: 'Preferenza cliente', col: AMBER },
+  { val: 'follow_up', label: 'Da ricontattare', col: TEAL_LOC() },
+  { val: 'tecnico', label: 'Nota tecnica', col: BLUE_DARK(), categoria: 'tecnico' as const },
 ];
+
+function NAVY_LOC() { return '#1E3A5F'; }
+function TEAL_LOC() { return '#0F6E56'; }
+
+// Sostituiamo l'array originale con icone SVG
+const TIPI_NOTA = TIPI_NOTA_RAW.map(t => ({ ...t, icon: '' }));
 
 interface Props {
   aziendaId: string;
@@ -150,12 +157,16 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
       <div onClick={e => e.stopPropagation()} style={{ background: BG, borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 600, maxHeight: '95vh', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{ background: `linear-gradient(180deg, ${NAVY_DEEP}, ${NAVY})`, color: '#fff', padding: '14px 16px', borderRadius: '16px 16px 0 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(126,34,206,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📝</div>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IcoFile size={20} color="#fff" />
+          </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 9, letterSpacing: 1, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>DIARIO CLIENTE</div>
             <div style={{ fontSize: 16, fontWeight: 800 }}>Nuova nota</div>
           </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, fontWeight: 700 }}>×</button>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IcoClose size={18} color="#fff" />
+          </button>
         </div>
 
         {/* Body */}
@@ -169,12 +180,12 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
                 <button key={t.val} onClick={() => setTipo(t.val)} style={{
                   background: sel ? t.col : '#fff',
                   color: sel ? '#fff' : TEXT,
-                  border: `2px solid ${sel ? t.col : '#E5EAF0'}`,
-                  borderRadius: 10, padding: '8px 4px',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  border: `1.5px solid ${sel ? t.col : '#E5EAF0'}`,
+                  borderRadius: 10, padding: '10px 4px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}>
-                  <span style={{ fontSize: 18 }}>{t.icon}</span>
+                  <IcoTipoNota tipo={t.val} color={sel ? '#fff' : t.col} />
                   <span style={{ fontSize: 9, fontWeight: 700, lineHeight: 1.1, textAlign: 'center' as const }}>{t.label}</span>
                 </button>
               );
@@ -191,13 +202,14 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
             <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: 0.5, flex: 1 }}>DESCRIZIONE</div>
             <button onClick={toggleRecording} style={{
-              padding: '5px 10px', borderRadius: 6,
-              background: recording ? RED : TEAL,
+              padding: '6px 11px', borderRadius: 6,
+              background: recording ? RED : TEAL_DEEP,
               color: '#fff', border: 'none', cursor: 'pointer',
               fontSize: 10, fontWeight: 800, letterSpacing: 0.3,
-              display: 'flex', alignItems: 'center', gap: 4,
+              display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              {recording ? '⏹ STOP' : '🎤 DETTA'}
+              {recording ? <IcoStop size={11} color="#fff" /> : <IcoMic size={11} color="#fff" />}
+              {recording ? 'STOP' : 'DETTA'}
               {recording && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }} />}
             </button>
           </div>
@@ -223,12 +235,10 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
                     background: sel ? t.col : '#F8FAFA',
                     color: sel ? '#fff' : TEXT,
                     border: `1.5px solid ${sel ? t.col : '#E5EAF0'}`,
-                    borderRadius: 6, padding: '5px 9px',
+                    borderRadius: 6, padding: '6px 11px',
                     fontSize: 10, fontWeight: 700, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 4,
                   }}>
-                    <span>{t.icon}</span>
-                    <span>{t.val.replace(/_/g, ' ')}</span>
+                    {t.val.replace(/_/g, ' ')}
                   </button>
                 );
               })}
@@ -236,7 +246,7 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
           </div>
 
           {/* FOTO */}
-          <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, marginBottom: 6, letterSpacing: 0.5 }}>FOTO ALLEGATE · {fotoUrls.length}</div>
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, marginBottom: 6, letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 6 }}><IcoCamera size={11} color={MUTED} />FOTO ALLEGATE · {fotoUrls.length}</div>
           <div style={{ background: '#fff', borderRadius: 10, padding: 10, marginBottom: 14 }}>
             <FotoGrid foto={fotoUrls} onChange={setFotoUrls} uploadFolder="notes" size="md" maxFoto={6} />
           </div>
@@ -255,9 +265,12 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
               color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 14, fontWeight: 800,
             }}>{pinnato && '✓'}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: pinnato ? '#92400E' : TEXT }}>📌 Pinna in alto</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>Resta sempre visibile in cima al dossier (DA RICORDARE)</div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <IcoPin size={14} color={pinnato ? '#92400E' : MUTED} />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: pinnato ? '#92400E' : TEXT }}>Pinna in alto</div>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>Resta sempre visibile in cima al dossier</div>
+              </div>
             </div>
           </div>
         </div>
@@ -271,14 +284,28 @@ export default function ModalNuovaNota({ aziendaId, clienteId, commessaId, onClo
           }}>Annulla</button>
           <button onClick={handleSave} disabled={salvando} style={{
             flex: 2, padding: '14px 0',
-            background: salvando ? MUTED : `linear-gradient(90deg, ${TEAL}, ${TEAL_DEEP})`,
+            background: salvando ? MUTED : `linear-gradient(90deg, ${TEAL_DEEP}, #047857)`,
             color: '#fff', border: 'none', borderRadius: 10,
             fontSize: 13, fontWeight: 800, cursor: salvando ? 'wait' : 'pointer',
-          }}>{salvando ? 'Salvataggio...' : '✓ SALVA NEL DIARIO'}</button>
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}>{salvando ? 'Salvataggio...' : (<><IcoCheck size={16} color='#fff' /><span>SALVA NEL DIARIO</span></>)}</button>
         </div>
 
         <style dangerouslySetInnerHTML={{ __html: '@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }' }} />
       </div>
     </div>
   );
+}
+
+
+// Helper per icone tipi nota
+function IcoTipoNota({ tipo, color }: { tipo: string; color: string }) {
+  const size = 18;
+  if (tipo === 'memo') return <IPin size={size} color={color} />;
+  if (tipo === 'osservazione') return <IcoEye size={size} color={color} />;
+  if (tipo === 'problema') return <IcoAlertTriangle size={size} color={color} />;
+  if (tipo === 'preferenza') return <IcoSparkles size={size} color={color} />;
+  if (tipo === 'follow_up') return <IcoRefresh size={size} color={color} />;
+  if (tipo === 'tecnico') return <IcoTool size={size} color={color} />;
+  return <IPin size={size} color={color} />;
 }

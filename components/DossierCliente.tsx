@@ -16,6 +16,7 @@ import { useComunicazioni } from "../hooks/useComunicazioni";
 import { usePagamentiCliente } from "../hooks/useDossierExtra";
 import { useImmobiliCliente } from "../hooks/useImmobili";
 import { BannerAIInsights, PillSintesi, BottoneAscolta, ModalitaAuto } from "./AIClienteUI";
+import { IcoFile, IcoChevronLeft } from "./IconLib";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -132,7 +133,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
       <div style={{ background: `linear-gradient(180deg, ${NAVY_DEEP} 0%, ${NAVY} 100%)`, padding: '14px 14px 20px', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg>
+            <IcoChevronLeft size={16} color="#fff" />
           </button>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 9, letterSpacing: 1.2, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>DOSSIER CLIENTE</div>
@@ -252,7 +253,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         <ViewTabBtn active={view === 'pagamenti'} onClick={() => setView('pagamenti')} label="💰 Pagamenti" />
         <ViewTabBtn active={view === 'immobili'} onClick={() => setView('immobili')} label="🏠 Immobili" />
         <ViewTabBtn active={view === 'rete'} onClick={() => setView('rete')} label="🤝 Rete" />
-        <ViewTabBtn active={view === 'documenti'} onClick={() => setView('documenti')} label="📂 Doc" />
+        <ViewTabBtn active={view === 'documenti'} onClick={() => setView('documenti')} label="Documenti" />
       </div>
 
       {/* CONTENT in base a view */}
@@ -338,14 +339,14 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
       {/* FAB Nuova Nota */}
       <button onClick={() => setShowNota(true)} style={{
         position: 'fixed', bottom: 90, right: 18, zIndex: 9850,
-        height: 56, padding: '0 18px', borderRadius: 28,
-        background: `linear-gradient(135deg, ${PURPLE}, #5B21B6)`,
+        height: 54, padding: '0 18px', borderRadius: 27,
+        background: `linear-gradient(135deg, ${NAVY}, ${NAVY_DEEP})`,
         color: '#fff', border: 'none', cursor: 'pointer',
-        boxShadow: '0 6px 20px rgba(126,34,206,0.5)',
+        boxShadow: '0 6px 20px rgba(15,27,45,0.35)',
         display: 'flex', alignItems: 'center', gap: 8,
-        fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
+        fontSize: 12, fontWeight: 800, letterSpacing: 0.5,
       }}>
-        <span style={{ fontSize: 20 }}>📝</span>
+        <IcoFile size={17} color="#fff" />
         <span>NOTA</span>
       </button>
 

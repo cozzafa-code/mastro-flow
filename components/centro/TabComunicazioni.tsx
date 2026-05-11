@@ -4,6 +4,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useComunicazioni, toggleRispondere, marcaLetto, type Comunicazione } from "../../hooks/useComunicazioni";
+import { IcoPaperclip } from "../IconLib";
 
 const NAVY = "#1E3A5F";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -175,11 +176,12 @@ function CardCom({ c, onApriCommessa, clienteTelefono, clienteEmail }: any) {
             <div style={{ marginTop: 6, display: 'flex', gap: 5, flexWrap: 'wrap' as const }}>
               {c.allegati.map((a: any, i: number) => (
                 <a key={i} href={typeof a === 'string' ? a : a.url} target="_blank" rel="noopener noreferrer" style={{
-                  background: '#F1F4F7', color: TEXT, padding: '4px 9px', borderRadius: 5,
+                  background: '#F1F4F7', color: TEXT, padding: '5px 10px', borderRadius: 5,
                   fontSize: 10, fontWeight: 700, textDecoration: 'none',
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
                 }}>
-                  📎 {typeof a === 'string' ? `Allegato ${i+1}` : (a.nome || `Allegato ${i+1}`)}
+                  <IcoPaperclip size={11} color={TEXT} />
+                  {typeof a === 'string' ? `Allegato ${i+1}` : (a.nome || `Allegato ${i+1}`)}
                 </a>
               ))}
             </div>
