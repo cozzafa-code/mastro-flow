@@ -10,6 +10,19 @@ import React, { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCentroMontaggi, type MontaggioRow } from "../hooks/useCentroMontaggi";
 import { useSquadre, type SquadraDetail } from "../hooks/useSquadre";
+
+function useIsWideScreen(minWidth = 1024) {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const check = () => setWide(window.innerWidth >= minWidth);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [minWidth]);
+  return wide;
+}
+
 import CommessaCardOperativa from "./centro/CommessaCardOperativa";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
@@ -49,6 +62,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
   const [view, setView] = useState<ViewMode>('da-pianificare');
   const [currentDate, setCurrentDate] = useState(new Date());
   const resolved = resolveAziendaId(aziendaId);
+  const isWide = useIsWideScreen(1024);
 
   const { from, to, label } = useMemo(() => {
     if (view === 'giorno') return { from: fmtDate(currentDate), to: fmtDate(currentDate), label: currentDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }) };
@@ -93,7 +107,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
         )}
       </div>
 
-      <div style={{ background: '#fff', margin: '-10px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, position: 'relative' as const, zIndex: 2, overflowX: 'auto' as const }}>
+      <div style={{ background: '#fff', margin: '-10px 14px 0', padding: 4, borderRadius: 10, display: isWide ? 'none' : 'flex', gap: 2, position: 'relative' as const, zIndex: 2, overflowX: 'auto' as const }}>
         {([
           { k: 'da-pianificare' as ViewMode, l: 'Pianifica' },
           { k: 'squadre' as ViewMode, l: 'Squadre' },
@@ -105,14 +119,49 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
         ))}
       </div>
 
-      <div style={{ padding: 14 }}>
-        {loading ? <Empty label="Caricamento..." /> :
-         view === 'da-pianificare' ? <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} /> :
-         view === 'squadre' ? <ViewSquadre aziendaId={resolved} /> :
-         view === 'giorno' ? <ViewGiorno montaggi={montaggi} onApri={onApriCommessa} /> :
-         view === 'settimana' ? <ViewSettimana montaggi={montaggi} fromDate={from} onApri={onApriCommessa} /> :
-         <ViewMese montaggi={montaggi} currentDate={currentDate} onClickDay={(d: Date) => { setCurrentDate(d); setView('giorno'); }} />}
-      </div>
+      {isWide ? (
+        // ========== LAYOUT 3 COLONNE DESKTOP/TABLET ==========
+        <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr 340px', gap: 14, padding: 14, alignItems: 'start' }}>
+          {/* COLONNA SX: Commesse da pianificare */}
+          <div style={{ background: '#fff', borderRadius: 12, padding: 12, maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' as const, position: 'sticky' as const, top: 14 }}>
+            <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 10, fontWeight: 700 }}>DA PIANIFICARE</div>
+            <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} />
+          </div>
+
+          {/* COLONNA CENTRO: Calendario */}
+          <div style={{ background: '#fff', borderRadius: 12, padding: 12, minHeight: 'calc(100vh - 200px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, fontWeight: 700, flex: 1 }}>CALENDARIO OPERATIVO</div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['giorno','settimana','mese'] as ViewMode[]).map(v => (
+                  <button key={v} onClick={() => setView(v)} style={{ padding: '5px 10px', fontSize: 10, fontWeight: 600, color: view === v ? '#fff' : MUTED, background: view === v ? NAVY : '#F1F4F7', border: 'none', borderRadius: 6, cursor: 'pointer' }}>{v.charAt(0).toUpperCase() + v.slice(1)}</button>
+                ))}
+              </div>
+            </div>
+            {loading ? <Empty label="Caricamento..." /> :
+             view === 'giorno' ? <ViewGiorno montaggi={montaggi} onApri={onApriCommessa} /> :
+             view === 'settimana' ? <ViewSettimana montaggi={montaggi} fromDate={from} onApri={onApriCommessa} /> :
+             view === 'mese' ? <ViewMese montaggi={montaggi} currentDate={currentDate} onClickDay={(d: Date) => { setCurrentDate(d); setView('giorno'); }} /> :
+             <ViewSettimana montaggi={montaggi} fromDate={from} onApri={onApriCommessa} />}
+          </div>
+
+          {/* COLONNA DX: Squadre */}
+          <div style={{ background: '#fff', borderRadius: 12, padding: 12, maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' as const, position: 'sticky' as const, top: 14 }}>
+            <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 10, fontWeight: 700 }}>SQUADRE</div>
+            <ViewSquadre aziendaId={resolved} />
+          </div>
+        </div>
+      ) : (
+        // ========== MOBILE: tab classico ==========
+        <div style={{ padding: 14 }}>
+          {loading ? <Empty label="Caricamento..." /> :
+           view === 'da-pianificare' ? <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} /> :
+           view === 'squadre' ? <ViewSquadre aziendaId={resolved} /> :
+           view === 'giorno' ? <ViewGiorno montaggi={montaggi} onApri={onApriCommessa} /> :
+           view === 'settimana' ? <ViewSettimana montaggi={montaggi} fromDate={from} onApri={onApriCommessa} /> :
+           <ViewMese montaggi={montaggi} currentDate={currentDate} onClickDay={(d: Date) => { setCurrentDate(d); setView('giorno'); }} />}
+        </div>
+      )}
     </div>
   );
 }
