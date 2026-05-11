@@ -10,6 +10,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCentroMontaggi, type MontaggioRow } from "../hooks/useCentroMontaggi";
 import { useSquadre, type SquadraDetail } from "../hooks/useSquadre";
+import { useConflitti } from "../hooks/useConflitti";
 
 function useIsWideScreen(minWidth = 1024) {
   const [wide, setWide] = useState(false);
@@ -63,6 +64,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
   const [currentDate, setCurrentDate] = useState(new Date());
   const resolved = resolveAziendaId(aziendaId);
   const isWide = useIsWideScreen(1024);
+  const { conflitti, totBlock, totWarn } = useConflitti(resolved);
 
   const { from, to, label } = useMemo(() => {
     if (view === 'giorno') return { from: fmtDate(currentDate), to: fmtDate(currentDate), label: currentDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }) };
@@ -93,6 +95,22 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
             <div style={{ fontSize: 9, letterSpacing: 1.2, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>MONTAGGI</div>
             <div style={{ fontSize: 17, fontWeight: 600, marginTop: 2 }}>{label}</div>
           </div>
+          {(totBlock > 0 || totWarn > 0) && (
+            <div style={{ display: 'flex', gap: 6 }}>
+              {totBlock > 0 && (
+                <div style={{ background: 'rgba(220,38,38,0.25)', color: '#FCA5A5', padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx={12} cy={12} r={10}/><line x1={15} y1={9} x2={9} y2={15}/><line x1={9} y1={9} x2={15} y2={15}/></svg>
+                  {totBlock} BLOCCO
+                </div>
+              )}
+              {totWarn > 0 && (
+                <div style={{ background: 'rgba(217,119,6,0.25)', color: '#FBBF24', padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/></svg>
+                  {totWarn} WARN
+                </div>
+              )}
+            </div>
+          )}
         </div>
         {view !== 'da-pianificare' && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -125,7 +143,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
           {/* COLONNA SX: Commesse da pianificare */}
           <div style={{ background: '#fff', borderRadius: 12, padding: 12, maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' as const, position: 'sticky' as const, top: 14 }}>
             <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 10, fontWeight: 700 }}>DA PIANIFICARE</div>
-            <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} />
+            <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} conflitti={conflitti} />
           </div>
 
           {/* COLONNA CENTRO: Calendario */}
@@ -155,7 +173,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
         // ========== MOBILE: tab classico ==========
         <div style={{ padding: 14 }}>
           {loading ? <Empty label="Caricamento..." /> :
-           view === 'da-pianificare' ? <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} /> :
+           view === 'da-pianificare' ? <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} conflitti={conflitti} /> :
            view === 'squadre' ? <ViewSquadre aziendaId={resolved} /> :
            view === 'giorno' ? <ViewGiorno montaggi={montaggi} onApri={onApriCommessa} /> :
            view === 'settimana' ? <ViewSettimana montaggi={montaggi} fromDate={from} onApri={onApriCommessa} /> :
@@ -167,7 +185,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
 }
 
 // =============== VISTA 1: DA PIANIFICARE + MAPPA ===============
-function ViewDaPianificare({ aziendaId, onApri }: any) {
+function ViewDaPianificare({ aziendaId, onApri, conflitti }: any) {
   const [commesse, setCommesse] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'tutte'|'pronte'|'parziali'|'attesa'|'urgenti'>('tutte');
@@ -264,7 +282,7 @@ function ViewDaPianificare({ aziendaId, onApri }: any) {
 
       <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>COMMESSE ({filtered.length})</div>
       {filtered.map(c => (
-        <CommessaCardOperativa key={c.id} cm={c} onClick={() => onApri?.(c.id)} showIndirizzo />
+        <CommessaCardOperativa key={c.id} cm={c} onClick={() => onApri?.(c.id)} showIndirizzo conflitti={conflitti?.[c.id]} />
       ))}
     </>
   );

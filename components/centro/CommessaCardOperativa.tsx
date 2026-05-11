@@ -22,14 +22,21 @@ interface CommessaOp {
   squadra_prevista?: string | null;
 }
 
+interface Conflitto {
+  severity: 'block' | 'warn';
+  code: string;
+  message: string;
+}
+
 interface Props {
   cm: CommessaOp;
   onClick?: () => void;
   compact?: boolean;
   showIndirizzo?: boolean;
+  conflitti?: Conflitto[];
 }
 
-export default function CommessaCardOperativa({ cm, onClick, compact, showIndirizzo }: Props) {
+export default function CommessaCardOperativa({ cm, onClick, compact, showIndirizzo, conflitti }: Props) {
   const matCol = cm.materiali_status === 'completo' ? TEAL : cm.materiali_status === 'parziale' ? AMBER : cm.materiali_status === 'in_attesa' ? RED : MUTED;
   const rischio = computeRischio(cm);
 
@@ -58,6 +65,24 @@ export default function CommessaCardOperativa({ cm, onClick, compact, showIndiri
         </div>
         <span style={{ background: matBadge.bg, color: matBadge.fg, fontSize: 9, padding: '4px 8px', borderRadius: 5, fontWeight: 700, whiteSpace: 'nowrap' }}>{matBadge.l}</span>
       </div>
+
+      {conflitti && conflitti.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          {conflitti.map((c, i) => (
+            <div key={i} style={{ 
+              background: c.severity === 'block' ? '#FEE2E2' : '#FEF3C7',
+              borderLeft: `3px solid ${c.severity === 'block' ? RED : AMBER}`,
+              padding: '6px 10px', borderRadius: 6, marginBottom: 4,
+              display: 'flex', alignItems: 'center', gap: 6, fontSize: 10,
+            }}>
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={c.severity === 'block' ? '#991B1B' : '#92400E'} strokeWidth={2.5}>
+                {c.severity === 'block' ? <><circle cx={12} cy={12} r={10}/><line x1={15} y1={9} x2={9} y2={15}/><line x1={9} y1={9} x2={15} y2={15}/></> : <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/><line x1={12} y1={17} x2={12.01} y2={17}/></>}
+              </svg>
+              <span style={{ color: c.severity === 'block' ? '#991B1B' : '#92400E', fontWeight: 600 }}>{c.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {!compact && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
