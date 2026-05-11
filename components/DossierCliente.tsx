@@ -6,6 +6,7 @@ import React, { useState, useMemo } from "react";
 import { useDossierCliente, type ClienteEvento, togglePin } from "../hooks/useDossierCliente";
 import ModalNuovaNota from "./ModalNuovaNota";
 import TabComunicazioni from "./centro/TabComunicazioni";
+import TabImmobili from "./centro/TabImmobili";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -52,7 +53,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
   const [filtro, setFiltro] = useState<FiltroCategoria>('tutti');
   const [search, setSearch] = useState('');
   const [showNota, setShowNota] = useState(false);
-  const [view, setView] = useState<'timeline' | 'comunicazioni'>('timeline');
+  const [view, setView] = useState<'timeline' | 'comunicazioni' | 'immobili'>('timeline');
 
   const eventiFiltered = useMemo(() => {
     let arr = eventi;
@@ -198,16 +199,21 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         </div>
       </div>
 
-      {/* TAB SWITCHER Timeline/Comunicazioni */}
-      <div style={{ background: '#fff', margin: '10px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2 }}>
-        <ViewTabBtn active={view === 'timeline'} onClick={() => setView('timeline')} label="📅 Timeline storica" badge={eventi.length} />
-        <ViewTabBtn active={view === 'comunicazioni'} onClick={() => setView('comunicazioni')} label="💬 Comunicazioni" />
+      {/* TAB SWITCHER Timeline/Comunicazioni/Immobili */}
+      <div style={{ background: '#fff', margin: '10px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, overflowX: 'auto' as const }}>
+        <ViewTabBtn active={view === 'timeline'} onClick={() => setView('timeline')} label="📅 Timeline" badge={eventi.length} />
+        <ViewTabBtn active={view === 'comunicazioni'} onClick={() => setView('comunicazioni')} label="💬 Messaggi" />
+        <ViewTabBtn active={view === 'immobili'} onClick={() => setView('immobili')} label="🏠 Immobili" />
       </div>
 
       {/* CONTENT in base a view */}
       {view === 'comunicazioni' ? (
         <div style={{ padding: 14 }}>
           <TabComunicazioni clienteId={cliente.id} clienteTelefono={cliente.telefono} clienteEmail={cliente.email} onApriCommessa={onApriCommessa} />
+        </div>
+      ) : view === 'immobili' ? (
+        <div style={{ padding: 14 }}>
+          <TabImmobili clienteId={cliente.id} onApriCommessa={onApriCommessa} />
         </div>
       ) : (
       <div style={{ padding: 14 }}>
