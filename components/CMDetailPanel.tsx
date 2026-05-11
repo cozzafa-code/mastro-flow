@@ -1534,8 +1534,26 @@ export default function CMDetailPanel() {
               titolo = "In attesa consegna";
               desc = "Ordine inviato al fornitore. Aspetta consegna materiali per avviare produzione.";
               tags = [{ lbl: "In transito", bg: "#FEF3C7", fg: "#92400E" }];
-              primaryLbl = "VEDI ORDINI FORNITORI";
-              primaryAction = () => { console.log("[v-fase-ordine] apertura sheet ordini"); window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } })); };
+              primaryLbl = "AVANZA A PRODUZIONE";
+              primaryAction = async () => {
+                console.log("[v-fase-ordine] avanza a produzione");
+                try {
+                  const { supabase } = await import("@/lib/supabase");
+                  const { error } = await supabase
+                    .from("commesse")
+                    .update({ fase: "produzione", produzione_iniziata_at: new Date().toISOString() })
+                    .eq("id", selectedCM.id);
+                  if (error) {
+                    console.error("[v-fase-ordine] err:", error);
+                    alert("Errore: " + error.message);
+                  } else {
+                    setSelectedCM((p: any) => p ? ({ ...p, fase: "produzione" }) : p);
+                    setCantieri((cs: any[]) => cs.map((x: any) => x.id === selectedCM.id ? { ...x, fase: "produzione" } : x));
+                  }
+                } catch (e: any) {
+                  console.error(e); alert("Errore: " + (e?.message || e));
+                }
+              };
             } else if (_faseDb === "produzione") {
               eyebrow = "Fase corrente · Produzione";
               titolo = "Lavorazione in corso";
