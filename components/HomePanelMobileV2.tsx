@@ -24,7 +24,6 @@ const ALL_CARDS = [
   { id: 'produzione', title: 'PRODUZIONE' },
   { id: 'gestione-materiali', title: 'GESTIONE MATERIALI' },
   { id: 'clienti', title: 'CLIENTI' },
-  { id: 'magazzino', title: 'MAGAZZINO' },
   { id: 'statistiche', title: 'STATISTICHE' },
 ]
 const DEFAULT_ORDER = ALL_CARDS.map(c => c.id)
