@@ -10,6 +10,11 @@ import TabImmobili from "./centro/TabImmobili";
 import TabCommesse from "./centro/TabCommesse";
 import TabPagamenti from "./centro/TabPagamenti";
 import TabRete from "./centro/TabRete";
+import { useClienteAI } from "../hooks/useClienteAI";
+import { useComunicazioni } from "../hooks/useComunicazioni";
+import { usePagamentiCliente } from "../hooks/useDossierExtra";
+import { useImmobiliCliente } from "../hooks/useImmobili";
+import { BannerAIInsights, PillSintesi, BottoneAscolta, ModalitaAuto } from "./AIClienteUI";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -56,6 +61,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
   const [filtro, setFiltro] = useState<FiltroCategoria>('tutti');
   const [search, setSearch] = useState('');
   const [showNota, setShowNota] = useState(false);
+  const [showAuto, setShowAuto] = useState(false);
   const [view, setView] = useState<'timeline' | 'comunicazioni' | 'immobili' | 'commesse' | 'pagamenti' | 'rete'>('timeline');
 
   const eventiFiltered = useMemo(() => {
@@ -90,6 +96,25 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
       </div>
     );
   }
+
+  // === AI DATA AGGREGATION ===
+  const { com: aiComunicazioni } = useComunicazioni(cliente.id);
+  const { fatture: aiFatture, stats: aiPagamentiStats } = usePagamentiCliente(cliente.id);
+  const { immobili: aiImmobili } = useImmobiliCliente(cliente.id);
+  // Tutti gli infissi attraverso gli immobili (semplificato: aggrego per cliente)
+  const aiInfissi: any[] = [];
+  const ai = useClienteAI({
+    cliente,
+    eventi,
+    comunicazioni: aiComunicazioni,
+    commesse,
+    fatture: aiFatture,
+    pagamentiStats: aiPagamentiStats,
+    immobili: aiImmobili,
+    infissi: aiInfissi,
+  });
+  
+  const ultimoProblemaTitolo = eventi.find(e => e.categoria === 'problema' && e.severity !== 'success')?.titolo || null;
 
   const statoMeta = STATO_META[cliente.stato_cliente] || STATO_META.attivo;
   const prioMeta = PRIORITA_META[cliente.livello_priorita] || PRIORITA_META.medio;
@@ -202,6 +227,22 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         </div>
       </div>
 
+      {/* PILL SINTESI - 3 dati operativi top */}
+      <div style={{ marginTop: 10 }}>
+        <PillSintesi
+          alertCount={ai.countByTipo.alert}
+          prossimaAzione={cliente.prossima_azione}
+          saldoAperto={totale_saldo_aperto}
+          problemaAperto={ultimoProblemaTitolo}
+        />
+      </div>
+
+      {/* BOTTONE ASCOLTA TTS + MODALITÀ AUTO */}
+      <BottoneAscolta testo={ai.riassuntoVocale} onModalitaAuto={() => setShowAuto(true)} />
+
+      {/* BANNER AI INSIGHTS */}
+      <BannerAIInsights insights={ai.insights} countByTipo={ai.countByTipo} />
+
       {/* TAB SWITCHER 6 viste */}
       <div style={{ background: '#fff', margin: '10px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, overflowX: 'auto' as const }}>
         <ViewTabBtn active={view === 'timeline'} onClick={() => setView('timeline')} label="📅 Timeline" badge={eventi.length} />
@@ -301,6 +342,10 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         <span style={{ fontSize: 20 }}>📝</span>
         <span>NOTA</span>
       </button>
+
+      {showAuto && (
+        <ModalitaAuto cliente={cliente} testo={ai.riassuntoVocale} onClose={() => setShowAuto(false)} />
+      )}
 
       {showNota && (
         <ModalNuovaNota
