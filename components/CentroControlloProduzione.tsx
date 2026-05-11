@@ -37,6 +37,7 @@ function resolveAziendaId(propId: string | null): string {
 export default function CentroControlloProduzione({ aziendaId, onClose, onApriCommessa }: any) {
   const [view, setView] = useState<ViewMode>('overview');
   const [filter, setFilter] = useState<'tutte'|'urgenti'|'ritardo'|'pronte'|'bloccate'>('tutte');
+  const [search, setSearch] = useState('');
   const [commesse, setCommesse] = useState<Commessa[]>([]);
   const [loading, setLoading] = useState(true);
   const resolved = resolveAziendaId(aziendaId);
@@ -82,12 +83,22 @@ export default function CentroControlloProduzione({ aziendaId, onClose, onApriCo
   }, [resolved]);
 
   const filtered = useMemo(() => {
-    if (filter === 'urgenti') return commesse.filter(c => (c.urgenza || '').toLowerCase() === 'alta');
-    if (filter === 'ritardo') return commesse.filter(c => c.materiali_status === 'in_attesa' && c.fase === 'produzione');
-    if (filter === 'pronte') return commesse.filter(c => c.materiali_status === 'completo');
-    if (filter === 'bloccate') return commesse.filter(c => c.materiali_status === 'in_attesa');
-    return commesse;
-  }, [commesse, filter]);
+    let arr = commesse;
+    if (filter === 'urgenti') arr = arr.filter(c => (c.urgenza || '').toLowerCase() === 'alta');
+    else if (filter === 'ritardo') arr = arr.filter(c => c.materiali_status === 'in_attesa' && c.fase === 'produzione');
+    else if (filter === 'pronte') arr = arr.filter(c => c.materiali_status === 'completo');
+    else if (filter === 'bloccate') arr = arr.filter(c => c.materiali_status === 'in_attesa');
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      arr = arr.filter(c => 
+        (c.code || '').toLowerCase().includes(q) ||
+        (c.cliente || '').toLowerCase().includes(q) ||
+        (c.cognome || '').toLowerCase().includes(q) ||
+        (c.tipo_infisso || '').toLowerCase().includes(q)
+      );
+    }
+    return arr;
+  }, [commesse, filter, search]);
 
   const stats = useMemo(() => {
     const inProd = commesse.filter(c => c.fase === 'produzione').length;
@@ -121,6 +132,8 @@ export default function CentroControlloProduzione({ aziendaId, onClose, onApriCo
         <button onClick={() => setView('overview')} style={{ flex: 1, padding: '9px 0', fontSize: 12, fontWeight: 500, color: view === 'overview' ? '#fff' : MUTED, background: view === 'overview' ? NAVY : 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer' }}>Overview</button>
         <button onClick={() => setView('kanban')} style={{ flex: 1, padding: '9px 0', fontSize: 12, fontWeight: 500, color: view === 'kanban' ? '#fff' : MUTED, background: view === 'kanban' ? NAVY : 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer' }}>Kanban</button>
       </div>
+
+      <SearchBar value={search} onChange={setSearch} placeholder="Cerca codice, cliente, tipo infisso..." />
 
       <FilterBar filter={filter} setFilter={setFilter} counts={{
         tutte: commesse.length,
@@ -300,6 +313,30 @@ function Pill({ label, bg, fg }: any) {
   return <span style={{ background: bg, color: fg, fontSize: 9, padding: '3px 7px', borderRadius: 4, fontWeight: 600, whiteSpace: 'nowrap' as const }}>{label}</span>;
 }
 
+
+
+function SearchBar({ value, onChange, placeholder }: any) {
+  return (
+    <div style={{ background: '#fff', margin: '8px 14px 0', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2}>
+        <circle cx={11} cy={11} r={8}/><line x1={21} y1={21} x2={16.65} y2={16.65}/>
+      </svg>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{
+          flex: 1, border: 'none', outline: 'none',
+          fontSize: 12, color: TEXT, background: 'transparent',
+        }}
+      />
+      {value && (
+        <button onClick={() => onChange('')} style={{ background: '#F1F4F7', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, color: MUTED, cursor: 'pointer', fontWeight: 700 }}>×</button>
+      )}
+    </div>
+  );
+}
 
 function FilterBar({ filter, setFilter, counts }: any) {
   const filters: { k: 'tutte'|'urgenti'|'ritardo'|'pronte'|'bloccate'; l: string; bg: string; activeBg: string; activeFg: string }[] = [

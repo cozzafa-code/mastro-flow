@@ -208,6 +208,7 @@ function ViewDaPianificare({ aziendaId, onApri, conflitti, onAutoSchedule }: any
   const [commesse, setCommesse] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'tutte'|'pronte'|'parziali'|'attesa'|'urgenti'>('tutte');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (!aziendaId) { setLoading(false); return; }
@@ -256,11 +257,20 @@ function ViewDaPianificare({ aziendaId, onApri, conflitti, onAutoSchedule }: any
   const urgenti = commesse.filter(c => (c.urgenza || '').toLowerCase() === 'alta').length;
 
   const filtered = commesse.filter(c => {
-    if (filter === 'tutte') return true;
-    if (filter === 'pronte') return c.materiali_status === 'completo';
-    if (filter === 'parziali') return c.materiali_status === 'parziale';
-    if (filter === 'attesa') return c.materiali_status === 'in_attesa';
-    if (filter === 'urgenti') return (c.urgenza || '').toLowerCase() === 'alta';
+    if (filter === 'pronte' && c.materiali_status !== 'completo') return false;
+    if (filter === 'parziali' && c.materiali_status !== 'parziale') return false;
+    if (filter === 'attesa' && c.materiali_status !== 'in_attesa') return false;
+    if (filter === 'urgenti' && (c.urgenza || '').toLowerCase() !== 'alta') return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      if (!(
+        (c.code || '').toLowerCase().includes(q) ||
+        (c.cliente || '').toLowerCase().includes(q) ||
+        (c.cognome || '').toLowerCase().includes(q) ||
+        (c.indirizzo || '').toLowerCase().includes(q) ||
+        (c.tipo_infisso || '').toLowerCase().includes(q)
+      )) return false;
+    }
     return true;
   });
 
@@ -291,6 +301,8 @@ function ViewDaPianificare({ aziendaId, onApri, conflitti, onAutoSchedule }: any
         </div>
       </div>
 
+      <SearchBarMontaggi value={search} onChange={setSearch} />
+
       <div style={{ background: '#fff', padding: 8, borderRadius: 10, display: 'flex', gap: 6, overflowX: 'auto' as const, marginBottom: 10 }}>
         <FilterChip active={filter==='tutte'} onClick={() => setFilter('tutte')} label="TUTTE" n={commesse.length} activeBg={NAVY} />
         <FilterChip active={filter==='urgenti'} onClick={() => setFilter('urgenti')} label="URGENTI" n={urgenti} activeBg={RED} bg="#FFE4E4" />
@@ -304,6 +316,27 @@ function ViewDaPianificare({ aziendaId, onApri, conflitti, onAutoSchedule }: any
         <CommessaCardOperativa key={c.id} cm={c} onClick={() => onApri?.(c.id)} showIndirizzo conflitti={conflitti?.[c.id]} onAutoSchedule={(id: string) => onAutoSchedule?.(id, c.code)} />
       ))}
     </>
+  );
+}
+
+
+function SearchBarMontaggi({ value, onChange }: any) {
+  return (
+    <div style={{ background: '#fff', padding: 10, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2}>
+        <circle cx={11} cy={11} r={8}/><line x1={21} y1={21} x2={16.65} y2={16.65}/>
+      </svg>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="Cerca codice, cliente, indirizzo, tipo..."
+        style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12, color: TEXT, background: 'transparent' }}
+      />
+      {value && (
+        <button onClick={() => onChange('')} style={{ background: '#F1F4F7', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, color: MUTED, cursor: 'pointer', fontWeight: 700 }}>×</button>
+      )}
+    </div>
   );
 }
 
