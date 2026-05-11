@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { useCentroMontaggi, type MontaggioRow } from "../hooks/useCentroMontaggi";
 import { useSquadre, type SquadraDetail } from "../hooks/useSquadre";
 import { useConflitti } from "../hooks/useConflitti";
+import BannerPrevisioneCollassi from "./centro/BannerPrevisioneCollassi";
 
 function useIsWideScreen(minWidth = 1024) {
   const [wide, setWide] = useState(false);
@@ -139,6 +140,12 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
 
       {isWide ? (
         // ========== LAYOUT 3 COLONNE DESKTOP/TABLET ==========
+        <div style={{ padding: '14px 14px 0' }}>
+          <BannerPrevisioneCollassi aziendaId={resolved} />
+        </div>
+      ) : null}
+
+      {isWide ? (
         <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr 340px', gap: 14, padding: 14, alignItems: 'start' }}>
           {/* COLONNA SX: Commesse da pianificare */}
           <div style={{ background: '#fff', borderRadius: 12, padding: 12, maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' as const, position: 'sticky' as const, top: 14 }}>
@@ -172,6 +179,7 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
       ) : (
         // ========== MOBILE: tab classico ==========
         <div style={{ padding: 14 }}>
+          <BannerPrevisioneCollassi aziendaId={resolved} />
           {loading ? <Empty label="Caricamento..." /> :
            view === 'da-pianificare' ? <ViewDaPianificare aziendaId={resolved} onApri={onApriCommessa} conflitti={conflitti} /> :
            view === 'squadre' ? <ViewSquadre aziendaId={resolved} /> :
