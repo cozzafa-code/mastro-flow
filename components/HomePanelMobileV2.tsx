@@ -8,6 +8,7 @@ import CentroControlloOrdini from "./CentroControlloOrdini";
 import CentroControlloMagazzino from "./CentroControlloMagazzino";
 import CentroPreparazioneFurgoni from "./CentroPreparazioneFurgoni";
 import CentroFatturazione from "./CentroFatturazione";
+import CentroClienti from "./CentroClienti";
 import CentroControlloProduzione from "./CentroControlloProduzione";
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
@@ -117,6 +118,7 @@ export default function HomePanelMobileV2(props: any) {
   const [showCentroMagazzino, setShowCentroMagazzino] = React.useState(false);
   const [showCentroFurgoni, setShowCentroFurgoni] = React.useState(false);
   const [showCentroFatturazione, setShowCentroFatturazione] = React.useState(false);
+  const [showCentroClienti, setShowCentroClienti] = React.useState(false);
   const { data } = useHomeMobile()
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const [editMode, setEditMode] = useState(false)
@@ -287,7 +289,7 @@ export default function HomePanelMobileV2(props: any) {
             onMagazzino={() => setShowCentroMagazzino(true)}
             onFurgoni={() => setShowCentroFurgoni(true)}
             onFatturazione={() => setShowCentroFatturazione(true)}
-            onClienti={() => goto('clienti')}
+            onClienti={() => setShowCentroClienti(true)}
             onAgenda={() => goto('agenda')}
             onTeam={() => goto('team')}
             onStatistiche={() => goto('contabilita')}
@@ -390,6 +392,13 @@ export default function HomePanelMobileV2(props: any) {
           aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
           onClose={() => setShowCentroFatturazione(false)}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroFatturazione(false); setOrganizzaCm(cm); } }}
+        />
+      )}
+      {showCentroClienti && (
+        <CentroClienti
+          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          onClose={() => setShowCentroClienti(false)}
+          onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroClienti(false); setOrganizzaCm(cm); } }}
         />
       )}
     </div>
