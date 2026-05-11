@@ -34,9 +34,10 @@ interface Props {
   compact?: boolean;
   showIndirizzo?: boolean;
   conflitti?: Conflitto[];
+  onAutoSchedule?: (id: string) => void;
 }
 
-export default function CommessaCardOperativa({ cm, onClick, compact, showIndirizzo, conflitti }: Props) {
+export default function CommessaCardOperativa({ cm, onClick, compact, showIndirizzo, conflitti, onAutoSchedule }: Props) {
   const matCol = cm.materiali_status === 'completo' ? TEAL : cm.materiali_status === 'parziale' ? AMBER : cm.materiali_status === 'in_attesa' ? RED : MUTED;
   const rischio = computeRischio(cm);
 
@@ -82,6 +83,19 @@ export default function CommessaCardOperativa({ cm, onClick, compact, showIndiri
             </div>
           ))}
         </div>
+      )}
+
+      {!compact && onAutoSchedule && !cm.data_montaggio_prevista && (
+        <button onClick={(e) => { e.stopPropagation(); onAutoSchedule(cm.id); }}
+          style={{
+            width: '100%', padding: '9px 0', marginBottom: 10,
+            background: `linear-gradient(90deg, ${TEAL}, ${TEAL_DEEP})`, color: '#fff',
+            border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          AUTO SCHEDULING AI
+        </button>
       )}
 
       {!compact && (
