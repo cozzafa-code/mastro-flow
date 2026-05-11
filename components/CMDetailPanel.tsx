@@ -3334,7 +3334,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   altezza_mm: v?.altezza_mm ?? 0,
                   note: v?.note,
                 }))}
-                prezzo_base_eur={(c as any)?.totale_eur ?? 0}
+                prezzo_base_eur={Number((c as any)?.totale_finale ?? (c as any)?.totale_preventivo ?? (c as any)?.totale_eur ?? 0)}
                 costo_reale_eur={0}
                 is_showroom={false}
                 initial_bonus={((c as any)?.bonus_scelto as any) ?? null}

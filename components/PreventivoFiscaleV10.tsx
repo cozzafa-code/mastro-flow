@@ -54,7 +54,6 @@ export default function PreventivoFiscaleV10({
   cliente_nome, cliente_cf, cliente_telefono, citta, vani,
   prezzo_base_eur, costo_reale_eur = 0,
 }: Props) {
-  console.log("[PreventivoFiscaleV10] mount props:", { commessa_id, prezzo_base_eur });
 
   // [v-autosave-preventivo] Salva totale_finale su DB ogni volta che cambia prezzo_base_eur (debounce 1.5s)
   React.useEffect(() => {
