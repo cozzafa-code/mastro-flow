@@ -8,12 +8,13 @@
 // Persistenza silenziosa via usePreventivoState (auto-save background)
 
 "use client";
-import { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import BonusChecklistInline from "./BonusChecklistInline";
 import IVAChecklistInline from "./IVAChecklistInline";
 import RDPFornitoreInline from "./RDPFornitoreInline";
 import { usePreventivoState } from "@/hooks/usePreventivoState";
 import { BONUS_META, IVA_META, type BonusKey, type IVAKey } from "@/lib/preventivo-checklist-templates";
+import { markPreventivoInviato } from "../lib/supabase-sync";
 
 type Vano = {
   tipo?: string;
@@ -53,6 +54,20 @@ export default function PreventivoFiscaleV10({
   cliente_nome, cliente_cf, cliente_telefono, citta, vani,
   prezzo_base_eur, costo_reale_eur = 0,
 }: Props) {
+
+  // [v-autosave-preventivo] Salva totale_finale su DB ogni volta che cambia prezzo_base_eur (debounce 1.5s)
+  React.useEffect(() => {
+    if (!commessa_id || !prezzo_base_eur || prezzo_base_eur <= 0) return;
+    const t = setTimeout(() => {
+      markPreventivoInviato(commessa_id, prezzo_base_eur).then((ok) => {
+        console.log("[PreventivoSave] DB write:", ok, "totale:", prezzo_base_eur, "commessa:", commessa_id);
+      }).catch((e) => {
+        console.warn("[PreventivoSave] errore:", e);
+      });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [commessa_id, prezzo_base_eur]);
+
 
   const { state, loading, patch, logEvento, markInviato } = usePreventivoState({
     commessa_id, azienda_id,
