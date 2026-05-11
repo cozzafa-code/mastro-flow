@@ -4,6 +4,7 @@ import { useFinanze, formatEuro, formatEuroShort } from "../hooks/useFinanze";
 import { useFattureFinanze, type FatturaFin, type FiltroFatture } from "../hooks/useFattureFinanze";
 import { useSpese, CATEGORIE_SPESA, METODI_PAGAMENTO, statoFattRicLabel, type SpesaRow, type FatturaRicevutaRow, type FiltroSpese, type FiltroFattRic } from "../hooks/useSpese";
 import { useCommessaPL, statoPLMeta, type CommessaPLRow } from "../hooks/useCommessaPL";
+import { useTasse, tipoEventoMeta, type LiquidazioneIva, type EventoFiscale } from "../hooks/useTasse";
 import HeroKPIFinanze from "./finanze/HeroKPIFinanze";
 import { PASTEL, BG_APP, MUTED, TEXT } from "../lib/modaleColors";
 import { IcoFile, IcoEuro, IcoAlertTriangle, IcoSparkles, IcoCheck, IcoChevronLeft, IcoTrendingUp, IcoTruck, IcoUser, IcoBuilding, IcoChat } from "./IconLib";
@@ -12,6 +13,7 @@ function IcoPlus({size=14,color="currentColor"}:any){return <svg width={size} he
 function IcoX({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round"><line x1={18} y1={6} x2={6} y2={18}/><line x1={6} y1={6} x2={18} y2={18}/></svg>;}
 function IcoSearch({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}><circle cx={11} cy={11} r={8}/><line x1={21} y1={21} x2={16.65} y2={16.65}/></svg>;}
 function IcoCam({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx={12} cy={13} r={4}/></svg>;}
+function IcoCalendar({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1={16} y1={2} x2={16} y2={6}/><line x1={8} y1={2} x2={8} y2={6}/><line x1={3} y1={10} x2={21} y2={10}/></svg>;}
 
 interface Props {
   aziendaId: string;
@@ -23,7 +25,8 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
   const fattHook = useFattureFinanze(aziendaId);
   const speseHook = useSpese(aziendaId);
   const plHook = useCommessaPL(aziendaId);
-  const [tab, setTab] = useState<'home'|'fatture'|'uscite'|'pl'|'cashflow'|'scadenze'|'alert'>('home');
+  const tasseHook = useTasse(aziendaId);
+  const [tab, setTab] = useState<'home'|'fatture'|'uscite'|'pl'|'tasse'|'cashflow'|'scadenze'|'alert'>('home');
   const [showFab, setShowFab] = useState(false);
 
   const [showNuovaFattura, setShowNuovaFattura] = useState(false);
@@ -90,6 +93,7 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
             { val: 'fatture', label: `Fatture${fattHook.kpi ? ` · ${fattHook.kpi.n_aperte}` : ''}` },
             { val: 'uscite', label: `Uscite${speseHook.kpiFatt ? ` · ${speseHook.kpiFatt.n_da_pagare}` : ''}` },
             { val: 'pl', label: `P&L${plHook.kpi ? ` · ${plHook.kpi.n_commesse_totali}` : ''}` },
+            { val: 'tasse', label: `Tasse${tasseHook.kpi ? ` · ${tasseHook.kpi.n_aperte}` : ''}` },
             { val: 'cashflow', label: 'Cashflow' },
             { val: 'scadenze', label: 'Scadenze' },
             { val: 'alert', label: `Alert${alerts.length ? ` · ${alerts.length}` : ''}` },
@@ -193,6 +197,20 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
               />
             )}
 
+            {tab === 'tasse' && (
+              <TabTasse
+                kpi={tasseHook.kpi}
+                liquidazioni={tasseHook.liquidazioni}
+                eventiProssimi={tasseHook.eventiProssimi}
+                eventiScaduti={tasseHook.eventiScaduti}
+                onMarcaVersata={async (id) => {
+                  const rif = prompt('Riferimento F24 (opzionale):') || undefined;
+                  const res = await tasseHook.marcaVersata(id, rif);
+                  if (!res.ok) alert('Errore: ' + (res.error || 'sconosciuto'));
+                }}
+              />
+            )}
+
             {tab === 'cashflow' && <CashflowChart cashflow={cashflow} kpi={kpi} />}
 
             {tab === 'scadenze' && (
@@ -238,7 +256,7 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
             <FabBtn Ico={IcoCam}         label="Nuova spesa"         color={PASTEL.amber}  onClick={() => { setShowFab(false); setShowSpesa(true); }} />
             <FabBtn Ico={IcoBuilding}    label="Pagamento fornitore" color={PASTEL.red}    onClick={() => { setShowFab(false); setShowPagFornit({ open: true }); }} />
             <FabBtn Ico={IcoChat}        label="Fattura ricevuta"    color={PASTEL.violet} onClick={() => { setShowFab(false); setShowNuovaFatturaRic(true); }} />
-            <FabBtn Ico={IcoTrendingUp}  label="Movimento banca"     color={PASTEL.blue}   onClick={() => { setShowFab(false); alert('Apri Modale Movimento (Blocco futuro)'); }} />
+            <FabBtn Ico={IcoCalendar}    label="Vai a Tasse"         color={PASTEL.blue}   onClick={() => { setShowFab(false); setTab('tasse'); }} />
           </div>
         </>
       )}
@@ -959,7 +977,142 @@ function ModalDettaglioPL({ commessa, onClose }: any) {
   );
 }
 
-// =============== MODALI ESISTENTI (V2 + V3) ===============
+// =============== TAB TASSE (Blocco 7) ===============
+function TabTasse({ kpi, liquidazioni, eventiProssimi, eventiScaduti, onMarcaVersata }: any) {
+  if (!kpi || liquidazioni.length === 0) {
+    return (
+      <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>
+        Nessuna liquidazione IVA disponibile.<br/>
+        Le liquidazioni vengono calcolate automaticamente dalle fatture emesse e ricevute.
+      </div>
+    );
+  }
+
+  const prossimaSc = kpi.prossima_scadenza ? new Date(kpi.prossima_scadenza) : null;
+  const giorniProssima = prossimaSc ? Math.round((prossimaSc.getTime() - new Date().setHours(0,0,0,0)) / 86400000) : null;
+
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+        <KpiMini color={PASTEL.red} label="DA VERSARE" valore={formatEuroShort(kpi.importo_da_versare)} sub={`${kpi.n_aperte} liquidazioni aperte`} />
+        <KpiMini color={PASTEL.peach} label="SCADUTO" valore={formatEuroShort(kpi.importo_scaduto)} sub={`${kpi.n_scadute} scadute`} />
+        <KpiMini color={PASTEL.green} label="VERSATO TOTALE" valore={formatEuroShort(kpi.importo_versato_totale)} sub={`${kpi.n_versate} liquidazioni`} />
+        <KpiMini color={PASTEL.blue} label="PROSSIMA SCADENZA" valore={giorniProssima !== null ? (giorniProssima === 0 ? 'OGGI' : giorniProssima < 0 ? `${-giorniProssima}gg fa` : `+${giorniProssima}gg`) : '—'} sub={prossimaSc ? prossimaSc.toLocaleDateString('it-IT') : ''} />
+      </div>
+
+      {kpi.importo_scaduto > 0 && (
+        <div style={{ background: PASTEL.red.bg, borderRadius: 12, padding: 12, borderLeft: `4px solid ${PASTEL.red.solid}`, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: PASTEL.red.text }}>🔴 Hai {formatEuro(kpi.importo_scaduto)} di tasse SCADUTE</div>
+          <div style={{ fontSize: 11, color: PASTEL.red.text, marginTop: 4, lineHeight: 1.35 }}>
+            Versa subito per evitare sanzioni e interessi. Ravvedimento operoso disponibile entro 30/90/365 giorni.
+          </div>
+        </div>
+      )}
+
+      {giorniProssima !== null && giorniProssima >= 0 && giorniProssima <= 14 && (
+        <div style={{ background: PASTEL.amber.bg, borderRadius: 12, padding: 12, borderLeft: `4px solid ${PASTEL.amber.solid}`, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: PASTEL.amber.text }}>⏰ Scadenza tra {giorniProssima} gg: {formatEuro(kpi.importo_da_versare)}</div>
+          <div style={{ fontSize: 11, color: PASTEL.amber.text, marginTop: 4, lineHeight: 1.35 }}>
+            Prepara F24 e bonifico, ricorda di lasciare la liquidità sul conto.
+          </div>
+        </div>
+      )}
+
+      <SectionLabel Ico={IcoEuro} title="LIQUIDAZIONI IVA" sub={`${liquidazioni.length} totali`} />
+      {liquidazioni.map((l: LiquidazioneIva) => <LiquidazioneIvaRiga key={l.id} liq={l} onMarcaVersata={() => onMarcaVersata(l.id)} />)}
+
+      <div style={{ height: 12 }} />
+      <SectionLabel Ico={IcoCalendar} title="CALENDARIO FISCALE 60GG" sub={`${eventiProssimi.length} eventi prossimi`} />
+      {eventiProssimi.length === 0 ? (
+        <div style={{ background: '#fff', borderRadius: 12, padding: 20, textAlign: 'center' as const, color: MUTED, fontSize: 11 }}>
+          Nessun evento fiscale nei prossimi 60 giorni
+        </div>
+      ) : (
+        eventiProssimi.map((e: EventoFiscale) => <EventoFiscaleRiga key={e.id_evento} ev={e} />)
+      )}
+    </>
+  );
+}
+
+function LiquidazioneIvaRiga({ liq, onMarcaVersata }: any) {
+  const statoMeta: Record<string, any> = {
+    versata:  { col: PASTEL.green, label: 'VERSATA' },
+    scaduta:  { col: PASTEL.red, label: 'SCADUTA' },
+    urgente:  { col: PASTEL.amber, label: 'URGENTE' },
+    da_versare: { col: PASTEL.blue, label: 'DA VERSARE' },
+  };
+  const m = statoMeta[liq.stato_calcolato] || statoMeta.da_versare;
+  const isPagabile = liq.stato_calcolato !== 'versata';
+  const ggLabel = liq.giorni_a_scadenza === null ? '' :
+    liq.giorni_a_scadenza < 0 ? `scaduta da ${liq.giorni_ritardo}gg` :
+    liq.giorni_a_scadenza === 0 ? 'scade oggi' :
+    `tra ${liq.giorni_a_scadenza}gg`;
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: 11, marginBottom: 6, borderLeft: `4px solid ${m.col.solid}`, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: TEXT }}>IVA {liq.periodo}</span>
+          <span style={{ fontSize: 8, color: PASTEL.navy.solid, background: PASTEL.navy.bg, padding: '1px 6px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase' as const }}>{liq.tipo_periodo}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, marginTop: 3 }}>
+          <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>Vendite {formatEuroShort(liq.iva_vendite)}</span>
+          <span style={{ fontSize: 10, color: MUTED }}>·</span>
+          <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>Acquisti {formatEuroShort(liq.iva_acquisti)}</span>
+          {liq.data_versamento && <><span style={{ fontSize: 10, color: MUTED }}>·</span><span style={{ fontSize: 10, color: liq.giorni_a_scadenza !== null && liq.giorni_a_scadenza < 0 ? PASTEL.red.solid : MUTED, fontWeight: 700 }}>{ggLabel}</span></>}
+        </div>
+        <div style={{ display: 'inline-block', marginTop: 5, fontSize: 8, color: m.col.text, background: m.col.bg, padding: '2px 6px', borderRadius: 4, fontWeight: 800, letterSpacing: 0.5 }}>{m.label}</div>
+        {liq.f24_riferimento && <div style={{ fontSize: 9, color: MUTED, marginTop: 3, fontWeight: 600 }}>F24: {liq.f24_riferimento}</div>}
+      </div>
+      <div style={{ textAlign: 'right' as const, minWidth: 95 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: liq.debito_versare > 0 ? PASTEL.red.solid : PASTEL.green.solid, letterSpacing: -0.3 }}>
+          {formatEuro(liq.debito_versare)}
+        </div>
+        {liq.data_versamento && (
+          <div style={{ fontSize: 9, color: MUTED, marginTop: 2, fontWeight: 600 }}>
+            {new Date(liq.data_versamento).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
+          </div>
+        )}
+        {isPagabile && (
+          <button onClick={(e) => { e.stopPropagation(); onMarcaVersata(); }} style={{ marginTop: 6, padding: '4px 8px', background: PASTEL.green.solid, color: '#fff', border: 'none', borderRadius: 6, fontSize: 9, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
+            ✓ VERSATA
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EventoFiscaleRiga({ ev }: any) {
+  const meta = tipoEventoMeta(ev.tipo);
+  const col = (PASTEL as any)[meta.tone] || PASTEL.navy;
+  const d = new Date(ev.data);
+  const oggi = new Date(); oggi.setHours(0,0,0,0);
+  const gg = Math.round((d.getTime() - oggi.getTime()) / 86400000);
+  const dataFmt = d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+  const labelGg = gg === 0 ? 'oggi' : gg === 1 ? 'domani' : gg < 0 ? `${-gg}gg fa` : `+${gg}gg`;
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 10, padding: 10, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 10, borderLeft: `3px solid ${col.solid}` }}>
+      <div style={{ width: 50, padding: '6px 0', textAlign: 'center' as const, background: col.bg, color: col.text, borderRadius: 8, fontSize: 9, fontWeight: 800, letterSpacing: 0.3 }}>
+        <div>{dataFmt}</div>
+        <div style={{ fontSize: 8, fontWeight: 600, opacity: 0.8, marginTop: 1 }}>{labelGg}</div>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 14 }}>{meta.emoji}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>{ev.descrizione}</span>
+        </div>
+        <div style={{ fontSize: 9, color: MUTED, marginTop: 1, fontWeight: 600 }}>{meta.label}</div>
+      </div>
+      <div style={{ textAlign: 'right' as const }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: col.solid }}>{formatEuro(ev.importo)}</div>
+      </div>
+    </div>
+  );
+}
+
+// =============== MODALI ===============
 function ModalNuovaFattura({ onClose, onCrea }: any) {
   const [cliente, setCliente] = useState('');
   const [piva, setPiva] = useState('');
