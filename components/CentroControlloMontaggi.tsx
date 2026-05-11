@@ -449,54 +449,151 @@ function ViewGiorno({ montaggi, onApri }: any) {
 // =============== VISTA 3: SETTIMANA matrice squadre × giorni ===============
 function ViewSettimana({ montaggi, fromDate, onApri }: any) {
   const dates = Array.from({length: 5}, (_, i) => fmtDate(addDays(new Date(fromDate), i)));
-  
-  // Estrai squadre uniche, con almeno una di default
+  const [draggedM, setDraggedM] = useState<MontaggioRow | null>(null);
+  const [hoverCell, setHoverCell] = useState<string | null>(null);
+  const [validation, setValidation] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
   let squadre = Array.from(new Set(montaggi.map((m: MontaggioRow) => m.squadra_label || 'Da assegnare'))) as string[];
-  if (squadre.length === 0) squadre = ['ALF', 'BET', 'SAM'];
+  if (squadre.length === 0) squadre = ['ALFA', 'BETA', 'SAM'];
 
   const colorPerSquadra = (sq: string) => {
     const seed = sq.charCodeAt(0);
     return [NAVY, TEAL, RED, AMBER, TEAL_DEEP][seed % 5];
   };
 
+  // Aggrega ore per squadra+giorno per validazione sovraccarico
+  function oreSquadraGiorno(sq: string, date: string): number {
+    return montaggi
+      .filter((m: MontaggioRow) => m.data_montaggio === date && (m.squadra_label || 'Da assegnare') === sq)
+      .reduce((s: number, m: MontaggioRow) => s + (Number(m.ore_preventivate) || 4), 0);
+  }
+
+  function validateDrop(m: MontaggioRow, sq: string, date: string) {
+    const oreEsistenti = oreSquadraGiorno(sq, date);
+    const oreNuove = Number(m.ore_preventivate) || 4;
+    const giorno = new Date(date);
+    const isWeekend = giorno.getDay() === 0 || giorno.getDay() === 6;
+    
+    if (isWeekend) return { ok: false, msg: 'Weekend - giorno non lavorativo' };
+    if (m.materiali_status === 'in_attesa') return { ok: false, msg: 'Materiali non arrivati - non pianificabile' };
+    if (oreEsistenti + oreNuove > 8) return { ok: false, msg: `Sovraccarico: ${oreEsistenti + oreNuove}h > 8h max` };
+    if (oreEsistenti + oreNuove > 6) return { ok: true, msg: `Attenzione: ${oreEsistenti + oreNuove}h pianificate` };
+    return { ok: true, msg: 'OK - rilascia' };
+  }
+
+  async function applyDrop(m: MontaggioRow, sq: string, newDate: string) {
+    const v = validateDrop(m, sq, newDate);
+    if (!v.ok) {
+      setToast({ msg: v.msg, ok: false });
+      setTimeout(() => setToast(null), 3500);
+      return;
+    }
+
+    const updates: any = { data_montaggio: newDate };
+    if (sq !== 'Da assegnare') updates.squadra = [{ nome: sq }];
+
+    const { error } = await supabase.from('montaggi').update(updates).eq('id', m.id);
+    if (error) setToast({ msg: 'Errore: ' + error.message, ok: false });
+    else setToast({ msg: `${m.commessa_code} spostato a ${sq} - ${new Date(newDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}`, ok: true });
+    setTimeout(() => setToast(null), 2500);
+  }
+
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: 10 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '40px repeat(5, 1fr)', gap: 3, fontSize: 8, color: MUTED, textAlign: 'center' as const, fontWeight: 600, marginBottom: 6 }}>
-        <div></div>
-        {dates.map(d => {
-          const dt = new Date(d);
-          return <div key={d}>{GIORNI_ABBR[(dt.getDay()+6)%7]}<div style={{ fontSize: 11, color: TEXT, marginTop: 2 }}>{dt.getDate()}</div></div>;
-        })}
-      </div>
-      {squadre.map(sq => (
-        <div key={sq} style={{ display: 'grid', gridTemplateColumns: '40px repeat(5, 1fr)', gap: 3, marginBottom: 3 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 26, height: 26, borderRadius: '50%', background: colorPerSquadra(sq), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700 }}>{sq.slice(0,3).toUpperCase()}</div>
-          </div>
+    <>
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
+          background: toast.ok ? TEAL_DEEP : RED, color: '#fff',
+          padding: '10px 18px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+          zIndex: 9999, boxShadow: '0 6px 20px rgba(0,0,0,0.25)', maxWidth: '90%',
+        }}>
+          {toast.ok ? '✓' : '✕'} {toast.msg}
+        </div>
+      )}
+
+      <div style={{ background: '#fff', borderRadius: 12, padding: 10 }}>
+        <div style={{ fontSize: 9, color: MUTED, marginBottom: 8, fontWeight: 600, textAlign: 'center' as const }}>
+          Trascina i blocchi per spostarli tra squadre e giorni
+        </div>
+
+        {/* Header giorni */}
+        <div style={{ display: 'grid', gridTemplateColumns: '60px repeat(5, 1fr)', gap: 4, fontSize: 9, color: MUTED, textAlign: 'center' as const, fontWeight: 600, marginBottom: 8 }}>
+          <div></div>
           {dates.map(d => {
-            const cell = montaggi.find((m: MontaggioRow) => m.data_montaggio === d && (m.squadra_label || 'Da assegnare') === sq);
-            const ore = cell?.ore_preventivate || 0;
-            const bg = !cell ? '#F8FAFA' : ore >= 8 ? '#FEE2E2' : ore >= 4 ? '#FEF3C7' : '#E1F5EE';
-            const fg = !cell ? MUTED : ore >= 8 ? '#991B1B' : ore >= 4 ? '#92400E' : TEAL_DEEP;
+            const dt = new Date(d);
+            const isToday = d === fmtDate(new Date());
             return (
-              <div key={d} onClick={() => cell && onApri?.(cell.commessa_id)} style={{ background: bg, padding: '5px 3px', borderRadius: 5, minHeight: 50, cursor: cell ? 'pointer' : 'default', textAlign: 'center' as const }}>
-                {cell ? (
-                  <>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: fg }}>{ore}h</div>
-                    <div style={{ fontSize: 8, color: fg, marginTop: 2 }}>{cell.commessa_code}</div>
-                  </>
-                ) : <div style={{ fontSize: 8, color: MUTED, marginTop: 14 }}>libero</div>}
+              <div key={d} style={{ background: isToday ? TEAL + '22' : 'transparent', borderRadius: 6, padding: 4 }}>
+                <div style={{ color: isToday ? TEAL_DEEP : MUTED }}>{GIORNI_ABBR[(dt.getDay()+6)%7]}</div>
+                <div style={{ fontSize: 14, color: isToday ? TEAL_DEEP : TEXT, marginTop: 2, fontWeight: 700 }}>{dt.getDate()}</div>
               </div>
             );
           })}
         </div>
-      ))}
-      <div style={{ display: 'flex', gap: 10, marginTop: 12, fontSize: 9, color: MUTED, justifyContent: 'center' }}>
-        <Legend color="#FEE2E2" label="Pieno" />
-        <Legend color="#FEF3C7" label="Parziale" />
-        <Legend color="#E1F5EE" label="Libero" />
+
+        {/* Righe squadre */}
+        {squadre.map(sq => (
+          <div key={sq} style={{ display: 'grid', gridTemplateColumns: '60px repeat(5, 1fr)', gap: 4, marginBottom: 5 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', background: colorPerSquadra(sq), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>{sq.slice(0,3).toUpperCase()}</div>
+            </div>
+            {dates.map(d => {
+              const cell = montaggi.find((m: MontaggioRow) => m.data_montaggio === d && (m.squadra_label || 'Da assegnare') === sq);
+              const cellKey = `${sq}|${d}`;
+              const isHover = hoverCell === cellKey && draggedM !== null;
+              const liveValid = isHover && draggedM ? validateDrop(draggedM, sq, d) : null;
+              
+              const ore = cell?.ore_preventivate || 0;
+              const bg = isHover ? (liveValid?.ok ? '#D1FAE5' : '#FEE2E2') 
+                       : !cell ? '#F8FAFA' 
+                       : ore >= 8 ? '#FEE2E2' : ore >= 4 ? '#FEF3C7' : '#E1F5EE';
+              const fg = !cell ? MUTED : ore >= 8 ? '#991B1B' : ore >= 4 ? '#92400E' : TEAL_DEEP;
+              const border = isHover ? `2px dashed ${liveValid?.ok ? TEAL : RED}` : '2px solid transparent';
+
+              return (
+                <div key={d}
+                  onDragOver={(e) => { e.preventDefault(); setHoverCell(cellKey); }}
+                  onDragLeave={() => setHoverCell(prev => prev === cellKey ? null : prev)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedM) applyDrop(draggedM, sq, d);
+                    setDraggedM(null);
+                    setHoverCell(null);
+                  }}
+                  style={{ background: bg, padding: '8px 4px', borderRadius: 8, minHeight: 70, textAlign: 'center' as const, border, transition: 'all 0.15s', cursor: cell ? 'grab' : 'default' }}>
+                  {cell ? (
+                    <div
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedM(cell);
+                        e.dataTransfer.setData('text/plain', cell.id);
+                      }}
+                      onDragEnd={() => { setDraggedM(null); setHoverCell(null); }}
+                      onClick={() => onApri?.(cell.commessa_id)}
+                      style={{ opacity: draggedM?.id === cell.id ? 0.4 : 1, transition: 'opacity 0.15s' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: fg }}>{ore}h</div>
+                      <div style={{ fontSize: 9, color: fg, marginTop: 3, fontWeight: 600 }}>{cell.commessa_code}</div>
+                      {cell.cliente && <div style={{ fontSize: 8, color: fg, marginTop: 2, opacity: 0.7, textOverflow: 'ellipsis' as const, overflow: 'hidden' as const, whiteSpace: 'nowrap' as const }}>{cell.cliente}</div>}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 9, color: isHover ? (liveValid?.ok ? TEAL_DEEP : RED) : MUTED, marginTop: 18, fontWeight: 600 }}>
+                      {isHover ? (liveValid?.msg || 'libero') : 'libero'}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 12, fontSize: 9, color: MUTED, justifyContent: 'center' }}>
+          <Legend color="#FEE2E2" label="Pieno" />
+          <Legend color="#FEF3C7" label="Parziale" />
+          <Legend color="#E1F5EE" label="Libero" />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

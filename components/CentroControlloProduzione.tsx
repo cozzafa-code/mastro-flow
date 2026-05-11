@@ -185,30 +185,136 @@ function Overview({ commesse, onApri }: any) {
   );
 }
 
+type ColKey = 'da-avviare' | 'in-prod' | 'pronto' | 'bloccato';
+
 function Kanban({ commesse, onApri }: any) {
-  const cols = [
-    { key: 'da-avviare', title: 'DA AVVIARE', color: MUTED, items: commesse.filter((c: Commessa) => c.fase === 'ordine' && c.materiali_status === 'completo') },
-    { key: 'in-prod', title: 'IN PRODUZIONE', color: TEAL, items: commesse.filter((c: Commessa) => c.fase === 'produzione' && c.materiali_status !== 'in_attesa') },
-    { key: 'pronto', title: 'PRONTO MONTAGGIO', color: TEAL_DEEP, items: commesse.filter((c: Commessa) => c.fase === 'montaggio') },
-    { key: 'bloccato', title: 'BLOCCATO', color: RED, items: commesse.filter((c: Commessa) => c.materiali_status === 'in_attesa') },
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [hoverCol, setHoverCol] = useState<ColKey | null>(null);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  const cols: { key: ColKey; title: string; color: string; targetFase: string; items: Commessa[] }[] = [
+    { key: 'da-avviare', title: 'DA AVVIARE', color: MUTED, targetFase: 'ordine', items: commesse.filter((c: Commessa) => c.fase === 'ordine' && c.materiali_status === 'completo') },
+    { key: 'in-prod', title: 'IN PRODUZIONE', color: TEAL, targetFase: 'produzione', items: commesse.filter((c: Commessa) => c.fase === 'produzione' && c.materiali_status !== 'in_attesa') },
+    { key: 'pronto', title: 'PRONTO MONTAGGIO', color: TEAL_DEEP, targetFase: 'montaggio', items: commesse.filter((c: Commessa) => c.fase === 'montaggio') },
+    { key: 'bloccato', title: 'BLOCCATO', color: RED, targetFase: 'bloccato', items: commesse.filter((c: Commessa) => c.materiali_status === 'in_attesa') },
   ];
+
+  function validateMove(cm: Commessa, target: ColKey): { ok: boolean; reason?: string } {
+    if (target === 'bloccato') return { ok: true };
+    if (target === 'da-avviare') {
+      if (cm.materiali_status !== 'completo') return { ok: false, reason: 'Materiali non completi — non avviabile' };
+      return { ok: true };
+    }
+    if (target === 'in-prod') {
+      if (cm.materiali_status === 'in_attesa') return { ok: false, reason: 'Materiali mancanti — non avviabile' };
+      if (!cm.fattura_acconto_pagata_at) return { ok: false, reason: 'Acconto non pagato — non avviabile' };
+      return { ok: true };
+    }
+    if (target === 'pronto') {
+      if (!cm.produzione_completata_at && cm.fase !== 'montaggio') return { ok: false, reason: 'Produzione non completata' };
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  async function applyMove(cmId: string, target: ColKey) {
+    const cm = commesse.find((x: Commessa) => x.id === cmId);
+    if (!cm) return;
+    const v = validateMove(cm, target);
+    if (!v.ok) {
+      setToast({ msg: `${cm.code}: ${v.reason}`, ok: false });
+      setTimeout(() => setToast(null), 3500);
+      return;
+    }
+    
+    const updates: Record<string, any> = {};
+    if (target === 'in-prod') {
+      updates.fase = 'produzione';
+      if (!cm.produzione_iniziata_at) updates.produzione_iniziata_at = new Date().toISOString();
+    } else if (target === 'pronto') {
+      updates.fase = 'montaggio';
+      if (!cm.produzione_completata_at) updates.produzione_completata_at = new Date().toISOString();
+    } else if (target === 'da-avviare') {
+      updates.fase = 'ordine';
+    } else if (target === 'bloccato') {
+      // 'bloccato' è derivato da materiali_status — mettere in attesa
+      updates.materiali_status = 'in_attesa';
+    }
+
+    const { error } = await supabase.from('commesse').update(updates).eq('id', cmId);
+    if (error) {
+      setToast({ msg: `Errore: ${error.message}`, ok: false });
+    } else {
+      setToast({ msg: `${cm.code} spostato in ${target.replace('-', ' ').toUpperCase()}`, ok: true });
+    }
+    setTimeout(() => setToast(null), 2500);
+  }
+
   return (
-    <div style={{ display: 'flex', gap: 10, overflowX: 'auto' as const, paddingBottom: 8 }}>
-      {cols.map(col => (
-        <div key={col.key} style={{ minWidth: 280, flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '0 4px' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: col.color }} />
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: TEXT }}>{col.title}</div>
-            <span style={{ marginLeft: 'auto', background: '#fff', color: col.color, fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{col.items.length}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {col.items.length === 0 ?
-              <div style={{ background: 'rgba(255,255,255,0.5)', borderRadius: 10, padding: 20, textAlign: 'center' as const, fontSize: 10, color: MUTED, border: '1px dashed #E5EAF0' }}>Vuoto</div> :
-              col.items.map((c: Commessa) => <CommessaCardOperativa key={c.id} cm={c} compact onClick={() => onApri?.(c.id)} />)}
-          </div>
+    <>
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
+          background: toast.ok ? TEAL_DEEP : RED, color: '#fff',
+          padding: '10px 18px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+          zIndex: 9999, boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+          display: 'flex', alignItems: 'center', gap: 8, maxWidth: '90%',
+        }}>
+          {toast.ok ? '✓' : '✕'} {toast.msg}
         </div>
-      ))}
-    </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 10, overflowX: 'auto' as const, paddingBottom: 8 }}>
+        {cols.map(col => {
+          const isHover = hoverCol === col.key && draggedId !== null;
+          return (
+            <div key={col.key}
+              onDragOver={(e) => { e.preventDefault(); setHoverCol(col.key); }}
+              onDragLeave={() => setHoverCol(prev => prev === col.key ? null : prev)}
+              onDrop={(e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData('text/plain') || draggedId;
+                if (id) applyMove(id, col.key);
+                setDraggedId(null);
+                setHoverCol(null);
+              }}
+              style={{
+                minWidth: 280, flexShrink: 0,
+                padding: isHover ? 6 : 0,
+                borderRadius: 10,
+                background: isHover ? col.color + '22' : 'transparent',
+                border: isHover ? `2px dashed ${col.color}` : '2px dashed transparent',
+                transition: 'all 0.15s',
+              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '0 4px' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: col.color }} />
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: TEXT }}>{col.title}</div>
+                <span style={{ marginLeft: 'auto', background: '#fff', color: col.color, fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{col.items.length}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 60 }}>
+                {col.items.length === 0 ?
+                  <div style={{ background: 'rgba(255,255,255,0.5)', borderRadius: 10, padding: 20, textAlign: 'center' as const, fontSize: 10, color: MUTED, border: '1px dashed #E5EAF0' }}>
+                    {isHover ? '⤵ Rilascia qui' : 'Vuoto'}
+                  </div> :
+                  col.items.map((c: Commessa) => (
+                    <div key={c.id}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedId(c.id);
+                        e.dataTransfer.setData('text/plain', c.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => { setDraggedId(null); setHoverCol(null); }}
+                      style={{ opacity: draggedId === c.id ? 0.4 : 1, cursor: 'grab', transition: 'opacity 0.15s' }}>
+                      <CommessaCardOperativa cm={c} compact onClick={() => onApri?.(c.id)} />
+                    </div>
+                  ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
