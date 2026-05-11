@@ -63,8 +63,10 @@ export interface CaricoArticolo {
   qr_code: string | null;
   verificato: boolean;
   verificato_at: string | null;
+  verificato_da_nome: string | null;
   caricato: boolean;
   caricato_at: string | null;
+  caricato_da_nome: string | null;
   foto_url: string | null;
   note: string | null;
 }
@@ -196,12 +198,38 @@ export function useCarico(caricoId: string | null) {
   return { carico, articoli, loading, reload: load };
 }
 
+function getNomeOperatore(): string {
+  if (typeof window === 'undefined') return 'Sistema';
+  return localStorage.getItem('mastro:nome_operatore') 
+    || sessionStorage.getItem('mastro:user_name')
+    || 'Operatore';
+}
+
 export async function toggleVerificato(articoloId: string, verificato: boolean) {
-  const updates: any = { verificato, verificato_at: verificato ? new Date().toISOString() : null };
+  const nome = getNomeOperatore();
+  const updates: any = { 
+    verificato, 
+    verificato_at: verificato ? new Date().toISOString() : null,
+    verificato_da_nome: verificato ? nome : null,
+  };
   await supabase.from('carico_articoli').update(updates).eq('id', articoloId);
 }
 
 export async function toggleCaricato(articoloId: string, caricato: boolean) {
-  const updates: any = { caricato, caricato_at: caricato ? new Date().toISOString() : null };
+  const nome = getNomeOperatore();
+  const updates: any = { 
+    caricato, 
+    caricato_at: caricato ? new Date().toISOString() : null,
+    caricato_da_nome: caricato ? nome : null,
+  };
   await supabase.from('carico_articoli').update(updates).eq('id', articoloId);
+}
+
+export async function verificaPartenza(caricoId: string) {
+  const updates: any = {
+    verificato_partenza: true,
+    verificato_partenza_at: new Date().toISOString(),
+    stato: 'caricato',
+  };
+  return await supabase.from('carichi_furgone').update(updates).eq('id', caricoId);
 }

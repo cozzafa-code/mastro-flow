@@ -3,7 +3,8 @@
 // BLOCCO 6 - Lista carichi giornalieri + dettaglio FURGONE-GIORNO
 
 import React, { useState } from "react";
-import { useFurgoni, useCarico, toggleVerificato, toggleCaricato, type Carico, type CaricoArticolo } from "../hooks/useFurgoni";
+import { useFurgoni, useCarico, toggleVerificato, toggleCaricato, verificaPartenza, type Carico, type CaricoArticolo } from "../hooks/useFurgoni";
+import { usePicking, useErrorEngine, type PickingStop, type ErroreBloccante } from "../hooks/usePicking";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -164,7 +165,8 @@ function CardCarico({ c, onClick }: { c: Carico; onClick: () => void }) {
 // =============== DETTAGLIO FURGONE-GIORNO ===============
 function DettaglioCarico({ caricoId, onClose, onApriCommessa }: any) {
   const { carico, articoli, loading } = useCarico(caricoId);
-  const [tab, setTab] = useState<'percorso' | 'carico' | 'squadra'>('carico');
+  const errori = useErrorEngine(carico, articoli);
+  const [tab, setTab] = useState<'percorso' | 'carico' | 'picking' | 'squadra'>('carico');
 
   if (loading || !carico) {
     return (
@@ -201,20 +203,174 @@ function DettaglioCarico({ caricoId, onClose, onApriCommessa }: any) {
       </div>
 
       {/* Tab switcher */}
-      <div style={{ background: '#fff', margin: '8px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2 }}>
-        <TabBtn active={tab === 'percorso'} onClick={() => setTab('percorso')} label="🛣️ Percorso" badge={carico.percorso_montaggi?.length || 0} />
+      <div style={{ background: '#fff', margin: '8px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, overflowX: 'auto' as const }}>
+        <TabBtn active={tab === 'percorso'} onClick={() => setTab('percorso')} label="🛣️ Stop" badge={carico.percorso_montaggi?.length || 0} />
+        <TabBtn active={tab === 'picking'} onClick={() => setTab('picking')} label="🛒 Picking" />
         <TabBtn active={tab === 'carico'} onClick={() => setTab('carico')} label="📦 Carico" badge={totArt} />
         <TabBtn active={tab === 'squadra'} onClick={() => setTab('squadra')} label="👥 Squadra" />
       </div>
 
       <div style={{ padding: 14 }}>
+        <BannerErrori errori={errori} carico={carico} />
         {tab === 'percorso' && <ViewPercorso carico={carico} onApriCommessa={onApriCommessa} />}
+        {tab === 'picking' && <ViewPicking articoli={articoli} />}
         {tab === 'carico' && <ViewCarico articoli={articoli} carico={carico} />}
         {tab === 'squadra' && <ViewSquadra carico={carico} articoli={articoli} />}
       </div>
     </div>
   );
 }
+
+// =============== BANNER ERROR ENGINE ===============
+function BannerErrori({ errori, carico }: { errori: ErroreBloccante[]; carico: Carico }) {
+  const [expanded, setExpanded] = useState(false);
+  const blocks = errori.filter(e => e.severity === 'block');
+  const warns = errori.filter(e => e.severity === 'warn');
+  const allOk = errori.length === 0;
+  const canDepart = blocks.length === 0;
+
+  if (allOk && carico.verificato_partenza) {
+    return (
+      <div style={{ background: TEAL_DEEP, color: '#fff', padding: '10px 14px', borderRadius: 10, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 20 }}>✅</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5 }}>VERIFICA PARTENZA OK</div>
+          <div style={{ fontSize: 10, opacity: 0.9 }}>Carico pronto al 100% per la partenza</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div onClick={() => setExpanded(!expanded)} style={{
+        background: !canDepart ? '#FEE2E2' : warns.length > 0 ? '#FEF3C7' : '#E1F5EE',
+        border: `2px solid ${!canDepart ? RED : warns.length > 0 ? AMBER : TEAL}`,
+        borderRadius: 10, padding: '10px 12px', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <span style={{ fontSize: 20 }}>{!canDepart ? '🚫' : warns.length > 0 ? '⚠️' : '✓'}</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, color: !canDepart ? '#991B1B' : warns.length > 0 ? '#92400E' : TEAL_DEEP }}>
+            ERROR ENGINE
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>
+            {!canDepart ? `${blocks.length} bloccanti - NON PARTIRE` : warns.length > 0 ? `${warns.length} avvertimenti` : 'Tutto ok'}
+          </div>
+        </div>
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2} style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+
+      {expanded && (
+        <div style={{ background: '#fff', padding: 10, marginTop: 6, borderRadius: 8 }}>
+          {errori.map((e, i) => {
+            const col = e.severity === 'block' ? RED : AMBER;
+            const bg = e.severity === 'block' ? '#FEE2E2' : '#FEF3C7';
+            const fg = e.severity === 'block' ? '#991B1B' : '#92400E';
+            return (
+              <div key={i} style={{ background: bg, borderLeft: `3px solid ${col}`, padding: '7px 10px', borderRadius: 6, marginBottom: 5, fontSize: 11, color: fg, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ background: col, color: '#fff', padding: '1px 6px', borderRadius: 3, fontSize: 8, fontWeight: 800 }}>
+                  {e.severity === 'block' ? 'BLOCK' : 'WARN'}
+                </span>
+                <span>{e.message}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {canDepart && !carico.verificato_partenza && (
+        <button onClick={async () => {
+          if (confirm('Confermi che il carico è verificato e pronto per partenza?')) {
+            await verificaPartenza(carico.id);
+          }
+        }} style={{
+          width: '100%', padding: '14px 0', marginTop: 8,
+          background: `linear-gradient(90deg, ${TEAL}, ${TEAL_DEEP})`, color: '#fff',
+          border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 800,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}>
+          ✓ VERIFICA PARTENZA E CONFERMA CARICO
+        </button>
+      )}
+    </div>
+  );
+}
+
+// =============== VIEW PICKING - percorso ottimale magazzino ===============
+function ViewPicking({ articoli }: { articoli: CaricoArticolo[] }) {
+  const stops = usePicking(articoli);
+  if (stops.length === 0) return <Empty label="Nessun articolo da prelevare" />;
+
+  const totVerif = stops.filter(s => s.tutti_verificati).length;
+  const totCar = stops.filter(s => s.tutti_caricati).length;
+
+  return (
+    <>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 10, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, color: MUTED, letterSpacing: 1, marginBottom: 6, fontWeight: 700 }}>
+          🛒 PERCORSO OTTIMALE PICKUP · {stops.length} STOP
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <div style={{ background: '#E1F5EE', padding: '7px 8px', borderRadius: 6, textAlign: 'center' as const }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: TEAL_DEEP }}>{totVerif}/{stops.length}</div>
+            <div style={{ fontSize: 8, color: TEAL_DEEP, fontWeight: 700, marginTop: 2 }}>SCAFFALI VERIFICATI</div>
+          </div>
+          <div style={{ background: '#FEF3C7', padding: '7px 8px', borderRadius: 6, textAlign: 'center' as const }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#92400E' }}>{totCar}/{stops.length}</div>
+            <div style={{ fontSize: 8, color: '#92400E', fontWeight: 700, marginTop: 2 }}>SCAFFALI CARICATI</div>
+          </div>
+        </div>
+      </div>
+
+      {stops.map((s, i) => {
+        const statoCol = s.tutti_caricati ? TEAL_DEEP : s.tutti_verificati ? AMBER : MUTED;
+        const statoLabel = s.tutti_caricati ? 'CARICATO' : s.tutti_verificati ? 'PRESO' : 'DA PRENDERE';
+        return (
+          <div key={s.scaffale} style={{ background: '#fff', borderRadius: 12, marginBottom: 10, overflow: 'hidden' as const, borderLeft: `5px solid ${statoCol}` }}>
+            <div style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 50, height: 50, borderRadius: '50%', background: NAVY, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800 }}>
+                {i + 1}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <span style={{ background: AMBER, color: '#fff', padding: '3px 9px', borderRadius: 5, fontSize: 14, fontWeight: 800 }}>📍 {s.scaffale}</span>
+                </div>
+                <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginTop: 4 }}>
+                  Zona: {s.zona.toUpperCase()} · {s.articoli.length} {s.articoli.length === 1 ? 'articolo' : 'articoli'} · {s.totale_pz} pz
+                </div>
+              </div>
+              <span style={{ background: statoCol, color: '#fff', padding: '4px 9px', borderRadius: 5, fontSize: 9, fontWeight: 800 }}>{statoLabel}</span>
+            </div>
+
+            <div style={{ background: '#F8FAFA', padding: 10, borderTop: '1px solid #E5EAF0' }}>
+              {s.articoli.map(a => {
+                const icon = CAT_ICON[a.categoria] || '📦';
+                return (
+                  <div key={a.id} style={{ background: '#fff', padding: 8, marginBottom: 5, borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 16 }}>{icon}</span>
+                    <div style={{ flex: 1, minWidth: 0, fontSize: 11 }}>
+                      <div style={{ fontWeight: 700, color: TEXT, lineHeight: 1.3 }}>{a.articolo_descrizione}</div>
+                      <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{a.commessa_code} · {a.quantita} pz · {a.peso_kg ? a.peso_kg + 'kg' : ''}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <span style={{ fontSize: 16, opacity: a.verificato ? 1 : 0.2 }} title="Verificato">✓</span>
+                      <span style={{ fontSize: 16, opacity: a.caricato ? 1 : 0.2 }} title="Caricato">🚛</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+
 
 // =============== TAB PERCORSO ===============
 function ViewPercorso({ carico, onApriCommessa }: any) {
@@ -324,9 +480,14 @@ function RigaCarico({ a }: { a: CaricoArticolo }) {
           square
         />
       </div>
-      {a.verificato_at && (
-        <div style={{ marginTop: 6, fontSize: 9, color: MUTED, textAlign: 'right' as const }}>
-          Verificato {new Date(a.verificato_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+      {(a.verificato_at || a.caricato_at) && (
+        <div style={{ marginTop: 6, fontSize: 9, color: MUTED, display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
+          {a.verificato_at && (
+            <span>✓ <strong>{a.verificato_da_nome || 'Operatore'}</strong> · {new Date(a.verificato_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+          )}
+          {a.caricato_at && (
+            <span style={{ marginLeft: 'auto' }}>🚛 <strong>{a.caricato_da_nome || 'Operatore'}</strong> · {new Date(a.caricato_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+          )}
         </div>
       )}
     </div>
