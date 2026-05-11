@@ -5,6 +5,7 @@ import CardAzioniVeloci from "./home/CardAzioniVeloci";
 import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import CentroControlloMontaggi from "./CentroControlloMontaggi";
 import CentroControlloOrdini from "./CentroControlloOrdini";
+import CentroControlloMagazzino from "./CentroControlloMagazzino";
 import CentroControlloProduzione from "./CentroControlloProduzione";
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
@@ -111,6 +112,7 @@ export default function HomePanelMobileV2(props: any) {
   const [showCentroMontaggi, setShowCentroMontaggi] = React.useState(false);
   const [showCentroProduzione, setShowCentroProduzione] = React.useState(false);
   const [showCentroOrdini, setShowCentroOrdini] = React.useState(false);
+  const [showCentroMagazzino, setShowCentroMagazzino] = React.useState(false);
   const { data } = useHomeMobile()
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const [editMode, setEditMode] = useState(false)
@@ -278,6 +280,7 @@ export default function HomePanelMobileV2(props: any) {
             onProduzione={() => setShowCentroProduzione(true)}
             onMontaggi={() => setShowCentroMontaggi(true)}
             onOrdini={() => setShowCentroOrdini(true)}
+            onMagazzino={() => setShowCentroMagazzino(true)}
             onMateriali={() => goto('materiali')}
             onMagazzino={() => goto('materiali')}
             onClienti={() => goto('clienti')}
@@ -362,6 +365,13 @@ export default function HomePanelMobileV2(props: any) {
           onClose={() => setShowCentroOrdini(false)}
           onApriOrdine={(ordId: string) => { console.log('apri ordine', ordId); }}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroOrdini(false); setOrganizzaCm(cm); } }}
+        />
+      )}
+      {showCentroMagazzino && (
+        <CentroControlloMagazzino
+          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          onClose={() => setShowCentroMagazzino(false)}
+          onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroMagazzino(false); setOrganizzaCm(cm); } }}
         />
       )}
     </div>

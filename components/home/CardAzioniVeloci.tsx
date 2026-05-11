@@ -107,7 +107,7 @@ export default function CardAzioniVeloci(props: Props) {
         <Tile primary navy onClick={props.onProduzione} count={counts.produzione} label="Produzione" sub="In lavorazione" icon={<IT color="#fff" />} />
         <Tile primary teal onClick={props.onMontaggi} count={counts.montaggi} label="Montaggi" sub="Pianificati" icon={<IK color="#fff" />} />
         <Tile primary amber onClick={props.onOrdini || props.onMateriali} count={counts.materiali} label="Ordini" sub="Catena operativa" icon={<IB color="#fff" />} />
-        <Tile onClick={props.onMagazzino} count={counts.magazzino} label="Magazzino" sub="Articoli a scorta" accent="#6B21A8" accentBg="#F3E8FF" icon={<IA color="#6B21A8" />} />
+        <Tile primary purple onClick={props.onMagazzino} count={counts.magazzino} label="Magazzino" sub="Mappa scaffali" icon={<IA color="#fff" />} />
         <Tile onClick={props.onClienti} count={counts.clienti} label="Clienti" sub="Anagrafica" accent="#9A3412" accentBg="#FFEDD5" icon={<IU color="#9A3412" />} />
         <Tile onClick={props.onAgenda} count={counts.agenda} label="Agenda" sub="Appuntamenti" accent="#155E75" accentBg="#CFFAFE" icon={<IC color="#155E75" />} />
         <Tile onClick={props.onTeam} count={counts.team} label="Team" sub="Operatori" accent="#9F1239" accentBg="#FCE7F3" icon={<IG color="#9F1239" />} />
@@ -117,9 +117,9 @@ export default function CardAzioniVeloci(props: Props) {
   );
 }
 
-function Tile({ primary, navy, teal, amber, onClick, count, countText, label, sub, accent, accentBg, border, icon }: any) {
+function Tile({ primary, navy, teal, amber, purple, onClick, count, countText, label, sub, accent, accentBg, border, icon }: any) {
   const isPrimary = primary;
-  const bg = isPrimary ? (navy ? NAVY : amber ? '#D97706' : TEAL) : '#fff';
+  const bg = isPrimary ? (navy ? NAVY : amber ? '#D97706' : purple ? '#6B21A8' : TEAL) : '#fff';
   const color = isPrimary ? '#fff' : TEXT;
   const borderStyle = isPrimary ? 'none' : (border ? `1.5px solid ${accent}` : '1.5px solid #E5EAF0');
   const iconBg = isPrimary ? 'rgba(255,255,255,0.15)' : accentBg;
