@@ -948,6 +948,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [showGradi, setShowGradi] = React.useState(true);
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"accessori"|"sensi"|"strumenti"|null>(null);
+  // === Big-screen detection: attiva UI piu grande per tablet+desktop (>=768px). Smartphone INTATTO. ===
+  const [isBig, setIsBig] = React.useState<boolean>(false);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const check = () => setIsBig(window.innerWidth >= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const [telaioBatch, setTelaioBatch] = React.useState<{open: boolean, L: string, H: string, N: string} | null>(null);
   const [shapePicker, setShapePicker] = React.useState<{open: boolean, shape: string | null, L: string, H: string, H2: string, H3: string, H4: string, N: string} | null>(null);
   const telaioTapRef = React.useRef<number>(0);
@@ -3122,9 +3131,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
 
                             // ══ Styles ══
-                            const bs = (active = false) => ({ padding: "10px 14px", borderRadius: 8, border: `1px solid ${active ? "#1A9E73" : T.bdr}`, background: active ? `${"#1A9E73"}12` : T.card, fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? "#1A9E73" : T.text, minHeight: 48 });
-                            const bAp = (active = false) => ({ padding: "10px 14px", borderRadius: 8, border: `1px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue, minHeight: 48 });
-                            const bDel = (c2 = T.red) => ({ padding: "14px 20px", borderRadius: 10, border: `2px solid ${c2}50`, background: `${c2}15`, fontSize: 16, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2, minHeight: 56 });
+                            const bs = (active = false) => ({ padding: isBig ? "8px 12px" : "3px 6px", borderRadius: isBig ? 8 : 5, border: `1px solid ${active ? "#28A0A0" : T.bdr}`, background: active ? (isBig ? "#28A0A015" : `${"#1A9E73"}12`) : T.card, fontSize: isBig ? 12 : 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? "#28A0A0" : T.text, minHeight: isBig ? 38 : undefined });
+                            const bAp = (active = false) => ({ padding: isBig ? "8px 12px" : "3px 6px", borderRadius: isBig ? 8 : 5, border: `1px solid ${active ? T.blue : T.blue + (isBig ? "40" : "30")}`, background: active ? `${T.blue}${isBig ? "15" : "12"}` : `${T.blue}${isBig ? "08" : "05"}`, fontSize: isBig ? 12 : 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue, minHeight: isBig ? 38 : undefined });
+                            const bDel = (c2 = T.red) => ({ padding: isBig ? "10px 16px" : "5px 9px", borderRadius: isBig ? 8 : 6, border: `1px solid ${c2}${isBig ? "40" : "30"}`, background: `${c2}${isBig ? "10" : "08"}`, fontSize: isBig ? 13 : 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2, minHeight: isBig ? 42 : undefined });
 
                             const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" || drawMode === "place-zocc-free" || drawMode === "place-fermavetro" || drawMode === "place-maniglione" || drawMode === "place-catalogo" || drawMode === "place-veloce" ? "crosshair" : drawMode ? "pointer" : "default";
 
@@ -3366,12 +3375,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     {id:"strumenti",l:"Strumenti",c:"#6366f1"},
                                   ].map(mt => (
                                     <div key={mt.id} data-cad="tab" onClick={() => setMenuTab(menuTab === mt.id ? null : mt.id as any)} style={{
-                                      flex: 1, padding: "16px 4px", textAlign: "center", fontSize: 15, fontWeight: 800,
-                                      borderRadius: 10, cursor: "pointer",
-                                      background: menuTab === mt.id ? mt.c : "white",
-                                      color: menuTab === mt.id ? "white" : T.sub,
-                                      border: `2px solid ${menuTab === mt.id ? mt.c : T.bdr}`,
-                                      minHeight: 60,
+                                      flex: 1, padding: isBig ? "10px 4px" : "5px 0", textAlign: "center", fontSize: isBig ? 12 : 9, fontWeight: isBig ? 700 : 800,
+                                      borderRadius: isBig ? 8 : 6, cursor: "pointer",
+                                      background: menuTab === mt.id ? mt.c : (isBig ? "#F8FAFC" : "white"),
+                                      color: menuTab === mt.id ? "white" : (isBig ? "#475569" : T.sub),
+                                      border: `1px solid ${menuTab === mt.id ? mt.c : (isBig ? "#E2E8F0" : T.bdr)}`,
+                                      ...(isBig ? { minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" } : {}),
                                     }}>{mt.l}</div>
                                   ))}
                                 </div>
