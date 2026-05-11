@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useMemo } from "react";
 import { useFinanze, formatEuro, formatEuroShort } from "../hooks/useFinanze";
-import { useFattureFinanze, statoLabel, type FatturaFin, type FiltroFatture } from "../hooks/useFattureFinanze";
+import { useFattureFinanze, type FatturaFin, type FiltroFatture } from "../hooks/useFattureFinanze";
+import { useSpese, CATEGORIE_SPESA, METODI_PAGAMENTO, statoFattRicLabel, type SpesaRow, type FatturaRicevutaRow, type FiltroSpese, type FiltroFattRic } from "../hooks/useSpese";
 import HeroKPIFinanze from "./finanze/HeroKPIFinanze";
 import { PASTEL, BG_APP, MUTED, TEXT } from "../lib/modaleColors";
 import { IcoFile, IcoEuro, IcoAlertTriangle, IcoSparkles, IcoCheck, IcoChevronLeft, IcoTrendingUp, IcoTruck, IcoUser, IcoBuilding, IcoChat } from "./IconLib";
@@ -9,6 +10,7 @@ import { IcoFile, IcoEuro, IcoAlertTriangle, IcoSparkles, IcoCheck, IcoChevronLe
 function IcoPlus({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round"><line x1={12} y1={5} x2={12} y2={19}/><line x1={5} y1={12} x2={19} y2={12}/></svg>;}
 function IcoX({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round"><line x1={18} y1={6} x2={6} y2={18}/><line x1={6} y1={6} x2={18} y2={18}/></svg>;}
 function IcoSearch({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}><circle cx={11} cy={11} r={8}/><line x1={21} y1={21} x2={16.65} y2={16.65}/></svg>;}
+function IcoCam({size=14,color="currentColor"}:any){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx={12} cy={13} r={4}/></svg>;}
 
 interface Props {
   aziendaId: string;
@@ -18,17 +20,31 @@ interface Props {
 export default function CentroFinanze({ aziendaId, onClose }: Props) {
   const { kpi, heroKpi, alerts, cashflow, loading, dismissAlert } = useFinanze(aziendaId);
   const fattHook = useFattureFinanze(aziendaId);
-  const [tab, setTab] = useState<'home'|'fatture'|'cashflow'|'scadenze'|'alert'>('home');
+  const speseHook = useSpese(aziendaId);
+  const [tab, setTab] = useState<'home'|'fatture'|'uscite'|'cashflow'|'scadenze'|'alert'>('home');
   const [showFab, setShowFab] = useState(false);
 
-  // Stati modali
+  // Modali esistenti (V2)
   const [showNuovaFattura, setShowNuovaFattura] = useState(false);
   const [showPagamento, setShowPagamento] = useState<{open: boolean; fatturaId?: string}>({open: false});
   const [dettaglioId, setDettaglioId] = useState<string | null>(null);
 
-  // Filtri tab Fatture
+  // Modali nuovi (V3 Blocco 3)
+  const [showSpesa, setShowSpesa] = useState(false);
+  const [showPagFornit, setShowPagFornit] = useState<{open: boolean; fatturaId?: string}>({open: false});
+  const [showNuovaFatturaRic, setShowNuovaFatturaRic] = useState(false);
+  const [dettaglioFattRicId, setDettaglioFattRicId] = useState<string | null>(null);
+
+  // Filtri Fatture
   const [filtroF, setFiltroF] = useState<FiltroFatture>('tutte');
   const [searchF, setSearchF] = useState('');
+
+  // Filtri Uscite (3 sub-tab)
+  const [subTabUscite, setSubTabUscite] = useState<'spese'|'fornitori'|'storico'>('spese');
+  const [filtroSpese, setFiltroSpese] = useState<FiltroSpese>('mese');
+  const [searchSpese, setSearchSpese] = useState('');
+  const [filtroFornit, setFiltroFornit] = useState<FiltroFattRic>('da_pagare');
+  const [searchFornit, setSearchFornit] = useState('');
 
   const scadenzeProssime = useMemo(() => {
     const items: any[] = [];
@@ -37,8 +53,11 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
   }, [cashflow]);
 
   const fattureFiltrate = useMemo(() => fattHook.filtra(filtroF, searchF), [fattHook.fatture, filtroF, searchF]);
+  const speseFiltrate = useMemo(() => speseHook.filtraSpese(filtroSpese, searchSpese), [speseHook.spese, filtroSpese, searchSpese]);
+  const fornitFiltrate = useMemo(() => speseHook.filtraFattRicevute(filtroFornit, searchFornit), [speseHook.fattRicevute, filtroFornit, searchFornit]);
 
   const fatturaCorrente = dettaglioId ? fattHook.fatture.find(f => f.id === dettaglioId) : null;
+  const fatturaRicCorrente = dettaglioFattRicId ? speseHook.fattRicevute.find(f => f.id === dettaglioFattRicId) : null;
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: BG_APP, zIndex: 9800, display: 'flex', flexDirection: 'column' as const }}>
@@ -66,11 +85,12 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
           )}
         </div>
 
-        {/* Tab nav - 5 tab */}
+        {/* Tab nav - 6 tab */}
         <div style={{ display: 'flex', gap: 3, marginTop: 12, background: '#F1F4F7', padding: 3, borderRadius: 10, overflowX: 'auto' as const }}>
           {[
             { val: 'home', label: 'Sintesi' },
             { val: 'fatture', label: `Fatture${fattHook.kpi ? ` · ${fattHook.kpi.n_aperte}` : ''}` },
+            { val: 'uscite', label: `Uscite${speseHook.kpiFatt ? ` · ${speseHook.kpiFatt.n_da_pagare}` : ''}` },
             { val: 'cashflow', label: 'Cashflow' },
             { val: 'scadenze', label: 'Scadenze' },
             { val: 'alert', label: `Alert${alerts.length ? ` · ${alerts.length}` : ''}` },
@@ -134,6 +154,35 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
               />
             )}
 
+            {tab === 'uscite' && (
+              <TabUscite
+                subTab={subTabUscite}
+                setSubTab={setSubTabUscite}
+                kpiSpese={speseHook.kpiSpese}
+                kpiFatt={speseHook.kpiFatt}
+                categorieSpese={speseHook.categorieSpese}
+                spese={speseFiltrate}
+                fornit={fornitFiltrate}
+                pagamentiStorico={speseHook.fattRicevute}
+                filtroSpese={filtroSpese}
+                setFiltroSpese={setFiltroSpese}
+                searchSpese={searchSpese}
+                setSearchSpese={setSearchSpese}
+                filtroFornit={filtroFornit}
+                setFiltroFornit={setFiltroFornit}
+                searchFornit={searchFornit}
+                setSearchFornit={setSearchFornit}
+                onEliminaSpesa={async (id) => {
+                  if (!confirm('Eliminare questa spesa?')) return;
+                  await speseHook.eliminaSpesa(id);
+                }}
+                onApriFornit={(id) => setDettaglioFattRicId(id)}
+                onPagaFornit={(id) => setShowPagFornit({ open: true, fatturaId: id })}
+                onNuovaFattRic={() => setShowNuovaFatturaRic(true)}
+                onNuovaSpesa={() => setShowSpesa(true)}
+              />
+            )}
+
             {tab === 'cashflow' && <CashflowChart cashflow={cashflow} kpi={kpi} />}
 
             {tab === 'scadenze' && (
@@ -175,30 +224,27 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
         <>
           <div onClick={() => setShowFab(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,27,45,0.5)', zIndex: 9840 }} />
           <div style={{ position: 'fixed', bottom: 90, right: 18, zIndex: 9845, display: 'flex', flexDirection: 'column' as const, gap: 8, alignItems: 'flex-end' }}>
-            <FabBtn Ico={IcoFile}     label="Nuova fattura"      color={PASTEL.peach}  onClick={() => { setShowFab(false); setShowNuovaFattura(true); }} />
-            <FabBtn Ico={IcoEuro}     label="Pagamento ricevuto" color={PASTEL.green}  onClick={() => { setShowFab(false); setShowPagamento({ open: true }); }} />
-            <FabBtn Ico={IcoChat}     label="Nuova spesa"        color={PASTEL.amber}  onClick={() => { setShowFab(false); alert('Apri Modale Spesa (BLOCCO 3)'); }} />
-            <FabBtn Ico={IcoTrendingUp} label="Movimento banca"  color={PASTEL.blue}   onClick={() => { setShowFab(false); alert('Apri Modale Movimento (Blocco futuro)'); }} />
+            <FabBtn Ico={IcoFile}        label="Nuova fattura"       color={PASTEL.peach}  onClick={() => { setShowFab(false); setShowNuovaFattura(true); }} />
+            <FabBtn Ico={IcoEuro}        label="Pagamento ricevuto"  color={PASTEL.green}  onClick={() => { setShowFab(false); setShowPagamento({ open: true }); }} />
+            <FabBtn Ico={IcoCam}         label="Nuova spesa"         color={PASTEL.amber}  onClick={() => { setShowFab(false); setShowSpesa(true); }} />
+            <FabBtn Ico={IcoBuilding}    label="Pagamento fornitore" color={PASTEL.red}    onClick={() => { setShowFab(false); setShowPagFornit({ open: true }); }} />
+            <FabBtn Ico={IcoChat}        label="Fattura ricevuta"    color={PASTEL.violet} onClick={() => { setShowFab(false); setShowNuovaFatturaRic(true); }} />
+            <FabBtn Ico={IcoTrendingUp}  label="Movimento banca"     color={PASTEL.blue}   onClick={() => { setShowFab(false); alert('Apri Modale Movimento (Blocco futuro)'); }} />
           </div>
         </>
       )}
 
-      {/* Modali */}
+      {/* Modali V2 (fatture clienti) */}
       {showNuovaFattura && (
         <ModalNuovaFattura
           onClose={() => setShowNuovaFattura(false)}
           onCrea={async (data) => {
             const res = await fattHook.creaFattura(data);
-            if (res.ok) {
-              setShowNuovaFattura(false);
-              setTab('fatture');
-            } else {
-              alert('Errore: ' + (res.error || 'sconosciuto'));
-            }
+            if (res.ok) { setShowNuovaFattura(false); setTab('fatture'); }
+            else alert('Errore: ' + (res.error || 'sconosciuto'));
           }}
         />
       )}
-
       {showPagamento.open && (
         <ModalRegistraPagamento
           fatture={fattHook.fatture.filter(f => f.stato_calcolato === 'aperta' || f.stato_calcolato === 'parziale' || f.stato_calcolato === 'scaduta')}
@@ -206,29 +252,69 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
           onClose={() => setShowPagamento({ open: false })}
           onRegistra={async (args) => {
             const res = await fattHook.registraPagamento(args);
-            if (res.ok) {
-              setShowPagamento({ open: false });
-            } else {
-              alert('Errore: ' + (res.error || 'sconosciuto'));
-            }
+            if (res.ok) setShowPagamento({ open: false });
+            else alert('Errore: ' + (res.error || 'sconosciuto'));
           }}
         />
       )}
-
       {fatturaCorrente && (
         <ModalDettaglioFattura
           fattura={fatturaCorrente}
           getPagamenti={() => fattHook.getPagamentiPerFattura(fatturaCorrente.id)}
           onClose={() => setDettaglioId(null)}
-          onRegistraPagamento={() => {
-            setDettaglioId(null);
-            setShowPagamento({ open: true, fatturaId: fatturaCorrente.id });
-          }}
+          onRegistraPagamento={() => { setDettaglioId(null); setShowPagamento({ open: true, fatturaId: fatturaCorrente.id }); }}
           onAnnulla={async () => {
             if (!confirm('Annullare definitivamente la fattura ' + fatturaCorrente.numero + ' ?')) return;
             const res = await fattHook.annullaFattura(fatturaCorrente.id);
-            if (res.ok) setDettaglioId(null);
+            if (res.ok) setDettaglioId(null); else alert('Errore: ' + (res.error || 'sconosciuto'));
+          }}
+        />
+      )}
+
+      {/* Modali V3 (uscite) */}
+      {showSpesa && (
+        <ModalNuovaSpesa
+          aziendaId={aziendaId}
+          onClose={() => setShowSpesa(false)}
+          onCrea={async (data) => {
+            const res = await speseHook.creaSpesa(data);
+            if (res.ok) { setShowSpesa(false); setTab('uscite'); setSubTabUscite('spese'); }
             else alert('Errore: ' + (res.error || 'sconosciuto'));
+          }}
+        />
+      )}
+      {showPagFornit.open && (
+        <ModalPagamentoFornitore
+          fatture={speseHook.fattRicevute.filter(f => f.stato_calcolato === 'da_pagare' || f.stato_calcolato === 'parziale' || f.stato_calcolato === 'scaduta')}
+          fatturaIdPreselect={showPagFornit.fatturaId}
+          onClose={() => setShowPagFornit({ open: false })}
+          onRegistra={async (args) => {
+            const res = await speseHook.registraPagamentoFornitore(args);
+            if (res.ok) setShowPagFornit({ open: false });
+            else alert('Errore: ' + (res.error || 'sconosciuto'));
+          }}
+        />
+      )}
+      {showNuovaFatturaRic && (
+        <ModalNuovaFatturaRicevuta
+          onClose={() => setShowNuovaFatturaRic(false)}
+          onCrea={async (data) => {
+            const res = await speseHook.creaFatturaRicevuta(data);
+            if (res.ok) { setShowNuovaFatturaRic(false); setTab('uscite'); setSubTabUscite('fornitori'); }
+            else alert('Errore: ' + (res.error || 'sconosciuto'));
+          }}
+        />
+      )}
+      {fatturaRicCorrente && (
+        <ModalDettaglioFattRic
+          fattura={fatturaRicCorrente}
+          getPagamenti={() => speseHook.getPagamentiFatturaRicevuta(fatturaRicCorrente.id)}
+          onClose={() => setDettaglioFattRicId(null)}
+          onPaga={() => { setDettaglioFattRicId(null); setShowPagFornit({ open: true, fatturaId: fatturaRicCorrente.id }); }}
+          onAnnulla={async () => {
+            if (!confirm('Annullare la fattura ' + fatturaRicCorrente.numero + ' ?')) return;
+            const res = await speseHook.annullaFatturaRicevuta(fatturaRicCorrente.id);
+            if (res.ok) setDettaglioFattRicId(null); else alert('Errore: ' + (res.error || 'sconosciuto'));
           }}
         />
       )}
@@ -257,10 +343,7 @@ function AlertCard({ alert, onDismiss, expanded }: any) {
   };
   const Ico = tipoIco[alert.tipo] || IcoSparkles;
   return (
-    <div style={{
-      background: '#fff', borderRadius: 12, padding: 12, marginBottom: 6,
-      borderLeft: `4px solid ${m.solid}`, display: 'flex', alignItems: 'flex-start', gap: 10,
-    }}>
+    <div style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 6, borderLeft: `4px solid ${m.solid}`, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
       <div style={{ width: 38, height: 38, borderRadius: 10, background: m.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <Ico size={18} color={m.text} />
       </div>
@@ -275,17 +358,13 @@ function AlertCard({ alert, onDismiss, expanded }: any) {
           </div>
         )}
       </div>
-      <button onClick={() => onDismiss(alert.id)} aria-label="Chiudi" style={{
-        width: 26, height: 26, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-      }}>
+      <button onClick={() => onDismiss(alert.id)} aria-label="Chiudi" style={{ width: 26, height: 26, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <IcoCheck size={14} color={MUTED} />
       </button>
     </div>
   );
 }
 
-// =============== SCADENZA RIGA ===============
 function ScadenzaRiga({ ev, expanded }: any) {
   const isIn = ev.direzione === 'in';
   const col = isIn ? PASTEL.green : PASTEL.red;
@@ -295,10 +374,7 @@ function ScadenzaRiga({ ev, expanded }: any) {
   const dataFmt = d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
   const labelGg = gg === 0 ? 'oggi' : gg === 1 ? 'domani' : `+${gg}gg`;
   return (
-    <div style={{
-      background: '#fff', borderRadius: 10, padding: 10, marginBottom: 5,
-      display: 'flex', alignItems: 'center', gap: 10, borderLeft: `3px solid ${col.solid}`,
-    }}>
+    <div style={{ background: '#fff', borderRadius: 10, padding: 10, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 10, borderLeft: `3px solid ${col.solid}` }}>
       <div style={{ width: 50, padding: '6px 0', textAlign: 'center' as const, background: col.bg, color: col.text, borderRadius: 8, fontSize: 9, fontWeight: 800, letterSpacing: 0.3 }}>
         <div>{dataFmt}</div>
         <div style={{ fontSize: 8, fontWeight: 600, opacity: 0.8, marginTop: 1 }}>{labelGg}</div>
@@ -314,7 +390,6 @@ function ScadenzaRiga({ ev, expanded }: any) {
   );
 }
 
-// =============== CASHFLOW CHART ===============
 function CashflowChart({ cashflow, kpi }: any) {
   if (cashflow.length === 0) return <div style={{ padding: 30, color: MUTED, textAlign: 'center' as const }}>Nessun dato cashflow</div>;
   const max = Math.max(...cashflow.map((g: any) => g.saldo_previsto), 0);
@@ -376,7 +451,6 @@ function CashflowChart({ cashflow, kpi }: any) {
   );
 }
 
-// =============== FAB BUTTON ===============
 function FabBtn({ Ico, label, color, onClick }: any) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -391,71 +465,6 @@ function FabBtn({ Ico, label, color, onClick }: any) {
   );
 }
 
-// =============== TAB FATTURE ===============
-function TabFatture({ fatture, kpi, filtro, setFiltro, search, setSearch, onApriDettaglio, onApriPagamento }: any) {
-  const filtri: { val: FiltroFatture; label: string; count?: number }[] = [
-    { val: 'tutte',    label: 'Tutte',       count: kpi?.n_totali  },
-    { val: 'aperte',   label: 'Da incassare',count: kpi?.n_aperte  },
-    { val: 'scadute',  label: 'Scadute',     count: kpi?.n_scadute },
-    { val: 'pagate',   label: 'Pagate',      count: kpi?.n_pagate  },
-  ];
-  return (
-    <>
-      {/* KPI mini 2x2 */}
-      {kpi && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-          <KpiMini color={PASTEL.teal}  label="DA INCASSARE" valore={formatEuroShort(kpi.importo_aperto)} sub={`${kpi.n_aperte} fatture aperte`} />
-          <KpiMini color={PASTEL.red}   label="SCADUTO"      valore={formatEuroShort(kpi.importo_scaduto)} sub={`${kpi.n_scadute} fatture scadute`} />
-          <KpiMini color={PASTEL.green} label="INCASSATO"    valore={formatEuroShort(kpi.importo_pagato)} sub={`${kpi.n_pagate} fatture pagate`} />
-          <KpiMini color={PASTEL.navy}  label="TOTALE EMESSO" valore={formatEuroShort(kpi.importo_totale)} sub={`${kpi.n_totali} fatture totali`} />
-        </div>
-      )}
-
-      {/* Filtri */}
-      <div style={{ display: 'flex', gap: 5, marginBottom: 10, overflowX: 'auto' as const, paddingBottom: 2 }}>
-        {filtri.map(f => (
-          <button key={f.val} onClick={() => setFiltro(f.val)} style={{
-            flex: '0 0 auto', padding: '6px 12px', borderRadius: 8,
-            background: filtro === f.val ? TEXT : '#fff',
-            color: filtro === f.val ? '#fff' : MUTED,
-            border: '1px solid ' + (filtro === f.val ? TEXT : '#E5EAF0'),
-            fontSize: 11, fontWeight: 700, cursor: 'pointer',
-            fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
-          }}>
-            {f.label}{f.count !== undefined ? ` · ${f.count}` : ''}
-          </button>
-        ))}
-      </div>
-
-      {/* Search */}
-      <div style={{ background: '#fff', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, border: '1px solid #E5EAF0' }}>
-        <IcoSearch size={14} color={MUTED} />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cerca cliente, numero, commessa..."
-          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12, color: TEXT, fontFamily: 'inherit', background: 'transparent' }}
-        />
-        {search && (
-          <button onClick={() => setSearch('')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}>
-            <IcoX size={12} color={MUTED} />
-          </button>
-        )}
-      </div>
-
-      {/* Lista fatture */}
-      {fatture.length === 0 ? (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>
-          Nessuna fattura trovata
-        </div>
-      ) : (
-        fatture.map((f: FatturaFin) => <FatturaRiga key={f.id} fattura={f} onApri={() => onApriDettaglio(f.id)} onPagamento={() => onApriPagamento(f.id)} />)
-      )}
-    </>
-  );
-}
-
 function KpiMini({ color, label, valore, sub }: any) {
   return (
     <div style={{ background: '#fff', borderRadius: 12, padding: 10, borderLeft: `4px solid ${color.solid}` }}>
@@ -466,13 +475,62 @@ function KpiMini({ color, label, valore, sub }: any) {
   );
 }
 
+// =============== TAB FATTURE (V2 mantenuta) ===============
+function TabFatture({ fatture, kpi, filtro, setFiltro, search, setSearch, onApriDettaglio, onApriPagamento }: any) {
+  const filtri: { val: FiltroFatture; label: string; count?: number }[] = [
+    { val: 'tutte',    label: 'Tutte',       count: kpi?.n_totali  },
+    { val: 'aperte',   label: 'Da incassare',count: kpi?.n_aperte  },
+    { val: 'scadute',  label: 'Scadute',     count: kpi?.n_scadute },
+    { val: 'pagate',   label: 'Pagate',      count: kpi?.n_pagate  },
+  ];
+  return (
+    <>
+      {kpi && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+          <KpiMini color={PASTEL.teal}  label="DA INCASSARE" valore={formatEuroShort(kpi.importo_aperto)} sub={`${kpi.n_aperte} fatture aperte`} />
+          <KpiMini color={PASTEL.red}   label="SCADUTO"      valore={formatEuroShort(kpi.importo_scaduto)} sub={`${kpi.n_scadute} fatture scadute`} />
+          <KpiMini color={PASTEL.green} label="INCASSATO"    valore={formatEuroShort(kpi.importo_pagato)} sub={`${kpi.n_pagate} fatture pagate`} />
+          <KpiMini color={PASTEL.navy}  label="TOTALE EMESSO" valore={formatEuroShort(kpi.importo_totale)} sub={`${kpi.n_totali} fatture totali`} />
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 5, marginBottom: 10, overflowX: 'auto' as const, paddingBottom: 2 }}>
+        {filtri.map(f => (
+          <button key={f.val} onClick={() => setFiltro(f.val)} style={{
+            flex: '0 0 auto', padding: '6px 12px', borderRadius: 8,
+            background: filtro === f.val ? TEXT : '#fff',
+            color: filtro === f.val ? '#fff' : MUTED,
+            border: '1px solid ' + (filtro === f.val ? TEXT : '#E5EAF0'),
+            fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
+          }}>
+            {f.label}{f.count !== undefined ? ` · ${f.count}` : ''}
+          </button>
+        ))}
+      </div>
+      <div style={{ background: '#fff', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, border: '1px solid #E5EAF0' }}>
+        <IcoSearch size={14} color={MUTED} />
+        <input
+          type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cerca cliente, numero, commessa..."
+          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12, color: TEXT, fontFamily: 'inherit', background: 'transparent' }}
+        />
+        {search && <button onClick={() => setSearch('')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}><IcoX size={12} color={MUTED} /></button>}
+      </div>
+      {fatture.length === 0 ? (
+        <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>Nessuna fattura trovata</div>
+      ) : (
+        fatture.map((f: FatturaFin) => <FatturaRiga key={f.id} fattura={f} onApri={() => onApriDettaglio(f.id)} onPagamento={() => onApriPagamento(f.id)} />)
+      )}
+    </>
+  );
+}
+
 function FatturaRiga({ fattura, onApri, onPagamento }: any) {
   const statoMeta: Record<string, any> = {
-    pagata:    { col: PASTEL.green,  label: 'PAGATA' },
-    scaduta:   { col: PASTEL.red,    label: 'SCADUTA' },
-    parziale:  { col: PASTEL.amber,  label: 'ACCONTO' },
-    aperta:    { col: PASTEL.teal,   label: 'DA INCASSARE' },
-    annullata: { col: PASTEL.navy,   label: 'ANNULLATA' },
+    pagata: { col: PASTEL.green, label: 'PAGATA' },
+    scaduta: { col: PASTEL.red, label: 'SCADUTA' },
+    parziale: { col: PASTEL.amber, label: 'ACCONTO' },
+    aperta: { col: PASTEL.teal, label: 'DA INCASSARE' },
+    annullata: { col: PASTEL.navy, label: 'ANNULLATA' },
   };
   const m = statoMeta[fattura.stato_calcolato] || statoMeta.aperta;
   const isApribile = fattura.stato_calcolato !== 'pagata' && fattura.stato_calcolato !== 'annullata';
@@ -483,54 +541,285 @@ function FatturaRiga({ fattura, onApri, onPagamento }: any) {
     `tra ${fattura.giorni_a_scadenza}gg`;
 
   return (
-    <div onClick={onApri} style={{
-      background: '#fff', borderRadius: 12, padding: 11, marginBottom: 6,
-      borderLeft: `4px solid ${m.col.solid}`, cursor: 'pointer',
-      display: 'flex', alignItems: 'flex-start', gap: 10,
-    }}>
+    <div onClick={onApri} style={{ background: '#fff', borderRadius: 12, padding: 11, marginBottom: 6, borderLeft: `4px solid ${m.col.solid}`, cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
           <span style={{ fontSize: 12, fontWeight: 800, color: TEXT }}>{fattura.cliente_display}</span>
-          {fattura.commessa_code && (
-            <span style={{ fontSize: 8, color: PASTEL.navy.solid, background: PASTEL.navy.bg, padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>{fattura.commessa_code}</span>
-          )}
+          {fattura.commessa_code && <span style={{ fontSize: 8, color: PASTEL.navy.solid, background: PASTEL.navy.bg, padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>{fattura.commessa_code}</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, marginTop: 3 }}>
           <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>n.{fattura.numero}</span>
           <span style={{ fontSize: 10, color: MUTED }}>·</span>
           <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{dataEm}</span>
-          {ggLabel && (
-            <>
-              <span style={{ fontSize: 10, color: MUTED }}>·</span>
-              <span style={{ fontSize: 10, color: fattura.giorni_a_scadenza !== null && fattura.giorni_a_scadenza < 0 ? PASTEL.red.solid : MUTED, fontWeight: 700 }}>{ggLabel}</span>
-            </>
-          )}
+          {ggLabel && <><span style={{ fontSize: 10, color: MUTED }}>·</span><span style={{ fontSize: 10, color: fattura.giorni_a_scadenza !== null && fattura.giorni_a_scadenza < 0 ? PASTEL.red.solid : MUTED, fontWeight: 700 }}>{ggLabel}</span></>}
         </div>
-        <div style={{ display: 'inline-block', marginTop: 5, fontSize: 8, color: m.col.text, background: m.col.bg, padding: '2px 6px', borderRadius: 4, fontWeight: 800, letterSpacing: 0.5 }}>
-          {m.label}
-        </div>
+        <div style={{ display: 'inline-block', marginTop: 5, fontSize: 8, color: m.col.text, background: m.col.bg, padding: '2px 6px', borderRadius: 4, fontWeight: 800, letterSpacing: 0.5 }}>{m.label}</div>
       </div>
       <div style={{ textAlign: 'right' as const, minWidth: 90 }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: TEXT }}>{formatEuro(fattura.totale)}</div>
-        {fattura.pagato > 0 && fattura.residuo > 0 && (
-          <div style={{ fontSize: 9, color: PASTEL.green.solid, marginTop: 2, fontWeight: 700 }}>incassato {formatEuro(fattura.pagato)}</div>
+        {fattura.pagato > 0 && fattura.residuo > 0 && <div style={{ fontSize: 9, color: PASTEL.green.solid, marginTop: 2, fontWeight: 700 }}>incassato {formatEuro(fattura.pagato)}</div>}
+        {fattura.residuo > 0 && <div style={{ fontSize: 10, color: PASTEL.amber.solid, marginTop: 2, fontWeight: 700 }}>resta {formatEuro(fattura.residuo)}</div>}
+        {isApribile && <button onClick={(e) => { e.stopPropagation(); onPagamento(); }} style={{ marginTop: 6, padding: '4px 8px', background: PASTEL.green.solid, color: '#fff', border: 'none', borderRadius: 6, fontSize: 9, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>+ PAGAMENTO</button>}
+      </div>
+    </div>
+  );
+}
+// =============== TAB USCITE (V3 Blocco 3) ===============
+function TabUscite({
+  subTab, setSubTab, kpiSpese, kpiFatt, categorieSpese,
+  spese, fornit, pagamentiStorico,
+  filtroSpese, setFiltroSpese, searchSpese, setSearchSpese,
+  filtroFornit, setFiltroFornit, searchFornit, setSearchFornit,
+  onEliminaSpesa, onApriFornit, onPagaFornit, onNuovaFattRic, onNuovaSpesa,
+}: any) {
+
+  // Sub-tab nav
+  const subTabs = [
+    { val: 'spese',     label: `Spese${kpiSpese ? ` · ${kpiSpese.n_mese}` : ''}` },
+    { val: 'fornitori', label: `Fornitori${kpiFatt ? ` · ${kpiFatt.n_da_pagare}` : ''}` },
+    { val: 'storico',   label: 'Pagati' },
+  ];
+
+  return (
+    <>
+      {/* KPI mini 2x2 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+        {kpiSpese && (
+          <>
+            <KpiMini color={PASTEL.amber} label="SPESE MESE"    valore={formatEuroShort(kpiSpese.totale_mese)} sub={`${kpiSpese.n_mese} spese · ${formatEuroShort(kpiSpese.totale_mese_scorso)} mese -1`} />
+          </>
         )}
-        {fattura.residuo > 0 && (
-          <div style={{ fontSize: 10, color: PASTEL.amber.solid, marginTop: 2, fontWeight: 700 }}>resta {formatEuro(fattura.residuo)}</div>
+        {kpiFatt && (
+          <>
+            <KpiMini color={PASTEL.red}   label="DA PAGARE"     valore={formatEuroShort(kpiFatt.importo_da_pagare)} sub={`${kpiFatt.n_da_pagare} fatture aperte`} />
+            <KpiMini color={PASTEL.peach} label="SCADUTO"       valore={formatEuroShort(kpiFatt.importo_scaduto)} sub={`${kpiFatt.n_scadute} fatture scadute`} />
+            <KpiMini color={PASTEL.green} label="PAGATO TOTALE" valore={formatEuroShort(kpiFatt.importo_pagato)} sub={`${kpiFatt.n_pagate} fatture pagate`} />
+          </>
         )}
-        {isApribile && (
-          <button onClick={(e) => { e.stopPropagation(); onPagamento(); }} style={{
-            marginTop: 6, padding: '4px 8px', background: PASTEL.green.solid, color: '#fff',
-            border: 'none', borderRadius: 6, fontSize: 9, fontWeight: 800, cursor: 'pointer',
-            fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
-          }}>+ PAGAMENTO</button>
+      </div>
+
+      {/* Sub-tab nav */}
+      <div style={{ display: 'flex', gap: 3, marginBottom: 12, background: '#fff', padding: 3, borderRadius: 10, border: '1px solid #E5EAF0' }}>
+        {subTabs.map(t => (
+          <button key={t.val} onClick={() => setSubTab(t.val)} style={{
+            flex: 1, padding: '8px 6px',
+            background: subTab === t.val ? PASTEL.amber.solid : 'transparent',
+            color: subTab === t.val ? '#fff' : MUTED,
+            border: 'none', borderRadius: 7,
+            fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* SUB-TAB: SPESE TITOLARE */}
+      {subTab === 'spese' && (
+        <>
+          {/* Filtri */}
+          <div style={{ display: 'flex', gap: 5, marginBottom: 10, overflowX: 'auto' as const, paddingBottom: 2 }}>
+            {[
+              { val: 'mese',        label: 'Questo mese' },
+              { val: 'mese_scorso', label: 'Mese scorso' },
+              { val: '90gg',        label: '90 giorni' },
+              { val: 'tutte',       label: 'Tutte' },
+            ].map(f => (
+              <button key={f.val} onClick={() => setFiltroSpese(f.val)} style={{
+                flex: '0 0 auto', padding: '6px 12px', borderRadius: 8,
+                background: filtroSpese === f.val ? TEXT : '#fff',
+                color: filtroSpese === f.val ? '#fff' : MUTED,
+                border: '1px solid ' + (filtroSpese === f.val ? TEXT : '#E5EAF0'),
+                fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
+              }}>{f.label}</button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div style={{ background: '#fff', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, border: '1px solid #E5EAF0' }}>
+            <IcoSearch size={14} color={MUTED} />
+            <input
+              type="text" value={searchSpese} onChange={(e) => setSearchSpese(e.target.value)}
+              placeholder="Cerca categoria, fornitore, descrizione..."
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12, color: TEXT, fontFamily: 'inherit', background: 'transparent' }}
+            />
+            {searchSpese && <button onClick={() => setSearchSpese('')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}><IcoX size={12} color={MUTED} /></button>}
+          </div>
+
+          {/* Categorie mese (chip orizzontali) */}
+          {categorieSpese.length > 0 && filtroSpese === 'mese' && (
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto' as const, marginBottom: 12, paddingBottom: 2 }}>
+              {categorieSpese.map((c: any) => {
+                const meta = CATEGORIE_SPESA.find(x => x.val === c.categoria);
+                return (
+                  <div key={c.categoria} style={{ flex: '0 0 auto', background: '#fff', borderRadius: 10, padding: '8px 10px', border: '1px solid #E5EAF0', minWidth: 80 }}>
+                    <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 0.5 }}>{(meta?.label || c.categoria).toUpperCase()}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: TEXT, marginTop: 2 }}>{formatEuroShort(c.totale)}</div>
+                    <div style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{c.n_spese} spese</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Lista spese */}
+          {spese.length === 0 ? (
+            <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>
+              Nessuna spesa nel periodo
+              <button onClick={onNuovaSpesa} style={{ display: 'block', margin: '12px auto 0', padding: '8px 16px', background: PASTEL.amber.solid, color: '#fff', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                + Aggiungi spesa
+              </button>
+            </div>
+          ) : (
+            spese.map((s: SpesaRow) => <SpesaRiga key={s.id} spesa={s} onElimina={() => onEliminaSpesa(s.id)} />)
+          )}
+        </>
+      )}
+
+      {/* SUB-TAB: FORNITORI */}
+      {subTab === 'fornitori' && (
+        <>
+          {/* Filtri */}
+          <div style={{ display: 'flex', gap: 5, marginBottom: 10, overflowX: 'auto' as const, paddingBottom: 2 }}>
+            {[
+              { val: 'da_pagare', label: 'Da pagare',  count: kpiFatt?.n_da_pagare },
+              { val: 'scadute',   label: 'Scadute',    count: kpiFatt?.n_scadute },
+              { val: 'pagate',    label: 'Pagate',     count: kpiFatt?.n_pagate },
+              { val: 'tutte',     label: 'Tutte',      count: kpiFatt?.n_totali },
+            ].map((f: any) => (
+              <button key={f.val} onClick={() => setFiltroFornit(f.val)} style={{
+                flex: '0 0 auto', padding: '6px 12px', borderRadius: 8,
+                background: filtroFornit === f.val ? TEXT : '#fff',
+                color: filtroFornit === f.val ? '#fff' : MUTED,
+                border: '1px solid ' + (filtroFornit === f.val ? TEXT : '#E5EAF0'),
+                fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
+              }}>
+                {f.label}{f.count !== undefined ? ` · ${f.count}` : ''}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ background: '#fff', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, border: '1px solid #E5EAF0' }}>
+            <IcoSearch size={14} color={MUTED} />
+            <input
+              type="text" value={searchFornit} onChange={(e) => setSearchFornit(e.target.value)}
+              placeholder="Cerca fornitore, numero, commessa..."
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12, color: TEXT, fontFamily: 'inherit', background: 'transparent' }}
+            />
+            {searchFornit && <button onClick={() => setSearchFornit('')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}><IcoX size={12} color={MUTED} /></button>}
+          </div>
+
+          {fornit.length === 0 ? (
+            <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>
+              Nessuna fattura fornitore nel periodo
+              <button onClick={onNuovaFattRic} style={{ display: 'block', margin: '12px auto 0', padding: '8px 16px', background: PASTEL.violet.solid, color: '#fff', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                + Registra fattura fornitore
+              </button>
+            </div>
+          ) : (
+            fornit.map((f: FatturaRicevutaRow) => <FattRicevutaRiga key={f.id} fattura={f} onApri={() => onApriFornit(f.id)} onPaga={() => onPagaFornit(f.id)} />)
+          )}
+        </>
+      )}
+
+      {/* SUB-TAB: STORICO */}
+      {subTab === 'storico' && (
+        <>
+          <SectionLabel Ico={IcoCheck} title="FATTURE FORNITORI PAGATE" sub={`${(pagamentiStorico || []).filter((f: any) => f.stato_calcolato === 'pagata').length} fatture`} />
+          {(pagamentiStorico || []).filter((f: any) => f.stato_calcolato === 'pagata').length === 0 ? (
+            <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>
+              Nessuna fattura ancora pagata
+            </div>
+          ) : (
+            pagamentiStorico.filter((f: FatturaRicevutaRow) => f.stato_calcolato === 'pagata').map((f: FatturaRicevutaRow) =>
+              <FattRicevutaRiga key={f.id} fattura={f} onApri={() => onApriFornit(f.id)} onPaga={null} />
+            )
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+// =============== SPESA RIGA ===============
+function SpesaRiga({ spesa, onElimina }: any) {
+  const meta = CATEGORIE_SPESA.find(c => c.val === spesa.categoria);
+  const d = new Date(spesa.data).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: 11, marginBottom: 6, borderLeft: `4px solid ${PASTEL.amber.solid}`, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+      <div style={{ width: 42, height: 42, borderRadius: 10, background: PASTEL.amber.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>
+        {meta?.icon || '•'}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: TEXT }}>{meta?.label || spesa.categoria}</div>
+        {spesa.descrizione && <div style={{ fontSize: 11, color: MUTED, marginTop: 1, lineHeight: 1.3 }}>{spesa.descrizione}</div>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' as const }}>
+          <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{d}</span>
+          {spesa.fornitore && (<>
+            <span style={{ fontSize: 10, color: MUTED }}>·</span>
+            <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{spesa.fornitore}</span>
+          </>)}
+          {spesa.commessa_id && (<>
+            <span style={{ fontSize: 10, color: MUTED }}>·</span>
+            <span style={{ fontSize: 9, color: PASTEL.navy.solid, background: PASTEL.navy.bg, padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>{spesa.commessa_id}</span>
+          </>)}
+        </div>
+      </div>
+      <div style={{ textAlign: 'right' as const }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: PASTEL.amber.solid }}>−{formatEuro(spesa.importo)}</div>
+        {spesa.foto_url && <div style={{ fontSize: 8, color: MUTED, marginTop: 2, fontWeight: 600 }}>📎 foto</div>}
+        <button onClick={(e) => { e.stopPropagation(); onElimina(); }} style={{ marginTop: 4, padding: '2px 6px', background: 'transparent', color: PASTEL.red.solid, border: '1px solid ' + PASTEL.red.bg, borderRadius: 5, fontSize: 9, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          ELIMINA
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// =============== FATTURA RICEVUTA RIGA ===============
+function FattRicevutaRiga({ fattura, onApri, onPaga }: any) {
+  const statoMeta: Record<string, any> = {
+    pagata: { col: PASTEL.green, label: 'PAGATA' },
+    scaduta: { col: PASTEL.red, label: 'SCADUTA' },
+    parziale: { col: PASTEL.amber, label: 'PARZIALE' },
+    da_pagare: { col: PASTEL.peach, label: 'DA PAGARE' },
+    annullata: { col: PASTEL.navy, label: 'ANNULLATA' },
+  };
+  const m = statoMeta[fattura.stato_calcolato] || statoMeta.da_pagare;
+  const isPagabile = fattura.stato_calcolato !== 'pagata' && fattura.stato_calcolato !== 'annullata';
+  const dataRic = new Date(fattura.data_ricezione).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+  const ggLabel = fattura.giorni_a_scadenza === null ? '' :
+    fattura.giorni_a_scadenza < 0 ? `scaduta da ${fattura.giorni_ritardo}gg` :
+    fattura.giorni_a_scadenza === 0 ? 'scade oggi' :
+    `tra ${fattura.giorni_a_scadenza}gg`;
+
+  return (
+    <div onClick={onApri} style={{ background: '#fff', borderRadius: 12, padding: 11, marginBottom: 6, borderLeft: `4px solid ${m.col.solid}`, cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: TEXT }}>{fattura.fornitore}</span>
+          {fattura.commessa_code && <span style={{ fontSize: 8, color: PASTEL.navy.solid, background: PASTEL.navy.bg, padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>{fattura.commessa_code}</span>}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, marginTop: 3 }}>
+          <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>n.{fattura.numero}</span>
+          <span style={{ fontSize: 10, color: MUTED }}>·</span>
+          <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{dataRic}</span>
+          {ggLabel && <><span style={{ fontSize: 10, color: MUTED }}>·</span><span style={{ fontSize: 10, color: fattura.giorni_a_scadenza !== null && fattura.giorni_a_scadenza < 0 ? PASTEL.red.solid : MUTED, fontWeight: 700 }}>{ggLabel}</span></>}
+        </div>
+        <div style={{ display: 'inline-block', marginTop: 5, fontSize: 8, color: m.col.text, background: m.col.bg, padding: '2px 6px', borderRadius: 4, fontWeight: 800, letterSpacing: 0.5 }}>{m.label}</div>
+      </div>
+      <div style={{ textAlign: 'right' as const, minWidth: 90 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: TEXT }}>{formatEuro(fattura.totale)}</div>
+        {fattura.pagato > 0 && fattura.residuo > 0 && <div style={{ fontSize: 9, color: PASTEL.green.solid, marginTop: 2, fontWeight: 700 }}>pagato {formatEuro(fattura.pagato)}</div>}
+        {fattura.residuo > 0 && <div style={{ fontSize: 10, color: PASTEL.red.solid, marginTop: 2, fontWeight: 700 }}>resta {formatEuro(fattura.residuo)}</div>}
+        {isPagabile && onPaga && (
+          <button onClick={(e) => { e.stopPropagation(); onPaga(); }} style={{ marginTop: 6, padding: '4px 8px', background: PASTEL.red.solid, color: '#fff', border: 'none', borderRadius: 6, fontSize: 9, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
+            + PAGA
+          </button>
         )}
       </div>
     </div>
   );
 }
 
-// =============== MODAL NUOVA FATTURA ===============
+// =============== MODAL NUOVA FATTURA (clienti, V2) ===============
 function ModalNuovaFattura({ onClose, onCrea }: any) {
   const [cliente, setCliente] = useState('');
   const [piva, setPiva] = useState('');
@@ -550,7 +839,6 @@ function ModalNuovaFattura({ onClose, onCrea }: any) {
   const imp = parseFloat(imponibile.replace(',', '.')) || 0;
   const iva = +(imp * ivaP / 100).toFixed(2);
   const tot = +(imp + iva).toFixed(2);
-
   const valido = cliente.trim().length > 0 && imp > 0 && dataEm.length === 10;
 
   async function submit() {
@@ -565,9 +853,7 @@ function ModalNuovaFattura({ onClose, onCrea }: any) {
       cliente_provincia: provincia.trim() || undefined,
       data_emissione: dataEm,
       data_scadenza: dataScad || null,
-      imponibile: imp,
-      iva_percent: ivaP,
-      tipo,
+      imponibile: imp, iva_percent: ivaP, tipo,
       commessa_code: commessa.trim() || null,
       note: note.trim() || undefined,
     });
@@ -588,7 +874,6 @@ function ModalNuovaFattura({ onClose, onCrea }: any) {
           <Field label="Prov." value={provincia} setValue={setProvincia} placeholder="CS" />
         </FieldRow>
       </Sezione>
-
       <Sezione titolo="DATI FATTURA">
         <FieldRow>
           <Field label="Data emissione *" value={dataEm} setValue={setDataEm} type="date" />
@@ -596,22 +881,14 @@ function ModalNuovaFattura({ onClose, onCrea }: any) {
         </FieldRow>
         <FieldRow>
           <Field label="Imponibile € *" value={imponibile} setValue={setImponibile} placeholder="0,00" type="number" />
-          <Field label="IVA %" value={String(ivaP)} setValue={(v) => setIvaP(Number(v) || 0)} type="number" />
+          <Field label="IVA %" value={String(ivaP)} setValue={(v: any) => setIvaP(Number(v) || 0)} type="number" />
         </FieldRow>
-
         <div style={{ background: '#F1F4F7', borderRadius: 8, padding: 10, marginTop: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: MUTED, marginBottom: 4 }}>
-            <span>Imponibile</span><span style={{ fontWeight: 700, color: TEXT }}>{formatEuro(imp, 2)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: MUTED, marginBottom: 4 }}>
-            <span>IVA {ivaP}%</span><span style={{ fontWeight: 700, color: TEXT }}>{formatEuro(iva, 2)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: TEXT, fontWeight: 800, paddingTop: 5, borderTop: '1px solid #D8DEE5', marginTop: 4 }}>
-            <span>TOTALE</span><span>{formatEuro(tot, 2)}</span>
-          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: MUTED, marginBottom: 4 }}><span>Imponibile</span><span style={{ fontWeight: 700, color: TEXT }}>{formatEuro(imp, 2)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: MUTED, marginBottom: 4 }}><span>IVA {ivaP}%</span><span style={{ fontWeight: 700, color: TEXT }}>{formatEuro(iva, 2)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: TEXT, fontWeight: 800, paddingTop: 5, borderTop: '1px solid #D8DEE5', marginTop: 4 }}><span>TOTALE</span><span>{formatEuro(tot, 2)}</span></div>
         </div>
       </Sezione>
-
       <Sezione titolo="TIPO E COLLEGAMENTI">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5, marginBottom: 8 }}>
           {(['unica','acconto','saldo','sal','altro'] as const).map(t => (
@@ -627,18 +904,15 @@ function ModalNuovaFattura({ onClose, onCrea }: any) {
         <Field label="Codice commessa (opzionale)" value={commessa} setValue={setCommessa} placeholder="Es. S-0060" />
         <TextareaField label="Note" value={note} setValue={setNote} placeholder="Note interne o per il cliente..." />
       </Sezione>
-
       <ModalFooter>
         <BtnSecondary onClick={onClose}>Annulla</BtnSecondary>
-        <BtnPrimary color={PASTEL.peach} onClick={submit} disabled={!valido || submitting}>
-          {submitting ? 'Creazione...' : 'Crea fattura'}
-        </BtnPrimary>
+        <BtnPrimary color={PASTEL.peach} onClick={submit} disabled={!valido || submitting}>{submitting ? 'Creazione...' : 'Crea fattura'}</BtnPrimary>
       </ModalFooter>
     </ModalShell>
   );
 }
 
-// =============== MODAL REGISTRA PAGAMENTO ===============
+// =============== MODAL REGISTRA PAGAMENTO (clienti, V2) ===============
 function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegistra }: any) {
   const [fatturaId, setFatturaId] = useState(fatturaIdPreselect || '');
   const [importo, setImporto] = useState('');
@@ -649,11 +923,8 @@ function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegist
   const [submitting, setSubmitting] = useState(false);
 
   const fatturaSel = fatture.find((f: FatturaFin) => f.id === fatturaId);
-
   React.useEffect(() => {
-    if (fatturaSel && !importo) {
-      setImporto(String(fatturaSel.residuo).replace('.', ','));
-    }
+    if (fatturaSel && !importo) setImporto(String(fatturaSel.residuo).replace('.', ','));
   }, [fatturaSel]);
 
   const imp = parseFloat(importo.replace(',', '.')) || 0;
@@ -679,13 +950,8 @@ function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegist
         <div style={{ fontSize: 10, color: MUTED, marginBottom: 5, fontWeight: 700 }}>Seleziona fattura *</div>
         <select value={fatturaId} onChange={(e) => setFatturaId(e.target.value)} style={selectStyle}>
           <option value="">-- Seleziona --</option>
-          {fatture.map((f: FatturaFin) => (
-            <option key={f.id} value={f.id}>
-              n.{f.numero} · {f.cliente_display} · resta {formatEuro(f.residuo)}
-            </option>
-          ))}
+          {fatture.map((f: FatturaFin) => (<option key={f.id} value={f.id}>n.{f.numero} · {f.cliente_display} · resta {formatEuro(f.residuo)}</option>))}
         </select>
-
         {fatturaSel && (
           <div style={{ background: PASTEL.green.bg, borderRadius: 8, padding: 10, marginTop: 8 }}>
             <div style={{ fontSize: 11, color: PASTEL.green.text, fontWeight: 700 }}>{fatturaSel.cliente_display}</div>
@@ -695,21 +961,15 @@ function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegist
           </div>
         )}
       </Sezione>
-
       <Sezione titolo="PAGAMENTO">
         <FieldRow>
           <Field label="Importo € *" value={importo} setValue={setImporto} placeholder="0,00" type="number" />
           <Field label="Data *" value={data} setValue={setData} type="date" />
         </FieldRow>
-        {supero && (
-          <div style={{ fontSize: 10, color: PASTEL.red.solid, marginTop: 4, fontWeight: 700 }}>
-            ⚠ Importo superiore al residuo
-          </div>
-        )}
-
+        {supero && <div style={{ fontSize: 10, color: PASTEL.red.solid, marginTop: 4, fontWeight: 700 }}>⚠ Importo superiore al residuo</div>}
         <div style={{ fontSize: 10, color: MUTED, marginTop: 8, marginBottom: 5, fontWeight: 700 }}>Metodo pagamento</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
-          {['bonifico','contanti','assegno','carta','altro'].map(m => (
+          {METODI_PAGAMENTO.map(m => (
             <button key={m} onClick={() => setMetodo(m)} style={{
               padding: '8px 0', borderRadius: 8,
               background: metodo === m ? PASTEL.green.solid : '#fff',
@@ -719,32 +979,27 @@ function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegist
             }}>{m}</button>
           ))}
         </div>
-
         <Field label="Riferimento (es. CRO bonifico)" value={riferimento} setValue={setRiferimento} placeholder="Opzionale" />
         <TextareaField label="Note" value={note} setValue={setNote} />
       </Sezione>
-
       <ModalFooter>
         <BtnSecondary onClick={onClose}>Annulla</BtnSecondary>
-        <BtnPrimary color={PASTEL.green} onClick={submit} disabled={!valido || submitting}>
-          {submitting ? 'Registrazione...' : 'Registra pagamento'}
-        </BtnPrimary>
+        <BtnPrimary color={PASTEL.green} onClick={submit} disabled={!valido || submitting}>{submitting ? 'Registrazione...' : 'Registra pagamento'}</BtnPrimary>
       </ModalFooter>
     </ModalShell>
   );
 }
 
-// =============== MODAL DETTAGLIO FATTURA ===============
+// =============== MODAL DETTAGLIO FATTURA (clienti, V2) ===============
 function ModalDettaglioFattura({ fattura, getPagamenti, onClose, onRegistraPagamento, onAnnulla }: any) {
   const [pagamenti, setPagamenti] = React.useState<any[]>([]);
   React.useEffect(() => { getPagamenti().then(setPagamenti); }, []);
-
   const statoMeta: Record<string, any> = {
-    pagata:    { col: PASTEL.green,  label: 'PAGATA' },
-    scaduta:   { col: PASTEL.red,    label: 'SCADUTA' },
-    parziale:  { col: PASTEL.amber,  label: 'ACCONTO' },
-    aperta:    { col: PASTEL.teal,   label: 'DA INCASSARE' },
-    annullata: { col: PASTEL.navy,   label: 'ANNULLATA' },
+    pagata: { col: PASTEL.green, label: 'PAGATA' },
+    scaduta: { col: PASTEL.red, label: 'SCADUTA' },
+    parziale: { col: PASTEL.amber, label: 'ACCONTO' },
+    aperta: { col: PASTEL.teal, label: 'DA INCASSARE' },
+    annullata: { col: PASTEL.navy, label: 'ANNULLATA' },
   };
   const m = statoMeta[fattura.stato_calcolato] || statoMeta.aperta;
   const isApribile = fattura.stato_calcolato !== 'pagata' && fattura.stato_calcolato !== 'annullata';
@@ -759,7 +1014,6 @@ function ModalDettaglioFattura({ fattura, getPagamenti, onClose, onRegistraPagam
           <RigaInfo label="Residuo" value={formatEuro(fattura.residuo, 2)} color={PASTEL.amber.solid} bold last />
         </div>
       </Sezione>
-
       <Sezione titolo="DATI FATTURA">
         <RigaInfo label="Data emissione" value={new Date(fattura.data_emissione).toLocaleDateString('it-IT')} />
         {fattura.data_scadenza && <RigaInfo label="Scadenza" value={new Date(fattura.data_scadenza).toLocaleDateString('it-IT')} />}
@@ -768,19 +1022,15 @@ function ModalDettaglioFattura({ fattura, getPagamenti, onClose, onRegistraPagam
         <RigaInfo label="Imponibile" value={formatEuro(fattura.imponibile, 2)} />
         <RigaInfo label={`IVA ${fattura.iva_percent}%`} value={formatEuro(fattura.iva, 2)} last />
       </Sezione>
-
       <Sezione titolo="CLIENTE">
         <RigaInfo label="Nome" value={fattura.cliente_display} />
         {fattura.cliente_piva && <RigaInfo label="P.IVA" value={fattura.cliente_piva} />}
         {fattura.cliente_email && <RigaInfo label="Email" value={fattura.cliente_email} />}
         {fattura.cliente_indirizzo && <RigaInfo label="Indirizzo" value={fattura.cliente_indirizzo} last />}
       </Sezione>
-
       <Sezione titolo={`STORICO PAGAMENTI (${pagamenti.length})`}>
         {pagamenti.length === 0 ? (
-          <div style={{ fontSize: 11, color: MUTED, textAlign: 'center' as const, padding: 14 }}>
-            Nessun pagamento registrato
-          </div>
+          <div style={{ fontSize: 11, color: MUTED, textAlign: 'center' as const, padding: 14 }}>Nessun pagamento registrato</div>
         ) : (
           pagamenti.map(p => (
             <div key={p.id} style={{ background: '#F1F4F7', borderRadius: 8, padding: 10, marginBottom: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -793,17 +1043,356 @@ function ModalDettaglioFattura({ fattura, getPagamenti, onClose, onRegistraPagam
           ))
         )}
       </Sezione>
-
-      {fattura.note && (
-        <Sezione titolo="NOTE">
-          <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.4 }}>{fattura.note}</div>
-        </Sezione>
-      )}
-
+      {fattura.note && <Sezione titolo="NOTE"><div style={{ fontSize: 11, color: TEXT, lineHeight: 1.4 }}>{fattura.note}</div></Sezione>}
       <ModalFooter>
         {isApribile && <BtnSecondary onClick={onAnnulla}>Annulla fattura</BtnSecondary>}
         {isApribile && <BtnPrimary color={PASTEL.green} onClick={onRegistraPagamento}>+ Registra pagamento</BtnPrimary>}
         {!isApribile && <BtnPrimary color={m.col} onClick={onClose}>Chiudi</BtnPrimary>}
+      </ModalFooter>
+    </ModalShell>
+  );
+}
+
+// =============== MODAL NUOVA SPESA (V3 Blocco 3) ===============
+function ModalNuovaSpesa({ aziendaId, onClose, onCrea }: any) {
+  const [data, setData] = useState(new Date().toISOString().split('T')[0]);
+  const [importo, setImporto] = useState('');
+  const [categoria, setCategoria] = useState('carburante');
+  const [descrizione, setDescrizione] = useState('');
+  const [fornitore, setFornitore] = useState('');
+  const [commessa, setCommessa] = useState('');
+  const [ivaP, setIvaP] = useState(22);
+  const [detraibile, setDetraibile] = useState(true);
+  const [fotoUrl, setFotoUrl] = useState('');
+  const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const imp = parseFloat(importo.replace(',', '.')) || 0;
+  const valido = imp > 0 && data.length === 10 && categoria;
+
+  async function handleFotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const ext = file.name.split('.').pop();
+      const path = `${aziendaId}/spese/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('commesse-foto').upload(path, file);
+      if (error) { alert('Errore upload: ' + error.message); setUploading(false); return; }
+      const { data: { publicUrl } } = supabase.storage.from('commesse-foto').getPublicUrl(path);
+      setFotoUrl(publicUrl);
+    } catch (err: any) {
+      alert('Errore upload: ' + (err?.message || 'sconosciuto'));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function submit() {
+    if (!valido || submitting) return;
+    setSubmitting(true);
+    await onCrea({
+      data, importo: imp, categoria,
+      descrizione: descrizione.trim() || undefined,
+      fornitore: fornitore.trim() || undefined,
+      commessa_code: commessa.trim() || null,
+      iva_percent: ivaP, detraibile_iva: detraibile,
+      foto_url: fotoUrl || null,
+      note: note.trim() || undefined,
+    });
+    setSubmitting(false);
+  }
+
+  return (
+    <ModalShell color={PASTEL.amber} icon={IcoCam} title="Nuova spesa" sub="Registra spesa titolare" onClose={onClose}>
+      <Sezione titolo="CATEGORIA *">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
+          {CATEGORIE_SPESA.map(c => (
+            <button key={c.val} onClick={() => setCategoria(c.val)} style={{
+              padding: '10px 4px', borderRadius: 8,
+              background: categoria === c.val ? PASTEL.amber.solid : '#fff',
+              color: categoria === c.val ? '#fff' : MUTED,
+              border: '1px solid ' + (categoria === c.val ? PASTEL.amber.solid : '#E5EAF0'),
+              fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 3,
+            }}>
+              <span style={{ fontSize: 18 }}>{c.icon}</span>
+              <span>{c.label}</span>
+            </button>
+          ))}
+        </div>
+      </Sezione>
+
+      <Sezione titolo="DATI">
+        <FieldRow>
+          <Field label="Importo € *" value={importo} setValue={setImporto} placeholder="0,00" type="number" />
+          <Field label="Data *" value={data} setValue={setData} type="date" />
+        </FieldRow>
+        <Field label="Descrizione" value={descrizione} setValue={setDescrizione} placeholder="Es. Pieno Ducato + lavaggio" />
+        <FieldRow>
+          <Field label="Fornitore" value={fornitore} setValue={setFornitore} placeholder="Es. Eni Cosenza" />
+          <Field label="Commessa" value={commessa} setValue={setCommessa} placeholder="S-0055" />
+        </FieldRow>
+        <FieldRow>
+          <Field label="IVA %" value={String(ivaP)} setValue={(v: any) => setIvaP(Number(v) || 0)} type="number" />
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 10, color: MUTED, marginBottom: 3, fontWeight: 700 }}>Detraibile IVA</div>
+            <button onClick={() => setDetraibile(!detraibile)} style={{
+              width: '100%', padding: '9px 0', borderRadius: 7,
+              background: detraibile ? PASTEL.green.solid : '#fff',
+              color: detraibile ? '#fff' : MUTED,
+              border: '1px solid ' + (detraibile ? PASTEL.green.solid : '#E5EAF0'),
+              fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+            }}>{detraibile ? 'SÌ DETRAIBILE' : 'NO'}</button>
+          </div>
+        </FieldRow>
+      </Sezione>
+
+      <Sezione titolo="FOTO SCONTRINO">
+        {fotoUrl ? (
+          <div style={{ position: 'relative' as const }}>
+            <img src={fotoUrl} alt="scontrino" style={{ width: '100%', borderRadius: 8, maxHeight: 180, objectFit: 'cover' as const }} />
+            <button onClick={() => setFotoUrl('')} style={{ position: 'absolute' as const, top: 6, right: 6, background: PASTEL.red.solid, color: '#fff', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>Rimuovi</button>
+          </div>
+        ) : (
+          <label style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '14px 0', background: PASTEL.amber.bg, color: PASTEL.amber.text,
+            borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 700, border: `1px dashed ${PASTEL.amber.solid}`,
+          }}>
+            <IcoCam size={18} color={PASTEL.amber.text} />
+            {uploading ? 'Caricamento...' : 'Scatta foto / scegli file'}
+            <input type="file" accept="image/*" capture="environment" onChange={handleFotoUpload} style={{ display: 'none' }} />
+          </label>
+        )}
+        <TextareaField label="Note" value={note} setValue={setNote} placeholder="Note opzionali..." />
+      </Sezione>
+
+      <ModalFooter>
+        <BtnSecondary onClick={onClose}>Annulla</BtnSecondary>
+        <BtnPrimary color={PASTEL.amber} onClick={submit} disabled={!valido || submitting}>{submitting ? 'Registrazione...' : 'Registra spesa'}</BtnPrimary>
+      </ModalFooter>
+    </ModalShell>
+  );
+}
+
+// =============== MODAL PAGAMENTO FORNITORE (V3 Blocco 3) ===============
+function ModalPagamentoFornitore({ fatture, fatturaIdPreselect, onClose, onRegistra }: any) {
+  const [fatturaId, setFatturaId] = useState(fatturaIdPreselect || '');
+  const [importo, setImporto] = useState('');
+  const [data, setData] = useState(new Date().toISOString().split('T')[0]);
+  const [metodo, setMetodo] = useState('bonifico');
+  const [riferimento, setRiferimento] = useState('');
+  const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const fatturaSel = fatture.find((f: FatturaRicevutaRow) => f.id === fatturaId);
+  React.useEffect(() => {
+    if (fatturaSel && !importo) setImporto(String(fatturaSel.residuo).replace('.', ','));
+  }, [fatturaSel]);
+
+  const imp = parseFloat(importo.replace(',', '.')) || 0;
+  const valido = fatturaId && imp > 0 && data.length === 10;
+  const supero = fatturaSel && imp > fatturaSel.residuo + 0.01;
+
+  async function submit() {
+    if (!valido || submitting) return;
+    setSubmitting(true);
+    await onRegistra({
+      fatturaRicevutaId: fatturaId,
+      importo: imp, data, metodo,
+      riferimento: riferimento.trim() || undefined,
+      note: note.trim() || undefined,
+      fornitore: fatturaSel?.fornitore,
+    });
+    setSubmitting(false);
+  }
+
+  return (
+    <ModalShell color={PASTEL.red} icon={IcoBuilding} title="Pagamento fornitore" sub="Registra pagamento fattura ricevuta" onClose={onClose}>
+      <Sezione titolo="FATTURA FORNITORE">
+        <div style={{ fontSize: 10, color: MUTED, marginBottom: 5, fontWeight: 700 }}>Seleziona fattura *</div>
+        <select value={fatturaId} onChange={(e) => setFatturaId(e.target.value)} style={selectStyle}>
+          <option value="">-- Seleziona --</option>
+          {fatture.map((f: FatturaRicevutaRow) => (<option key={f.id} value={f.id}>n.{f.numero} · {f.fornitore} · resta {formatEuro(f.residuo)}</option>))}
+        </select>
+        {fatturaSel && (
+          <div style={{ background: PASTEL.red.bg, borderRadius: 8, padding: 10, marginTop: 8 }}>
+            <div style={{ fontSize: 11, color: PASTEL.red.text, fontWeight: 700 }}>{fatturaSel.fornitore}</div>
+            <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
+              Totale {formatEuro(fatturaSel.totale)} · Pagato {formatEuro(fatturaSel.pagato)} · <strong style={{ color: PASTEL.amber.solid }}>Resta {formatEuro(fatturaSel.residuo)}</strong>
+            </div>
+          </div>
+        )}
+      </Sezione>
+      <Sezione titolo="PAGAMENTO">
+        <FieldRow>
+          <Field label="Importo € *" value={importo} setValue={setImporto} placeholder="0,00" type="number" />
+          <Field label="Data *" value={data} setValue={setData} type="date" />
+        </FieldRow>
+        {supero && <div style={{ fontSize: 10, color: PASTEL.red.solid, marginTop: 4, fontWeight: 700 }}>⚠ Importo superiore al residuo</div>}
+        <div style={{ fontSize: 10, color: MUTED, marginTop: 8, marginBottom: 5, fontWeight: 700 }}>Metodo pagamento</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
+          {METODI_PAGAMENTO.map(m => (
+            <button key={m} onClick={() => setMetodo(m)} style={{
+              padding: '8px 0', borderRadius: 8,
+              background: metodo === m ? PASTEL.red.solid : '#fff',
+              color: metodo === m ? '#fff' : MUTED,
+              border: '1px solid ' + (metodo === m ? PASTEL.red.solid : '#E5EAF0'),
+              fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textTransform: 'capitalize' as const,
+            }}>{m}</button>
+          ))}
+        </div>
+        <Field label="Riferimento (es. CRO bonifico)" value={riferimento} setValue={setRiferimento} placeholder="Opzionale" />
+        <TextareaField label="Note" value={note} setValue={setNote} />
+      </Sezione>
+      <ModalFooter>
+        <BtnSecondary onClick={onClose}>Annulla</BtnSecondary>
+        <BtnPrimary color={PASTEL.red} onClick={submit} disabled={!valido || submitting}>{submitting ? 'Registrazione...' : 'Registra pagamento'}</BtnPrimary>
+      </ModalFooter>
+    </ModalShell>
+  );
+}
+
+// =============== MODAL NUOVA FATTURA RICEVUTA (V3 Blocco 3) ===============
+function ModalNuovaFatturaRicevuta({ onClose, onCrea }: any) {
+  const [numero, setNumero] = useState('');
+  const [dataRic, setDataRic] = useState(new Date().toISOString().split('T')[0]);
+  const [dataScad, setDataScad] = useState(new Date(Date.now() + 30*86400000).toISOString().split('T')[0]);
+  const [fornitore, setFornitore] = useState('');
+  const [piva, setPiva] = useState('');
+  const [imponibile, setImponibile] = useState('');
+  const [ivaP, setIvaP] = useState(22);
+  const [categoria, setCategoria] = useState('materiali');
+  const [commessa, setCommessa] = useState('');
+  const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const imp = parseFloat(imponibile.replace(',', '.')) || 0;
+  const iva = +(imp * ivaP / 100).toFixed(2);
+  const tot = +(imp + iva).toFixed(2);
+  const valido = numero.trim().length > 0 && fornitore.trim().length > 0 && imp > 0;
+
+  async function submit() {
+    if (!valido || submitting) return;
+    setSubmitting(true);
+    await onCrea({
+      numero: numero.trim(),
+      data_ricezione: dataRic,
+      data_scadenza: dataScad || null,
+      fornitore: fornitore.trim(),
+      fornitore_piva: piva.trim() || undefined,
+      imponibile: imp, iva_percent: ivaP,
+      categoria, commessa_code: commessa.trim() || null,
+      note: note.trim() || undefined,
+    });
+    setSubmitting(false);
+  }
+
+  return (
+    <ModalShell color={PASTEL.violet} icon={IcoChat} title="Fattura ricevuta" sub="Registra fattura fornitore" onClose={onClose}>
+      <Sezione titolo="FORNITORE">
+        <Field label="Nome fornitore *" value={fornitore} setValue={setFornitore} placeholder="Es. Schuco Italia SpA" />
+        <Field label="P.IVA" value={piva} setValue={setPiva} placeholder="Opzionale" />
+      </Sezione>
+      <Sezione titolo="DATI FATTURA">
+        <Field label="Numero fattura *" value={numero} setValue={setNumero} placeholder="Es. 2024/1850" />
+        <FieldRow>
+          <Field label="Data ricezione *" value={dataRic} setValue={setDataRic} type="date" />
+          <Field label="Data scadenza" value={dataScad} setValue={setDataScad} type="date" />
+        </FieldRow>
+        <FieldRow>
+          <Field label="Imponibile € *" value={imponibile} setValue={setImponibile} placeholder="0,00" type="number" />
+          <Field label="IVA %" value={String(ivaP)} setValue={(v: any) => setIvaP(Number(v) || 0)} type="number" />
+        </FieldRow>
+        <div style={{ background: '#F1F4F7', borderRadius: 8, padding: 10, marginTop: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: MUTED, marginBottom: 4 }}><span>Imponibile</span><span style={{ fontWeight: 700, color: TEXT }}>{formatEuro(imp, 2)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: MUTED, marginBottom: 4 }}><span>IVA {ivaP}%</span><span style={{ fontWeight: 700, color: TEXT }}>{formatEuro(iva, 2)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: TEXT, fontWeight: 800, paddingTop: 5, borderTop: '1px solid #D8DEE5', marginTop: 4 }}><span>TOTALE</span><span>{formatEuro(tot, 2)}</span></div>
+        </div>
+      </Sezione>
+      <Sezione titolo="CATEGORIA">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5, marginBottom: 8 }}>
+          {['materiali', 'utenze', 'leasing', 'consulenze', 'assicurazione', 'altro'].map(c => (
+            <button key={c} onClick={() => setCategoria(c)} style={{
+              padding: '8px 4px', borderRadius: 8,
+              background: categoria === c ? PASTEL.violet.solid : '#fff',
+              color: categoria === c ? '#fff' : MUTED,
+              border: '1px solid ' + (categoria === c ? PASTEL.violet.solid : '#E5EAF0'),
+              fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textTransform: 'capitalize' as const,
+            }}>{c}</button>
+          ))}
+        </div>
+        <Field label="Codice commessa (opzionale)" value={commessa} setValue={setCommessa} placeholder="Es. S-0055" />
+        <TextareaField label="Note" value={note} setValue={setNote} />
+      </Sezione>
+      <ModalFooter>
+        <BtnSecondary onClick={onClose}>Annulla</BtnSecondary>
+        <BtnPrimary color={PASTEL.violet} onClick={submit} disabled={!valido || submitting}>{submitting ? 'Registrazione...' : 'Registra fattura'}</BtnPrimary>
+      </ModalFooter>
+    </ModalShell>
+  );
+}
+
+// =============== MODAL DETTAGLIO FATTURA RICEVUTA ===============
+function ModalDettaglioFattRic({ fattura, getPagamenti, onClose, onPaga, onAnnulla }: any) {
+  const [pagamenti, setPagamenti] = React.useState<any[]>([]);
+  React.useEffect(() => { getPagamenti().then(setPagamenti); }, []);
+
+  const statoMeta: Record<string, any> = {
+    pagata: { col: PASTEL.green, label: 'PAGATA' },
+    scaduta: { col: PASTEL.red, label: 'SCADUTA' },
+    parziale: { col: PASTEL.amber, label: 'PARZIALE' },
+    da_pagare: { col: PASTEL.peach, label: 'DA PAGARE' },
+    annullata: { col: PASTEL.navy, label: 'ANNULLATA' },
+  };
+  const m = statoMeta[fattura.stato_calcolato] || statoMeta.da_pagare;
+  const isPagabile = fattura.stato_calcolato !== 'pagata' && fattura.stato_calcolato !== 'annullata';
+
+  return (
+    <ModalShell color={m.col} icon={IcoBuilding} title={`Fatt. n.${fattura.numero}`} sub={fattura.fornitore} onClose={onClose}>
+      <Sezione titolo="STATO">
+        <div style={{ display: 'inline-block', fontSize: 10, color: m.col.text, background: m.col.bg, padding: '4px 10px', borderRadius: 6, fontWeight: 800, letterSpacing: 0.5 }}>{m.label}</div>
+        <div style={{ background: '#F1F4F7', borderRadius: 8, padding: 10, marginTop: 8 }}>
+          <RigaInfo label="Totale" value={formatEuro(fattura.totale, 2)} bold />
+          <RigaInfo label="Pagato" value={formatEuro(fattura.pagato, 2)} color={PASTEL.green.solid} />
+          <RigaInfo label="Residuo" value={formatEuro(fattura.residuo, 2)} color={PASTEL.red.solid} bold last />
+        </div>
+      </Sezione>
+      <Sezione titolo="DATI FATTURA">
+        <RigaInfo label="Data ricezione" value={new Date(fattura.data_ricezione).toLocaleDateString('it-IT')} />
+        {fattura.data_scadenza && <RigaInfo label="Scadenza" value={new Date(fattura.data_scadenza).toLocaleDateString('it-IT')} />}
+        {fattura.categoria && <RigaInfo label="Categoria" value={fattura.categoria} />}
+        {fattura.commessa_code && <RigaInfo label="Commessa" value={fattura.commessa_code} />}
+        <RigaInfo label="Imponibile" value={formatEuro(fattura.imponibile, 2)} />
+        <RigaInfo label="IVA" value={formatEuro(fattura.iva, 2)} last />
+      </Sezione>
+      <Sezione titolo="FORNITORE">
+        <RigaInfo label="Nome" value={fattura.fornitore} last={!fattura.fornitore_piva} />
+        {fattura.fornitore_piva && <RigaInfo label="P.IVA" value={fattura.fornitore_piva} last />}
+      </Sezione>
+      <Sezione titolo={`STORICO PAGAMENTI (${pagamenti.length})`}>
+        {pagamenti.length === 0 ? (
+          <div style={{ fontSize: 11, color: MUTED, textAlign: 'center' as const, padding: 14 }}>Nessun pagamento registrato</div>
+        ) : (
+          pagamenti.map(p => (
+            <div key={p.id} style={{ background: '#F1F4F7', borderRadius: 8, padding: 10, marginBottom: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: TEXT }}>{new Date(p.data_pagamento).toLocaleDateString('it-IT')}</div>
+                <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{p.metodo}{p.riferimento ? ` · ${p.riferimento}` : ''}</div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: PASTEL.red.solid }}>−{formatEuro(p.importo)}</div>
+            </div>
+          ))
+        )}
+      </Sezione>
+      {fattura.note && <Sezione titolo="NOTE"><div style={{ fontSize: 11, color: TEXT, lineHeight: 1.4 }}>{fattura.note}</div></Sezione>}
+      <ModalFooter>
+        {isPagabile && <BtnSecondary onClick={onAnnulla}>Annulla</BtnSecondary>}
+        {isPagabile && <BtnPrimary color={PASTEL.red} onClick={onPaga}>+ Registra pagamento</BtnPrimary>}
+        {!isPagabile && <BtnPrimary color={m.col} onClick={onClose}>Chiudi</BtnPrimary>}
       </ModalFooter>
     </ModalShell>
   );
@@ -863,15 +1452,8 @@ function Field({ label, value, setValue, placeholder, type = 'text' }: any) {
     <div style={{ marginBottom: 8 }}>
       <div style={{ fontSize: 10, color: MUTED, marginBottom: 3, fontWeight: 700 }}>{label}</div>
       <input
-        type={type}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        style={{
-          width: '100%', padding: '9px 11px', border: '1px solid #E5EAF0',
-          borderRadius: 7, fontSize: 12, color: TEXT, fontFamily: 'inherit',
-          background: '#FAFBFC', boxSizing: 'border-box' as const,
-        }}
+        type={type} value={value} onChange={(e) => setValue(e.target.value)} placeholder={placeholder}
+        style={{ width: '100%', padding: '9px 11px', border: '1px solid #E5EAF0', borderRadius: 7, fontSize: 12, color: TEXT, fontFamily: 'inherit', background: '#FAFBFC', boxSizing: 'border-box' as const }}
       />
     </div>
   );
@@ -882,15 +1464,8 @@ function TextareaField({ label, value, setValue, placeholder }: any) {
     <div style={{ marginBottom: 8 }}>
       <div style={{ fontSize: 10, color: MUTED, marginBottom: 3, fontWeight: 700 }}>{label}</div>
       <textarea
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        rows={3}
-        style={{
-          width: '100%', padding: '9px 11px', border: '1px solid #E5EAF0',
-          borderRadius: 7, fontSize: 12, color: TEXT, fontFamily: 'inherit',
-          background: '#FAFBFC', resize: 'vertical' as const, boxSizing: 'border-box' as const,
-        }}
+        value={value} onChange={(e) => setValue(e.target.value)} placeholder={placeholder} rows={3}
+        style={{ width: '100%', padding: '9px 11px', border: '1px solid #E5EAF0', borderRadius: 7, fontSize: 12, color: TEXT, fontFamily: 'inherit', background: '#FAFBFC', resize: 'vertical' as const, boxSizing: 'border-box' as const }}
       />
     </div>
   );
@@ -898,32 +1473,19 @@ function TextareaField({ label, value, setValue, placeholder }: any) {
 
 function ModalFooter({ children }: any) {
   return (
-    <div style={{
-      background: '#fff', borderTop: '1px solid #E5EAF0',
-      padding: '12px 14px', display: 'flex', gap: 8,
-      position: 'sticky' as const, bottom: 0, marginTop: 8, marginLeft: -14, marginRight: -14,
-    }}>{children}</div>
+    <div style={{ background: '#fff', borderTop: '1px solid #E5EAF0', padding: '12px 14px', display: 'flex', gap: 8, position: 'sticky' as const, bottom: 0, marginTop: 8, marginLeft: -14, marginRight: -14 }}>{children}</div>
   );
 }
 
 function BtnPrimary({ color, onClick, disabled, children }: any) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{
-      flex: 1, padding: '12px 14px', borderRadius: 10,
-      background: disabled ? '#C5CED6' : color.solid, color: '#fff',
-      border: 'none', fontSize: 12, fontWeight: 800, cursor: disabled ? 'not-allowed' : 'pointer',
-      fontFamily: 'inherit',
-    }}>{children}</button>
+    <button onClick={onClick} disabled={disabled} style={{ flex: 1, padding: '12px 14px', borderRadius: 10, background: disabled ? '#C5CED6' : color.solid, color: '#fff', border: 'none', fontSize: 12, fontWeight: 800, cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>{children}</button>
   );
 }
 
 function BtnSecondary({ onClick, children }: any) {
   return (
-    <button onClick={onClick} style={{
-      flex: 1, padding: '12px 14px', borderRadius: 10,
-      background: '#fff', color: TEXT, border: '1px solid #E5EAF0',
-      fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-    }}>{children}</button>
+    <button onClick={onClick} style={{ flex: 1, padding: '12px 14px', borderRadius: 10, background: '#fff', color: TEXT, border: '1px solid #E5EAF0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{children}</button>
   );
 }
 
