@@ -20,6 +20,8 @@ import ModalFirma from "./ModalFirma";
 import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import { useMastro } from "./MastroContext";
 import SchedaFinanziariaCommessa from "./finanze/SchedaFinanziariaCommessa";
+import CardPLCommessa from "./finanze/CardPLCommessa";
+import CardPLCommessa from "./finanze/CardPLCommessa";
 import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey, markPreventivoInviato, setFaseCommessa } from "./mastro-constants";
 import { buildSnapshot, creaFascicolo, getFascicoliCommessa, revocaFascicolo } from "../lib/fascicolo-service";
 import { generaFascicoloGeometraPDF } from "../lib/pdf-fascicolo";
@@ -2202,7 +2204,15 @@ export default function CMDetailPanel() {
             );
           })()}
 
-                    {/* MENU 4 CENTRI */}
+                    {/* CARD P&L COMMESSA */}
+          {(cV70 as any)?.azienda_id && cV70.code && (
+            <CardPLCommessa
+              aziendaId={(cV70 as any).azienda_id || (cV70 as any).aziendaId || ''}
+              commessaCode={cV70.code}
+            />
+          )}
+
+          {/* MENU 4 CENTRI */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
             {[
               { id: "cliente", label: "Cliente", color: "#1E3A5F", tintFrom: "rgba(219,230,241,0.6)", tintTo: "rgba(181,200,221,0.3)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
