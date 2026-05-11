@@ -143,7 +143,7 @@ const RECENT_COMMESSE = [
 ];
 
 export default function DashboardTablet() {
-  const { preset, navigate } = useDashboard();
+  const { preset } = useDashboard();
   const mode = useViewport();
 
   // Responsive layout decisions
@@ -208,11 +208,11 @@ export default function DashboardTablet() {
       {/* KPI */}
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${kpiCols}, minmax(0, 1fr))`, gap: 12, marginBottom: gap }}>
         <Kpi color="navy" mode={mode} iconPath={<><path d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></>} value="14" label="Attive" delta="▲ +2" deltaUp />
-        <Kpi color="amber" mode={mode} iconPath={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></>} value="3" label="Sopra." onClick={() => navigate("sopralluoghi")} />
-        <Kpi color="purple" mode={mode} iconPath={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} value="5" label="Produz." delta="▲ +1" deltaUp onClick={() => navigate("produzione")} />
-        <Kpi color="red" mode={mode} iconPath={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} value="2" label="Ferme" delta="▲ +1" onClick={() => navigate("commesse")} />
-        <Kpi color="blue" mode={mode} iconPath={<><path d="M12 2v6m0 0L9 5m3 3l3-3"/><circle cx="12" cy="14" r="6"/></>} value="7" label="Scadenza" onClick={() => navigate("contabilita")} />
-        <Kpi color="green" mode={mode} iconPath={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></>} value="€17,9k" label="Fatturato" delta="▲ 12%" deltaUp small onClick={() => navigate("contabilita")} />
+        <Kpi color="amber" mode={mode} iconPath={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></>} value="3" label="Sopra." />
+        <Kpi color="purple" mode={mode} iconPath={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} value="5" label="Produz." delta="▲ +1" deltaUp />
+        <Kpi color="red" mode={mode} iconPath={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} value="2" label="Ferme" delta="▲ +1" />
+        <Kpi color="blue" mode={mode} iconPath={<><path d="M12 2v6m0 0L9 5m3 3l3-3"/><circle cx="12" cy="14" r="6"/></>} value="7" label="Scadenza" />
+        <Kpi color="green" mode={mode} iconPath={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></>} value="€17,9k" label="Fatturato" delta="▲ 12%" deltaUp small />
       </div>
 
       {/* PIPELINE */}
@@ -224,16 +224,16 @@ export default function DashboardTablet() {
             </div>
             <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Pipeline · 14 attive</div>
           </div>
-          <div onClick={() => navigate("commesse")} style={{ fontSize: 11, color: C.navy, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.5, flexShrink: 0 }}>Dettagli ›</div>
+          <div style={{ fontSize: 11, color: C.navy, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.5, flexShrink: 0 }}>Dettagli ›</div>
         </div>
         <div style={{ display: "flex", height: pipBarHeight, borderRadius: 11, overflow: "hidden", gap: 2 }}>
-          <PipStep grow={3} bg={C.navy} num="3" lbl="Sopra." size={pipNumSize} onClick={() => navigate("sopralluoghi")} />
-          <PipStep grow={5} bg={C.blue} num="5" lbl="Prev." size={pipNumSize} onClick={() => navigate("commesse")} />
-          <PipStep grow={2} bg={C.amber} num="2" lbl="Conf." size={pipNumSize} onClick={() => navigate("commesse")} />
-          <PipStep grow={2} bg={C.purple} num="2" lbl="Ord." size={pipNumSize} onClick={() => navigate("ordini")} />
-          <PipStep grow={1} bg="#3DB8AA" num="1" lbl="Prod." size={pipNumSize} onClick={() => navigate("produzione")} />
-          <PipStep grow={2} bg={C.green} num="2" lbl="Fatt." size={pipNumSize} onClick={() => navigate("fiscale")} />
-          <PipStep grow={1} bg={C.subLight} num="1" lbl="Pag." size={pipNumSize} onClick={() => navigate("contabilita")} />
+          <PipStep grow={3} bg={C.navy} num="3" lbl="Sopra." size={pipNumSize} />
+          <PipStep grow={5} bg={C.blue} num="5" lbl="Prev." size={pipNumSize} />
+          <PipStep grow={2} bg={C.amber} num="2" lbl="Conf." size={pipNumSize} />
+          <PipStep grow={2} bg={C.purple} num="2" lbl="Ord." size={pipNumSize} />
+          <PipStep grow={1} bg="#3DB8AA" num="1" lbl="Prod." size={pipNumSize} />
+          <PipStep grow={2} bg={C.green} num="2" lbl="Fatt." size={pipNumSize} />
+          <PipStep grow={1} bg={C.subLight} num="1" lbl="Pag." size={pipNumSize} />
         </div>
       </div>
 
@@ -485,7 +485,7 @@ const TLEvent: React.FC<{ left: string; color: string; time: string; tag: string
   </div>
 );
 
-const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "blue"; iconPath: React.ReactNode; value: string; label: string; delta?: string; deltaUp?: boolean; small?: boolean; mode: Mode; onClick?: () => void }> = ({ color, iconPath, value, label, delta, deltaUp, small, mode, onClick }) => {
+const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "blue"; iconPath: React.ReactNode; value: string; label: string; delta?: string; deltaUp?: boolean; small?: boolean; mode: Mode }> = ({ color, iconPath, value, label, delta, deltaUp, small, mode }) => {
   const colorMap = {
     navy: { bd: C.navy, bg: C.navyTint, fg: C.navy },
     amber: { bd: C.amber, bg: C.amberTint, fg: C.amber },
@@ -497,9 +497,9 @@ const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "bl
   const m = colorMap[color];
   const valueSize = mode === "xs" ? 22 : mode === "sm" ? 24 : (small ? 22 : 28);
   return (
-    <div onClick={onClick} style={{
+    <div style={{
       background: C.card, borderRadius: 14, padding: mode === "xs" ? 12 : 14,
-      boxShadow: "0 4px 16px rgba(15,23,42,0.18)", cursor: onClick ? "pointer" : "default",
+      boxShadow: "0 4px 16px rgba(15,23,42,0.18)", cursor: "pointer",
       borderTop: `4px solid ${m.bd}`,
       display: "flex", flexDirection: "column", gap: 6,
       minWidth: 0, overflow: "hidden",
@@ -525,8 +525,8 @@ const Kpi: React.FC<{ color: "navy" | "amber" | "purple" | "green" | "red" | "bl
   );
 };
 
-const PipStep: React.FC<{ grow: number; bg: string; num: string; lbl: string; size: number; onClick?: () => void }> = ({ grow, bg, num, lbl, size, onClick }) => (
-  <div onClick={onClick} style={{
+const PipStep: React.FC<{ grow: number; bg: string; num: string; lbl: string; size: number }> = ({ grow, bg, num, lbl, size }) => (
+  <div style={{
     flex: 1, flexGrow: grow, minWidth: 0,
     display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
     background: bg, color: "#fff", fontWeight: 800, cursor: "pointer", padding: 6, textAlign: "center",
