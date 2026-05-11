@@ -1,9 +1,5 @@
 // app/api/preventivo-link/route.ts
-// POST: crea token pubblico per preventivo (restituisce URL condivisibile)
-// GET:  legge preventivo pubblico (no auth, solo via token)
-//       ?cm_id=xxx → lookup ultimo token per commessa (per titolare)
-//       ?unread=1&azienda_id=xxx → lista risposte cliente non ancora notificate al titolare
-// PATCH: cliente risponde (OK / modifiche / chiamare) — salva IP + UA per tracciabilità legale
+// [v-fix-reinvio 2026-05-11] snapshot opzionale in POST
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -29,7 +25,7 @@ function getClientMeta(req: NextRequest): { ip: string; ua: string } {
     || req.headers.get("x-real-ip")
     || req.headers.get("cf-connecting-ip")
     || "";
-  const ua = (req.headers.get("user-agent") || "").slice(0, 500); // limit
+  const ua = (req.headers.get("user-agent") || "").slice(0, 500);
   return { ip, ua };
 }
 
@@ -37,14 +33,16 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { cm_id, cm_code, snapshot, azienda_id } = body;
-    if (!cm_id || !snapshot) {
-      return NextResponse.json({ error: "missing params" }, { status: 400 });
+
+    if (!cm_id) {
+      return NextResponse.json({ error: "missing cm_id" }, { status: 400 });
     }
 
     const sb = sbAdmin();
+
     const { data: existing } = await sb
       .from("preventivo_tokens")
-      .select("token")
+      .select("token, snapshot")
       .eq("cm_id", cm_id)
       .is("risposta", null)
       .gt("expires_at", new Date().toISOString())
@@ -52,7 +50,12 @@ export async function POST(req: NextRequest) {
 
     let token = existing?.token;
 
-    if (!token) {
+    if (token) {
+      if (snapshot) {
+        await sb.from("preventivo_tokens").update({ snapshot }).eq("token", token);
+      }
+    } else {
+      const snapshotToInsert = snapshot || existing?.snapshot || {};
       token = genToken();
       for (let i = 0; i < 3; i++) {
         const { error } = await sb.from("preventivo_tokens").insert({
@@ -60,19 +63,16 @@ export async function POST(req: NextRequest) {
           cm_id,
           cm_code: cm_code || "",
           azienda_id: azienda_id || null,
-          snapshot,
+          snapshot: snapshotToInsert,
         });
         if (!error) break;
         token = genToken();
       }
-    } else {
-      await sb.from("preventivo_tokens")
-        .update({ snapshot })
-        .eq("token", token);
     }
 
     return NextResponse.json({ token, url: `/p/${token}` });
   } catch (e: any) {
+    console.error("[preventivo-link POST]", e);
     return NextResponse.json({ error: e?.message || "error" }, { status: 500 });
   }
 }
@@ -87,7 +87,6 @@ export async function GET(req: NextRequest) {
 
     const sb2 = sbAdmin();
 
-    // ── Endpoint nuovo: lista risposte cliente non ancora notificate
     if (unread === "1" && azienda_id) {
       const { data: rows, error } = await sb2
         .from("preventivo_tokens")
@@ -102,7 +101,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ items: rows || [] });
     }
 
-    // ── Lookup per titolare: ultimo token per commessa
     if (cm_id && !token) {
       const { data: rows } = await sb2.from("preventivo_tokens")
         .select("*")
@@ -130,24 +128,13 @@ export async function GET(req: NextRequest) {
 
     if (!token) return NextResponse.json({ error: "missing token" }, { status: 400 });
 
-    const { data, error } = await sb2
-      .from("preventivo_tokens")
-      .select("*")
-      .eq("token", token)
-      .maybeSingle();
+    const { data, error } = await sb2.from("preventivo_tokens").select("*").eq("token", token).maybeSingle();
 
-    if (error || !data) {
-      return NextResponse.json({ error: "not found" }, { status: 404 });
-    }
-    if (new Date(data.expires_at) < new Date()) {
-      return NextResponse.json({ error: "expired" }, { status: 410 });
-    }
+    if (error || !data) return NextResponse.json({ error: "not found" }, { status: 404 });
+    if (new Date(data.expires_at) < new Date()) return NextResponse.json({ error: "expired" }, { status: 410 });
 
-    // Marca come visualizzato (con IP+UA solo prima volta) + incrementa letture
     const { ip, ua } = getClientMeta(req);
-    const updateData: any = {
-      letture_count: (data.letture_count || 0) + 1,
-    };
+    const updateData: any = { letture_count: (data.letture_count || 0) + 1 };
     if (!data.visualizzato) {
       updateData.visualizzato = true;
       updateData.visualizzato_at = new Date().toISOString();
@@ -168,59 +155,40 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// PATCH: cliente risponde (OK / modifiche / chiamare) — con tracciabilità legale
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const { token, risposta, nota, ack_titolare } = body;
 
-    // Caso speciale: il titolare segna come "letta/notificata" la risposta
     if (token && ack_titolare === true) {
       const sb = sbAdmin();
-      const { error } = await sb.from("preventivo_tokens")
-        .update({ notify_titolare_inviata: true })
-        .eq("token", token);
+      const { error } = await sb.from("preventivo_tokens").update({ notify_titolare_inviata: true }).eq("token", token);
       if (error) throw error;
       return NextResponse.json({ ok: true, ack: true });
     }
 
-    if (!token || !risposta) {
-      return NextResponse.json({ error: "missing params" }, { status: 400 });
-    }
-    if (!["accettato", "modifiche", "chiamare"].includes(risposta)) {
-      return NextResponse.json({ error: "invalid risposta" }, { status: 400 });
-    }
+    if (!token || !risposta) return NextResponse.json({ error: "missing params" }, { status: 400 });
+    if (!["accettato", "modifiche", "chiamare"].includes(risposta)) return NextResponse.json({ error: "invalid risposta" }, { status: 400 });
 
     const { ip, ua } = getClientMeta(req);
     const sb = sbAdmin();
     const { data: tokenRow, error: errToken } = await sb.from("preventivo_tokens")
       .update({
-        risposta,
-        risposta_nota: nota || null,
+        risposta, risposta_nota: nota || null,
         risposta_at: new Date().toISOString(),
-        risposta_ip: ip || null,
-        risposta_ua: ua || null,
-        // Reset notify flag così il titolare riceve la notifica
+        risposta_ip: ip || null, risposta_ua: ua || null,
         notify_titolare_inviata: false,
       })
-      .eq("token", token)
-      .select("cm_id, azienda_id")
-      .maybeSingle();
+      .eq("token", token).select("cm_id, azienda_id").maybeSingle();
 
     if (errToken) throw errToken;
 
-    // v36 + fix enum DB: avanza fase commessa solo se cliente ha accettato
-    // Le risposte 'modifiche' / 'chiamare' non avanzano fase (rimangono a 'preventivo')
     if (tokenRow?.cm_id && risposta === "accettato") {
-      // accettato: avanza preventivo -> conferma_ordine (richiede preventivo_inviato_at + totale_finale > 0)
-      // Se mancano i gates, l'update fallisce silenziosamente: il bottone "CREA CONFERMA D'ORDINE" servira' per forzare
-      const { error: errFase } = await sb.from("commesse").update({ 
+      const { error: errFase } = await sb.from("commesse").update({
         fase: "conferma_ordine",
         conferma_ordine_inviata_at: new Date().toISOString(),
       }).eq("id", tokenRow.cm_id);
-      if (errFase) {
-        console.warn("[preventivo-link] avanza preventivo->conferma_ordine bloccato:", errFase.message);
-      }
+      if (errFase) console.warn("[preventivo-link] avanza bloccato:", errFase.message);
     }
 
     return NextResponse.json({ ok: true });
