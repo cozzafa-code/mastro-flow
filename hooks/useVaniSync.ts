@@ -1,13 +1,14 @@
 "use client";
 // @ts-nocheck
 // ================================================================
-// MASTRO ERP - useVaniSync (v2 - FIX persistenza vani su DB)
+// MASTRO ERP - useVaniSync (v3 - FIX aziendaId da cantieri)
 // Sincronizza in background lo state cantieri verso Supabase:
 //   - tabella `vani` (record canonici - usata per workspace preventivo)
 //   - tabella `vani_disegno` (misure + disegno CAD)
 //   - tabella `ops_foto` (foto cantiere)
-// FIX: prima scriveva solo vani_disegno, ora scrive ANCHE vani
-// FIX: aziendaId da sessionStorage (gia disponibile), non da query operatori
+// v3 FIX: aziendaId estratto da cantieri[].azienda_id come priorita',
+//         storage come fallback. Risolve "Sync DISATTIVATO" quando
+//         storage non ha la chiave.
 // File < 300 righe.
 // ================================================================
 import { useEffect, useRef } from "react";
@@ -23,8 +24,16 @@ function sb() {
 const DEBOUNCE_MS = 3000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Recupera aziendaId da MULTIPLE fonti (gerarchia priorita')
-function getAziendaId(): string | null {
+// [v3-fix] Estrae aziendaId con gerarchia: cantieri → storage
+function resolveAziendaId(cantieri: any[]): string | null {
+  // 1. Prima cerca nei cantieri (FONTE PIU' AFFIDABILE - viene dal DB)
+  if (Array.isArray(cantieri)) {
+    for (const c of cantieri) {
+      const candidate = c?.azienda_id || c?.aziendaId;
+      if (candidate && UUID_RE.test(String(candidate))) return String(candidate);
+    }
+  }
+  // 2. Fallback storage
   if (typeof window === "undefined") return null;
   const candidates = [
     sessionStorage.getItem("mastro:aziendaId"),
@@ -33,7 +42,11 @@ function getAziendaId(): string | null {
     localStorage.getItem("aziendaId"),
   ];
   for (const c of candidates) {
-    if (c && UUID_RE.test(c)) return c;
+    if (c && UUID_RE.test(c)) {
+      // [v3-fix] auto-popola storage per altri componenti (OrdiniSheet, ecc.)
+      try { sessionStorage.setItem("mastro:aziendaId", c); } catch {}
+      return c;
+    }
   }
   return null;
 }
@@ -50,11 +63,19 @@ export function useVaniSync(
     if (!isUuid || !cantieri || cantieri.length === 0) return;
     if (!supabaseUrl || !supabaseKey) return;
 
-    const aziendaId = getAziendaId();
+    const aziendaId = resolveAziendaId(cantieri);
     if (!aziendaId) {
-      console.warn("[useVaniSync] aziendaId non trovato in sessionStorage. Sync DISATTIVATO.");
+      console.warn("[useVaniSync v3] aziendaId non trovato (ne' in cantieri ne' in storage). Sync DISATTIVATO.");
       return;
     }
+
+    // [v3-fix] auto-popola storage cosi' OrdiniSheet & altri lo trovano
+    try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("mastro:aziendaId", aziendaId);
+        localStorage.setItem("mastro:aziendaId", aziendaId);
+      }
+    } catch {}
 
     // Hash veloce per evitare sync inutili (rilieva solo cambi rilevanti)
     const hash = JSON.stringify(
@@ -83,6 +104,7 @@ export function useVaniSync(
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
+      console.log("[useVaniSync v3] sync trigger, aziendaId:", aziendaId, "cantieri:", cantieri.length);
       syncVaniToSupabase(cantieri, aziendaId);
     }, DEBOUNCE_MS);
 
@@ -165,11 +187,11 @@ async function syncVaniToSupabase(cantieri: any[], aziendaId: string) {
 
           if (existingVano?.id) {
             const { error } = await s.from("vani").update(vanoRow).eq("id", existingVano.id);
-            if (error) { console.warn(`[useVaniSync] update vani err ${vano.id}:`, error.message); totaleErrori++; }
+            if (error) { console.warn(`[useVaniSync v3] update vani err ${vano.id}:`, error.message); totaleErrori++; }
             else totaleVaniSync++;
           } else {
             const { error } = await s.from("vani").insert(vanoRow);
-            if (error) { console.warn(`[useVaniSync] insert vani err ${vano.id}:`, error.message); totaleErrori++; }
+            if (error) { console.warn(`[useVaniSync v3] insert vani err ${vano.id}:`, error.message); totaleErrori++; }
             else totaleVaniSync++;
           }
 
@@ -238,7 +260,7 @@ async function syncVaniToSupabase(cantieri: any[], aziendaId: string) {
             }
           }
         } catch (e: any) {
-          console.warn(`[useVaniSync] errore sync vano ${vano.id}:`, e?.message || e);
+          console.warn(`[useVaniSync v3] errore sync vano ${vano.id}:`, e?.message || e);
           totaleErrori++;
         }
       }
@@ -246,7 +268,7 @@ async function syncVaniToSupabase(cantieri: any[], aziendaId: string) {
   }
 
   if (totaleVaniSync > 0 || totaleErrori > 0) {
-    console.log(`[useVaniSync] Sync completato: ${totaleVaniSync} vani OK, ${totaleErrori} errori`);
+    console.log(`[useVaniSync v3] Sync completato: ${totaleVaniSync} vani OK, ${totaleErrori} errori`);
   }
 }
 
