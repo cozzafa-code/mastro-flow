@@ -1,6 +1,7 @@
 // HomePanelMobileV2 V16 - DB campi corretti + tap funzionante
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
+import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
 import { useMastro } from './MastroContext'
@@ -101,6 +102,7 @@ const IcoCheck = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="non
 
 
 export default function HomePanelMobileV2(props: any) {
+  const [organizzaCm, setOrganizzaCm] = React.useState<any>(null);
   const { data } = useHomeMobile()
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const [editMode, setEditMode] = useState(false)
@@ -261,7 +263,7 @@ export default function HomePanelMobileV2(props: any) {
         {id === 'produzione' && <CardProduzione cantieri={cantieri} apri={apriCM} />}
         {id === 'gestione-materiali' && <CardGestioneMateriali ordini={ctx?.ordiniFornDB || []} magazzino={ctx?.magazzinoArticoli || []} onClick={() => goto('materiali')} />}
         {id === 'clienti' && <CardClienti contatti={ctx?.contatti || ctx?.clienti || []} cantieri={cantieri} onClick={() => goto('clienti')} />}
-        {id === 'pianificazione' && <CardPianificazione aziendaId={ctx?.aziendaId || ''} onClick={(cmId) => { const cm = (cantieri||[]).find((c:any)=>c.id===cmId); if(cm) apriCM(cm); }} />}
+        {id === 'pianificazione' && <CardPianificazione aziendaId={ctx?.aziendaId || ''} onClick={(cmId) => { const cm = (cantieri||[]).find((c:any)=>c.id===cmId); if(cm) setOrganizzaCm(cm); }} />}
           {id === 'statistiche' && <CardStatistiche cantieri={cantieri} onClick={() => goto('contabilita')} />}
       </div>
     </div>
