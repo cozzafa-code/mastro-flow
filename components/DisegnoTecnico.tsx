@@ -3365,7 +3365,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     {id:"sensi",l:"Sensi",c:"#D08008"},
                                     {id:"strumenti",l:"Strumenti",c:"#6366f1"},
                                   ].map(mt => (
-                                    <div key={mt.id} onClick={() => setMenuTab(menuTab === mt.id ? null : mt.id as any)} style={{
+                                    <div key={mt.id} data-cad="tab" onClick={() => setMenuTab(menuTab === mt.id ? null : mt.id as any)} style={{
                                       flex: 1, padding: "5px 0", textAlign: "center", fontSize: 9, fontWeight: 800,
                                       borderRadius: 6, cursor: "pointer",
                                       background: menuTab === mt.id ? mt.c : "white",
