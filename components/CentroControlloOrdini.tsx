@@ -5,6 +5,7 @@
 import React, { useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useOrdini, type OrdineRow } from "../hooks/useOrdini";
+import TrasformatoreOrdiniModal from "./TrasformatoreOrdiniModal";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -47,6 +48,7 @@ function resolveAziendaId(propId: string | null): string {
 export default function CentroControlloOrdini({ aziendaId, onClose, onApriOrdine, onApriCommessa }: any) {
   const resolved = resolveAziendaId(aziendaId);
   const [view, setView] = useState<ViewMode>('alert');
+  const [showTrasformatore, setShowTrasformatore] = useState(false);
   const [filter, setFilter] = useState<'tutti' | 'urgenti' | 'bloccanti' | 'in_ritardo'>('tutti');
   const [search, setSearch] = useState('');
   const { ordini, stats, loading } = useOrdini(resolved);
@@ -128,6 +130,28 @@ export default function CentroControlloOrdini({ aziendaId, onClose, onApriOrdine
          view === 'kanban' ? <ViewKanban ordini={filtered} onApriOrdine={onApriOrdine} onApriCommessa={onApriCommessa} /> :
          <ViewLista ordini={filtered} onApriOrdine={onApriOrdine} onApriCommessa={onApriCommessa} />}
       </div>
+
+      {/* FAB Trasformatore */}
+      <button onClick={() => setShowTrasformatore(true)} style={{
+        position: 'fixed', bottom: 90, right: 18, zIndex: 9850,
+        height: 56, padding: '0 20px', borderRadius: 28,
+        background: `linear-gradient(135deg, ${TEAL}, ${TEAL_DEEP})`,
+        color: '#fff', border: 'none', cursor: 'pointer',
+        boxShadow: '0 6px 20px rgba(40,160,160,0.5)',
+        display: 'flex', alignItems: 'center', gap: 8,
+        fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
+      }}>
+        <span style={{ fontSize: 22 }}>⚡</span>
+        <span>NUOVO ORDINE</span>
+      </button>
+
+      {showTrasformatore && (
+        <TrasformatoreOrdiniModal
+          aziendaId={resolved}
+          onClose={() => setShowTrasformatore(false)}
+          onCreati={() => setShowTrasformatore(false)}
+        />
+      )}
     </div>
   );
 }
