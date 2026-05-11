@@ -1,6 +1,7 @@
 // HomePanelMobileV2 V16 - DB campi corretti + tap funzionante
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
+import CardAzioniVeloci from "./home/CardAzioniVeloci";
 import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
@@ -28,6 +29,7 @@ const ALL_CARDS = [
   { id: 'clienti', title: 'CLIENTI' },
   { id: 'pianificazione', title: 'PIANIFICAZIONE' },
     { id: 'statistiche', title: 'STATISTICHE' },
+  { id: 'azioni-veloci', title: 'AZIONI VELOCI' },
 ]
 const DEFAULT_ORDER = ALL_CARDS.map(c => c.id)
 
