@@ -271,6 +271,17 @@ export default function HomePanelMobileV2(props: any) {
         {id === 'clienti' && <CardClienti contatti={ctx?.contatti || ctx?.clienti || []} cantieri={cantieri} onClick={() => goto('clienti')} />}
         {id === 'pianificazione' && <CardPianificazione aziendaId={ctx?.aziendaId || ''} onClick={(cmId) => { const cm = (cantieri||[]).find((c:any)=>c.id===cmId); if(cm) setOrganizzaCm(cm); }} />}
           {id === 'statistiche' && <CardStatistiche cantieri={cantieri} onClick={() => goto('contabilita')} />}
+          {id === 'azioni-veloci' && <CardAzioniVeloci
+            aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || '') : '')}
+            onProduzione={() => setShowCentroProduzione(true)}
+            onMontaggi={() => setShowCentroMontaggi(true)}
+            onMateriali={() => goto('materiali')}
+            onMagazzino={() => goto('materiali')}
+            onClienti={() => goto('clienti')}
+            onAgenda={() => goto('agenda')}
+            onTeam={() => goto('team')}
+            onStatistiche={() => goto('contabilita')}
+          />}
       </div>
     </div>
   )

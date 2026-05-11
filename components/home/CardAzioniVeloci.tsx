@@ -23,8 +23,29 @@ const TEXT = "#0F1F33";
 const MUTED = "#5C6B7A";
 
 export default function CardAzioniVeloci(props: Props) {
-  const resolvedAziendaId = props.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || '') : '');
-  
+  const initial = props.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || '') : '');
+  const [resolvedAziendaId, setResolvedAziendaId] = useState(initial);
+
+  useEffect(() => {
+    if (resolvedAziendaId) return;
+    (async () => {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const uid = sess?.session?.user?.id;
+        if (!uid) return;
+        const { data: ud } = await supabase.from('user_data').select('azienda_id').eq('user_id', uid).limit(1).maybeSingle();
+        const az = (ud as any)?.azienda_id;
+        if (az) {
+          setResolvedAziendaId(az);
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('mastro:aziendaId', az);
+            localStorage.setItem('mastro:aziendaId', az);
+          }
+        }
+      } catch {}
+    })();
+  }, [resolvedAziendaId]);
+
   const [counts, setCounts] = useState({
     produzione: 0, montaggi: 0, materiali: 0, magazzino: 0,
     clienti: 0, agenda: 0, team: 0, fatturato: 0,

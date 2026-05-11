@@ -32,10 +32,34 @@ export default function CardPianificazione({ aziendaId, onClick }: Props) {
   const [commesse, setCommesse] = useState<CmRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const resolvedAziendaId = aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || '') : '');
+  const initial = aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || '') : '');
+  const [resolvedAziendaId, setResolvedAziendaId] = useState(initial);
+
+  // Fallback estremo: se non c'e' aziendaId, lo prendo da user_data via session loggata
+  useEffect(() => {
+    if (resolvedAziendaId) return;
+    (async () => {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const uid = sess?.session?.user?.id;
+        if (!uid) { setLoading(false); return; }
+        const { data: ud } = await supabase.from('user_data').select('azienda_id').eq('user_id', uid).limit(1).maybeSingle();
+        const az = (ud as any)?.azienda_id;
+        if (az) {
+          setResolvedAziendaId(az);
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('mastro:aziendaId', az);
+            localStorage.setItem('mastro:aziendaId', az);
+          }
+        } else {
+          setLoading(false);
+        }
+      } catch { setLoading(false); }
+    })();
+  }, [resolvedAziendaId]);
 
   useEffect(() => {
-    if (!resolvedAziendaId) { setLoading(false); return; }
+    if (!resolvedAziendaId) return;
     async function load() {
       const { data } = await supabase
         .from("commesse")
