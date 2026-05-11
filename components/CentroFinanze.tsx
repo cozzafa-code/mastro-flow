@@ -3,6 +3,7 @@ import React, { useState, useMemo } from "react";
 import { useFinanze, formatEuro, formatEuroShort } from "../hooks/useFinanze";
 import { useFattureFinanze, type FatturaFin, type FiltroFatture } from "../hooks/useFattureFinanze";
 import { useSpese, CATEGORIE_SPESA, METODI_PAGAMENTO, statoFattRicLabel, type SpesaRow, type FatturaRicevutaRow, type FiltroSpese, type FiltroFattRic } from "../hooks/useSpese";
+import { useCommessaPL, statoPLMeta, type CommessaPLRow } from "../hooks/useCommessaPL";
 import HeroKPIFinanze from "./finanze/HeroKPIFinanze";
 import { PASTEL, BG_APP, MUTED, TEXT } from "../lib/modaleColors";
 import { IcoFile, IcoEuro, IcoAlertTriangle, IcoSparkles, IcoCheck, IcoChevronLeft, IcoTrendingUp, IcoTruck, IcoUser, IcoBuilding, IcoChat } from "./IconLib";
@@ -21,25 +22,24 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
   const { kpi, heroKpi, alerts, cashflow, loading, dismissAlert } = useFinanze(aziendaId);
   const fattHook = useFattureFinanze(aziendaId);
   const speseHook = useSpese(aziendaId);
-  const [tab, setTab] = useState<'home'|'fatture'|'uscite'|'cashflow'|'scadenze'|'alert'>('home');
+  const plHook = useCommessaPL(aziendaId);
+  const [tab, setTab] = useState<'home'|'fatture'|'uscite'|'pl'|'cashflow'|'scadenze'|'alert'>('home');
   const [showFab, setShowFab] = useState(false);
 
-  // Modali esistenti (V2)
   const [showNuovaFattura, setShowNuovaFattura] = useState(false);
   const [showPagamento, setShowPagamento] = useState<{open: boolean; fatturaId?: string}>({open: false});
   const [dettaglioId, setDettaglioId] = useState<string | null>(null);
 
-  // Modali nuovi (V3 Blocco 3)
   const [showSpesa, setShowSpesa] = useState(false);
   const [showPagFornit, setShowPagFornit] = useState<{open: boolean; fatturaId?: string}>({open: false});
   const [showNuovaFatturaRic, setShowNuovaFatturaRic] = useState(false);
   const [dettaglioFattRicId, setDettaglioFattRicId] = useState<string | null>(null);
 
-  // Filtri Fatture
+  const [plDettaglio, setPlDettaglio] = useState<CommessaPLRow | null>(null);
+
   const [filtroF, setFiltroF] = useState<FiltroFatture>('tutte');
   const [searchF, setSearchF] = useState('');
 
-  // Filtri Uscite (3 sub-tab)
   const [subTabUscite, setSubTabUscite] = useState<'spese'|'fornitori'|'storico'>('spese');
   const [filtroSpese, setFiltroSpese] = useState<FiltroSpese>('mese');
   const [searchSpese, setSearchSpese] = useState('');
@@ -62,7 +62,6 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: BG_APP, zIndex: 9800, display: 'flex', flexDirection: 'column' as const }}>
 
-      {/* Header */}
       <div style={{ background: '#fff', padding: '14px 16px 12px', borderBottom: '1px solid #E5EAF0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, background: '#F1F4F7', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -85,12 +84,12 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
           )}
         </div>
 
-        {/* Tab nav - 6 tab */}
         <div style={{ display: 'flex', gap: 3, marginTop: 12, background: '#F1F4F7', padding: 3, borderRadius: 10, overflowX: 'auto' as const }}>
           {[
             { val: 'home', label: 'Sintesi' },
             { val: 'fatture', label: `Fatture${fattHook.kpi ? ` · ${fattHook.kpi.n_aperte}` : ''}` },
             { val: 'uscite', label: `Uscite${speseHook.kpiFatt ? ` · ${speseHook.kpiFatt.n_da_pagare}` : ''}` },
+            { val: 'pl', label: `P&L${plHook.kpi ? ` · ${plHook.kpi.n_commesse_totali}` : ''}` },
             { val: 'cashflow', label: 'Cashflow' },
             { val: 'scadenze', label: 'Scadenze' },
             { val: 'alert', label: `Alert${alerts.length ? ` · ${alerts.length}` : ''}` },
@@ -108,7 +107,6 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
         </div>
       </div>
 
-      {/* Body */}
       <div style={{ flex: 1, overflowY: 'auto' as const, padding: '12px 14px 90px' }}>
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center' as const, color: MUTED }}>Caricamento dati finanziari...</div>
@@ -183,6 +181,18 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
               />
             )}
 
+            {tab === 'pl' && (
+              <TabPL
+                kpi={plHook.kpi}
+                top5={plHook.top5}
+                bottom5={plHook.bottom5}
+                inPerdita={plHook.inPerdita}
+                bassoMargine={plHook.bassoMargine}
+                commesseAttive={plHook.commesseAttive}
+                onApriDettaglio={(c) => setPlDettaglio(c)}
+              />
+            )}
+
             {tab === 'cashflow' && <CashflowChart cashflow={cashflow} kpi={kpi} />}
 
             {tab === 'scadenze' && (
@@ -206,7 +216,6 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
         )}
       </div>
 
-      {/* FAB azioni rapide */}
       <button onClick={() => setShowFab(!showFab)} style={{
         position: 'fixed' as const, bottom: 22, right: 18, zIndex: 9850,
         width: 58, height: 58, borderRadius: 29,
@@ -234,7 +243,6 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
         </>
       )}
 
-      {/* Modali V2 (fatture clienti) */}
       {showNuovaFattura && (
         <ModalNuovaFattura
           onClose={() => setShowNuovaFattura(false)}
@@ -271,7 +279,6 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
         />
       )}
 
-      {/* Modali V3 (uscite) */}
       {showSpesa && (
         <ModalNuovaSpesa
           aziendaId={aziendaId}
@@ -318,11 +325,17 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
           }}
         />
       )}
+
+      {plDettaglio && (
+        <ModalDettaglioPL
+          commessa={plDettaglio}
+          onClose={() => setPlDettaglio(null)}
+        />
+      )}
     </div>
   );
 }
 
-// =============== SECTION LABEL ===============
 function SectionLabel({ Ico, title, sub }: any) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
@@ -333,7 +346,6 @@ function SectionLabel({ Ico, title, sub }: any) {
   );
 }
 
-// =============== ALERT CARD ===============
 function AlertCard({ alert, onDismiss, expanded }: any) {
   const sevMeta: Record<string, any> = { critical: PASTEL.red, warning: PASTEL.amber, info: PASTEL.blue };
   const m = sevMeta[alert.severity] || PASTEL.blue;
@@ -475,7 +487,6 @@ function KpiMini({ color, label, valore, sub }: any) {
   );
 }
 
-// =============== TAB FATTURE (V2 mantenuta) ===============
 function TabFatture({ fatture, kpi, filtro, setFiltro, search, setSearch, onApriDettaglio, onApriPagamento }: any) {
   const filtri: { val: FiltroFatture; label: string; count?: number }[] = [
     { val: 'tutte',    label: 'Tutte',       count: kpi?.n_totali  },
@@ -564,7 +575,6 @@ function FatturaRiga({ fattura, onApri, onPagamento }: any) {
     </div>
   );
 }
-// =============== TAB USCITE (V3 Blocco 3) ===============
 function TabUscite({
   subTab, setSubTab, kpiSpese, kpiFatt, categorieSpese,
   spese, fornit, pagamentiStorico,
@@ -572,8 +582,6 @@ function TabUscite({
   filtroFornit, setFiltroFornit, searchFornit, setSearchFornit,
   onEliminaSpesa, onApriFornit, onPagaFornit, onNuovaFattRic, onNuovaSpesa,
 }: any) {
-
-  // Sub-tab nav
   const subTabs = [
     { val: 'spese',     label: `Spese${kpiSpese ? ` · ${kpiSpese.n_mese}` : ''}` },
     { val: 'fornitori', label: `Fornitori${kpiFatt ? ` · ${kpiFatt.n_da_pagare}` : ''}` },
@@ -582,13 +590,8 @@ function TabUscite({
 
   return (
     <>
-      {/* KPI mini 2x2 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-        {kpiSpese && (
-          <>
-            <KpiMini color={PASTEL.amber} label="SPESE MESE"    valore={formatEuroShort(kpiSpese.totale_mese)} sub={`${kpiSpese.n_mese} spese · ${formatEuroShort(kpiSpese.totale_mese_scorso)} mese -1`} />
-          </>
-        )}
+        {kpiSpese && <KpiMini color={PASTEL.amber} label="SPESE MESE" valore={formatEuroShort(kpiSpese.totale_mese)} sub={`${kpiSpese.n_mese} spese · ${formatEuroShort(kpiSpese.totale_mese_scorso)} mese -1`} />}
         {kpiFatt && (
           <>
             <KpiMini color={PASTEL.red}   label="DA PAGARE"     valore={formatEuroShort(kpiFatt.importo_da_pagare)} sub={`${kpiFatt.n_da_pagare} fatture aperte`} />
@@ -598,7 +601,6 @@ function TabUscite({
         )}
       </div>
 
-      {/* Sub-tab nav */}
       <div style={{ display: 'flex', gap: 3, marginBottom: 12, background: '#fff', padding: 3, borderRadius: 10, border: '1px solid #E5EAF0' }}>
         {subTabs.map(t => (
           <button key={t.val} onClick={() => setSubTab(t.val)} style={{
@@ -611,10 +613,8 @@ function TabUscite({
         ))}
       </div>
 
-      {/* SUB-TAB: SPESE TITOLARE */}
       {subTab === 'spese' && (
         <>
-          {/* Filtri */}
           <div style={{ display: 'flex', gap: 5, marginBottom: 10, overflowX: 'auto' as const, paddingBottom: 2 }}>
             {[
               { val: 'mese',        label: 'Questo mese' },
@@ -632,7 +632,6 @@ function TabUscite({
             ))}
           </div>
 
-          {/* Search */}
           <div style={{ background: '#fff', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, border: '1px solid #E5EAF0' }}>
             <IcoSearch size={14} color={MUTED} />
             <input
@@ -643,7 +642,6 @@ function TabUscite({
             {searchSpese && <button onClick={() => setSearchSpese('')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}><IcoX size={12} color={MUTED} /></button>}
           </div>
 
-          {/* Categorie mese (chip orizzontali) */}
           {categorieSpese.length > 0 && filtroSpese === 'mese' && (
             <div style={{ display: 'flex', gap: 6, overflowX: 'auto' as const, marginBottom: 12, paddingBottom: 2 }}>
               {categorieSpese.map((c: any) => {
@@ -659,7 +657,6 @@ function TabUscite({
             </div>
           )}
 
-          {/* Lista spese */}
           {spese.length === 0 ? (
             <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>
               Nessuna spesa nel periodo
@@ -673,10 +670,8 @@ function TabUscite({
         </>
       )}
 
-      {/* SUB-TAB: FORNITORI */}
       {subTab === 'fornitori' && (
         <>
-          {/* Filtri */}
           <div style={{ display: 'flex', gap: 5, marginBottom: 10, overflowX: 'auto' as const, paddingBottom: 2 }}>
             {[
               { val: 'da_pagare', label: 'Da pagare',  count: kpiFatt?.n_da_pagare },
@@ -719,7 +714,6 @@ function TabUscite({
         </>
       )}
 
-      {/* SUB-TAB: STORICO */}
       {subTab === 'storico' && (
         <>
           <SectionLabel Ico={IcoCheck} title="FATTURE FORNITORI PAGATE" sub={`${(pagamentiStorico || []).filter((f: any) => f.stato_calcolato === 'pagata').length} fatture`} />
@@ -738,7 +732,6 @@ function TabUscite({
   );
 }
 
-// =============== SPESA RIGA ===============
 function SpesaRiga({ spesa, onElimina }: any) {
   const meta = CATEGORIE_SPESA.find(c => c.val === spesa.categoria);
   const d = new Date(spesa.data).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
@@ -773,7 +766,6 @@ function SpesaRiga({ spesa, onElimina }: any) {
   );
 }
 
-// =============== FATTURA RICEVUTA RIGA ===============
 function FattRicevutaRiga({ fattura, onApri, onPaga }: any) {
   const statoMeta: Record<string, any> = {
     pagata: { col: PASTEL.green, label: 'PAGATA' },
@@ -819,7 +811,155 @@ function FattRicevutaRiga({ fattura, onApri, onPaga }: any) {
   );
 }
 
-// =============== MODAL NUOVA FATTURA (clienti, V2) ===============
+// =============== TAB P&L (Blocco 8) ===============
+function TabPL({ kpi, top5, bottom5, inPerdita, bassoMargine, commesseAttive, onApriDettaglio }: any) {
+  if (!kpi || commesseAttive.length === 0) {
+    return (
+      <div style={{ background: '#fff', borderRadius: 12, padding: 30, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>
+        Nessun dato P&L disponibile.<br/>
+        Crea fatture e collega costi/spese alle commesse per vedere il margine reale.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+        <KpiMini color={PASTEL.green} label="UTILE TOTALE" valore={formatEuroShort(kpi.utile_totale)} sub={`${kpi.n_commesse_totali} commesse · ${formatEuroShort(kpi.ricavi_totali)} ricavi`} />
+        <KpiMini color={PASTEL.teal} label="MARGINE MEDIO" valore={kpi.margine_medio_pct !== null ? `${kpi.margine_medio_pct.toFixed(1)}%` : '—'} sub={`${kpi.n_margine_ottimo} ottime · ${kpi.n_margine_ok} ok`} />
+        <KpiMini color={PASTEL.red} label="IN PERDITA" valore={String(kpi.n_in_perdita)} sub={kpi.n_in_perdita > 0 ? 'Attenzione!' : 'Tutto OK'} />
+        <KpiMini color={PASTEL.amber} label="BASSO MARGINE" valore={String(kpi.n_basso_margine)} sub="margine < 10%" />
+      </div>
+
+      {inPerdita.length > 0 && (
+        <div style={{ background: PASTEL.red.bg, borderRadius: 12, padding: 12, borderLeft: `4px solid ${PASTEL.red.solid}`, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: PASTEL.red.text }}>🔴 {inPerdita.length} commesse in perdita</div>
+          <div style={{ fontSize: 11, color: PASTEL.red.text, marginTop: 4, lineHeight: 1.35 }}>
+            Costi superano i ricavi su <strong>{inPerdita.map((c: CommessaPLRow) => c.commessa_code).join(', ')}</strong>. Verifica fatturazione mancante o sovra-costi.
+          </div>
+        </div>
+      )}
+
+      <SectionLabel Ico={IcoTrendingUp} title="TOP 5 PER UTILE" sub="commesse più redditizie" />
+      {top5.map((c: CommessaPLRow) => <PLRiga key={c.commessa_id} commessa={c} onApri={() => onApriDettaglio(c)} />)}
+
+      {bottom5.length > 0 && bottom5[0].commessa_code !== top5[top5.length - 1]?.commessa_code && (
+        <>
+          <div style={{ height: 12 }} />
+          <SectionLabel Ico={IcoAlertTriangle} title="BOTTOM 5 PER UTILE" sub="commesse da monitorare" />
+          {bottom5.filter((c: CommessaPLRow) => !top5.find((t: CommessaPLRow) => t.commessa_id === c.commessa_id))
+                  .map((c: CommessaPLRow) => <PLRiga key={c.commessa_id} commessa={c} onApri={() => onApriDettaglio(c)} />)}
+        </>
+      )}
+    </>
+  );
+}
+
+function PLRiga({ commessa, onApri }: any) {
+  const m = statoPLMeta(commessa.stato_pl);
+  const col = (PASTEL as any)[m.tone] || PASTEL.navy;
+  const inUtile = commessa.utile_reale >= 0;
+
+  return (
+    <div onClick={onApri} style={{ background: '#fff', borderRadius: 12, padding: 11, marginBottom: 6, borderLeft: `4px solid ${col.solid}`, cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <span style={{ fontSize: 9, color: PASTEL.navy.solid, background: PASTEL.navy.bg, padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>{commessa.commessa_code}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: TEXT, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const, whiteSpace: 'nowrap' as const }}>{commessa.cliente || '—'}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, marginTop: 4 }}>
+          <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>Ricavi {formatEuroShort(commessa.ricavi_fatturati)}</span>
+          <span style={{ fontSize: 10, color: MUTED }}>·</span>
+          <span style={{ fontSize: 10, color: PASTEL.red.solid, fontWeight: 700 }}>Costi {formatEuroShort(commessa.costi_totali)}</span>
+        </div>
+        <div style={{ display: 'inline-block', marginTop: 5, fontSize: 8, color: col.text, background: col.bg, padding: '2px 6px', borderRadius: 4, fontWeight: 800, letterSpacing: 0.5 }}>
+          {m.emoji} {m.label.toUpperCase()}
+        </div>
+      </div>
+      <div style={{ textAlign: 'right' as const, minWidth: 95 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: inUtile ? PASTEL.green.solid : PASTEL.red.solid, letterSpacing: -0.3 }}>
+          {inUtile ? '+' : ''}{formatEuroShort(commessa.utile_reale)}
+        </div>
+        {commessa.margine_pct_reale !== null && (
+          <div style={{ fontSize: 11, color: inUtile ? PASTEL.green.solid : PASTEL.red.solid, fontWeight: 700, marginTop: 1 }}>
+            {commessa.margine_pct_reale.toFixed(1)}%
+          </div>
+        )}
+        {commessa.delta_margine_pct !== null && (
+          <div style={{ fontSize: 9, color: commessa.delta_margine_pct >= 0 ? PASTEL.green.solid : PASTEL.red.solid, marginTop: 2, fontWeight: 700 }}>
+            {commessa.delta_margine_pct >= 0 ? '+' : ''}{commessa.delta_margine_pct.toFixed(1)}% vs atteso
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ModalDettaglioPL({ commessa, onClose }: any) {
+  const m = statoPLMeta(commessa.stato_pl);
+  const col = (PASTEL as any)[m.tone] || PASTEL.navy;
+  const inUtile = commessa.utile_reale >= 0;
+
+  return (
+    <ModalShell color={col} icon={IcoTrendingUp} title={`P&L ${commessa.commessa_code}`} sub={commessa.cliente || '—'} onClose={onClose}>
+      <Sezione titolo="MARGINE REALE">
+        <div style={{ background: col.bg, borderRadius: 12, padding: 14, textAlign: 'center' as const }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: inUtile ? PASTEL.green.solid : PASTEL.red.solid, letterSpacing: -1 }}>
+            {inUtile ? '+' : ''}{formatEuro(commessa.utile_reale)}
+          </div>
+          {commessa.margine_pct_reale !== null && (
+            <div style={{ fontSize: 16, fontWeight: 800, color: inUtile ? PASTEL.green.solid : PASTEL.red.solid, marginTop: 4 }}>
+              {commessa.margine_pct_reale.toFixed(1)}% margine
+            </div>
+          )}
+          {commessa.delta_margine_pct !== null && (
+            <div style={{ fontSize: 11, color: commessa.delta_margine_pct >= 0 ? PASTEL.green.solid : PASTEL.red.solid, marginTop: 6, fontWeight: 700 }}>
+              {commessa.delta_margine_pct >= 0 ? '+' : ''}{commessa.delta_margine_pct.toFixed(1)}% vs preventivato ({commessa.margine_atteso_pct?.toFixed(0)}%)
+            </div>
+          )}
+          <div style={{ display: 'inline-block', marginTop: 8, fontSize: 10, color: col.text, background: '#fff', padding: '4px 10px', borderRadius: 6, fontWeight: 800, letterSpacing: 0.5 }}>
+            {m.emoji} {m.label.toUpperCase()}
+          </div>
+        </div>
+      </Sezione>
+
+      <Sezione titolo="RICAVI">
+        <RigaInfo label="Fatturato totale" value={formatEuro(commessa.ricavi_fatturati, 2)} bold />
+        <RigaInfo label="Già incassato" value={formatEuro(commessa.ricavi_incassati, 2)} color={PASTEL.green.solid} />
+        <RigaInfo label="Da incassare" value={formatEuro(commessa.ricavi_da_incassare, 2)} color={PASTEL.amber.solid} last />
+      </Sezione>
+
+      <Sezione titolo="COSTI">
+        <RigaInfo label={`Materiali fornitori (${commessa.n_fatt_fornitore} fatt.)`} value={formatEuro(commessa.costi_materiali, 2)} />
+        <RigaInfo label={`Spese titolare (${commessa.n_spese} voci)`} value={formatEuro(commessa.costi_spese, 2)} />
+        <RigaInfo label="TOTALE COSTI" value={formatEuro(commessa.costi_totali, 2)} bold color={PASTEL.red.solid} last />
+      </Sezione>
+
+      <Sezione titolo="CASSA REALE (solo incassato - solo pagato)">
+        <div style={{ background: '#F1F4F7', borderRadius: 8, padding: 10 }}>
+          <RigaInfo label="Incassato" value={formatEuro(commessa.ricavi_incassati, 2)} color={PASTEL.green.solid} />
+          <RigaInfo label="Pagato fornitori" value={formatEuro(commessa.costi_materiali_pagati, 2)} color={PASTEL.red.solid} />
+          <RigaInfo label="Cassa netta" value={formatEuro(commessa.utile_cassa, 2)} bold color={commessa.utile_cassa >= 0 ? PASTEL.green.solid : PASTEL.red.solid} last />
+        </div>
+      </Sezione>
+
+      {commessa.prezzo_finale_eur && (
+        <Sezione titolo="PREVENTIVATO vs REALE">
+          <RigaInfo label="Prezzo concordato" value={formatEuro(commessa.prezzo_finale_eur, 2)} />
+          <RigaInfo label="Fatturato finora" value={formatEuro(commessa.ricavi_fatturati, 2)} />
+          <RigaInfo label="Margine atteso" value={commessa.margine_atteso_pct ? `${commessa.margine_atteso_pct.toFixed(0)}%` : '—'} />
+          <RigaInfo label="Margine reale" value={commessa.margine_pct_reale !== null ? `${commessa.margine_pct_reale.toFixed(1)}%` : '—'} bold color={inUtile ? PASTEL.green.solid : PASTEL.red.solid} last />
+        </Sezione>
+      )}
+
+      <ModalFooter>
+        <BtnPrimary color={col} onClick={onClose}>Chiudi</BtnPrimary>
+      </ModalFooter>
+    </ModalShell>
+  );
+}
+
+// =============== MODALI ESISTENTI (V2 + V3) ===============
 function ModalNuovaFattura({ onClose, onCrea }: any) {
   const [cliente, setCliente] = useState('');
   const [piva, setPiva] = useState('');
@@ -912,7 +1052,6 @@ function ModalNuovaFattura({ onClose, onCrea }: any) {
   );
 }
 
-// =============== MODAL REGISTRA PAGAMENTO (clienti, V2) ===============
 function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegistra }: any) {
   const [fatturaId, setFatturaId] = useState(fatturaIdPreselect || '');
   const [importo, setImporto] = useState('');
@@ -990,7 +1129,6 @@ function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegist
   );
 }
 
-// =============== MODAL DETTAGLIO FATTURA (clienti, V2) ===============
 function ModalDettaglioFattura({ fattura, getPagamenti, onClose, onRegistraPagamento, onAnnulla }: any) {
   const [pagamenti, setPagamenti] = React.useState<any[]>([]);
   React.useEffect(() => { getPagamenti().then(setPagamenti); }, []);
@@ -1053,7 +1191,6 @@ function ModalDettaglioFattura({ fattura, getPagamenti, onClose, onRegistraPagam
   );
 }
 
-// =============== MODAL NUOVA SPESA (V3 Blocco 3) ===============
 function ModalNuovaSpesa({ aziendaId, onClose, onCrea }: any) {
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
   const [importo, setImporto] = useState('');
@@ -1178,7 +1315,6 @@ function ModalNuovaSpesa({ aziendaId, onClose, onCrea }: any) {
   );
 }
 
-// =============== MODAL PAGAMENTO FORNITORE (V3 Blocco 3) ===============
 function ModalPagamentoFornitore({ fatture, fatturaIdPreselect, onClose, onRegistra }: any) {
   const [fatturaId, setFatturaId] = useState(fatturaIdPreselect || '');
   const [importo, setImporto] = useState('');
@@ -1256,7 +1392,6 @@ function ModalPagamentoFornitore({ fatture, fatturaIdPreselect, onClose, onRegis
   );
 }
 
-// =============== MODAL NUOVA FATTURA RICEVUTA (V3 Blocco 3) ===============
 function ModalNuovaFatturaRicevuta({ onClose, onCrea }: any) {
   const [numero, setNumero] = useState('');
   const [dataRic, setDataRic] = useState(new Date().toISOString().split('T')[0]);
@@ -1336,7 +1471,6 @@ function ModalNuovaFatturaRicevuta({ onClose, onCrea }: any) {
   );
 }
 
-// =============== MODAL DETTAGLIO FATTURA RICEVUTA ===============
 function ModalDettaglioFattRic({ fattura, getPagamenti, onClose, onPaga, onAnnulla }: any) {
   const [pagamenti, setPagamenti] = React.useState<any[]>([]);
   React.useEffect(() => { getPagamenti().then(setPagamenti); }, []);
