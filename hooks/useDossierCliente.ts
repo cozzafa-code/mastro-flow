@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 
 export interface ClienteDossier {
   id: string;
+  azienda_id: string;
   nome: string;
   cognome: string;
   tipo: string;

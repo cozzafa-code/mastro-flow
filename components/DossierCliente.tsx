@@ -4,6 +4,8 @@
 
 import React, { useState, useMemo } from "react";
 import { useDossierCliente, type ClienteEvento, togglePin } from "../hooks/useDossierCliente";
+import ModalNuovaNota from "./ModalNuovaNota";
+import TabComunicazioni from "./centro/TabComunicazioni";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -49,6 +51,8 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
   const { cliente, eventi, commesse, giorni_da_ultimo_contatto, totale_pagato, totale_saldo_aperto, num_commesse_attive, num_problemi_aperti, loading } = useDossierCliente(clienteId);
   const [filtro, setFiltro] = useState<FiltroCategoria>('tutti');
   const [search, setSearch] = useState('');
+  const [showNota, setShowNota] = useState(false);
+  const [view, setView] = useState<'timeline' | 'comunicazioni'>('timeline');
 
   const eventiFiltered = useMemo(() => {
     let arr = eventi;
@@ -160,7 +164,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         <AzioneBtn icon="📞" label="Chiama" col={TEAL} onClick={() => cliente.telefono && window.open(`tel:${cliente.telefono}`)} disabled={!cliente.telefono} />
         <AzioneBtn icon="💬" label="WhatsApp" col={GREEN} onClick={() => cliente.telefono && window.open(`https://wa.me/${cliente.telefono.replace(/[^\d]/g, '')}`)} disabled={!cliente.telefono} />
         <AzioneBtn icon="✉️" label="Email" col={BLUE} onClick={() => cliente.email && window.open(`mailto:${cliente.email}`)} disabled={!cliente.email} />
-        <AzioneBtn icon="📝" label="Nota" col={PURPLE} onClick={() => alert('Aggiungi nota (BLOCCO 2)')} />
+        <AzioneBtn icon="📝" label="Nota" col={PURPLE} onClick={() => setShowNota(true)} />
       </div>
 
       {/* TAG EMOZIONALI */}
@@ -194,7 +198,18 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         </div>
       </div>
 
-      {/* TIMELINE STORICA */}
+      {/* TAB SWITCHER Timeline/Comunicazioni */}
+      <div style={{ background: '#fff', margin: '10px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2 }}>
+        <ViewTabBtn active={view === 'timeline'} onClick={() => setView('timeline')} label="📅 Timeline storica" badge={eventi.length} />
+        <ViewTabBtn active={view === 'comunicazioni'} onClick={() => setView('comunicazioni')} label="💬 Comunicazioni" />
+      </div>
+
+      {/* CONTENT in base a view */}
+      {view === 'comunicazioni' ? (
+        <div style={{ padding: 14 }}>
+          <TabComunicazioni clienteId={cliente.id} clienteTelefono={cliente.telefono} clienteEmail={cliente.email} onApriCommessa={onApriCommessa} />
+        </div>
+      ) : (
       <div style={{ padding: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <div style={{ width: 4, height: 22, background: NAVY, borderRadius: 2 }} />
@@ -247,7 +262,46 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
           </div>
         )}
       </div>
+      )}
+
+      {/* FAB Nuova Nota */}
+      <button onClick={() => setShowNota(true)} style={{
+        position: 'fixed', bottom: 90, right: 18, zIndex: 9850,
+        height: 56, padding: '0 18px', borderRadius: 28,
+        background: `linear-gradient(135deg, ${PURPLE}, #5B21B6)`,
+        color: '#fff', border: 'none', cursor: 'pointer',
+        boxShadow: '0 6px 20px rgba(126,34,206,0.5)',
+        display: 'flex', alignItems: 'center', gap: 8,
+        fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
+      }}>
+        <span style={{ fontSize: 20 }}>📝</span>
+        <span>NOTA</span>
+      </button>
+
+      {showNota && (
+        <ModalNuovaNota
+          aziendaId={cliente.azienda_id || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          clienteId={cliente.id}
+          onClose={() => setShowNota(false)}
+        />
+      )}
     </div>
+  );
+}
+
+function ViewTabBtn({ active, onClick, label, badge }: any) {
+  return (
+    <button onClick={onClick} style={{
+      flex: 1, padding: '10px 0', fontSize: 11, fontWeight: 700,
+      color: active ? '#fff' : MUTED, background: active ? NAVY : 'transparent',
+      border: 'none', borderRadius: 7, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+    }}>
+      {label}
+      {badge !== undefined && badge > 0 && (
+        <span style={{ background: active ? 'rgba(255,255,255,0.25)' : '#F1F4F7', color: active ? '#fff' : TEXT, padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{badge}</span>
+      )}
+    </button>
   );
 }
 
