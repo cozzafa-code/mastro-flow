@@ -3,6 +3,8 @@
 import CardPianificazione from "./home/CardPianificazione";
 import CardAzioniVeloci from "./home/CardAzioniVeloci";
 import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
+import CentroControlloMontaggi from "./CentroControlloMontaggi";
+import CentroControlloProduzione from "./CentroControlloProduzione";
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
 import { useMastro } from './MastroContext'
@@ -105,6 +107,8 @@ const IcoCheck = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="non
 
 export default function HomePanelMobileV2(props: any) {
   const [organizzaCm, setOrganizzaCm] = React.useState<any>(null);
+  const [showCentroMontaggi, setShowCentroMontaggi] = React.useState(false);
+  const [showCentroProduzione, setShowCentroProduzione] = React.useState(false);
   const { data } = useHomeMobile()
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const [editMode, setEditMode] = useState(false)
