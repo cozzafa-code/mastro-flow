@@ -1534,8 +1534,8 @@ export default function CMDetailPanel() {
               titolo = "In attesa consegna";
               desc = "Ordine inviato al fornitore. Aspetta consegna materiali per avviare produzione.";
               tags = [{ lbl: "In transito", bg: "#FEF3C7", fg: "#92400E" }];
-              primaryLbl = "Vedi ordine";
-              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+              primaryLbl = "VEDI ORDINI FORNITORI";
+              primaryAction = () => { console.log("[v-fase-ordine] apertura sheet ordini"); window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } })); };
             } else if (_faseDb === "produzione") {
               eyebrow = "Fase corrente · Produzione";
               titolo = "Lavorazione in corso";
