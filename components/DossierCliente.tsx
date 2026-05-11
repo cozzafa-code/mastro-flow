@@ -7,6 +7,9 @@ import { useDossierCliente, type ClienteEvento, togglePin } from "../hooks/useDo
 import ModalNuovaNota from "./ModalNuovaNota";
 import TabComunicazioni from "./centro/TabComunicazioni";
 import TabImmobili from "./centro/TabImmobili";
+import TabCommesse from "./centro/TabCommesse";
+import TabPagamenti from "./centro/TabPagamenti";
+import TabRete from "./centro/TabRete";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -53,7 +56,7 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
   const [filtro, setFiltro] = useState<FiltroCategoria>('tutti');
   const [search, setSearch] = useState('');
   const [showNota, setShowNota] = useState(false);
-  const [view, setView] = useState<'timeline' | 'comunicazioni' | 'immobili'>('timeline');
+  const [view, setView] = useState<'timeline' | 'comunicazioni' | 'immobili' | 'commesse' | 'pagamenti' | 'rete'>('timeline');
 
   const eventiFiltered = useMemo(() => {
     let arr = eventi;
@@ -199,11 +202,14 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         </div>
       </div>
 
-      {/* TAB SWITCHER Timeline/Comunicazioni/Immobili */}
+      {/* TAB SWITCHER 6 viste */}
       <div style={{ background: '#fff', margin: '10px 14px 0', padding: 4, borderRadius: 10, display: 'flex', gap: 2, overflowX: 'auto' as const }}>
         <ViewTabBtn active={view === 'timeline'} onClick={() => setView('timeline')} label="📅 Timeline" badge={eventi.length} />
         <ViewTabBtn active={view === 'comunicazioni'} onClick={() => setView('comunicazioni')} label="💬 Messaggi" />
+        <ViewTabBtn active={view === 'commesse'} onClick={() => setView('commesse')} label="🏗️ Commesse" badge={commesse.length} />
+        <ViewTabBtn active={view === 'pagamenti'} onClick={() => setView('pagamenti')} label="💰 Pagamenti" />
         <ViewTabBtn active={view === 'immobili'} onClick={() => setView('immobili')} label="🏠 Immobili" />
+        <ViewTabBtn active={view === 'rete'} onClick={() => setView('rete')} label="🤝 Rete" />
       </div>
 
       {/* CONTENT in base a view */}
@@ -211,9 +217,21 @@ export default function DossierCliente({ clienteId, onClose, onApriCommessa }: P
         <div style={{ padding: 14 }}>
           <TabComunicazioni clienteId={cliente.id} clienteTelefono={cliente.telefono} clienteEmail={cliente.email} onApriCommessa={onApriCommessa} />
         </div>
+      ) : view === 'commesse' ? (
+        <div style={{ padding: 14 }}>
+          <TabCommesse clienteId={cliente.id} onApriCommessa={onApriCommessa} />
+        </div>
+      ) : view === 'pagamenti' ? (
+        <div style={{ padding: 14 }}>
+          <TabPagamenti clienteId={cliente.id} onApriCommessa={onApriCommessa} />
+        </div>
       ) : view === 'immobili' ? (
         <div style={{ padding: 14 }}>
           <TabImmobili clienteId={cliente.id} onApriCommessa={onApriCommessa} />
+        </div>
+      ) : view === 'rete' ? (
+        <div style={{ padding: 14 }}>
+          <TabRete clienteId={cliente.id} />
         </div>
       ) : (
       <div style={{ padding: 14 }}>
