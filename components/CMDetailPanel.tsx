@@ -17,6 +17,7 @@ import { supabase } from "@/lib/supabase";
 import { buildVanoRighe } from "../lib/vano-helpers";
 import { uploadPreventivoPdf } from "../lib/upload-preventivo-pdf";
 import ModalFirma from "./ModalFirma";
+import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import { useMastro } from "./MastroContext";
 import SchedaFinanziariaCommessa from "./finanze/SchedaFinanziariaCommessa";
 import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey, markPreventivoInviato, setFaseCommessa } from "./mastro-constants";
@@ -497,6 +498,7 @@ export default function CMDetailPanel() {
     // [v51] Drawer Timeline sempre accessibile dal Centro Comando
     const [showTimelineDrawer, setShowTimelineDrawer] = useState(false);
     // [v51] Storico preventivi (overlay con tutte le versioni)
+    const [showOrganizzaLavori, setShowOrganizzaLavori] = useState(false);
     const [showStoricoPreventivi, setShowStoricoPreventivi] = useState<{ commessaId: string; numero: number } | null>(null);
     const [nuovoRilievoComplesso, setNuovoRilievoComplesso] = useState(false);
     const [showAggiungiVanoModal, setShowAggiungiVanoModal] = useState(false);
