@@ -527,7 +527,7 @@ export default function CMDetailPanel() {
 
       const dataInvio = cV70.preventivoInviatoAt ? new Date(cV70.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
 
-      const totaleV23 = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(cV70) : (cV70.totalePreventivo || 0)) || 0;
+      const _calcV23 = typeof calcolaTotaleCommessa === "function" ? Number(calcolaTotaleCommessa(cV70) || 0) : 0; const _dbV23 = Number(cV70.totalePreventivo ?? cV70.totale_preventivo ?? cV70.totaleFinale ?? cV70.totale_finale ?? 0); const totaleV23 = _dbV23 > 0 ? _dbV23 : _calcV23;
       const fmtEurV23 = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
       const telPulitoV23 = (cV70.telefono || "").replace(/[^0-9+]/g, "");
@@ -1842,7 +1842,7 @@ export default function CMDetailPanel() {
             const rilievoCorr29 = selectedRilievo || (tuttiRilievi29.length > 0 ? tuttiRilievi29[tuttiRilievi29.length - 1] : null);
             const numCorr29 = rilievoCorr29?.numero || tuttiRilievi29.length || 1;
             const dataInvio29 = c29.preventivoInviatoAt ? new Date(c29.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
-            const totale29 = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c29) : (c29.totalePreventivo || 0)) || 0;
+            const _calc29 = typeof calcolaTotaleCommessa === "function" ? Number(calcolaTotaleCommessa(c29) || 0) : 0; const _db29 = Number(c29.totalePreventivo ?? c29.totale_preventivo ?? c29.totaleFinale ?? c29.totale_finale ?? 0); const totale29 = _db29 > 0 ? _db29 : _calc29;
             const fmtEur29 = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             const telPul29 = (c29.telefono || "").replace(/[^0-9+]/g, "");
             const numWA29 = telPul29.startsWith("+") ? telPul29.slice(1) : (telPul29.startsWith("39") ? telPul29 : "39" + telPul29);
