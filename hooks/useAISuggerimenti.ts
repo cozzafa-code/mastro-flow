@@ -134,7 +134,7 @@ export function useAISuggerimenti(aziendaId: string | null) {
               priorita: 'media',
               titolo: `${c.code} ferma da ${Math.floor(diasFermo)} giorni`,
               descrizione: `In fase ${c.fase} da troppo tempo — cliente ${clienteFull}`,
-              azione: 'Apri e verifica cosa sta bloccando l\\'avanzamento',
+              azione: 'Apri e verifica cosa blocca avanzamento',
               commessa_id: c.id,
               commessa_code: c.code,
               icona: '⏰',
