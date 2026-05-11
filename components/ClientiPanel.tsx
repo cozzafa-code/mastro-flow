@@ -61,6 +61,7 @@ export default function ClientiPanel() {
   const [clienteNotes, setClienteNotes] = React.useState<Record<string, string>>({});
   const [editMode, setEditMode] = React.useState(false);
   const [editForm, setEditForm] = React.useState<any>(null);
+  const [savedCliente, setSavedCliente] = React.useState<any>(null);
   const [newDiarioText, setNewDiarioText] = React.useState("");
   const [newDiarioTag, setNewDiarioTag] = React.useState("nota");
 
