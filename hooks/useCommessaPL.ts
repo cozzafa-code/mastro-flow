@@ -150,4 +150,4 @@ export function statoPLMeta(stato: CommessaPLRow['stato_pl']): { label: string; 
     case 'solo_costi':      return { label: 'Solo costi',      emoji: '⏳', tone: 'navy' };
     default:                return { label: 'Nessun dato',     emoji: '•',  tone: 'navy' };
   }
-}mpl
+}
