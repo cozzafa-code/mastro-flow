@@ -14,6 +14,7 @@ import { useConflitti } from "../hooks/useConflitti";
 import BannerPrevisioneCollassi from "./centro/BannerPrevisioneCollassi";
 import ModalAutoScheduling from "./centro/ModalAutoScheduling";
 import AIAssistantDrawer from "./centro/AIAssistantDrawer";
+import MappaCantieri from "./centro/MappaCantieri";
 
 function useIsWideScreen(minWidth = 1024) {
   const [wide, setWide] = useState(false);
@@ -288,21 +289,7 @@ function ViewDaPianificare({ aziendaId, onApri, conflitti, onAutoSchedule }: any
         </div>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 10, position: 'relative' as const }}>
-        <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>MAPPA CANTIERI</div>
-        <div style={{ background: 'linear-gradient(135deg, #F0F7F4 0%, #E1F5EE 100%)', borderRadius: 8, height: 140, position: 'relative' as const, overflow: 'hidden' as const }}>
-          {commesse.slice(0, 6).map((c, i) => {
-            const x = 15 + (i * 13) % 75;
-            const y = 20 + (i * 17) % 60;
-            return (
-              <div key={c.id} onClick={() => onApri?.(c.id)} style={{ position: 'absolute' as const, left: `${x}%`, top: `${y}%`, width: 18, height: 18, borderRadius: '50%', background: getMatColor(c.materiali_status), border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700 }}>
-                {i+1}
-              </div>
-            );
-          })}
-          <div style={{ position: 'absolute' as const, bottom: 8, right: 8, background: 'rgba(255,255,255,0.9)', padding: '4px 8px', borderRadius: 5, fontSize: 9, fontWeight: 600, color: TEXT }}>{commesse.length} cantieri</div>
-        </div>
-      </div>
+      <MappaCantieri aziendaId={aziendaId} onApriCommessa={onApri} />
 
       <SearchBarMontaggi value={search} onChange={setSearch} />
 
