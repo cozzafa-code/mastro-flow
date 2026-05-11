@@ -98,12 +98,11 @@ body::before {
   pointer-events: none;
 }
 /* === MASTRO HD OVERSCROLL FIX END ===*/
-/* === TABLET 768-1023px: bottoni 72px + div cliccabili === */
+/* === TABLET 768-1023px: bottoni grandi + colori fliwoX === */
 @media (min-width: 768px) and (max-width: 1023px) {
-  /* Sfondo body fliwoX */
   body { background: #E8F4F4 !important; }
 
-  /* BUTTON nativi: 72px */
+  /* BUTTON nativi 72px */
   button {
     min-height: 72px !important;
     padding: 18px 24px !important;
@@ -111,46 +110,45 @@ body::before {
     font-weight: 700 !important;
   }
 
-  /* DIV cliccabili con cursor pointer (tab/toolbar/accordion) */
-  div[style*="cursor: pointer"], div[style*="cursor:pointer"],
-  div[role="button"], div[role="tab"] {
+  /* DIV cliccabili (accordion, tab, toolbar) - selettori multipli */
+  div[style*="cursor: pointer"],
+  div[style*="cursor:pointer"],
+  div[role="button"],
+  div[role="tab"],
+  [data-accordion],
+  details > summary {
     min-height: 64px !important;
     padding: 16px 20px !important;
     font-size: 16px !important;
   }
 
-  /* Input/select grandi */
+  /* INPUT/SELECT 60px */
   input, select, textarea {
     min-height: 60px !important;
     font-size: 17px !important;
     padding: 14px 18px !important;
   }
-}
-/* === TABLET 768-1023px: bottoni 72px + div cliccabili === */
-@media (min-width: 768px) and (max-width: 1023px) {
-  /* Sfondo body fliwoX */
-  body { background: #E8F4F4 !important; }
 
-  /* BUTTON nativi: 72px */
-  button {
-    min-height: 72px !important;
-    padding: 18px 24px !important;
+  /* Header sezione (Lamiera, Controtelaio, etc) - identifico per borderRadius + padding inline */
+  div[style*="borderRadius: 12px"][style*="cursor"],
+  div[style*="border-radius: 12px"][style*="cursor"],
+  div[style*="borderRadius: 14px"][style*="cursor"],
+  div[style*="border-radius: 14px"][style*="cursor"] {
+    min-height: 68px !important;
+    padding: 18px 22px !important;
     font-size: 17px !important;
-    font-weight: 700 !important;
   }
 
-  /* DIV cliccabili con cursor pointer (tab/toolbar/accordion) */
-  div[style*="cursor: pointer"], div[style*="cursor:pointer"],
-  div[role="button"], div[role="tab"] {
-    min-height: 64px !important;
-    padding: 16px 20px !important;
-    font-size: 16px !important;
+  /* COLORI fliwoX - sostituisco rosso troppo acceso con rosso fliwoX più scuro */
+  button[style*="rgb(220, 68, 68)"],
+  button[style*="#DC4444"] {
+    background: #B91C1C !important;
+    box-shadow: 0 4px 0 0 #7F1D1D !important;
   }
 
-  /* Input/select grandi */
-  input, select, textarea {
-    min-height: 60px !important;
-    font-size: 17px !important;
-    padding: 14px 18px !important;
+  /* Tab attivi: bordo bottom più spesso */
+  div[style*="borderBottom: 2px"],
+  div[style*="border-bottom: 2px"] {
+    border-bottom-width: 4px !important;
   }
 }
