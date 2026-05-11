@@ -32,13 +32,15 @@ export default function CardPianificazione({ aziendaId, onClick }: Props) {
   const [commesse, setCommesse] = useState<CmRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const resolvedAziendaId = aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || '') : '');
+
   useEffect(() => {
-    if (!aziendaId) return;
+    if (!resolvedAziendaId) { setLoading(false); return; }
     async function load() {
       const { data } = await supabase
         .from("commesse")
         .select("id, code, cliente, cognome, fase, materiali_status, materiali_perc")
-        .eq("azienda_id", aziendaId)
+        .eq("azienda_id", resolvedAziendaId)
         .in("fase", ["ordine", "acconto_pagato", "produzione", "montaggio"])
         .order("created_at", { ascending: false })
         .limit(8);
@@ -47,11 +49,11 @@ export default function CardPianificazione({ aziendaId, onClick }: Props) {
     }
     load();
 
-    const ch = supabase.channel(`card-pianif-${aziendaId}`)
+    const ch = supabase.channel(`card-pianif-${resolvedAziendaId}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "commesse" }, load)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [aziendaId]);
+  }, [resolvedAziendaId]);
 
   const counts = {
     pronte: commesse.filter(c => c.materiali_status === 'completo').length,
