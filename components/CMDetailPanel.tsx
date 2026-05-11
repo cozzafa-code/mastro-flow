@@ -8,6 +8,7 @@ import RilieviVaniPanel from "./RilieviVaniPanel";
 // Estratto S6: ~938 righe (Dettaglio commessa)
 // 
 import React, { useState } from "react";
+import { useRealtimeCommessa } from "../hooks/useRealtimeCommessa";
 import PassaggiSaltati from "./PassaggiSaltati";
 import VanoCardPreventivo from "./VanoCardPreventivo";
 import BulkEditBar from "./BulkEditBar";
@@ -254,6 +255,13 @@ export default function CMDetailPanel() {
     apriInboxDocumento,
     aziendaInfo,
   } = useMastro();
+
+    // [v-realtime] aggiornamento istantaneo su firma/fattura/fase
+    useRealtimeCommessa(selectedCM?.id, (cm: any) => {
+      console.log("[CMDetailPanel] realtime update ricevuto", cm?.fase);
+      setSelectedCM((prev: any) => prev && prev.id === cm.id ? { ...prev, ...cm } : prev);
+      setCantieri((cs: any[]) => cs.map((x: any) => x.id === cm.id ? { ...x, ...cm } : x));
+    });
 
   // AUTO_PICK: se ci sono rilievi, seleziona l'ultimo. NON crea pi+ bozze automatiche.
   const [showRilieviPanel, setShowRilieviPanel] = React.useState<any>(null);
