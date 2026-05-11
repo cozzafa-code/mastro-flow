@@ -331,6 +331,28 @@ export default function HomePanelMobileV2(props: any) {
       <div style={{ padding: '0 12px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {order.map(id => renderCard(id))}
       </div>
+
+      {organizzaCm && (
+        <OrganizzaLavoriPanel
+          commessa={organizzaCm}
+          aziendaId={(organizzaCm as any).azienda_id || (organizzaCm as any).aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          onClose={() => setOrganizzaCm(null)}
+        />
+      )}
+      {showCentroMontaggi && (
+        <CentroControlloMontaggi
+          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          onClose={() => setShowCentroMontaggi(false)}
+          onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroMontaggi(false); setOrganizzaCm(cm); } }}
+        />
+      )}
+      {showCentroProduzione && (
+        <CentroControlloProduzione
+          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          onClose={() => setShowCentroProduzione(false)}
+          onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroProduzione(false); setOrganizzaCm(cm); } }}
+        />
+      )}
     </div>
   )
 }
@@ -932,7 +954,7 @@ function CardClienti({ contatti, cantieri, onClick }: any) {
       <div onClick={onClick} style={{ marginTop: 8, padding: '8px 10px', background: '#F2FAFA', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
         <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>STORIA · DIARIO · COMMESSE</span>
         <span style={{ fontSize: 10, color: '#1E3A5F', fontWeight: 700 }}>APRI →</span>
-      </div>
+</div>
     </>
   )
 }
