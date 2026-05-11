@@ -36,6 +36,7 @@ function resolveAziendaId(propId: string | null): string {
 
 export default function CentroControlloProduzione({ aziendaId, onClose, onApriCommessa }: any) {
   const [view, setView] = useState<ViewMode>('overview');
+  const [filter, setFilter] = useState<'tutte'|'urgenti'|'ritardo'|'pronte'|'bloccate'>('tutte');
   const [commesse, setCommesse] = useState<Commessa[]>([]);
   const [loading, setLoading] = useState(true);
   const resolved = resolveAziendaId(aziendaId);
@@ -72,6 +73,14 @@ export default function CentroControlloProduzione({ aziendaId, onClose, onApriCo
     return () => { supabase.removeChannel(ch); };
   }, [resolved]);
 
+  const filtered = useMemo(() => {
+    if (filter === 'urgenti') return commesse.filter(c => (c.urgenza || '').toLowerCase() === 'alta');
+    if (filter === 'ritardo') return commesse.filter(c => c.materiali_status === 'in_attesa' && c.fase === 'produzione');
+    if (filter === 'pronte') return commesse.filter(c => c.materiali_status === 'completo');
+    if (filter === 'bloccate') return commesse.filter(c => c.materiali_status === 'in_attesa');
+    return commesse;
+  }, [commesse, filter]);
+
   const stats = useMemo(() => {
     const inProd = commesse.filter(c => c.fase === 'produzione').length;
     const ritardo = commesse.filter(c => c.materiali_status === 'in_attesa' && c.fase === 'produzione').length;
@@ -105,10 +114,18 @@ export default function CentroControlloProduzione({ aziendaId, onClose, onApriCo
         <button onClick={() => setView('kanban')} style={{ flex: 1, padding: '9px 0', fontSize: 12, fontWeight: 500, color: view === 'kanban' ? '#fff' : MUTED, background: view === 'kanban' ? NAVY : 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer' }}>Kanban</button>
       </div>
 
+      <FilterBar filter={filter} setFilter={setFilter} counts={{
+        tutte: commesse.length,
+        urgenti: commesse.filter(c => (c.urgenza || '').toLowerCase() === 'alta').length,
+        ritardo: commesse.filter(c => c.materiali_status === 'in_attesa' && c.fase === 'produzione').length,
+        pronte: commesse.filter(c => c.materiali_status === 'completo').length,
+        bloccate: commesse.filter(c => c.materiali_status === 'in_attesa').length,
+      }} />
+
       <div style={{ padding: 14 }}>
         {loading ? <Empty label="Caricamento..." /> :
-         view === 'overview' ? <Overview commesse={commesse} onApri={onApriCommessa} /> :
-         <Kanban commesse={commesse} onApri={onApriCommessa} />}
+         view === 'overview' ? <Overview commesse={filtered} onApri={onApriCommessa} /> :
+         <Kanban commesse={filtered} onApri={onApriCommessa} />}
       </div>
     </div>
   );
@@ -264,6 +281,38 @@ function Check({ ok, label, partial, running }: any) {
 
 function Pill({ label, bg, fg }: any) {
   return <span style={{ background: bg, color: fg, fontSize: 9, padding: '3px 7px', borderRadius: 4, fontWeight: 600, whiteSpace: 'nowrap' as const }}>{label}</span>;
+}
+
+
+function FilterBar({ filter, setFilter, counts }: any) {
+  const filters: { k: 'tutte'|'urgenti'|'ritardo'|'pronte'|'bloccate'; l: string; bg: string; activeBg: string; activeFg: string }[] = [
+    { k: 'tutte',    l: 'TUTTE',     bg: '#F1F4F7', activeBg: NAVY,  activeFg: '#fff' },
+    { k: 'urgenti',  l: 'URGENTI',   bg: '#FFE4E4', activeBg: RED,   activeFg: '#fff' },
+    { k: 'ritardo',  l: 'RITARDO',   bg: '#FEE2E2', activeBg: '#991B1B', activeFg: '#fff' },
+    { k: 'pronte',   l: 'PRONTE',    bg: '#D1FAE5', activeBg: TEAL,  activeFg: '#fff' },
+    { k: 'bloccate', l: 'BLOCCATE',  bg: '#FEF3C7', activeBg: AMBER, activeFg: '#fff' },
+  ];
+  return (
+    <div style={{ background: '#fff', margin: '8px 14px 0', padding: 8, borderRadius: 10, display: 'flex', gap: 6, overflowX: 'auto' as const }}>
+      {filters.map(f => {
+        const isActive = filter === f.k;
+        const n = counts[f.k] || 0;
+        return (
+          <button key={f.k} onClick={() => setFilter(f.k)} style={{
+            background: isActive ? f.activeBg : f.bg,
+            color: isActive ? f.activeFg : TEXT,
+            border: 'none', borderRadius: 8, padding: '8px 12px',
+            fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
+            whiteSpace: 'nowrap' as const, flexShrink: 0,
+          }}>
+            {f.l}
+            <span style={{ background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)', color: isActive ? '#fff' : TEXT, padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{n}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function Empty({ label }: any) { return <div style={{ padding: 40, textAlign: 'center' as const, color: MUTED, fontSize: 12 }}>{label}</div>; }
