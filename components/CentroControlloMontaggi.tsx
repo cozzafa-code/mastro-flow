@@ -9,6 +9,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCentroMontaggi, type MontaggioRow } from "../hooks/useCentroMontaggi";
+import CommessaCardOperativa from "./centro/CommessaCardOperativa";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -117,17 +118,34 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
 function ViewDaPianificare({ aziendaId, onApri }: any) {
   const [commesse, setCommesse] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'tutte'|'pronte'|'parziali'|'attesa'|'urgenti'>('tutte');
 
   useEffect(() => {
     if (!aziendaId) { setLoading(false); return; }
     (async () => {
-      const { data } = await supabase
+      // Query completa: tutti i dati operativi
+      const { data: cm } = await supabase
         .from('commesse')
-        .select('id, code, cliente, cognome, indirizzo, materiali_status, materiali_perc, fase, totale_finale, total_vani')
+        .select('id, code, cliente, cognome, indirizzo, fase, tipo_infisso, piano_edificio, difficolta_salita, mezzo_salita, urgenza, materiali_status, materiali_perc, produzione_iniziata_at, produzione_completata_at, fattura_acconto_pagata_at, totale_finale')
         .eq('azienda_id', aziendaId)
         .in('fase', ['ordine','acconto_pagato','produzione','montaggio'])
         .order('materiali_perc', { ascending: false });
-      setCommesse(data || []);
+
+      const ids = (cm || []).map((c: any) => c.id);
+      if (ids.length === 0) { setCommesse([]); setLoading(false); return; }
+
+      // Vani
+      const { data: vaniData } = await supabase.from('vani').select('commessa_id').in('commessa_id', ids);
+      const vaniMap: Record<string, number> = {};
+      (vaniData || []).forEach((v: any) => { vaniMap[v.commessa_id] = (vaniMap[v.commessa_id] || 0) + 1; });
+
+      // Ore previste
+      const { data: montData } = await supabase.from('montaggi').select('commessa_id, ore_preventivate').in('commessa_id', ids);
+      const oreMap: Record<string, number> = {};
+      (montData || []).forEach((m: any) => { oreMap[m.commessa_id] = (oreMap[m.commessa_id] || 0) + (Number(m.ore_preventivate) || 0); });
+
+      const enriched = (cm || []).map((c: any) => ({ ...c, n_vani: vaniMap[c.id] || 0, ore_previste: oreMap[c.id] || 0 }));
+      setCommesse(enriched);
       setLoading(false);
     })();
   }, [aziendaId]);
@@ -138,6 +156,16 @@ function ViewDaPianificare({ aziendaId, onApri }: any) {
   const pronte = commesse.filter(c => c.materiali_status === 'completo').length;
   const parziali = commesse.filter(c => c.materiali_status === 'parziale').length;
   const attesa = commesse.filter(c => c.materiali_status === 'in_attesa').length;
+  const urgenti = commesse.filter(c => (c.urgenza || '').toLowerCase() === 'alta').length;
+
+  const filtered = commesse.filter(c => {
+    if (filter === 'tutte') return true;
+    if (filter === 'pronte') return c.materiali_status === 'completo';
+    if (filter === 'parziali') return c.materiali_status === 'parziale';
+    if (filter === 'attesa') return c.materiali_status === 'in_attesa';
+    if (filter === 'urgenti') return (c.urgenza || '').toLowerCase() === 'alta';
+    return true;
+  });
 
   return (
     <>
@@ -152,7 +180,7 @@ function ViewDaPianificare({ aziendaId, onApri }: any) {
 
       <div style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 10, position: 'relative' as const }}>
         <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>MAPPA CANTIERI</div>
-        <div style={{ background: 'linear-gradient(135deg, #F0F7F4 0%, #E1F5EE 100%)', borderRadius: 8, height: 140, position: 'relative' as const, overflow: 'hidden' as const, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: 'linear-gradient(135deg, #F0F7F4 0%, #E1F5EE 100%)', borderRadius: 8, height: 140, position: 'relative' as const, overflow: 'hidden' as const }}>
           {commesse.slice(0, 6).map((c, i) => {
             const x = 15 + (i * 13) % 75;
             const y = 20 + (i * 17) % 60;
@@ -166,22 +194,35 @@ function ViewDaPianificare({ aziendaId, onApri }: any) {
         </div>
       </div>
 
-      <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>COMMESSE ({commesse.length})</div>
-      {commesse.map(c => (
-        <div key={c.id} onClick={() => onApri?.(c.id)} style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, borderLeft: `4px solid ${getMatColor(c.materiali_status)}`, cursor: 'pointer' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 6 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{c.code} · {c.cliente} {c.cognome || ''}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c.indirizzo || 'no indirizzo'} · {c.total_vani || 0} vani</div>
-            </div>
-            <span style={{ background: getMatColor(c.materiali_status) + '22', color: getMatColor(c.materiali_status), fontSize: 9, padding: '3px 7px', borderRadius: 5, fontWeight: 600 }}>{c.materiali_perc}% MAT</span>
-          </div>
-          <div style={{ height: 5, background: '#F1F4F7', borderRadius: 3, overflow: 'hidden' as const }}>
-            <div style={{ width: `${c.materiali_perc}%`, height: '100%', background: getMatColor(c.materiali_status) }} />
-          </div>
-        </div>
+      <div style={{ background: '#fff', padding: 8, borderRadius: 10, display: 'flex', gap: 6, overflowX: 'auto' as const, marginBottom: 10 }}>
+        <FilterChip active={filter==='tutte'} onClick={() => setFilter('tutte')} label="TUTTE" n={commesse.length} activeBg={NAVY} />
+        <FilterChip active={filter==='urgenti'} onClick={() => setFilter('urgenti')} label="URGENTI" n={urgenti} activeBg={RED} bg="#FFE4E4" />
+        <FilterChip active={filter==='pronte'} onClick={() => setFilter('pronte')} label="PRONTE" n={pronte} activeBg={TEAL} bg="#E1F5EE" />
+        <FilterChip active={filter==='parziali'} onClick={() => setFilter('parziali')} label="PARZIALI" n={parziali} activeBg={AMBER} bg="#FEF3C7" />
+        <FilterChip active={filter==='attesa'} onClick={() => setFilter('attesa')} label="ATTESA" n={attesa} activeBg="#991B1B" bg="#FEE2E2" />
+      </div>
+
+      <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>COMMESSE ({filtered.length})</div>
+      {filtered.map(c => (
+        <CommessaCardOperativa key={c.id} cm={c} onClick={() => onApri?.(c.id)} showIndirizzo />
       ))}
     </>
+  );
+}
+
+function FilterChip({ active, onClick, label, n, activeBg, bg }: any) {
+  return (
+    <button onClick={onClick} style={{
+      background: active ? activeBg : (bg || '#F1F4F7'),
+      color: active ? '#fff' : TEXT,
+      border: 'none', borderRadius: 8, padding: '8px 12px',
+      fontSize: 11, fontWeight: 700, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', gap: 6,
+      whiteSpace: 'nowrap' as const, flexShrink: 0,
+    }}>
+      {label}
+      <span style={{ background: active ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)', color: active ? '#fff' : TEXT, padding: '2px 6px', borderRadius: 4, fontSize: 10 }}>{n}</span>
+    </button>
   );
 }
 
