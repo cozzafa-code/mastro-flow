@@ -1,4 +1,4 @@
-// HomePanelMobileV2 V16 - DB campi corretti + tap funzionante
+// HomePanelMobileV2 V17 - aggancio Centro Finanze
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
 import CardAzioniVeloci from "./home/CardAzioniVeloci";
@@ -10,6 +10,7 @@ import CentroPreparazioneFurgoni from "./CentroPreparazioneFurgoni";
 import CentroFatturazione from "./CentroFatturazione";
 import CentroClienti from "./CentroClienti";
 import CentroControlloProduzione from "./CentroControlloProduzione";
+import CentroFinanze from "./CentroFinanze";
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
 import { useMastro } from './MastroContext'
@@ -70,9 +71,7 @@ const dotColor = (e: any) => {
   return GREEN
 }
 
-// Helper per parsare data eventi (events ha date+time, eventi ha data+ora)
 const parseEventDate = (e: any): Date => {
-  // Tabella `events`: date + time stringhe
   if (e?.date) {
     const d = new Date(e.date)
     if (e?.time) {
@@ -81,7 +80,6 @@ const parseEventDate = (e: any): Date => {
     }
     return d
   }
-  // Tabella `eventi`: data + ora
   if (e?.data) {
     const d = new Date(e.data)
     if (e?.ora) {
@@ -90,15 +88,13 @@ const parseEventDate = (e: any): Date => {
     }
     return d
   }
-  // fallback
   return new Date(e?.start || 0)
 }
 
 const eventTitle = (e: any) => e?.text || e?.titolo || e?.title || ''
 const eventLuogo = (e: any) => e?.addr || e?.indirizzo || e?.luogo || ''
 
-
-// === Icone SVG inline coerenti fliwoX (no emoji) ===
+// === Icone SVG inline (no emoji) ===
 const IcoCal = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
 const IcoClock = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>
 const IcoPin = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg>
@@ -119,6 +115,7 @@ export default function HomePanelMobileV2(props: any) {
   const [showCentroFurgoni, setShowCentroFurgoni] = React.useState(false);
   const [showCentroFatturazione, setShowCentroFatturazione] = React.useState(false);
   const [showCentroClienti, setShowCentroClienti] = React.useState(false);
+  const [showCentroFinanze, setShowCentroFinanze] = React.useState(false);
   const { data } = useHomeMobile()
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const [editMode, setEditMode] = useState(false)
@@ -144,11 +141,9 @@ export default function HomePanelMobileV2(props: any) {
   const goto = (tab: string) => { if (ctx?.setTab) ctx.setTab(tab); else if (props?.onNavigate) props.onNavigate(tab) }
   const apriCM = (id: string) => { if (id && ctx?.setSelectedCM) ctx.setSelectedCM(id); goto('commesse') }
 
-  // Toggle done task con UI ottimistica
   const [doneOptim, setDoneOptim] = useState<Record<string, boolean>>({})
   const toggleTask = async (taskId: string, currentDone: boolean) => {
     if (!taskId) return
-    // 1. UI ottimistica: aggiorna subito stato locale
     setDoneOptim(prev => ({ ...prev, [taskId]: !currentDone }))
     try {
       const { error } = await supabase
@@ -157,11 +152,9 @@ export default function HomePanelMobileV2(props: any) {
         .eq('id', taskId)
       if (error) {
         console.error('toggleTask supabase error', error)
-        // rollback
         setDoneOptim(prev => ({ ...prev, [taskId]: currentDone }))
         return
       }
-      // 2. Trigger refresh contesto se disponibile
       if (typeof ctx?.refresh === 'function') ctx.refresh()
       else if (typeof ctx?.reload === 'function') ctx.reload()
       else if (typeof ctx?.refreshTasks === 'function') ctx.refreshTasks()
@@ -171,7 +164,6 @@ export default function HomePanelMobileV2(props: any) {
     }
   }
 
-  // DRAG drop riordina - ottimizzato
   const dragState = useRef<any>(null)
   const startDrag = (e: React.PointerEvent, id: string) => {
     e.preventDefault(); e.stopPropagation()
@@ -219,15 +211,11 @@ export default function HomePanelMobileV2(props: any) {
     window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp)
   }
 
-  // === FILTRI con CAMPI DB CORRETTI ===
   const cantieri = (ctx?.cantieri || []).filter((c: any) => !c?.deleted_at && !c?.archived_at)
   const fattureDB = ctx?.fattureDB || []
   const team = ctx?.team || []
-  // Eventi: usa entrambe le tabelle events + eventi
   const eventi = ctx?.events || ctx?.eventi || data?.agenda?.eventi || []
-  // TASK: campo è `done` non `completata`, titolo è `testo`
   const tasks = (ctx?.tasks || []).filter((t: any) => !t?.done)
-  // MONTAGGI: data_montaggio
   const montaggi = ctx?.montaggi || []
   const ferme = cantieri.filter((c: any) => {
     const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
@@ -243,6 +231,8 @@ export default function HomePanelMobileV2(props: any) {
     const dm = m?.data_montaggio || m?.data
     return dm && new Date(dm).getTime() > Date.now()
   }).sort((a: any, b: any) => new Date(a.data_montaggio || a.data).getTime() - new Date(b.data_montaggio || b.data).getTime())
+
+  const aziendaIdResolved = ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')
 
   const renderCard = (id: string) => (
     <div key={id} data-card-id={id} style={{
@@ -274,15 +264,15 @@ export default function HomePanelMobileV2(props: any) {
         {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} toggleTask={toggleTask} doneOptim={doneOptim} onClick={() => goto('team')} />}
         {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} />}
         {id === 'commesse' && <CardCommesse cantieri={cantieri} apri={apriCM} />}
-        {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => goto('contabilita')} />}
+        {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => setShowCentroFinanze(true)} />}
         {id === 'squadra' && <CardSquadra team={team} cantieri={cantieri} onClick={() => goto('team')} />}
         {id === 'produzione' && <CardProduzione cantieri={cantieri} apri={apriCM} />}
         {id === 'gestione-materiali' && <CardGestioneMateriali ordini={ctx?.ordiniFornDB || []} magazzino={ctx?.magazzinoArticoli || []} onClick={() => goto('materiali')} />}
         {id === 'clienti' && <CardClienti contatti={ctx?.contatti || ctx?.clienti || []} cantieri={cantieri} onClick={() => goto('clienti')} />}
         {id === 'pianificazione' && <CardPianificazione aziendaId={ctx?.aziendaId || ''} onClick={(cmId) => { const cm = (cantieri||[]).find((c:any)=>c.id===cmId); if(cm) setOrganizzaCm(cm); }} />}
-          {id === 'statistiche' && <CardStatistiche cantieri={cantieri} onClick={() => goto('contabilita')} />}
+          {id === 'statistiche' && <CardStatistiche cantieri={cantieri} onClick={() => setShowCentroFinanze(true)} />}
           {id === 'azioni-veloci' && <CardAzioniVeloci
-            aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+            aziendaId={aziendaIdResolved}
             onProduzione={() => setShowCentroProduzione(true)}
             onMontaggi={() => setShowCentroMontaggi(true)}
             onOrdini={() => setShowCentroOrdini(true)}
@@ -290,9 +280,10 @@ export default function HomePanelMobileV2(props: any) {
             onFurgoni={() => setShowCentroFurgoni(true)}
             onFatturazione={() => setShowCentroFatturazione(true)}
             onClienti={() => setShowCentroClienti(true)}
+            onContabilita={() => setShowCentroFinanze(true)}
             onAgenda={() => goto('agenda')}
             onTeam={() => goto('team')}
-            onStatistiche={() => goto('contabilita')}
+            onStatistiche={() => setShowCentroFinanze(true)}
           />}
       </div>
     </div>
@@ -335,7 +326,7 @@ export default function HomePanelMobileV2(props: any) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 12px 8px' }}>
         <Stat onClick={() => goto('commesse')} icon="briefcase" value={cantieri.length} label="Commesse attive" />
-        <Stat onClick={() => goto('contabilita')} icon="cash" value={daIncassareLabel} label="In attesa" />
+        <Stat onClick={() => setShowCentroFinanze(true)} icon="cash" value={daIncassareLabel} label="In attesa" />
         <Stat onClick={() => goto('agenda')} icon="calendar" value={eventiOggi.length} label="Eventi oggi" />
         <Stat onClick={() => goto('talk')} icon="msg" value={messaggi} label="Messaggi" badge={messaggi > 0 ? messaggi : null} />
       </div>
@@ -347,27 +338,27 @@ export default function HomePanelMobileV2(props: any) {
       {organizzaCm && (
         <OrganizzaLavoriPanel
           commessa={organizzaCm}
-          aziendaId={(organizzaCm as any).azienda_id || (organizzaCm as any).aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          aziendaId={(organizzaCm as any).azienda_id || (organizzaCm as any).aziendaId || aziendaIdResolved}
           onClose={() => setOrganizzaCm(null)}
         />
       )}
       {showCentroMontaggi && (
         <CentroControlloMontaggi
-          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroMontaggi(false)}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroMontaggi(false); setOrganizzaCm(cm); } }}
         />
       )}
       {showCentroProduzione && (
         <CentroControlloProduzione
-          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroProduzione(false)}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroProduzione(false); setOrganizzaCm(cm); } }}
         />
       )}
       {showCentroOrdini && (
         <CentroControlloOrdini
-          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroOrdini(false)}
           onApriOrdine={(ordId: string) => { console.log('apri ordine', ordId); }}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroOrdini(false); setOrganizzaCm(cm); } }}
@@ -375,30 +366,36 @@ export default function HomePanelMobileV2(props: any) {
       )}
       {showCentroMagazzino && (
         <CentroControlloMagazzino
-          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroMagazzino(false)}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroMagazzino(false); setOrganizzaCm(cm); } }}
         />
       )}
       {showCentroFurgoni && (
         <CentroPreparazioneFurgoni
-          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroFurgoni(false)}
           onApriCommessa={(cmCode: string) => { const cm = (cantieri||[]).find((c: any)=>c.code===cmCode); if(cm) { setShowCentroFurgoni(false); setOrganizzaCm(cm); } }}
         />
       )}
       {showCentroFatturazione && (
         <CentroFatturazione
-          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroFatturazione(false)}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroFatturazione(false); setOrganizzaCm(cm); } }}
         />
       )}
       {showCentroClienti && (
         <CentroClienti
-          aziendaId={ctx?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '')}
+          aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroClienti(false)}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroClienti(false); setOrganizzaCm(cm); } }}
+        />
+      )}
+      {showCentroFinanze && (
+        <CentroFinanze
+          aziendaId={aziendaIdResolved}
+          onClose={() => setShowCentroFinanze(false)}
         />
       )}
     </div>
@@ -444,7 +441,6 @@ function Row({ label, value, color, last, onClick }: any) {
   )
 }
 
-// CALENDARIO con tap evento
 function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
   const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('mese')
   const [cursor, setCursor] = useState(new Date())
@@ -625,7 +621,6 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
   )
 }
 
-// URGENTE
 function CardUrgente({ ferme, apri }: any) {
   const top = ferme.slice(0, SHOW_VERTICAL)
   const rest = ferme.slice(SHOW_VERTICAL)
@@ -672,7 +667,6 @@ function CardUrgente({ ferme, apri }: any) {
   )
 }
 
-// TASK con campi DB CORRETTI + UI ottimistica + checkbox grande
 function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any) {
   const top = tasks.slice(0, SHOW_VERTICAL)
   const rest = tasks.slice(SHOW_VERTICAL)
@@ -725,7 +719,6 @@ function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any
   )
 }
 
-// MONTAGGI con data_montaggio
 function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
   const top = montaggi.slice(0, SHOW_VERTICAL)
   const rest = montaggi.slice(SHOW_VERTICAL)
@@ -774,7 +767,6 @@ function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
   )
 }
 
-// COMMESSE
 function CardCommesse({ cantieri, apri }: any) {
   const top = cantieri.slice(0, SHOW_VERTICAL)
   const rest = cantieri.slice(SHOW_VERTICAL)
@@ -820,7 +812,7 @@ function CardCassa({ daIncassare, fatture, onClick }: any) {
   const incassateAmt = incassate.reduce((s: number, f: any) => s + Number(f?.totale || 0), 0)
   return (
     <>
-      <CardHead title="Cassa" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={6} width={20} height={12} rx={2}/><circle cx={12} cy={12} r={2}/></svg>} />
+      <CardHead title="Cassa" link="apri Centro Finanze" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={6} width={20} height={12} rx={2}/><circle cx={12} cy={12} r={2}/></svg>} />
       <Row label="Da incassare" value={daIncassare} color={TEXT} onClick={onClick} />
       {scadute.length > 0 ? <Row label={`Scadute (${scadute.length})`} value={`${Math.round(scaduteAmt)}€`} color={RED} onClick={onClick} /> : null}
       {incassate.length > 0 ? <Row label={`Incassate (${incassate.length})`} value={`${Math.round(incassateAmt)}€`} color={GREEN} last onClick={onClick} /> : null}
@@ -828,7 +820,6 @@ function CardCassa({ daIncassare, fatture, onClick }: any) {
   )
 }
 
-// SQUADRA con stato_attuale + commessa_attuale_id
 function CardSquadra({ team, cantieri, onClick }: any) {
   const attivi = team.filter((t: any) => t?.attivo !== false).length
   const top = team.slice(0, SHOW_VERTICAL)
@@ -916,16 +907,6 @@ function CardProduzione({ cantieri, apri }: any) {
   )
 }
 
-function CardMagazzino({ onClick }: any) {
-  return (
-    <>
-      <CardHead title="Magazzino" link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 8V21H3V8M1 3h22v5H1z"/></svg>} />
-      <div style={{ fontSize: 11, color: MUTED, padding: '6px 0' }}>Modulo MASTRO MAGAZZINO in arrivo</div>
-    </>
-  )
-}
-
-// ====== CARD GESTIONE MATERIALI ======
 function CardGestioneMateriali({ ordini, magazzino, onClick }: any) {
   const ordiniAttivi = (ordini || []).filter((o: any) => o?.stato && !['arrivato','completato','annullato'].includes(o.stato))
   const inTransito = (ordini || []).filter((o: any) => o?.stato === 'in_transito' || o?.stato === 'inviato' || o?.stato === 'confermato').length
@@ -965,16 +946,13 @@ function CardGestioneMateriali({ ordini, magazzino, onClick }: any) {
   )
 }
 
-// ====== CARD CLIENTI ======
 function CardClienti({ contatti, cantieri, onClick }: any) {
   const totale = (contatti || []).length
-  // Ordina per ultimo aggiornamento (updated_at o created_at)
   const recenti = (contatti || []).slice().sort((a: any, b: any) => {
     const ta = new Date(a?.updated_at || a?.created_at || 0).getTime()
     const tb = new Date(b?.updated_at || b?.created_at || 0).getTime()
     return tb - ta
   }).slice(0, 3)
-  // Conta commesse attive per cliente
   const commessePerCliente = (cliId: string) => cantieri.filter((c: any) => c?.cliente_id === cliId || c?.contatto_id === cliId).length
 
   return (
