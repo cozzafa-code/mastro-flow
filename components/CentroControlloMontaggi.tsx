@@ -13,6 +13,7 @@ import { useSquadre, type SquadraDetail } from "../hooks/useSquadre";
 import { useConflitti } from "../hooks/useConflitti";
 import BannerPrevisioneCollassi from "./centro/BannerPrevisioneCollassi";
 import ModalAutoScheduling from "./centro/ModalAutoScheduling";
+import AIAssistantDrawer from "./centro/AIAssistantDrawer";
 
 function useIsWideScreen(minWidth = 1024) {
   const [wide, setWide] = useState(false);
@@ -199,6 +200,8 @@ export default function CentroControlloMontaggi({ aziendaId, onClose, onApriComm
           onClose={() => setAutoSchedCm(null)}
         />
       )}
+
+      {resolved && <AIAssistantDrawer aziendaId={resolved} onApriCommessa={onApriCommessa} />}
     </div>
   );
 }

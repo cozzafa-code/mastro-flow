@@ -6,6 +6,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import AIAssistantDrawer from "./centro/AIAssistantDrawer";
 
 const NAVY = "#1E3A5F", NAVY_DEEP = "#0F1B2D";
 const TEAL = "#28A0A0", TEAL_DEEP = "#0F6E56";
@@ -148,6 +149,8 @@ export default function CentroControlloProduzione({ aziendaId, onClose, onApriCo
          view === 'overview' ? <Overview commesse={filtered} onApri={onApriCommessa} /> :
          <Kanban commesse={filtered} onApri={onApriCommessa} />}
       </div>
+
+      {resolved && <AIAssistantDrawer aziendaId={resolved} onApriCommessa={onApriCommessa} />}
     </div>
   );
 }
