@@ -20,7 +20,7 @@ interface Commessa {
   materiali_status: string; materiali_perc: number;
   produzione_iniziata_at: string | null; produzione_completata_at: string | null;
   fattura_acconto_pagata_at: string | null;
-  totale_finale: number; n_vani?: number; ore_previste?: number;
+  totale_finale: number; n_vani?: number; ore_previste?: number; data_montaggio_prevista?: string | null; squadra_prevista?: string | null;
 }
 
 type ViewMode = 'overview' | 'kanban';
@@ -58,11 +58,19 @@ export default function CentroControlloProduzione({ aziendaId, onClose, onApriCo
       const vaniMap: Record<string, number> = {};
       (vaniData || []).forEach((v: any) => { vaniMap[v.commessa_id] = (vaniMap[v.commessa_id] || 0) + 1; });
 
-      const { data: montData } = await supabase.from("montaggi").select("commessa_id, ore_preventivate").in("commessa_id", ids);
+      const { data: montData } = await supabase.from("montaggi").select("commessa_id, ore_preventivate, data_montaggio, squadra").in("commessa_id", ids).order("data_montaggio", { ascending: true });
       const oreMap: Record<string, number> = {};
-      (montData || []).forEach((m: any) => { oreMap[m.commessa_id] = (oreMap[m.commessa_id] || 0) + (Number(m.ore_preventivate) || 0); });
+      const dataMap: Record<string, string> = {};
+      const squadraMap: Record<string, string> = {};
+      (montData || []).forEach((m: any) => {
+        oreMap[m.commessa_id] = (oreMap[m.commessa_id] || 0) + (Number(m.ore_preventivate) || 0);
+        if (m.data_montaggio && !dataMap[m.commessa_id]) dataMap[m.commessa_id] = m.data_montaggio;
+        if (Array.isArray(m.squadra) && m.squadra.length > 0 && !squadraMap[m.commessa_id]) {
+          squadraMap[m.commessa_id] = m.squadra.map((s: any) => s.nome).filter(Boolean).join(', ');
+        }
+      });
 
-      const enriched = (cm || []).map((c: any) => ({ ...c, n_vani: vaniMap[c.id] || 0, ore_previste: oreMap[c.id] || 0 }));
+      const enriched = (cm || []).map((c: any) => ({ ...c, n_vani: vaniMap[c.id] || 0, ore_previste: oreMap[c.id] || 0, data_montaggio_prevista: dataMap[c.id] || null, squadra_prevista: squadraMap[c.id] || null }));
       setCommesse(enriched as Commessa[]);
       setLoading(false);
     }
@@ -216,6 +224,15 @@ function CommessaCardOperativa({ cm, onClick, compact }: any) {
           {cm.mezzo_salita && cm.mezzo_salita !== '' && <Pill label={cm.mezzo_salita} bg="#EFF6FF" fg="#1E40AF" />}
           {cm.difficolta_salita && cm.difficolta_salita !== '' && <Pill label={cm.difficolta_salita} bg="#FFFBEB" fg="#92400E" />}
           <Pill label={`Pr. ${urg}`} bg={urgenzaCol + '22'} fg={urgenzaCol} />
+        </div>
+      )}
+
+      {cm.data_montaggio_prevista && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: '#EFF6FF', borderRadius: 6, marginBottom: 10, fontSize: 10 }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#1E40AF" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span style={{ color: '#1E40AF', fontWeight: 600 }}>Montaggio:</span>
+          <span style={{ color: '#1E40AF', fontWeight: 700 }}>{new Date(cm.data_montaggio_prevista).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' })}</span>
+          {cm.squadra_prevista && <span style={{ marginLeft: 'auto', background: '#1E40AF', color: '#fff', padding: '2px 7px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>{cm.squadra_prevista}</span>}
         </div>
       )}
 

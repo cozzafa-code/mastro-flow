@@ -18,6 +18,8 @@ interface CommessaOp {
   fattura_acconto_pagata_at?: string | null;
   totale_finale?: number; n_vani?: number; ore_previste?: number;
   indirizzo?: string | null;
+  data_montaggio_prevista?: string | null;
+  squadra_prevista?: string | null;
 }
 
 interface Props {
@@ -63,6 +65,15 @@ export default function CommessaCardOperativa({ cm, onClick, compact, showIndiri
           {cm.mezzo_salita && cm.mezzo_salita !== '' && <Pill label={cm.mezzo_salita} bg="#EFF6FF" fg="#1E40AF" />}
           {cm.difficolta_salita && cm.difficolta_salita !== '' && <Pill label={cm.difficolta_salita} bg="#FFFBEB" fg="#92400E" />}
           <Pill label={`Pr. ${urg}`} bg={urgenzaCol + '22'} fg={urgenzaCol} />
+        </div>
+      )}
+
+      {cm.data_montaggio_prevista && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: '#EFF6FF', borderRadius: 6, marginBottom: 10, fontSize: 10 }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#1E40AF" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span style={{ color: '#1E40AF', fontWeight: 600 }}>Montaggio:</span>
+          <span style={{ color: '#1E40AF', fontWeight: 700 }}>{new Date(cm.data_montaggio_prevista).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' })}</span>
+          {cm.squadra_prevista && <span style={{ marginLeft: 'auto', background: '#1E40AF', color: '#fff', padding: '2px 7px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>{cm.squadra_prevista}</span>}
         </div>
       )}
 

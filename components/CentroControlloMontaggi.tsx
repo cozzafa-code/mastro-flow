@@ -143,11 +143,19 @@ function ViewDaPianificare({ aziendaId, onApri }: any) {
       (vaniData || []).forEach((v: any) => { vaniMap[v.commessa_id] = (vaniMap[v.commessa_id] || 0) + 1; });
 
       // Ore previste
-      const { data: montData } = await supabase.from('montaggi').select('commessa_id, ore_preventivate').in('commessa_id', ids);
+      const { data: montData } = await supabase.from('montaggi').select('commessa_id, ore_preventivate, data_montaggio, squadra').in('commessa_id', ids).order('data_montaggio', { ascending: true });
       const oreMap: Record<string, number> = {};
-      (montData || []).forEach((m: any) => { oreMap[m.commessa_id] = (oreMap[m.commessa_id] || 0) + (Number(m.ore_preventivate) || 0); });
+      const dataMap: Record<string, string> = {};
+      const squadraMap: Record<string, string> = {};
+      (montData || []).forEach((m: any) => {
+        oreMap[m.commessa_id] = (oreMap[m.commessa_id] || 0) + (Number(m.ore_preventivate) || 0);
+        if (m.data_montaggio && !dataMap[m.commessa_id]) dataMap[m.commessa_id] = m.data_montaggio;
+        if (Array.isArray(m.squadra) && m.squadra.length > 0 && !squadraMap[m.commessa_id]) {
+          squadraMap[m.commessa_id] = m.squadra.map((s: any) => s.nome).filter(Boolean).join(', ');
+        }
+      });
 
-      const enriched = (cm || []).map((c: any) => ({ ...c, n_vani: vaniMap[c.id] || 0, ore_previste: oreMap[c.id] || 0 }));
+      const enriched = (cm || []).map((c: any) => ({ ...c, n_vani: vaniMap[c.id] || 0, ore_previste: oreMap[c.id] || 0, data_montaggio_prevista: dataMap[c.id] || null, squadra_prevista: squadraMap[c.id] || null }));
       setCommesse(enriched);
       setLoading(false);
     })();
