@@ -20,6 +20,9 @@ import OrdiniTablet from "./ordini/OrdiniTablet";
 
 import TeamTablet from "./team/TeamTablet";
 import OpsTablet from "./ops/OpsTablet";
+import SopralluoghiTablet from "./sopralluoghi/SopralluoghiTablet";
+import ProduzioneTablet from "./produzione/ProduzioneTablet";
+import MontaggiTablet from "./montaggi/MontaggiTablet";
 import CodiciHub from "../codici/CodiciHub";
 
 import EntityDetailPanel from "./EntityDetailPanel";
@@ -214,9 +217,9 @@ export default function MastroTablet() {
             {active === "dashboard" && <DashboardTablet />}
 
             {active === "commesse"     && <CommessePanel />}
-            {active === "sopralluoghi" && <CommessePanel />}
-            {active === "produzione"   && <CommessePanel />}
-            {active === "montaggi"     && <CommessePanel />}
+            {active === "sopralluoghi" && <SopralluoghiTablet />}
+            {active === "produzione"   && <ProduzioneTablet />}
+            {active === "montaggi"     && <MontaggiTablet />}
             {active === "calendario"   && <AgendaPanel />}
             {active === "clienti"      && <ClientiPanel />}
             {active === "contabilita"  && <ContabilitaPanel />}
