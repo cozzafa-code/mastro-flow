@@ -6,7 +6,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html {
+  background-color: #0D1F1F;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+}
+
+body {
   overscroll-behavior-y: none;
   overscroll-behavior-x: none;
   background: #E4F2F2;
@@ -15,8 +21,30 @@ html, body {
   padding: 0;
 }
 
-html {
+/* Safe-area top blu fliwoX (zona Dynamic Island) */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 0px);
+  background-color: #0D1F1F;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Safe-area bottom chiaro (zona home indicator) */
+body::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-bottom, 0px);
   background-color: #E4F2F2;
+  z-index: 9999;
+  pointer-events: none;
 }
 
 ::-webkit-scrollbar {
@@ -39,4 +67,4 @@ input[type="button"], input[type="submit"], input[type="reset"],
   touch-action: manipulation;
 }
 /* svg e html/body NON devono avere touch-action: manipulation
-   perche causa doppio tap su Safari iOS - bug noto */
+   causa doppio tap su Safari iOS - bug noto */

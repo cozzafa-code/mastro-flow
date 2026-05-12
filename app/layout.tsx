@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'fliwoX',
   description: 'Fatto per chi lavora con le mani',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'fliwoX' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'fliwoX' },
   icons: {
     apple: '/icon-192.png',
   },
@@ -17,13 +17,13 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#E4F2F2',
+  themeColor: '#0D1F1F',
   viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it" suppressHydrationWarning style={{ backgroundColor: '#E4F2F2' }}>
+    <html lang="it" suppressHydrationWarning style={{ backgroundColor: '#0D1F1F' }}>
       <body suppressHydrationWarning style={{ margin: 0, padding: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#E4F2F2' }}>
         <div style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', minHeight: '100vh', boxSizing: 'border-box' }}>
           <DayProvider>{children}</DayProvider>
