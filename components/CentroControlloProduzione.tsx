@@ -112,8 +112,8 @@ export default function CentroControlloProduzione({ aziendaId, onClose, onApriCo
   }, [commesse]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 9800, overflowY: 'auto' as const, paddingBottom: 80 }}>
-      <div style={{ paddingTop: 'max(env(safe-area-inset-top), 8px)', background: `linear-gradient(180deg, ${NAVY_DEEP} 0%, ${NAVY} 100%)`, padding: '14px 14px 18px', color: '#fff' }}>
+    <div style={{ position: 'fixed', inset: 0, paddingTop: 'env(safe-area-inset-top)', background: BG, zIndex: 9800, overflowY: 'auto' as const, paddingBottom: 80 }}>
+      <div style={{ background: `linear-gradient(180deg, ${NAVY_DEEP} 0%, ${NAVY} 100%)`, padding: '14px 14px 18px', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg>
