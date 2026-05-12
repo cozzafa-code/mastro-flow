@@ -21,30 +21,25 @@ body {
   padding: 0;
 }
 
-/* Safe-area top blu fliwoX (zona Dynamic Island) */
+/* Striscia blu fissa sopra (copre safe-area top, evita Dynamic Island) */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: env(safe-area-inset-top, 0px);
+  height: calc(env(safe-area-inset-top, 0px) + 4px);
   background-color: #0D1F1F;
   z-index: 9999;
   pointer-events: none;
 }
 
-/* Safe-area bottom chiaro (zona home indicator) */
-body::after {
-  content: '';
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-bottom, 0px);
-  background-color: #E4F2F2;
-  z-index: 9999;
-  pointer-events: none;
+/* Push primo elemento sotto la safe-area top (header app) */
+nav[data-mastro-nav],
+header[data-mastro-header],
+.mastro-top-nav {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+  min-height: calc(56px + env(safe-area-inset-top, 0px) + 12px) !important;
 }
 
 ::-webkit-scrollbar {
@@ -59,12 +54,10 @@ body::after {
 }
 
 
-/* MASTRO_IOS_TAP_FIX v2 - solo highlight, no touch-action globale */
+/* MASTRO_IOS_TAP_FIX v2 */
 * { -webkit-tap-highlight-color: transparent; }
 button, a, [role="button"], [onclick], [onClick],
 input[type="button"], input[type="submit"], input[type="reset"],
 [data-tap], .touch-fix {
   touch-action: manipulation;
 }
-/* svg e html/body NON devono avere touch-action: manipulation
-   causa doppio tap su Safari iOS - bug noto */
