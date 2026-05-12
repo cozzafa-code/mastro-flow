@@ -1,4 +1,4 @@
-// HomePanelMobileV2 V18 - card Contabilità unica → CentroFinanze (legacy CentroFatturazione rimosso)
+// HomePanelMobileV2 V19 - swipe calendario + lista task verticale unica
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
 import CardAzioniVeloci from "./home/CardAzioniVeloci";
@@ -22,6 +22,7 @@ const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','
 const DOW_SHORT = ['LUN','MAR','MER','GIO','VEN','SAB','DOM']
 const DOW = ['L','M','M','G','V','S','D']
 const SHOW_VERTICAL = 5
+const SWIPE_THRESHOLD = 50
 
 const ALL_CARDS = [
   { id: 'agenda', title: 'AGENDA' },
@@ -59,6 +60,32 @@ function SwipeItem({ children, width = '180px', onClick }: any) {
       background: '#F7F9FB', borderRadius: 10, padding: 10, minWidth: 0,
       border: `1px solid ${BORDER}`, cursor: onClick ? 'pointer' : 'default',
     }}>{children}</div>
+  )
+}
+
+// SwipeArea: wrappa un blocco per intercettare swipe orizzontale sinistra/destra
+function SwipeArea({ children, onSwipeLeft, onSwipeRight, style }: any) {
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current == null || touchStartY.current == null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) onSwipeLeft?.()
+      else onSwipeRight?.()
+    }
+    touchStartX.current = null
+    touchStartY.current = null
+  }
+  return (
+    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={style}>
+      {children}
+    </div>
   )
 }
 
@@ -461,9 +488,14 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
     }
     return days
   }
-  const navPrev = (e: any) => { e.stopPropagation(); if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1)); else if (view === 'settimana') setCursor(new Date(cursor.getTime() - 7 * 86400000)); else setCursor(new Date(cursor.getTime() - 86400000)) }
-  const navNext = (e: any) => { e.stopPropagation(); if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)); else if (view === 'settimana') setCursor(new Date(cursor.getTime() + 7 * 86400000)); else setCursor(new Date(cursor.getTime() + 86400000)) }
+  const goPrev = () => { if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1)); else if (view === 'settimana') setCursor(new Date(cursor.getTime() - 7 * 86400000)); else setCursor(new Date(cursor.getTime() - 86400000)) }
+  const goNext = () => { if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)); else if (view === 'settimana') setCursor(new Date(cursor.getTime() + 7 * 86400000)); else setCursor(new Date(cursor.getTime() + 86400000)) }
+  const navPrev = (e: any) => { e.stopPropagation(); goPrev() }
+  const navNext = (e: any) => { e.stopPropagation(); goNext() }
   const navOggi = (e: any) => { e.stopPropagation(); setCursor(new Date()) }
+  // swipe sulla lista eventi sotto = cambia giorno selezionato (anche in vista mese/settimana)
+  const goPrevDay = () => setCursor(new Date(cursor.getTime() - 86400000))
+  const goNextDay = () => setCursor(new Date(cursor.getTime() + 86400000))
   const monthLabel = `${MESI[cursor.getMonth()]} ${cursor.getFullYear()}`
   const days = buildMonth()
   const navBtn: React.CSSProperties = { width: 26, height: 26, borderRadius: 6, background: '#F1F4F7', color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none' }
@@ -500,92 +532,98 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
       </div>
 
       {view === 'mese' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
-          {DOW.map((d, i) => <div key={i} style={{ textAlign: 'center', fontSize: 9, color: '#8FA8B8', padding: '2px 0' }}>{d}</div>)}
-          {days.map((d, i) => {
-            const isT = isSameDay(d.date, today), isS = isSameDay(d.date, cursor)
-            const has = (eventByDay[d.date.toDateString()] || []).length > 0
-            return (
-              <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d.date) }} style={{
-                aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, color: d.muted ? '#C8D2DA' : (isT ? '#FFF' : TEXT),
-                cursor: 'pointer', borderRadius: '50%', position: 'relative',
-                background: isT ? NAVY : (isS && !d.muted ? '#E5EAF0' : 'transparent'),
-                fontWeight: isT ? 600 : 400,
-              }}>
-                {d.date.getDate()}
-                {has && !d.muted ? <div style={{ position: 'absolute', bottom: 2, width: 4, height: 4, background: isT ? '#FFF' : NAVY, borderRadius: '50%' }}/> : null}
-              </div>
-            )
-          })}
-        </div>
+        <SwipeArea onSwipeLeft={goNext} onSwipeRight={goPrev}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
+            {DOW.map((d, i) => <div key={i} style={{ textAlign: 'center', fontSize: 9, color: '#8FA8B8', padding: '2px 0' }}>{d}</div>)}
+            {days.map((d, i) => {
+              const isT = isSameDay(d.date, today), isS = isSameDay(d.date, cursor)
+              const has = (eventByDay[d.date.toDateString()] || []).length > 0
+              return (
+                <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d.date) }} style={{
+                  aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, color: d.muted ? '#C8D2DA' : (isT ? '#FFF' : TEXT),
+                  cursor: 'pointer', borderRadius: '50%', position: 'relative',
+                  background: isT ? NAVY : (isS && !d.muted ? '#E5EAF0' : 'transparent'),
+                  fontWeight: isT ? 600 : 400,
+                }}>
+                  {d.date.getDate()}
+                  {has && !d.muted ? <div style={{ position: 'absolute', bottom: 2, width: 4, height: 4, background: isT ? '#FFF' : NAVY, borderRadius: '50%' }}/> : null}
+                </div>
+              )
+            })}
+          </div>
+        </SwipeArea>
       )}
 
       {view === 'settimana' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {weekDays.map((d, i) => {
-            const isT = isSameDay(d, today), isS = isSameDay(d, cursor)
-            const evs = (eventByDay[d.toDateString()] || []).sort((a: any, b: any) => parseEventDate(a).getTime() - parseEventDate(b).getTime())
-            return (
-              <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d) }} style={{
-                background: isT ? '#E5EAF0' : (isS ? '#F1F4F7' : '#F7F9FB'),
-                borderLeft: isT ? `3px solid ${NAVY}` : '3px solid transparent',
-                borderRadius: 8, padding: '8px 10px', cursor: 'pointer',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: isT ? NAVY : MUTED, minWidth: 28 }}>{DOW_SHORT[i]}</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{d.getDate()}</div>
-                    <div style={{ fontSize: 10, color: MUTED, textTransform: 'lowercase' }}>{MESI[d.getMonth()].slice(0, 3)}</div>
+        <SwipeArea onSwipeLeft={goNext} onSwipeRight={goPrev}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {weekDays.map((d, i) => {
+              const isT = isSameDay(d, today), isS = isSameDay(d, cursor)
+              const evs = (eventByDay[d.toDateString()] || []).sort((a: any, b: any) => parseEventDate(a).getTime() - parseEventDate(b).getTime())
+              return (
+                <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d) }} style={{
+                  background: isT ? '#E5EAF0' : (isS ? '#F1F4F7' : '#F7F9FB'),
+                  borderLeft: isT ? `3px solid ${NAVY}` : '3px solid transparent',
+                  borderRadius: 8, padding: '8px 10px', cursor: 'pointer',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: isT ? NAVY : MUTED, minWidth: 28 }}>{DOW_SHORT[i]}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{d.getDate()}</div>
+                      <div style={{ fontSize: 10, color: MUTED, textTransform: 'lowercase' }}>{MESI[d.getMonth()].slice(0, 3)}</div>
+                    </div>
+                    <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{evs.length === 0 ? '—' : `${evs.length} eventi`}</div>
                   </div>
-                  <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{evs.length === 0 ? '—' : `${evs.length} eventi`}</div>
+                  {evs.length > 0 ? (
+                    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      {evs.slice(0, 3).map((e: any, j: number) => {
+                        const data = parseEventDate(e)
+                        return (
+                          <div key={j} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                            <div style={{ width: 6, height: 6, borderRadius: 50, background: dotColor(e), flexShrink: 0 }}/>
+                            <span style={{ fontSize: 10, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 600, minWidth: 36 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span style={{ fontSize: 11, color: TEXT, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{eventTitle(e)}</span>
+                          </div>
+                        )
+                      })}
+                      {evs.length > 3 ? <div style={{ fontSize: 9, color: NAVY, fontWeight: 600 }}>+{evs.length - 3} altri</div> : null}
+                    </div>
+                  ) : null}
                 </div>
-                {evs.length > 0 ? (
-                  <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    {evs.slice(0, 3).map((e: any, j: number) => {
-                      const data = parseEventDate(e)
-                      return (
-                        <div key={j} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                          <div style={{ width: 6, height: 6, borderRadius: 50, background: dotColor(e), flexShrink: 0 }}/>
-                          <span style={{ fontSize: 10, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 600, minWidth: 36 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
-                          <span style={{ fontSize: 11, color: TEXT, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{eventTitle(e)}</span>
-                        </div>
-                      )
-                    })}
-                    {evs.length > 3 ? <div style={{ fontSize: 9, color: NAVY, fontWeight: 600 }}>+{evs.length - 3} altri</div> : null}
-                  </div>
-                ) : null}
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        </SwipeArea>
       )}
 
       {view === 'giorno' && (
-        <div style={{ background: '#F7F9FB', borderRadius: 8, padding: 10, minHeight: 100 }}>
-          <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 8, textTransform: 'capitalize' }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
-          {eventiSel.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '12px 0' }}>Nessun evento programmato</div> : null}
-          {eventiSel.map((e: any, i: number) => {
-            const data = parseEventDate(e)
-            return (
-              <div key={i} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 50, background: dotColor(e) }}/>
-                  <div style={{ fontSize: 11, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 700, minWidth: 38 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
+        <SwipeArea onSwipeLeft={goNext} onSwipeRight={goPrev}>
+          <div style={{ background: '#F7F9FB', borderRadius: 8, padding: 10, minHeight: 100 }}>
+            <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 8, textTransform: 'capitalize' }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+            {eventiSel.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '12px 0' }}>Nessun evento programmato</div> : null}
+            {eventiSel.map((e: any, i: number) => {
+              const data = parseEventDate(e)
+              return (
+                <div key={i} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 50, background: dotColor(e) }}/>
+                    <div style={{ fontSize: 11, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 700, minWidth: 38 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{eventTitle(e)}</div>
+                    {e?.tipo ? <div style={{ fontSize: 10, color: NAVY, marginTop: 1 }}>{e.tipo}</div> : null}
+                    {eventLuogo(e) ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg>{eventLuogo(e)}</div> : null}
+                  </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{eventTitle(e)}</div>
-                  {e?.tipo ? <div style={{ fontSize: 10, color: NAVY, marginTop: 1 }}>{e.tipo}</div> : null}
-                  {eventLuogo(e) ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg>{eventLuogo(e)}</div> : null}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        </SwipeArea>
       )}
 
       {view === 'mese' && eventiSel.length > 0 ? (
-        <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
+        <SwipeArea onSwipeLeft={goNextDay} onSwipeRight={goPrevDay} style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
           <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5, marginBottom: 6, fontWeight: 600 }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} · {eventiSel.length} EVENTI</div>
           {eventiSel.map((e: any, i: number) => {
             const data = parseEventDate(e)
@@ -602,7 +640,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
               </div>
             )
           })}
-        </div>
+        </SwipeArea>
       ) : null}
 
       <button onClick={onClick} style={{ marginTop: 10, background: 'transparent', border: 'none', color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer', width: '100%', padding: 4 }}>APRI AGENDA COMPLETA →</button>
