@@ -657,12 +657,13 @@ function CardUrgente({ ferme, apri }: any) {
 }
 
 function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any) {
-  const top = tasks.slice(0, SHOW_VERTICAL)
-  const rest = tasks.slice(SHOW_VERTICAL)
+  const top = tasks
+  const rest: any[] = []
   return (
     <>
       <CardHead title="Task" badge={tasks.length} link="vedi tutte" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>} />
       {tasks.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessuna task aperta</div> : null}
+      <div className='mastro-tasks-scroll' style={{ maxHeight: 320, overflowY: 'auto' }}><style>{.mastro-tasks-scroll::-webkit-scrollbar{display:none}}</style>
       {top.map((t: any, i: number) => {
         const cm = cantieri.find((c: any) => c?.id === t?.commessa_id)
         const scad = t?.data ? new Date(t.data) : null
