@@ -1,11 +1,12 @@
 // components/mobile/agenda/AgendaMobile.tsx
-// Vista operativa MASTRO - 3 viste (Giorno/Settimana/Mese) + filtri + squadra
+// Vista operativa MASTRO - 3 viste (Giorno/Settimana/Mese) + filtri + task
 // Sostituisce AgendaMobile vecchio mantenendo stesse props
 "use client";
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import AgendaEventSheetMobile from "./AgendaEventSheetMobile";
 import AgendaBottomNav from "./AgendaBottomNav";
 import { useAgendaMobile } from "../../../hooks/useAgendaMobile";
+import { supabase } from "../../../lib/supabase";
 
 const NAVY = '#1B3A5C', NAVY_DEEP = '#0F1F33';
 const TEAL = '#28A0A0', TEAL_DARK = '#1B6B6B';
@@ -28,8 +29,10 @@ const TIPI: Record<string, { label: string; color: string; gradientFrom: string;
 
 const FILTRI = [
   { id: 'tutti', label: 'TUTTI', color: NAVY },
+  { id: 'eventi', label: 'EVENTI', color: NAVY },
+  { id: 'task', label: 'TASK', color: TEAL },
   { id: 'montaggio', label: 'MONTAGGI', color: NAVY },
-  { id: 'sopralluogo', label: 'SOPRALLUOGHI', color: AMBER },
+  { id: 'sopralluogo', label: 'SOPRALL.', color: AMBER },
   { id: 'firma', label: 'FIRME', color: GREEN },
   { id: 'consegna', label: 'CONSEGNE', color: TEAL },
 ];
@@ -110,19 +113,56 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
   const [cursor, setCursor] = useState(new Date());
   const [filtro, setFiltro] = useState<string>('tutti');
   const [sheetEvento, setSheetEvento] = useState<any>(null);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasksDone, setTasksDone] = useState<Record<string, boolean>>({});
   const today = new Date();
   const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
+  // Fetch tasks
+  useEffect(() => {
+    let mounted = true;
+    const loadTasks = async () => {
+      try {
+        const az = (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '');
+        if (!az) return;
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('azienda_id', az)
+          .eq('done', false)
+          .order('data', { ascending: true });
+        if (error) { console.error('load tasks', error); return; }
+        if (mounted) setTasks(data || []);
+      } catch (err) { console.error('tasks fetch', err); }
+    };
+    loadTasks();
+    return () => { mounted = false; };
+  }, []);
+
+  const toggleTask = async (id: string, currentDone: boolean) => {
+    setTasksDone(prev => ({ ...prev, [id]: !currentDone }));
+    try {
+      await supabase.from('tasks').update({ done: !currentDone, done_at: !currentDone ? new Date().toISOString() : null }).eq('id', id);
+    } catch (err) {
+      console.error('toggle task', err);
+      setTasksDone(prev => ({ ...prev, [id]: currentDone }));
+    }
+  };
+
   const eventi = useMemo(() => {
     const raw = a?.events || a?.eventi || [];
-    return raw.filter((e: any) => !e?.completato && !e?.annullato && !e?.deleted_at);
-  }, [a]);
+    const evs = raw.filter((e: any) => !e?.completato && !e?.annullato && !e?.deleted_at).map((e: any) => ({ ...e, _kind: 'evento' }));
+    const tks = tasks.filter((t: any) => !t?.done && !tasksDone[t?.id]).map((t: any) => ({ ...t, _kind: 'task', titolo: t?.testo, data: t?.data || t?.scadenza }));
+    return [...evs, ...tks];
+  }, [a, tasks, tasksDone]);
 
   const team = a?.team || [];
 
   const eventiFiltrati = useMemo(() => {
     if (filtro === 'tutti') return eventi;
-    return eventi.filter((e: any) => getTipo(e) === filtro);
+    if (filtro === 'eventi') return eventi.filter((e: any) => e._kind === 'evento');
+    if (filtro === 'task') return eventi.filter((e: any) => e._kind === 'task');
+    return eventi.filter((e: any) => e._kind === 'evento' && getTipo(e) === filtro);
   }, [eventi, filtro]);
 
   const eventByDay = useMemo(() => {
@@ -240,7 +280,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
       <div style={{ paddingBottom: 140 }}>
       {view === 'giorno' && (
         <SwipeArea onSwipeLeft={goNext} onSwipeRight={goPrev}>
-          <VistaGiorno eventi={eventiSel} cantieri={cantieri} team={team} onApriEvento={apriEvento} cursor={cursor} today={today} />
+          <VistaGiorno eventi={eventiSel} cantieri={cantieri} team={team} onApriEvento={apriEvento} onToggleTask={toggleTask} cursor={cursor} today={today} />
         </SwipeArea>
       )}
 
@@ -250,7 +290,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
             weekDays={weekDays} cursor={cursor} setCursor={setCursor}
             eventByDay={eventByDay} cantieri={cantieri}
             maxCount={kpiSettimana.maxCount} today={today}
-            onApriEvento={apriEvento}
+            onApriEvento={apriEvento} onToggleTask={toggleTask}
           />
         </SwipeArea>
       )}
@@ -261,7 +301,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
             monthDays={monthDays} cursor={cursor} setCursor={setCursor}
             eventByDay={eventByDay} cantieri={cantieri}
             maxDay={kpiMese.maxDay} today={today}
-            onApriEvento={apriEvento}
+            onApriEvento={apriEvento} onToggleTask={toggleTask}
             eventiSel={eventiSel}
           />
         </SwipeArea>
@@ -392,7 +432,7 @@ function FiltriBar({ filtro, setFiltro }: any) {
   );
 }
 
-function VistaGiorno({ eventi, cantieri, team, onApriEvento, cursor, today }: any) {
+function VistaGiorno({ eventi, cantieri, team, onApriEvento, onToggleTask, cursor, today }: any) {
   const isToday = cursor.toDateString() === today.toDateString();
   const nowMin = isToday ? today.getHours() * 60 + today.getMinutes() : -1;
   return (
@@ -413,6 +453,9 @@ function VistaGiorno({ eventi, cantieri, team, onApriEvento, cursor, today }: an
         const isPast = nowMin > endMin;
         const isCurrent = nowMin >= startMin && nowMin <= endMin;
         const isUrgent = e?.urgente;
+        if (e._kind === 'task') {
+          return <BloccoTask key={e?.id || i} e={e} cm={cm} start={start} onApriEvento={onApriEvento} onToggle={onToggleTask} />;
+        }
         return (
           <BloccoEvento key={e?.id || i} e={e} cm={cm} tipo={tipo} importo={importo} isPast={isPast} isCurrent={isCurrent} isUrgent={isUrgent} start={start} end={end} onApriEvento={onApriEvento} />
         );
@@ -427,6 +470,40 @@ function VistaGiorno({ eventi, cantieri, team, onApriEvento, cursor, today }: an
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function BloccoTask({ e, cm, start, onApriEvento, onToggle }: any) {
+  const prio = (e?.priorita || '').toLowerCase();
+  const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : null;
+  const hasOra = e?.ora_inizio || e?.ora || (start && (start.getHours() > 0 || start.getMinutes() > 0));
+  const oraLabel = hasOra ? String(start.getHours()).padStart(2,'0') : '—';
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '0 16px 8px' }}>
+      <div style={{ width: 38, fontSize: 10, color: MUTED, fontWeight: 700, fontFeatureSettings: '"tnum"', paddingTop: 4 }}>{oraLabel}</div>
+      <div style={{ flex: 1, borderLeft: `2px solid ${BORDER}`, paddingLeft: 12 }}>
+        <div style={{
+          background: '#FFF', borderRadius: 10, padding: '10px 12px',
+          borderLeft: `3px solid ${TEAL}`, boxShadow: '0 1px 4px rgba(15,31,51,0.06)',
+          display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', position: 'relative',
+        }}>
+          <div style={{ position: 'absolute', top: -1, left: -14, width: 12, height: 2, background: TEAL }}/>
+          <button
+            onClick={(ev) => { ev.stopPropagation(); onToggle?.(e?.id, false); }}
+            style={{ width: 22, height: 22, borderRadius: 50, border: `2px solid ${TEAL}`, background: '#FFF', flexShrink: 0, cursor: 'pointer', padding: 0 }}
+            aria-label="Completa task"
+          />
+          <div onClick={() => onApriEvento?.(e)} style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 8, color: '#FFF', background: TEAL, padding: '2px 6px', borderRadius: 3, fontWeight: 700, letterSpacing: 0.5 }}>TASK</span>
+              {prioColor ? <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '2px 6px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span> : null}
+            </div>
+            <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>{(e?.testo || e?.titolo || 'Task').replace(/[\u2705\u2611\u2713\u2714\uD83D\uDCC5]/g, '').trim()}</div>
+            {cm ? <div style={{ fontSize: 9, color: NAVY, marginTop: 2, fontWeight: 600 }}>↗ {cm?.codice || cm?.code}</div> : null}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -469,7 +546,7 @@ function BloccoEvento({ e, cm, tipo, importo, isPast, isCurrent, isUrgent, start
   );
 }
 
-function VistaSettimana({ weekDays, cursor, setCursor, eventByDay, cantieri, maxCount, today, onApriEvento }: any) {
+function VistaSettimana({ weekDays, cursor, setCursor, eventByDay, cantieri, maxCount, today, onApriEvento, onToggleTask }: any) {
   const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   return (
     <div>
@@ -504,6 +581,24 @@ function VistaSettimana({ weekDays, cursor, setCursor, eventByDay, cantieri, max
           {cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} · {(eventByDay[cursor.toDateString()] || []).length} LAVORI
         </div>
         {(eventByDay[cursor.toDateString()] || []).map((e: any, i: number) => {
+          if (e._kind === 'task') {
+            const prio = (e?.priorita || '').toLowerCase();
+            const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : null;
+            const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
+            return (
+              <div key={e?.id || i} style={{ display: 'flex', gap: 10, padding: '10px 0', borderTop: i > 0 ? `1px solid ${BORDER}` : 'none', alignItems: 'center' }}>
+                <button onClick={(ev) => { ev.stopPropagation(); onToggleTask?.(e?.id, false); }} style={{ width: 22, height: 22, borderRadius: 50, border: `2px solid ${TEAL}`, background: '#FFF', flexShrink: 0, cursor: 'pointer', padding: 0 }} aria-label="Completa task" />
+                <div onClick={() => onApriEvento?.(e)} style={{ flex: 1, cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 8, color: '#FFF', background: TEAL, padding: '2px 6px', borderRadius: 3, fontWeight: 700 }}>TASK</span>
+                    {prioColor ? <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '2px 6px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span> : null}
+                    <span style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{(e?.testo || e?.titolo || 'Task').replace(/[\u2705\u2611\u2713\u2714\uD83D\uDCC5]/g, '').trim()}</span>
+                  </div>
+                  {cm ? <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>↗ {cm?.codice || cm?.code}</div> : null}
+                </div>
+              </div>
+            );
+          }
           const tipo = getTipo(e), t = TIPI[tipo] || TIPI.default;
           const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
           const start = parseEventDate(e);
@@ -531,7 +626,7 @@ function VistaSettimana({ weekDays, cursor, setCursor, eventByDay, cantieri, max
   );
 }
 
-function VistaMese({ monthDays, cursor, setCursor, eventByDay, cantieri, maxDay, today, onApriEvento, eventiSel }: any) {
+function VistaMese({ monthDays, cursor, setCursor, eventByDay, cantieri, maxDay, today, onApriEvento, onToggleTask, eventiSel }: any) {
   const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   return (
     <div style={{ background: '#FFF' }}>
@@ -581,6 +676,24 @@ function VistaMese({ monthDays, cursor, setCursor, eventByDay, cantieri, maxDay,
             {cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} · {eventiSel.length} LAVORI
           </div>
           {eventiSel.map((e: any, i: number) => {
+            if (e._kind === 'task') {
+              const prio = (e?.priorita || '').toLowerCase();
+              const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : null;
+              const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
+              return (
+                <div key={e?.id || i} style={{ display: 'flex', gap: 10, padding: '10px 12px', borderTop: i > 0 ? `1px solid ${BORDER}` : 'none', alignItems: 'center', background: '#FFF' }}>
+                  <button onClick={(ev) => { ev.stopPropagation(); onToggleTask?.(e?.id, false); }} style={{ width: 22, height: 22, borderRadius: 50, border: `2px solid ${TEAL}`, background: '#FFF', flexShrink: 0, cursor: 'pointer', padding: 0 }} aria-label="Completa task" />
+                  <div onClick={() => onApriEvento?.(e)} style={{ flex: 1, cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 8, color: '#FFF', background: TEAL, padding: '2px 6px', borderRadius: 3, fontWeight: 700 }}>TASK</span>
+                      {prioColor ? <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '2px 6px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span> : null}
+                      <span style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{(e?.testo || e?.titolo || 'Task').replace(/[\u2705\u2611\u2713\u2714\uD83D\uDCC5]/g, '').trim()}</span>
+                    </div>
+                    {cm ? <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>↗ {cm?.codice || cm?.code}</div> : null}
+                  </div>
+                </div>
+              );
+            }
             const tipo = getTipo(e), t = TIPI[tipo] || TIPI.default;
             const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
             const start = parseEventDate(e);
