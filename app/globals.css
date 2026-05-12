@@ -6,10 +6,17 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-body {
-  overscroll-behavior: none;
+html, body {
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
   background: #E4F2F2;
   color: #1A1A1C;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background-color: #E4F2F2;
 }
 
 ::-webkit-scrollbar {
@@ -33,156 +40,3 @@ input[type="button"], input[type="submit"], input[type="reset"],
 }
 /* svg e html/body NON devono avere touch-action: manipulation
    perche causa doppio tap su Safari iOS - bug noto */
-
-/* === MASTRO HD NAVY OVERRIDE START === */
-/* Override mirato: bottom-nav home mobile da fliwoX teal a navy 50/20 */
-/* Reversibile: cancella questo blocco per tornare al teal */
-
-/* Bottom nav fissa - background scuro navy invece di verde fliwoX */
-body div[style*="background: rgb(13, 31, 31)"],
-body div[style*="background:#0D1F1F"],
-body div[style*="background: #0D1F1F"] {
-  background: #0F1B2D !important;
-}
-
-/* Pill colore accent dentro la nav (era #28A0A0 fliwoX) */
-body div[style*="background: rgb(40, 160, 160)"],
-body div[style*="background:#28A0A0"],
-body div[style*="background: #28A0A0"] {
-  background: #1E3A5F !important;
-}
-
-/* Box-shadow con tinta verde -> tinta navy */
-body div[style*="rgba(40,160,160"] {
-  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.3) !important;
-}
-
-/* Toolbar Apri/Chiudi - bottoni piu' compatti */
-button[style*="border-radius: 6"][style*="border: 1px solid rgb(30, 58, 95)"] {
-  transition: transform 0.1s ease, background 0.15s ease !important;
-}
-button[style*="border-radius: 6"][style*="border: 1px solid rgb(30, 58, 95)"]:active {
-  transform: scale(0.96) !important;
-  background: #DBE6F1 !important;
-}
-/* === MASTRO HD NAVY OVERRIDE END === */
-
-@keyframes mastroWiggle {
-  0%   { transform: rotate(-0.4deg); }
-  100% { transform: rotate(0.4deg); }
-}
-/* === MASTRO HD OVERSCROLL FIX START === */
-/* Top: navy (header) - Bottom: grigio acciaio (body)
-   Tecnica: html navy fisso, body grigio fisso -> bounce mostra colori giusti */
-html {
-  background-color: #0F1B2D !important;
-  background: #0F1B2D !important;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-}
-body {
-  background-color: #94A3B8 !important;
-  background: #94A3B8 !important;
-  overscroll-behavior-y: none;
-  margin: 0;
-  min-height: 100vh;
-}
-/* Safe area top: zona sotto Dynamic Island = navy header */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: env(safe-area-inset-top, 0);
-  background: #0F1B2D;
-  z-index: 9999;
-  pointer-events: none;
-}
-/* === MASTRO HD OVERSCROLL FIX END ===*/
-/* === TABLET 768-1023px: bottoni grandi + colori fliwoX === */
-@media (min-width: 768px) and (max-width: 1023px) {
-  body { background: #E8F4F4 !important; }
-
-  /* BUTTON nativi 72px */
-  button {
-    min-height: 72px !important;
-    padding: 18px 24px !important;
-    font-size: 17px !important;
-    font-weight: 700 !important;
-  }
-
-  /* DIV cliccabili (accordion, tab, toolbar) - selettori multipli */
-  div[style*="cursor: pointer"],
-  div[style*="cursor:pointer"],
-  div[role="button"],
-  div[role="tab"],
-  [data-accordion],
-  details > summary {
-    min-height: 64px !important;
-    padding: 16px 20px !important;
-    font-size: 16px !important;
-  }
-
-  /* INPUT/SELECT 60px */
-  input, select, textarea {
-    min-height: 60px !important;
-    font-size: 17px !important;
-    padding: 14px 18px !important;
-  }
-
-  /* Header sezione (Lamiera, Controtelaio, etc) - identifico per borderRadius + padding inline */
-  div[style*="borderRadius: 12px"][style*="cursor"],
-  div[style*="border-radius: 12px"][style*="cursor"],
-  div[style*="borderRadius: 14px"][style*="cursor"],
-  div[style*="border-radius: 14px"][style*="cursor"] {
-    min-height: 68px !important;
-    padding: 18px 22px !important;
-    font-size: 17px !important;
-  }
-
-  /* COLORI fliwoX - sostituisco rosso troppo acceso con rosso fliwoX più scuro */
-  button[style*="rgb(220, 68, 68)"],
-  button[style*="#DC4444"] {
-    background: #B91C1C !important;
-    box-shadow: 0 4px 0 0 #7F1D1D !important;
-  }
-
-  /* Tab attivi: bordo bottom più spesso */
-  div[style*="borderBottom: 2px"],
-  div[style*="border-bottom: 2px"] {
-    border-bottom-width: 4px !important;
-  }
-}
-
-/* === CAD tablet touch — DisegnoTecnico toolbar tab === */
-@media (min-width: 768px) and (max-width: 1023px) {
-  [data-cad="tab"] {
-    min-height: 64px !important;
-    min-width: 84px !important;
-    padding: 12px 16px !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    border-radius: 10px !important;
-  }
-}
-
-
-/* MASTRO_SAFE_AREA_FIX - Dynamic Island iPhone Pro */
-:root {
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
-}
-body {
-  padding-top: var(--safe-top);
-  padding-bottom: var(--safe-bottom);
-  padding-left: var(--safe-left);
-  padding-right: var(--safe-right);
-}
-/* Utility classi per override */
-.safe-top { padding-top: var(--safe-top); }
-.safe-top-margin { margin-top: var(--safe-top); }
-.no-safe { padding: 0 !important; }
-/* Fix bottom-nav: deve restare fisso ma sopra la home bar iOS */
-.bottom-nav-safe { padding-bottom: var(--safe-bottom); }
-
