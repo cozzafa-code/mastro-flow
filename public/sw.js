@@ -7,7 +7,7 @@
 
 // BUILD_ID viene rigenerato ad ogni deploy (Vercel ricompila i static files).
 // Questo timestamp cambia automaticamente quando il file sw.js viene servito da un nuovo deploy.
-const BUILD_ID = '2026-04-29-19-30';
+const BUILD_ID = '2026-05-13-00-20';
 const CACHE_NAME = 'mastro-' + BUILD_ID;
 
 const STATIC_ASSETS = [
