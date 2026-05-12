@@ -1,4 +1,4 @@
-// HomePanelMobileV2 V19 - swipe calendario + lista task verticale unica
+// HomePanelMobileV2 V20 - bottom sheet evento/task + swipe calendario + no frecce
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
 import CardAzioniVeloci from "./home/CardAzioniVeloci";
@@ -18,6 +18,7 @@ import { supabase } from '../lib/supabase'
 const NAVY = '#1B3A5C', NAVY_DEEP = '#0F1F33', BG = '#7A8A9A'
 const RED = '#C73E1D', AMBER = '#BA7517', GREEN = '#0F6E56'
 const TEXT = '#0F1F33', MUTED = '#5C6B7A', BORDER = '#E5E7EB'
+const TEAL = '#28A0A0'
 const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre']
 const DOW_SHORT = ['LUN','MAR','MER','GIO','VEN','SAB','DOM']
 const DOW = ['L','M','M','G','V','S','D']
@@ -63,7 +64,6 @@ function SwipeItem({ children, width = '180px', onClick }: any) {
   )
 }
 
-// SwipeArea: wrappa un blocco per intercettare swipe orizzontale sinistra/destra
 function SwipeArea({ children, onSwipeLeft, onSwipeRight, style }: any) {
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
@@ -108,8 +108,9 @@ const parseEventDate = (e: any): Date => {
   }
   if (e?.data) {
     const d = new Date(e.data)
-    if (e?.ora) {
-      const [h, m] = String(e.ora).split(':').map(Number)
+    const oraStr = e?.ora_inizio || e?.ora
+    if (oraStr) {
+      const [h, m] = String(oraStr).split(':').map(Number)
       if (!isNaN(h)) d.setHours(h || 0, m || 0)
     }
     return d
@@ -120,17 +121,6 @@ const parseEventDate = (e: any): Date => {
 const eventTitle = (e: any) => e?.text || e?.titolo || e?.title || ''
 const eventLuogo = (e: any) => e?.addr || e?.indirizzo || e?.luogo || ''
 
-const IcoCal = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-const IcoClock = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>
-const IcoPin = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg>
-const IcoWin = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><rect x={3} y={3} width={18} height={18}/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
-const IcoPhone = () => <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-const IcoWarn = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-const IcoEuro = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><path d="M4 10h12M4 14h9M19 5a7 7 0 1 0 0 14"/></svg>
-const IcoBell = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-const IcoCheck = () => <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ display: 'inline-block', verticalAlign: '-1px', flexShrink: 0 }}><polyline points="20 6 9 17 4 12"/></svg>
-
-
 export default function HomePanelMobileV2(props: any) {
   const [organizzaCm, setOrganizzaCm] = React.useState<any>(null);
   const [showCentroMontaggi, setShowCentroMontaggi] = React.useState(false);
@@ -140,6 +130,10 @@ export default function HomePanelMobileV2(props: any) {
   const [showCentroFurgoni, setShowCentroFurgoni] = React.useState(false);
   const [showCentroClienti, setShowCentroClienti] = React.useState(false);
   const [showCentroFinanze, setShowCentroFinanze] = React.useState(false);
+  const [sheetEvento, setSheetEvento] = React.useState<any>(null);
+  const [sheetTask, setSheetTask] = React.useState<any>(null);
+  const [hiddenEventi, setHiddenEventi] = React.useState<Record<string, boolean>>({})
+  const [hiddenTasks, setHiddenTasks] = React.useState<Record<string, boolean>>({})
   const { data } = useHomeMobile()
   const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const [editMode, setEditMode] = useState(false)
@@ -186,6 +180,51 @@ export default function HomePanelMobileV2(props: any) {
       console.error('toggle task error', err)
       setDoneOptim(prev => ({ ...prev, [taskId]: currentDone }))
     }
+  }
+
+  // SHEET EVENTO ACTIONS
+  const completaEvento = async (id: string) => {
+    if (!id) return
+    setHiddenEventi(prev => ({ ...prev, [id]: true }))
+    setSheetEvento(null)
+    try {
+      await supabase.from('eventi').update({ completato: true }).eq('id', id)
+      if (typeof ctx?.refresh === 'function') ctx.refresh()
+    } catch (err) { console.error('completa evento error', err) }
+  }
+  const eliminaEvento = async (id: string) => {
+    if (!id) return
+    setHiddenEventi(prev => ({ ...prev, [id]: true }))
+    setSheetEvento(null)
+    try {
+      await supabase.from('eventi').update({ annullato: true }).eq('id', id)
+      if (typeof ctx?.refresh === 'function') ctx.refresh()
+    } catch (err) { console.error('elimina evento error', err) }
+  }
+  const aggiornaEvento = async (id: string, fields: any) => {
+    if (!id) return
+    try {
+      await supabase.from('eventi').update(fields).eq('id', id)
+      if (typeof ctx?.refresh === 'function') ctx.refresh()
+    } catch (err) { console.error('aggiorna evento error', err) }
+  }
+
+  // SHEET TASK ACTIONS
+  const eliminaTask = async (id: string) => {
+    if (!id) return
+    setHiddenTasks(prev => ({ ...prev, [id]: true }))
+    setSheetTask(null)
+    try {
+      await supabase.from('tasks').delete().eq('id', id)
+      if (typeof ctx?.refresh === 'function') ctx.refresh()
+    } catch (err) { console.error('elimina task error', err) }
+  }
+  const aggiornaTask = async (id: string, fields: any) => {
+    if (!id) return
+    try {
+      await supabase.from('tasks').update(fields).eq('id', id)
+      if (typeof ctx?.refresh === 'function') ctx.refresh()
+    } catch (err) { console.error('aggiorna task error', err) }
   }
 
   const dragState = useRef<any>(null)
@@ -238,8 +277,8 @@ export default function HomePanelMobileV2(props: any) {
   const cantieri = (ctx?.cantieri || []).filter((c: any) => !c?.deleted_at && !c?.archived_at)
   const fattureDB = ctx?.fattureDB || []
   const team = ctx?.team || []
-  const eventi = ctx?.events || ctx?.eventi || data?.agenda?.eventi || []
-  const tasks = (ctx?.tasks || []).filter((t: any) => !t?.done)
+  const eventi = (ctx?.events || ctx?.eventi || data?.agenda?.eventi || []).filter((e: any) => !hiddenEventi[e?.id] && !e?.completato && !e?.annullato)
+  const tasks = (ctx?.tasks || []).filter((t: any) => !t?.done && !hiddenTasks[t?.id])
   const montaggi = ctx?.montaggi || []
   const ferme = cantieri.filter((c: any) => {
     const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
@@ -283,9 +322,9 @@ export default function HomePanelMobileV2(props: any) {
         </>
       )}
       <div style={{ padding: '12px 14px', pointerEvents: editMode ? 'none' : 'auto' }}>
-        {id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} apriCM={apriCM} onClick={() => goto('agenda')} />}
+        {id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} apriCM={apriCM} onClick={() => goto('agenda')} apriSheetEvento={(e:any) => setSheetEvento(e)} />}
         {id === 'urgente' && <CardUrgente ferme={ferme} apri={apriCM} />}
-        {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} toggleTask={toggleTask} doneOptim={doneOptim} onClick={() => goto('team')} />}
+        {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} toggleTask={toggleTask} doneOptim={doneOptim} onClick={() => goto('team')} apriSheetTask={(t:any) => setSheetTask(t)} />}
         {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} />}
         {id === 'commesse' && <CardCommesse cantieri={cantieri} apri={apriCM} />}
         {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => setShowCentroFinanze(true)} />}
@@ -358,6 +397,30 @@ export default function HomePanelMobileV2(props: any) {
         {order.map(id => renderCard(id))}
       </div>
 
+      {sheetEvento && (
+        <SheetEvento
+          evento={sheetEvento}
+          cantieri={cantieri}
+          onClose={() => setSheetEvento(null)}
+          onCompleta={completaEvento}
+          onElimina={eliminaEvento}
+          onAggiorna={aggiornaEvento}
+          onApriCM={apriCM}
+        />
+      )}
+      {sheetTask && (
+        <SheetTask
+          task={sheetTask}
+          cantieri={cantieri}
+          team={team}
+          onClose={() => setSheetTask(null)}
+          onCompleta={(id: string) => { setHiddenTasks(prev => ({ ...prev, [id]: true })); setSheetTask(null); toggleTask(id, false) }}
+          onElimina={eliminaTask}
+          onAggiorna={aggiornaTask}
+          onApriCM={apriCM}
+        />
+      )}
+
       {organizzaCm && (
         <OrganizzaLavoriPanel
           commessa={organizzaCm}
@@ -418,6 +481,182 @@ export default function HomePanelMobileV2(props: any) {
   )
 }
 
+function SheetEvento({ evento, cantieri, onClose, onCompleta, onElimina, onAggiorna, onApriCM }: any) {
+  const [editMode, setEditMode] = useState(false)
+  const [data, setData] = useState(evento?.data || '')
+  const [ora, setOra] = useState(evento?.ora_inizio || evento?.ora || '')
+  const [note, setNote] = useState(evento?.note || '')
+  const cm = cantieri.find((c: any) => c?.id === evento?.commessa_id)
+  const telefono = evento?.telefono || cm?.telefono || cm?.cliente_telefono
+  const indirizzo = evento?.indirizzo || cm?.indirizzo
+  const tipo = (evento?.tipo || 'evento').toUpperCase()
+  const titolo = eventTitle(evento)
+  const dataObj = parseEventDate(evento)
+
+  const handleSave = async () => {
+    await onAggiorna(evento.id, { data, ora_inizio: ora, note })
+    setEditMode(false)
+  }
+
+  const naviga = () => {
+    if (!indirizzo) return
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(indirizzo)}`, '_blank')
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,31,51,0.5)', zIndex: 9000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 12 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#FFF', borderRadius: 14, boxShadow: '0 4px 24px rgba(15,31,51,0.25)', width: '100%', maxWidth: 380, overflow: 'hidden', marginBottom: 60 }}>
+        <div style={{ padding: '12px 14px 10px', background: '#F1F4F7', borderBottom: `1px solid ${BORDER}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: 50, background: NAVY }}/>
+            <span style={{ fontSize: 9, color: NAVY, fontWeight: 700, letterSpacing: 0.5 }}>{tipo}</span>
+            <span style={{ fontSize: 9, color: MUTED }}>· {dataObj.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })} · {dataObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, lineHeight: 1.3 }}>{titolo || 'Evento'}</div>
+        </div>
+
+        {!editMode ? (
+          <>
+            <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {indirizzo ? <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2.2}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>
+                <span style={{ fontSize: 11, color: TEXT }}>{indirizzo}</span>
+              </div> : null}
+              {cm ? <div onClick={() => { onClose(); onApriCM(cm.id) }} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2.2}><rect x={2} y={7} width={20} height={14} rx={2}/></svg>
+                <span style={{ fontSize: 11, color: NAVY, fontWeight: 600 }}>{cm?.codice || cm?.code} · {cm?.cliente || cm?.cliente_nome || ''}</span>
+              </div> : null}
+              {evento?.note ? <div style={{ fontSize: 11, color: MUTED, marginTop: 4, lineHeight: 1.4 }}>{evento.note}</div> : null}
+            </div>
+
+            <div style={{ padding: '10px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <button onClick={() => onCompleta(evento.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 9, background: NAVY, color: '#FFF', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><polyline points="20 6 9 17 4 12"/></svg>
+                Completa
+              </button>
+              {telefono ? <a href={`tel:${telefono}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 9, background: '#F1F4F7', color: NAVY, border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.5}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Chiama
+              </a> : null}
+              {indirizzo ? <button onClick={naviga} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 9, background: '#F1F4F7', color: NAVY, border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>
+                Naviga
+              </button> : null}
+              <button onClick={() => setEditMode(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 9, background: '#F1F4F7', color: NAVY, border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.5}><path d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Modifica
+              </button>
+            </div>
+
+            <div style={{ padding: '8px 14px 12px', display: 'flex', justifyContent: 'flex-end', borderTop: `1px solid ${BORDER}`, marginTop: 2 }}>
+              <button onClick={() => onElimina(evento.id)} style={{ background: 'none', border: 'none', color: RED, fontSize: 10, cursor: 'pointer', padding: 4 }}>Elimina evento</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 4 }}>DATA</div>
+                <input type="date" value={data} onChange={(e) => setData(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 12, background: '#F7F9FB', color: TEXT }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 4 }}>ORA</div>
+                <input type="time" value={ora} onChange={(e) => setOra(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 12, background: '#F7F9FB', color: TEXT }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 4 }}>NOTE</div>
+                <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 12, background: '#F7F9FB', color: TEXT, resize: 'vertical', fontFamily: 'inherit' }} />
+              </div>
+            </div>
+            <div style={{ padding: '0 14px 12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <button onClick={() => setEditMode(false)} style={{ padding: 9, background: '#F1F4F7', color: MUTED, border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Annulla</button>
+              <button onClick={handleSave} style={{ padding: 9, background: NAVY, color: '#FFF', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Salva</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SheetTask({ task, cantieri, team, onClose, onCompleta, onElimina, onAggiorna, onApriCM }: any) {
+  const [editMode, setEditMode] = useState(false)
+  const [testo, setTesto] = useState(task?.testo || '')
+  const [scadenza, setScadenza] = useState(task?.data || '')
+  const cm = cantieri.find((c: any) => c?.id === task?.commessa_id)
+  const op = team.find((t: any) => t?.id === task?.assegnata_a || t?.id === task?.utente_id)
+  const prio = (task?.priorita || '').toLowerCase()
+  const scad = task?.data ? new Date(task.data) : null
+  const isLate = scad && scad.getTime() < Date.now() - 86400000
+
+  const handleSave = async () => {
+    await onAggiorna(task.id, { testo, data: scadenza })
+    setEditMode(false)
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,31,51,0.5)', zIndex: 9000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 12 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#FFF', borderRadius: 14, boxShadow: '0 4px 24px rgba(15,31,51,0.25)', width: '100%', maxWidth: 380, overflow: 'hidden', marginBottom: 60 }}>
+        <div style={{ padding: '12px 14px 10px', background: '#F1F4F7', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <button onClick={() => onCompleta(task.id)} style={{ width: 22, height: 22, borderRadius: 5, border: `1.5px solid ${NAVY}`, background: '#FFF', cursor: 'pointer', flexShrink: 0, marginTop: 1, padding: 0 }} aria-label="Completa task" />
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+              {prio ? <span style={{ fontSize: 9, color: '#FFF', background: TEAL, padding: '2px 7px', borderRadius: 4, fontWeight: 700, letterSpacing: 0.5 }}>{prio.toUpperCase()}</span> : null}
+              {scad ? <span style={{ fontSize: 9, color: isLate ? TEXT : MUTED, fontWeight: 700 }}>{scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, lineHeight: 1.3 }}>{(task?.testo || 'Task').replace(/[\u2705\u2611\u2713\u2714\uD83D\uDCC5]/g, '').replace(/\s+/g, ' ').trim()}</div>
+          </div>
+        </div>
+
+        {!editMode ? (
+          <>
+            <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {cm ? <div onClick={() => { onClose(); onApriCM(cm.id) }} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2.2}><rect x={2} y={7} width={20} height={14} rx={2}/></svg>
+                <span style={{ fontSize: 11, color: NAVY, fontWeight: 600 }}>{cm?.codice || cm?.code} · {cm?.cliente || cm?.cliente_nome || ''}</span>
+              </div> : null}
+              {op ? <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2.2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/></svg>
+                <span style={{ fontSize: 11, color: TEXT }}>{op?.nome || 'Operatore'}{op?.cognome ? ` ${op.cognome[0]}.` : ''}</span>
+              </div> : null}
+            </div>
+
+            <div style={{ padding: '10px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              {cm ? <button onClick={() => { onClose(); onApriCM(cm.id) }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 9, background: NAVY, color: '#FFF', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                Apri commessa
+              </button> : null}
+              <button onClick={() => setEditMode(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 9, background: '#F1F4F7', color: NAVY, border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                Modifica
+              </button>
+            </div>
+
+            <div style={{ padding: '8px 14px 12px', display: 'flex', justifyContent: 'flex-end', borderTop: `1px solid ${BORDER}`, marginTop: 2 }}>
+              <button onClick={() => onElimina(task.id)} style={{ background: 'none', border: 'none', color: RED, fontSize: 10, cursor: 'pointer', padding: 4 }}>Elimina task</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 4 }}>TESTO</div>
+                <textarea value={testo} onChange={(e) => setTesto(e.target.value)} rows={2} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 12, background: '#F7F9FB', color: TEXT, resize: 'vertical', fontFamily: 'inherit' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 4 }}>SCADENZA</div>
+                <input type="date" value={scadenza} onChange={(e) => setScadenza(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 12, background: '#F7F9FB', color: TEXT }} />
+              </div>
+            </div>
+            <div style={{ padding: '0 14px 12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <button onClick={() => setEditMode(false)} style={{ padding: 9, background: '#F1F4F7', color: MUTED, border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Annulla</button>
+              <button onClick={handleSave} style={{ padding: 9, background: NAVY, color: '#FFF', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Salva</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function Stat({ icon, value, label, badge, onClick }: any) {
   const Ico = () => {
     if (icon === 'briefcase') return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={7} width={20} height={14} rx={2}/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
@@ -457,7 +696,7 @@ function Row({ label, value, color, last, onClick }: any) {
   )
 }
 
-function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
+function CardCalendar({ eventi, cantieri, apriCM, onClick, apriSheetEvento }: any) {
   const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('mese')
   const [cursor, setCursor] = useState(new Date())
   const today = new Date()
@@ -490,26 +729,16 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
   }
   const goPrev = () => { if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1)); else if (view === 'settimana') setCursor(new Date(cursor.getTime() - 7 * 86400000)); else setCursor(new Date(cursor.getTime() - 86400000)) }
   const goNext = () => { if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)); else if (view === 'settimana') setCursor(new Date(cursor.getTime() + 7 * 86400000)); else setCursor(new Date(cursor.getTime() + 86400000)) }
-  const navPrev = (e: any) => { e.stopPropagation(); goPrev() }
-  const navNext = (e: any) => { e.stopPropagation(); goNext() }
   const navOggi = (e: any) => { e.stopPropagation(); setCursor(new Date()) }
-  // swipe sulla lista eventi sotto = cambia giorno selezionato (anche in vista mese/settimana)
   const goPrevDay = () => setCursor(new Date(cursor.getTime() - 86400000))
   const goNextDay = () => setCursor(new Date(cursor.getTime() + 86400000))
   const monthLabel = `${MESI[cursor.getMonth()]} ${cursor.getFullYear()}`
   const days = buildMonth()
-  const navBtn: React.CSSProperties = { width: 26, height: 26, borderRadius: 6, background: '#F1F4F7', color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none' }
   const weekDays = useMemo(() => {
     const dow = (cursor.getDay() + 6) % 7
     const start = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - dow)
     return Array.from({ length: 7 }).map((_, i) => new Date(start.getTime() + i * 86400000))
   }, [cursor])
-
-  const apriEvento = (e: any) => {
-    const cmId = e?.commessa_id || e?.cm
-    if (cmId) apriCM(cmId)
-    else onClick()
-  }
 
   return (
     <>
@@ -524,11 +753,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <span style={{ color: TEXT, fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{monthLabel}</span>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button onClick={navPrev} style={navBtn}><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg></button>
-          <button onClick={navOggi} style={{ ...navBtn, padding: '0 10px', width: 'auto', fontSize: 10, fontWeight: 600 }}>OGGI</button>
-          <button onClick={navNext} style={navBtn}><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg></button>
-        </div>
+        <button onClick={navOggi} style={{ padding: '4px 12px', borderRadius: 6, background: '#F1F4F7', color: MUTED, fontSize: 10, fontWeight: 700, border: 'none', cursor: 'pointer' }}>OGGI</button>
       </div>
 
       {view === 'mese' && (
@@ -580,7 +805,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
                       {evs.slice(0, 3).map((e: any, j: number) => {
                         const data = parseEventDate(e)
                         return (
-                          <div key={j} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                          <div key={j} onClick={(ev) => { ev.stopPropagation(); apriSheetEvento(e) }} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                             <div style={{ width: 6, height: 6, borderRadius: 50, background: dotColor(e), flexShrink: 0 }}/>
                             <span style={{ fontSize: 10, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 600, minWidth: 36 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
                             <span style={{ fontSize: 11, color: TEXT, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{eventTitle(e)}</span>
@@ -605,7 +830,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
             {eventiSel.map((e: any, i: number) => {
               const data = parseEventDate(e)
               return (
-                <div key={i} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+                <div key={i} onClick={(ev) => { ev.stopPropagation(); apriSheetEvento(e) }} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                     <div style={{ width: 8, height: 8, borderRadius: 50, background: dotColor(e) }}/>
                     <div style={{ fontSize: 11, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 700, minWidth: 38 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
@@ -628,7 +853,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick }: any) {
           {eventiSel.map((e: any, i: number) => {
             const data = parseEventDate(e)
             return (
-              <div key={i} onClick={(ev) => { ev.stopPropagation(); apriEvento(e) }} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+              <div key={i} onClick={(ev) => { ev.stopPropagation(); apriSheetEvento(e) }} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '7px 0', borderBottom: i < eventiSel.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                   <div style={{ width: 7, height: 7, borderRadius: 50, background: dotColor(e) }}/>
                   <div style={{ fontSize: 10, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 700, minWidth: 38 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
@@ -694,7 +919,7 @@ function CardUrgente({ ferme, apri }: any) {
   )
 }
 
-function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any) {
+function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick, apriSheetTask }: any) {
   return (
     <>
       <CardHead title="Task" badge={tasks.length} link="vedi tutte" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>} />
@@ -706,7 +931,7 @@ function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any
           const scad = t?.data ? new Date(t.data) : null
           const isLate = scad && scad.getTime() < Date.now() - 86400000
           const prio = (t?.priorita || '').toLowerCase()
-          const prioColor = prio === 'alta' ? '#28A0A0' : prio === 'media' ? '#28A0A0' : MUTED
+          const prioColor = prio === 'alta' ? TEAL : prio === 'media' ? TEAL : MUTED
           const localDone = doneOptim?.[t?.id] !== undefined ? doneOptim[t.id] : !!t?.done
           return (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: i < tasks.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
@@ -714,14 +939,14 @@ function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleTask(t?.id, localDone) }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label={localDone ? 'Riapri task' : 'Completa task'}
-                style={{ width: 22, height: 22, borderRadius: 5, border: '1.5px solid #C8E4E4', flexShrink: 0, background: localDone ? '#28A0A0' : '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transition: 'all 0.15s ease' }}
+                style={{ width: 22, height: 22, borderRadius: 5, border: '1.5px solid #C8E4E4', flexShrink: 0, background: localDone ? TEAL : '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transition: 'all 0.15s ease' }}
               >
                 {localDone ? <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : null}
               </button>
-              <div onClick={() => cm && apri(cm.id)} style={{ flex: 1, minWidth: 0, cursor: cm ? 'pointer' : 'default', opacity: localDone ? 0.5 : 1 }}>
+              <div onClick={() => apriSheetTask(t)} style={{ flex: 1, minWidth: 0, cursor: 'pointer', opacity: localDone ? 0.5 : 1 }}>
                 <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3, textDecoration: localDone ? 'line-through' : 'none' }}>{(t?.testo || 'Task').replace(/[\u2705\u2611\u2713\u2714\uD83D\uDCC5]/g, '').replace(/\s+/g, ' ').trim()}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
-                  {scad ? <span style={{ fontSize: 10, color: isLate ? '#0D1F1F' : MUTED, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
+                  {scad ? <span style={{ fontSize: 10, color: isLate ? TEXT : MUTED, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
                   {prio ? <span style={{ fontSize: 9, color: '#FFF', background: prioColor, padding: '2px 7px', borderRadius: 4, fontWeight: 700, letterSpacing: 0.5 }}>{prio.toUpperCase()}</span> : null}
                   {cm ? <span style={{ fontSize: 10, color: NAVY, fontWeight: 600 }}>↗ {cm?.codice || cm?.code}</span> : null}
                 </div>
