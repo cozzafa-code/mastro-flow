@@ -24,14 +24,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it" suppressHydrationWarning style={{ backgroundColor: '#0D1F1F' }}>
-      <head>
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      </head>
-      <body suppressHydrationWarning style={{ margin: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#E4F2F2' }}>
-        <DayProvider>{children}</DayProvider>
-        <CookieBanner />
+      <body suppressHydrationWarning style={{ margin: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#0D1F1F', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', minHeight: '100vh' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 'calc(env(safe-area-inset-top, 0px) + 16px)', backgroundColor: '#0D1F1F', zIndex: 9999, pointerEvents: 'none' }} />
+        <div style={{ backgroundColor: '#E4F2F2', minHeight: 'calc(100vh - env(safe-area-inset-top, 0px) - 16px)' }}>
+          <DayProvider>{children}</DayProvider>
+          <CookieBanner />
+        </div>
         <script dangerouslySetInnerHTML={{ __html: "if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));if(window.caches){caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));}}" }} />
-        <script dangerouslySetInnerHTML={{ __html: "if(typeof window!=='undefined' && new URLSearchParams(location.search).get('debug')==='1'){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init();};document.body.appendChild(s);}" }} />
       </body>
     </html>
   )
