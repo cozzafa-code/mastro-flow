@@ -19,40 +19,25 @@ body {
   color: #1A1A1C;
   margin: 0;
   padding: 0;
+  min-height: 100vh;
 }
 
-/* Striscia blu fissa sopra (copre safe-area top, evita Dynamic Island) */
+/* STRISCIA BLU FISSA che copre la status bar / Dynamic Island */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: calc(env(safe-area-inset-top, 0px) + 4px);
+  height: env(safe-area-inset-top, 0px);
   background-color: #0D1F1F;
-  z-index: 9999;
+  z-index: 99999;
   pointer-events: none;
 }
 
-/* Push primo elemento sotto la safe-area top (header app) */
-nav[data-mastro-nav],
-header[data-mastro-header],
-.mastro-top-nav {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
-  min-height: calc(56px + env(safe-area-inset-top, 0px) + 12px) !important;
-}
-
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: #E4F2F2;
-}
-::-webkit-scrollbar-thumb {
-  background: #DCDCD7;
-  border-radius: 2px;
-}
-
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #E4F2F2; }
+::-webkit-scrollbar-thumb { background: #DCDCD7; border-radius: 2px; }
 
 /* MASTRO_IOS_TAP_FIX v2 */
 * { -webkit-tap-highlight-color: transparent; }

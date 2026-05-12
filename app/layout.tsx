@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'fliwoX',
   description: 'Fatto per chi lavora con le mani',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'fliwoX' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'fliwoX' },
   icons: {
     apple: '/icon-192.png',
   },
