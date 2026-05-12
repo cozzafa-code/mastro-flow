@@ -19,20 +19,28 @@ body {
   color: #1A1A1C;
   margin: 0;
   padding: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
   min-height: 100vh;
 }
 
-/* STRISCIA BLU FISSA che copre la status bar / Dynamic Island */
+/* STRISCIA BLU FISSA SOPRA - copre safe-area top + Dynamic Island con margine */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: env(safe-area-inset-top, 0px);
+  height: calc(env(safe-area-inset-top, 0px) + 20px);
   background-color: #0D1F1F;
   z-index: 99999;
   pointer-events: none;
+}
+
+/* Push contenuto sotto la striscia blu extra (20px respiro Dynamic Island) */
+body {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
 }
 
 ::-webkit-scrollbar { width: 4px; }
