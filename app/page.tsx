@@ -93,15 +93,15 @@ export default function LandingPage() {
   return (
     <main style={{ fontFamily: "system-ui,-apple-system,sans-serif", background: T.bg, color: T.dark, minHeight: "100vh" }}>
 
-      {/* NAV */}
-      <nav style={{ background: T.dark, padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, position: "sticky", top: 0, zIndex: 100 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* NAV - estende su safe-area top con colore dark */}
+      <nav style={{ background: T.dark, padding: "0 20px", paddingTop: "calc(env(safe-area-inset-top, 0px))", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 56, position: "sticky", top: "calc(-1 * env(safe-area-inset-top, 0px))", zIndex: 100, marginTop: "calc(-1 * env(safe-area-inset-top, 0px))" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, height: 56 }}>
           <FliwoxIcon size={32} />
           <span style={{ color: "#fff", fontWeight: 900, fontSize: 20, letterSpacing: -0.5 }}>
             fliwo<span style={{ color: T.teal }}>X</span>
           </span>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, height: 56, alignItems: "center" }}>
           <Link href="/login" style={{ padding: "7px 14px", borderRadius: 8, color: "#8BBCBC", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Accedi</Link>
           <Link href="/register" style={{ padding: "7px 16px", borderRadius: 8, background: T.teal, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", boxShadow: `0 4px 0 0 ${T.tealDark}` }}>
             Prova gratis
@@ -245,7 +245,7 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ background: T.dark, padding: "28px 20px", textAlign: "center" }}>
+      <footer style={{ background: T.dark, padding: "28px 20px calc(28px + env(safe-area-inset-bottom, 0px))", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14 }}>
           <FliwoxIcon size={28} />
           <span style={{ color: "#fff", fontWeight: 900, fontSize: 16 }}>fliwo<span style={{ color: T.teal }}>X</span></span>
