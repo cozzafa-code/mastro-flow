@@ -1919,17 +1919,34 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   };
 
 
-  const addEvent = () => {
+  const addEvent = async () => {
     const _evTitle = newEvent.text.trim() || (newEvent.persona ? "Appuntamento " + newEvent.persona : "");
     const v = validateEvento(newEvent);
     if (!v.valid) { toast(v.errors[0], "error"); return; }
     newEvent.text = _evTitle;
+    const eventDate = newEvent.date || selDate.toISOString().split("T")[0];
     // If tipo is "task", create a task instead of an event
     if (newEvent.tipo === "task") {
-      const taskDate = newEvent.date || selDate.toISOString().split("T")[0];
-      setTasks(ts => [...ts, { id: Date.now(), text: newEvent.text, meta: (newEvent as any)._taskMeta || "", time: newEvent.time, priority: (newEvent as any)._taskPriority || "media", cm: newEvent.cm, date: taskDate, persona: newEvent.persona, done: false, allegati: [] }]);
+      const tempId = "tmp_" + Date.now();
+      setTasks(ts => [...ts, { id: tempId, text: newEvent.text, meta: (newEvent as any)._taskMeta || "", time: newEvent.time, priority: (newEvent as any)._taskPriority || "media", cm: newEvent.cm, date: eventDate, persona: newEvent.persona, done: false, allegati: [] }]);
       setNewEvent({ text: "", time: "", tipo: "sopralluogo", cm: "", persona: "", date: "", reminder: "", addr: "" });
       setShowNewEvent(false);
+      try {
+        if (aziendaId) {
+          const { data: tk, error: tkErr } = await supabase.from("tasks").insert({
+            azienda_id: aziendaId,
+            testo: _evTitle,
+            data: eventDate,
+            ora: newEvent.time || null,
+            priorita: (newEvent as any)._taskPriority || "media",
+            persona: newEvent.persona || null,
+            meta: (newEvent as any)._taskMeta || null,
+            commessa_id: newEvent.cm || null,
+            done: false,
+          }).select().single();
+          if (!tkErr && tk?.id) setTasks(ts => ts.map(t => t.id === tempId ? { ...t, id: tk.id } : t));
+        }
+      } catch (err) { console.error("save task", err); }
       return;
     }
     if ((newEvent as any)._newCliente && (newEvent as any)._nomeCliente) {
@@ -1938,10 +1955,34 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       newEvent.persona = nc.nome + (nc.cognome ? " " + nc.cognome : "");
     }
     if (!newEvent.time) newEvent.time = "09:00";
-    setEvents(ev => [...ev, { id: Date.now(), ...newEvent, date: newEvent.date || selDate.toISOString().split("T")[0], addr: newEvent.addr || "", color: tipoEvColor(newEvent.tipo) }]);
+    const tempEvId = "tmp_" + Date.now();
+    setEvents(ev => [...ev, { id: tempEvId, ...newEvent, date: eventDate, addr: newEvent.addr || "", color: tipoEvColor(newEvent.tipo) }]);
     setNewEvent({ text: "", time: "", tipo: "sopralluogo", cm: "", persona: "", date: "", reminder: "", addr: "" });
     trackAction("evento", newEvent.text || "Evento", JSON.stringify({ type: "evento" }));
     setShowNewEvent(false);
+    try {
+      if (aziendaId) {
+        const { data: ev, error: evErr } = await supabase.from("eventi").insert({
+          azienda_id: aziendaId,
+          titolo: _evTitle,
+          tipo: newEvent.tipo || "sopralluogo",
+          data: eventDate,
+          ora: newEvent.time || "09:00",
+          ora_fine: (newEvent as any).oraFine || null,
+          durata_min: (newEvent as any).durata_min || null,
+          persona: newEvent.persona || null,
+          indirizzo: newEvent.addr || null,
+          note: (newEvent as any).note || null,
+          commessa_id: newEvent.cm || null,
+          colore: tipoEvColor(newEvent.tipo),
+          reminder: newEvent.reminder || null,
+          completato: false,
+          annullato: false,
+        }).select().single();
+        if (!evErr && ev?.id) setEvents(es => es.map(e => e.id === tempEvId ? { ...e, id: ev.id } : e));
+        if (evErr) { console.error("save event", evErr); toast("Errore salvataggio: " + evErr.message, "error"); }
+      }
+    } catch (err) { console.error("save event", err); }
   };
 
 
