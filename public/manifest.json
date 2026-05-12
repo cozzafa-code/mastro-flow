@@ -1,19 +1,24 @@
-﻿{
+{
   "name": "fliwoX",
   "short_name": "fliwoX",
   "description": "Fatto per chi lavora con le mani",
-  "start_url": "/app",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#E8F4F4",
+  "orientation": "portrait",
+  "background_color": "#0D1F1F",
   "theme_color": "#0D1F1F",
-  "orientation": "portrait-primary",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
-  ],
-  "categories": ["business", "productivity"],
-  "lang": "it",
-  "shortcuts": [
-    { "name": "Nuova Commessa", "url": "/app?action=nuova-commessa", "description": "Crea commessa rapidamente" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
