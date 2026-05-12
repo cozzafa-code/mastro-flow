@@ -222,7 +222,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
   };
 
   return (
-    <div style={{ background: BG_SOFT, minHeight: '100vh', paddingBottom: hideBottomNav ? 0 : 90 }}>
+    <div style={{ background: BG_SOFT, minHeight: '100vh', maxHeight: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header navy gradient con safe-area */}
       <div style={{ background: `linear-gradient(180deg, ${NAVY} 0%, ${NAVY_DEEP} 100%)`, paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <HeaderCal
@@ -237,6 +237,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
 
       <FiltriBar filtro={filtro} setFiltro={setFiltro} />
 
+      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any, paddingBottom: hideBottomNav ? 20 : 100 }}>
       {view === 'giorno' && (
         <SwipeArea onSwipeLeft={goNext} onSwipeRight={goPrev}>
           <VistaGiorno eventi={eventiSel} cantieri={cantieri} team={team} onApriEvento={apriEvento} cursor={cursor} today={today} />
@@ -265,6 +266,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
           />
         </SwipeArea>
       )}
+      </div>
 
       {sheetEvento && (
         <AgendaEventSheetMobile
