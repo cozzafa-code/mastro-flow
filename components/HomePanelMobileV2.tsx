@@ -27,7 +27,6 @@ const SWIPE_THRESHOLD = 50
 
 const ALL_CARDS = [
   { id: 'agenda', title: 'AGENDA' },
-  { id: 'urgente', title: 'URGENTE' },
   { id: 'task', title: 'TASK' },
   { id: 'prossimo-montaggio', title: 'PROSSIMI MONTAGGI' },
   { id: 'commesse', title: 'COMMESSE ATTIVE' },
