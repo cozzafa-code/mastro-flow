@@ -504,10 +504,10 @@ function SheetEvento({ evento, cantieri, onClose, onCompleta, onElimina, onAggio
   }
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,31,51,0.5)', zIndex: 9000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 12 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: '#FFF', borderRadius: 14, boxShadow: '0 4px 24px rgba(15,31,51,0.25)', width: '100%', maxWidth: 380, overflow: 'hidden', marginBottom: 60 }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,31,51,0.5)', zIndex: 9000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 8 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#FFF', borderRadius: 14, boxShadow: '0 4px 24px rgba(15,31,51,0.25)', width: '100%', maxWidth: 420, overflow: 'hidden', marginBottom: 70 }}>
         <div style={{ padding: '12px 14px 10px', background: '#F1F4F7', borderBottom: `1px solid ${BORDER}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
             <div style={{ width: 6, height: 6, borderRadius: 50, background: NAVY }}/>
             <span style={{ fontSize: 9, color: NAVY, fontWeight: 700, letterSpacing: 0.5 }}>{tipo}</span>
             <span style={{ fontSize: 9, color: MUTED }}>· {dataObj.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })} · {dataObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -595,8 +595,8 @@ function SheetTask({ task, cantieri, team, onClose, onCompleta, onElimina, onAgg
   }
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,31,51,0.5)', zIndex: 9000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 12 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: '#FFF', borderRadius: 14, boxShadow: '0 4px 24px rgba(15,31,51,0.25)', width: '100%', maxWidth: 380, overflow: 'hidden', marginBottom: 60 }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,31,51,0.5)', zIndex: 9000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 8 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#FFF', borderRadius: 14, boxShadow: '0 4px 24px rgba(15,31,51,0.25)', width: '100%', maxWidth: 420, overflow: 'hidden', marginBottom: 70 }}>
         <div style={{ padding: '12px 14px 10px', background: '#F1F4F7', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <button onClick={() => onCompleta(task.id)} style={{ width: 22, height: 22, borderRadius: 5, border: `1.5px solid ${NAVY}`, background: '#FFF', cursor: 'pointer', flexShrink: 0, marginTop: 1, padding: 0 }} aria-label="Completa task" />
           <div style={{ flex: 1 }}>
@@ -699,6 +699,7 @@ function Row({ label, value, color, last, onClick }: any) {
 function CardCalendar({ eventi, cantieri, apriCM, onClick, apriSheetEvento }: any) {
   const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('mese')
   const [cursor, setCursor] = useState(new Date())
+  const [expandedDay, setExpandedDay] = useState<string | null>(null)
   const today = new Date()
   const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
   const eventByDay = useMemo(() => {
@@ -786,33 +787,37 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick, apriSheetEvento }: an
             {weekDays.map((d, i) => {
               const isT = isSameDay(d, today), isS = isSameDay(d, cursor)
               const evs = (eventByDay[d.toDateString()] || []).sort((a: any, b: any) => parseEventDate(a).getTime() - parseEventDate(b).getTime())
+              const dayKey = d.toDateString()
+              const isExpanded = expandedDay === dayKey
               return (
-                <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d) }} style={{
-                  background: isT ? '#E5EAF0' : (isS ? '#F1F4F7' : '#F7F9FB'),
-                  borderLeft: isT ? `3px solid ${NAVY}` : '3px solid transparent',
-                  borderRadius: 8, padding: '8px 10px', cursor: 'pointer',
+                <div key={i} style={{
+                  background: isT ? '#E5EAF0' : (isExpanded ? '#F1F4F7' : (isS ? '#F1F4F7' : '#F7F9FB')),
+                  borderLeft: (isT || isExpanded) ? `3px solid ${NAVY}` : '3px solid transparent',
+                  borderRadius: 8, padding: '8px 10px',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div onClick={(e) => { e.stopPropagation(); setCursor(d); setExpandedDay(isExpanded ? null : dayKey) }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ fontSize: 9, fontWeight: 700, color: isT ? NAVY : MUTED, minWidth: 28 }}>{DOW_SHORT[i]}</div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{d.getDate()}</div>
                       <div style={{ fontSize: 10, color: MUTED, textTransform: 'lowercase' }}>{MESI[d.getMonth()].slice(0, 3)}</div>
                     </div>
-                    <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{evs.length === 0 ? '—' : `${evs.length} eventi`}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 9, color: isExpanded ? NAVY : MUTED, fontWeight: 700, background: isExpanded ? '#FFF' : 'transparent', padding: isExpanded ? '2px 6px' : 0, borderRadius: 4 }}>{evs.length === 0 ? '—' : `${evs.length} EVENTI`}</span>
+                      {evs.length > 0 ? <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={isExpanded ? NAVY : MUTED} strokeWidth={2.5}>{isExpanded ? <polyline points="18 15 12 9 6 15"/> : <polyline points="6 9 12 15 18 9"/>}</svg> : null}
+                    </div>
                   </div>
-                  {evs.length > 0 ? (
-                    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                      {evs.slice(0, 3).map((e: any, j: number) => {
+                  {isExpanded && evs.length > 0 ? (
+                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6, borderTop: `1px solid rgba(0,0,0,0.06)` }}>
+                      {evs.map((e: any, j: number) => {
                         const data = parseEventDate(e)
                         return (
-                          <div key={j} onClick={(ev) => { ev.stopPropagation(); apriSheetEvento(e) }} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                          <div key={j} onClick={(ev) => { ev.stopPropagation(); apriSheetEvento(e) }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 4px', background: 'rgba(255,255,255,0.6)', borderRadius: 4, cursor: 'pointer' }}>
                             <div style={{ width: 6, height: 6, borderRadius: 50, background: dotColor(e), flexShrink: 0 }}/>
                             <span style={{ fontSize: 10, color: MUTED, fontFeatureSettings: '"tnum"', fontWeight: 600, minWidth: 36 }}>{data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
                             <span style={{ fontSize: 11, color: TEXT, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{eventTitle(e)}</span>
                           </div>
                         )
                       })}
-                      {evs.length > 3 ? <div style={{ fontSize: 9, color: NAVY, fontWeight: 600 }}>+{evs.length - 3} altri</div> : null}
                     </div>
                   ) : null}
                 </div>
