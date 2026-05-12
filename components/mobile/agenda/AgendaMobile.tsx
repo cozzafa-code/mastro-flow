@@ -115,8 +115,31 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
   const [sheetEvento, setSheetEvento] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [tasksDone, setTasksDone] = useState<Record<string, boolean>>({});
+  const [eventiDB, setEventiDB] = useState<any[]>([]);
   const today = new Date();
   const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+
+  // Fetch eventi diretti da Supabase (sincronizzati con HOME)
+  useEffect(() => {
+    let mounted = true;
+    const loadEventi = async () => {
+      try {
+        const az = (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '');
+        if (!az) return;
+        const { data, error } = await supabase
+          .from('eventi')
+          .select('*')
+          .eq('azienda_id', az)
+          .order('data', { ascending: true });
+        if (error) { console.error('load eventi', error); return; }
+        if (mounted) setEventiDB(data || []);
+      } catch (err) { console.error('eventi fetch', err); }
+    };
+    loadEventi();
+    // Auto-refresh ogni 30s per sincro con HOME
+    const interval = setInterval(loadEventi, 30000);
+    return () => { mounted = false; clearInterval(interval); };
+  }, []);
 
   // Fetch tasks
   useEffect(() => {
@@ -150,11 +173,11 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
   };
 
   const eventi = useMemo(() => {
-    const raw = a?.events || a?.eventi || [];
-    const evs = raw.filter((e: any) => !e?.completato && !e?.annullato && !e?.deleted_at).map((e: any) => ({ ...e, _kind: 'evento' }));
+    // PRIORITÀ: eventi reali da Supabase (sincronizzati con HOME)
+    const evs = eventiDB.filter((e: any) => !e?.completato && !e?.annullato && !e?.deleted_at).map((e: any) => ({ ...e, _kind: 'evento' }));
     const tks = tasks.filter((t: any) => !t?.done && !tasksDone[t?.id]).map((t: any) => ({ ...t, _kind: 'task', titolo: t?.testo, data: t?.data || t?.scadenza }));
     return [...evs, ...tks];
-  }, [a, tasks, tasksDone]);
+  }, [eventiDB, tasks, tasksDone]);
 
   const team = a?.team || [];
 
