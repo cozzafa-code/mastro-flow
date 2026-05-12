@@ -1,603 +1,622 @@
 // components/mobile/agenda/AgendaMobile.tsx
-// Vista operativa MASTRO - 3 viste (Giorno/Settimana/Mese) + filtri + squadra
-// Sostituisce AgendaMobile vecchio mantenendo stesse props
 "use client";
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
+import AgendaEventCardMobile from "./AgendaEventCardMobile";
 import AgendaEventSheetMobile from "./AgendaEventSheetMobile";
+import AgendaWeekMobile from "./AgendaWeekMobile";
+import AgendaMonthMobile from "./AgendaMonthMobile";
+import AgendaProblemsMobile from "./AgendaProblemsMobile";
 import AgendaBottomNav from "./AgendaBottomNav";
 import { useAgendaMobile } from "../../../hooks/useAgendaMobile";
+import type { AgendaEvent, AgendaEventType } from "../../../lib/types/agenda";
 
-const NAVY = '#1B3A5C', NAVY_DEEP = '#0F1F33';
-const TEAL = '#28A0A0', TEAL_DARK = '#1B6B6B';
-const RED = '#C73E1D', AMBER = '#BA7517', GREEN = '#0F6E56';
-const TEXT = '#0F1F33', MUTED = '#5C6B7A', BORDER = '#E5E7EB';
-const BG_SOFT = '#F7F9FB', BG_PALE = '#F1F4F7';
-const SWIPE_THRESHOLD = 50;
-const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-const DOW = ['L','M','M','G','V','S','D'];
-const DOW_FULL = ['LUN','MAR','MER','GIO','VEN','SAB','DOM'];
-
-const TIPI: Record<string, { label: string; color: string; gradientFrom: string; gradientTo: string }> = {
-  montaggio: { label: 'MONTAGGIO', color: NAVY, gradientFrom: NAVY, gradientTo: NAVY_DEEP },
-  sopralluogo: { label: 'SOPRALLUOGO', color: AMBER, gradientFrom: AMBER, gradientTo: '#8B5500' },
-  rilievo: { label: 'RILIEVO', color: AMBER, gradientFrom: AMBER, gradientTo: '#8B5500' },
-  firma: { label: 'FIRMA', color: GREEN, gradientFrom: GREEN, gradientTo: '#0A4D3C' },
-  consegna: { label: 'CONSEGNA', color: TEAL, gradientFrom: TEAL, gradientTo: TEAL_DARK },
-  default: { label: 'EVENTO', color: MUTED, gradientFrom: MUTED, gradientTo: NAVY_DEEP },
+// ─── PALETTE NAVY 50/20 ──────────────────────────────────────
+const TH = {
+  bgPage: "#94A3B8",
+  bgCard: "#FFFFFF",
+  navy: "#1E3A5F",
+  navyDark: "#0F1B2D",
+  navyLight: "#2D5A87",
+  navyMuted: "#475A75",
+  navySoft: "#93B0CF",
+  ink: "#0A1628",
+  sub: "#475A75",
+  subLight: "#94A3B8",
+  border: "#CBD5E1",
+  borderSoft: "#E2E8F0",
+  bgPill: "#DBE6F1",
+  ambra: "#92400E",
+  ambraBg: "#FEF3C7",
+  red: "#991B1B",
+  redBg: "#FEE2E2",
+  green: "#065F46",
+  greenBg: "#ECFDF5",
 };
-
-const FILTRI = [
-  { id: 'tutti', label: 'TUTTI', color: NAVY },
-  { id: 'montaggio', label: 'MONTAGGI', color: NAVY },
-  { id: 'sopralluogo', label: 'SOPRALLUOGHI', color: AMBER },
-  { id: 'firma', label: 'FIRME', color: GREEN },
-  { id: 'consegna', label: 'CONSEGNE', color: TEAL },
-];
-
-function getTipo(e: any) {
-  const t = (e?.tipo || e?.type || '').toLowerCase();
-  if (t.includes('mont') || t.includes('posa')) return 'montaggio';
-  if (t.includes('sopral') || t.includes('rilievo') || t.includes('misure')) return 'sopralluogo';
-  if (t.includes('firma') || t.includes('contratto')) return 'firma';
-  if (t.includes('conseg')) return 'consegna';
-  return 'default';
-}
-
-function parseEventDate(e: any): Date {
-  if (e?.data) {
-    const d = new Date(e.data);
-    const ora = e?.ora_inizio || e?.ora || e?.time;
-    if (ora) { const [h, m] = String(ora).split(':').map(Number); if (!isNaN(h)) d.setHours(h || 0, m || 0); }
-    return d;
-  }
-  if (e?.date) {
-    const d = new Date(e.date);
-    if (e?.time) { const [h, m] = String(e.time).split(':').map(Number); if (!isNaN(h)) d.setHours(h || 0, m || 0); }
-    return d;
-  }
-  return new Date(e?.start || 0);
-}
-function parseEventEndDate(e: any): Date {
-  const start = parseEventDate(e);
-  if (e?.ora_fine) {
-    const d = new Date(start);
-    const [h, m] = String(e.ora_fine).split(':').map(Number);
-    if (!isNaN(h)) d.setHours(h || 0, m || 0);
-    return d;
-  }
-  if (e?.durata_min) return new Date(start.getTime() + Number(e.durata_min) * 60000);
-  return new Date(start.getTime() + 60 * 60000);
-}
-function eventTitle(e: any) { return e?.titolo || e?.text || e?.title || 'Evento'; }
-function eventLuogo(e: any) { return e?.indirizzo || e?.addr || e?.luogo || ''; }
-function eventImporto(e: any, cm: any) {
-  if (e?.importo) return Number(e.importo);
-  if (cm?.totale) return Number(cm.totale);
-  return 0;
-}
-function fmtEuro(n: number) {
-  if (!n) return '';
-  if (n >= 1000) return `€${(n / 1000).toFixed(1)}k`;
-  return `€${Math.round(n)}`;
-}
-
-function SwipeArea({ children, onSwipeLeft, onSwipeRight, style }: any) {
-  const sX = useRef<number | null>(null), sY = useRef<number | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => { sX.current = e.touches[0].clientX; sY.current = e.touches[0].clientY; };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (sX.current == null || sY.current == null) return;
-    const dx = e.changedTouches[0].clientX - sX.current;
-    const dy = e.changedTouches[0].clientY - sY.current;
-    if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0) onSwipeLeft?.(); else onSwipeRight?.();
-    }
-    sX.current = null; sY.current = null;
-  };
-  return <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={style}>{children}</div>;
-}
 
 interface Props {
   bottomNav?: React.ReactNode;
   hideBottomNav?: boolean;
   cantieri?: any[];
   onOpenCommessa?: (cmId: string | undefined, code: string | undefined) => void;
-  onCreateEvent?: (kind: string, dateIso: string) => void;
+  onCreateEvent?: (kind: AgendaEventType | "nota", selectedDate: string) => void;
 }
 
-export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], onOpenCommessa, onCreateEvent }: Props) {
-  const a: any = useAgendaMobile(cantieri);
-  const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('giorno');
-  const [cursor, setCursor] = useState(new Date());
-  const [filtro, setFiltro] = useState<string>('tutti');
-  const [sheetEvento, setSheetEvento] = useState<any>(null);
-  const today = new Date();
-  const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+const TODAY_ISO = new Date().toISOString().split("T")[0];
 
-  const eventi = useMemo(() => {
-    const raw = a?.events || a?.eventi || [];
-    return raw.filter((e: any) => !e?.completato && !e?.annullato && !e?.deleted_at);
-  }, [a]);
+export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpenCommessa, onCreateEvent }: Props) {
+  const a = useAgendaMobile(cantieri);
+  const [tap, setTap] = useState<AgendaEvent | null>(null);
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [filterTipo, setFilterTipo] = useState<"tutti" | "eventi" | "task">("tutti");
+  const [completed, setCompleted] = useState<AgendaEvent | null>(null);
 
-  const team = a?.team || [];
-
-  const eventiFiltrati = useMemo(() => {
-    if (filtro === 'tutti') return eventi;
-    return eventi.filter((e: any) => getTipo(e) === filtro);
-  }, [eventi, filtro]);
-
-  const eventByDay = useMemo(() => {
-    const map: Record<string, any[]> = {};
-    eventiFiltrati.forEach((e: any) => {
-      const d = parseEventDate(e);
-      if (isNaN(d.getTime())) return;
-      const k = d.toDateString();
-      if (!map[k]) map[k] = [];
-      map[k].push(e);
-    });
-    Object.keys(map).forEach(k => map[k].sort((a, b) => parseEventDate(a).getTime() - parseEventDate(b).getTime()));
-    return map;
-  }, [eventiFiltrati]);
-
-  const eventiSel = eventByDay[cursor.toDateString()] || [];
-
-  const kpiGiorno = useMemo(() => {
-    const evs = eventByDay[cursor.toDateString()] || [];
-    const valore = evs.reduce((s, e) => {
-      const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
-      return s + eventImporto(e, cm);
-    }, 0);
-    const completati = evs.filter((e: any) => e?.completato).length;
-    return { count: evs.length, valore, completati };
-  }, [eventByDay, cursor, cantieri]);
-
-  const weekDays = useMemo(() => {
-    const dow = (cursor.getDay() + 6) % 7;
-    const start = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - dow);
-    return Array.from({ length: 7 }).map((_, i) => new Date(start.getTime() + i * 86400000));
-  }, [cursor]);
-
-  const kpiSettimana = useMemo(() => {
-    let count = 0, valore = 0;
-    weekDays.forEach(d => {
-      const evs = eventByDay[d.toDateString()] || [];
-      count += evs.length;
-      evs.forEach((e: any) => {
-        const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
-        valore += eventImporto(e, cm);
-      });
-    });
-    const maxCount = Math.max(...weekDays.map(d => (eventByDay[d.toDateString()] || []).length), 1);
-    return { count, valore, maxCount };
-  }, [eventByDay, weekDays, cantieri]);
-
-  const monthDays = useMemo(() => {
-    const y = cursor.getFullYear(), m = cursor.getMonth();
-    const last = new Date(y, m + 1, 0);
-    const startDow = (new Date(y, m, 1).getDay() + 6) % 7;
-    const days: { date: Date; muted: boolean }[] = [];
-    for (let i = startDow; i > 0; i--) days.push({ date: new Date(y, m, 1 - i), muted: true });
-    for (let d = 1; d <= last.getDate(); d++) days.push({ date: new Date(y, m, d), muted: false });
-    while (days.length % 7 !== 0) {
-      const ld = days[days.length - 1].date;
-      days.push({ date: new Date(ld.getFullYear(), ld.getMonth(), ld.getDate() + 1), muted: true });
+  // ===== Titoli dinamici per vista =====
+  const headerTitle = useMemo(() => {
+    if (a.view === "mese") {
+      const d = new Date(a.selectedDate + "T00:00:00");
+      const m = d.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+      return m.charAt(0).toUpperCase() + m.slice(1);
     }
-    return days;
-  }, [cursor]);
+    if (a.view === "settimana") {
+      const d = new Date(a.selectedDate + "T00:00:00");
+      const day = d.getDay();
+      const diff = (day === 0 ? -6 : 1 - day);
+      const s = new Date(d); s.setDate(d.getDate() + diff);
+      const e = new Date(s); e.setDate(s.getDate() + 6);
+      return `${s.toLocaleDateString("it-IT", { day: "numeric", month: "short" })} – ${e.toLocaleDateString("it-IT", { day: "numeric", month: "short" })}`;
+    }
+    const d = new Date(a.selectedDate + "T00:00:00");
+    const s = d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }, [a.selectedDate, a.view]);
 
-  const kpiMese = useMemo(() => {
-    const y = cursor.getFullYear(), m = cursor.getMonth();
-    const monthEvs = eventiFiltrati.filter((e: any) => {
-      const d = parseEventDate(e); return d.getFullYear() === y && d.getMonth() === m;
+  // ===== Strip giorni settimana corrente =====
+  const weekStrip = useMemo(() => {
+    const sel = new Date(a.selectedDate + "T00:00:00");
+    const day = sel.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    const start = new Date(sel); start.setDate(sel.getDate() + diff);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      return d;
     });
-    const valore = monthEvs.reduce((s, e) => {
-      const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
-      return s + eventImporto(e, cm);
-    }, 0);
-    const perTipo: Record<string, number> = { montaggio: 0, sopralluogo: 0, firma: 0, consegna: 0 };
-    monthEvs.forEach((e: any) => { const t = getTipo(e); if (perTipo[t] !== undefined) perTipo[t]++; });
-    const counts = monthDays.map(d => (eventByDay[d.date.toDateString()] || []).length);
-    const maxDay = Math.max(...counts, 1);
-    return { count: monthEvs.length, valore, perTipo, maxDay };
-  }, [eventiFiltrati, eventByDay, monthDays, cursor, cantieri]);
+  }, [a.selectedDate]);
 
-  const goPrev = () => {
-    if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
-    else if (view === 'settimana') setCursor(new Date(cursor.getTime() - 7 * 86400000));
-    else setCursor(new Date(cursor.getTime() - 86400000));
-  };
-  const goNext = () => {
-    if (view === 'mese') setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
-    else if (view === 'settimana') setCursor(new Date(cursor.getTime() + 7 * 86400000));
-    else setCursor(new Date(cursor.getTime() + 86400000));
-  };
-  const goOggi = () => setCursor(new Date());
+  const isoOf = (d: Date) => d.toISOString().split("T")[0];
 
-  const apriEvento = (e: any) => {
-    setSheetEvento(e);
+  // ===== Counts per filtri =====
+  const allEvents = a.events || [];
+  const nEventi = allEvents.filter(e => e.tipo !== "task").length;
+  const nTask = allEvents.filter(e => e.tipo === "task").length;
+  const nTotal = allEvents.length;
+
+  // ===== Filter applied to current day =====
+  const eventsOfDayFiltered = useMemo(() => {
+    const list = a.eventsOfDay || [];
+    if (filterTipo === "eventi") return list.filter(e => e.tipo !== "task");
+    if (filterTipo === "task") return list.filter(e => e.tipo === "task");
+    return list;
+  }, [a.eventsOfDay, filterTipo]);
+
+  // ===== Navigazione tempo =====
+  const navMese = (delta: number) => {
+    const d = new Date(a.selectedDate + "T00:00:00");
+    d.setMonth(d.getMonth() + delta);
+    a.setSelectedDate(d.toISOString().split("T")[0]);
+  };
+  const navWeek = (delta: number) => {
+    const d = new Date(a.selectedDate + "T00:00:00");
+    d.setDate(d.getDate() + delta * 7);
+    a.setSelectedDate(d.toISOString().split("T")[0]);
+  };
+  const navDay = (delta: number) => {
+    const d = new Date(a.selectedDate + "T00:00:00");
+    d.setDate(d.getDate() + delta);
+    a.setSelectedDate(d.toISOString().split("T")[0]);
+  };
+  const navTime = (delta: number) => {
+    if (a.view === "mese") return navMese(delta);
+    if (a.view === "settimana") return navWeek(delta);
+    return navDay(delta);
   };
 
-  const apriCommessa = (cmId: string) => {
-    const cm = cantieri.find((c: any) => c?.id === cmId);
-    onOpenCommessa?.(cmId, cm?.code || cm?.codice);
+  // ===== Action handlers (preservati dal file originale) =====
+  const handleAction = (action: any, e: AgendaEvent) => {
+    if (action === "mappa" || action === "vai") {
+      if (e.indirizzo) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.indirizzo)}`, "_blank");
+      return;
+    }
+    if (action === "chiama") {
+      window.alert(`Chiama ${e.cliente || "cliente"}`);
+      return;
+    }
+    if (action === "risolvi") {
+      a.completeEvent(e.id);
+      setCompleted(e);
+      return;
+    }
+    if (action === "apri" || action === "sollecita" || action === "fattura" || action === "incassa") {
+      onOpenCommessa?.(e.cmId, e.commessaCode);
+      return;
+    }
   };
 
-  return (
-    <div style={{ background: BG_SOFT, minHeight: '100vh', paddingBottom: hideBottomNav ? 0 : 90 }}>
-      {/* Header navy gradient con safe-area */}
-      <div style={{ background: `linear-gradient(180deg, ${NAVY} 0%, ${NAVY_DEEP} 100%)`, paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        <HeaderCal
-          view={view} setView={setView}
-          cursor={cursor} goPrev={goPrev} goNext={goNext} goOggi={goOggi}
-          isToday={isSameDay(cursor, today)}
-          kpiGiorno={kpiGiorno} kpiSettimana={kpiSettimana} kpiMese={kpiMese}
-          weekDays={weekDays}
-          onCreateEvent={() => onCreateEvent?.('evento', cursor.toISOString())}
+  const handleSheetAction = (action: any, e: AgendaEvent) => {
+    if (action === "vai" || action === "mappa") {
+      if (e.indirizzo) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.indirizzo)}`, "_blank");
+      return;
+    }
+    if (action === "chiama") { window.alert(`Chiama ${e.cliente || "cliente"}`); return; }
+    if (action === "chat" || action === "foto") { window.alert(`${action.toUpperCase()}: da implementare`); }
+  };
+
+  const handleNewItem = (kind: AgendaEventType | "nota") => {
+    setShowCreateMenu(false);
+    if (onCreateEvent) {
+      onCreateEvent(kind, a.selectedDate);
+    } else {
+      a.addEvent({
+        id: "ev_" + Date.now(),
+        tipo: kind === "nota" ? "task" : kind,
+        oraInizio: "09:00",
+        oraFine: "10:00",
+        data: a.selectedDate,
+        titolo: "Nuovo " + (kind === "nota" ? "appunto" : kind),
+      } as AgendaEvent);
+    }
+  };
+
+  // ===== VISTA PROBLEMI =====
+  if (a.view === "problemi") {
+    return (
+      <div style={{ background: TH.bgPage, minHeight: "100vh", paddingBottom: 90, fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
+        <AgendaProblemsMobile
+          events={a.events}
+          onSegnala={() => setShowCreateMenu(true)}
+          onTap={() => {}}
+          onBack={() => a.setView("giorno")}
         />
+        {!hideBottomNav && (bottomNav ?? <AgendaBottomNav active="agenda" />)}
       </div>
+    );
+  }
 
-      <FiltriBar filtro={filtro} setFiltro={setFiltro} />
-
-      {view === 'giorno' && (
-        <SwipeArea onSwipeLeft={goNext} onSwipeRight={goPrev}>
-          <VistaGiorno eventi={eventiSel} cantieri={cantieri} team={team} onApriEvento={apriEvento} cursor={cursor} today={today} />
-        </SwipeArea>
-      )}
-
-      {view === 'settimana' && (
-        <SwipeArea onSwipeLeft={goNext} onSwipeRight={goPrev}>
-          <VistaSettimana
-            weekDays={weekDays} cursor={cursor} setCursor={setCursor}
-            eventByDay={eventByDay} cantieri={cantieri}
-            maxCount={kpiSettimana.maxCount} today={today}
-            onApriEvento={apriEvento}
-          />
-        </SwipeArea>
-      )}
-
-      {view === 'mese' && (
-        <SwipeArea onSwipeLeft={goNext} onSwipeRight={goPrev}>
-          <VistaMese
-            monthDays={monthDays} cursor={cursor} setCursor={setCursor}
-            eventByDay={eventByDay} cantieri={cantieri}
-            maxDay={kpiMese.maxDay} today={today}
-            onApriEvento={apriEvento}
-            eventiSel={eventiSel}
-          />
-        </SwipeArea>
-      )}
-
-      {sheetEvento && (
-        <AgendaEventSheetMobile
-          event={sheetEvento}
-          cantieri={cantieri}
-          onClose={() => setSheetEvento(null)}
-          onOpenCommessa={onOpenCommessa}
-          onUpdate={a?.updateEvent}
-          onDelete={a?.deleteEvent}
-        />
-      )}
-
-      {!hideBottomNav && bottomNav}
-    </div>
-  );
-}
-
-function HeaderCal({ view, setView, cursor, goPrev, goNext, goOggi, isToday, kpiGiorno, kpiSettimana, kpiMese, weekDays, onCreateEvent }: any) {
-  const titolo = view === 'giorno'
-    ? cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
-    : view === 'settimana'
-      ? `${weekDays[0].getDate()}–${weekDays[6].getDate()} ${MESI[weekDays[6].getMonth()]}`
-      : `${MESI[cursor.getMonth()]} ${cursor.getFullYear()}`;
-
-  const subtitle = view === 'giorno' ? (isToday ? 'OGGI' : 'GIORNO')
-    : view === 'settimana' ? 'SETTIMANA'
-    : 'MESE';
-
-  const kpiCount = view === 'giorno' ? kpiGiorno.count : view === 'settimana' ? kpiSettimana.count : kpiMese.count;
-  const kpiVal = view === 'giorno' ? kpiGiorno.valore : view === 'settimana' ? kpiSettimana.valore : kpiMese.valore;
-  const kpiLabel = view === 'giorno' ? 'lavori' : view === 'settimana' ? 'lavori' : 'commesse';
-
+  // ============================================================
+  // MAIN RENDER (mockup approvato)
+  // ============================================================
   return (
-    <div style={{ padding: '12px 16px 14px', color: '#FFF' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div style={{ fontSize: 14, color: '#FFF', fontWeight: 700, letterSpacing: 0.5 }}>AGENDA</div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={goPrev} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#FFF', width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <button onClick={goOggi} style={{ padding: '0 12px', borderRadius: 16, background: isToday ? TEAL : 'rgba(255,255,255,0.12)', color: '#FFF', fontSize: 11, fontWeight: 700, border: 'none', letterSpacing: 0.5, cursor: 'pointer', height: 32, boxShadow: isToday ? '0 2px 8px rgba(40,160,160,0.4)' : 'none' }}>OGGI</button>
-          <button onClick={goNext} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#FFF', width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-          <button onClick={onCreateEvent} style={{ background: TEAL, border: 'none', color: '#FFF', width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 6px rgba(40,160,160,0.4)' }}>
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-      </div>
+    <div style={{
+      background: TH.bgPage,
+      minHeight: "100vh",
+      paddingBottom: 90,
+      fontFamily: "'Manrope', -apple-system, 'SF Pro Display', system-ui, sans-serif",
+      overflowX: "hidden" as any,
+    }}>
 
-      <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.3)', padding: 3, borderRadius: 9, marginBottom: 14 }}>
-        {(['giorno','settimana','mese'] as const).map(v => (
-          <div key={v} onClick={() => setView(v)} style={{
-            flex: 1, textAlign: 'center', padding: '7px 0', fontSize: 10, fontWeight: 700,
-            color: view === v ? '#FFF' : 'rgba(255,255,255,0.55)',
-            background: view === v ? TEAL : 'transparent',
-            borderRadius: 6, letterSpacing: 0.5, cursor: 'pointer',
-            boxShadow: view === v ? '0 2px 6px rgba(40,160,160,0.4)' : 'none',
-          }}>{v.toUpperCase()}</div>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', letterSpacing: 1.5, fontWeight: 700, textTransform: 'uppercase' }}>{subtitle} · {titolo}</div>
-          <div style={{ fontSize: 26, fontWeight: 700, marginTop: 2, letterSpacing: -0.5, lineHeight: 1 }}>{kpiCount} {kpiLabel}</div>
-        </div>
-        {kpiVal > 0 ? (
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: TEAL, fontFeatureSettings: '"tnum"', lineHeight: 1 }}>{fmtEuro(kpiVal)}</div>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: 600, marginTop: 4 }}>VALORE</div>
-          </div>
-        ) : null}
-      </div>
-
-      {view === 'giorno' && kpiGiorno.count > 0 ? (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ display: 'flex', gap: 3 }}>
-            {Array.from({ length: kpiGiorno.count }).map((_, i) => (
-              <div key={i} style={{ flex: 1, height: 4, background: i < kpiGiorno.completati ? TEAL : 'rgba(255,255,255,0.2)', borderRadius: 2 }}/>
-            ))}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>{kpiGiorno.completati} COMPLETATI</span>
-            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>{kpiGiorno.count - kpiGiorno.completati} IN ARRIVO</span>
-          </div>
-        </div>
-      ) : null}
-
-      {view === 'mese' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginTop: 14 }}>
-          {(['montaggio','sopralluogo','firma','consegna'] as const).map(t => (
-            <div key={t} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: 8 }}>
-              <div style={{ fontSize: 15, color: '#FFF', fontWeight: 700, fontFeatureSettings: '"tnum"', lineHeight: 1 }}>{kpiMese.perTipo[t] || 0}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                <div style={{ width: 5, height: 5, borderRadius: 50, background: TIPI[t].color }}/>
-                <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.7)', fontWeight: 700, letterSpacing: 0.3 }}>{TIPI[t].label}</span>
-              </div>
+      {/* ═══ HEADER NAVY MOCKUP ═══ */}
+      <div style={{
+        background: `linear-gradient(160deg, ${TH.navy} 0%, ${TH.navyDark} 100%)`,
+        padding: "calc(env(safe-area-inset-top, 0px) + 16px) 18px 22px",
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
+        color: "#FFF",
+        boxShadow: "0 8px 22px rgba(15,23,42,0.25)",
+        marginBottom: 14,
+      }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.2, color: TH.navySoft, textTransform: "uppercase" as any }}>Pianificazione</div>
+            <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1, marginTop: 2 }}>Calendario</div>
+            <div style={{ fontSize: 12, color: "#B5C8DD", fontWeight: 600, marginTop: 4, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <span>{nEventi} eventi</span>
+              <span style={{ opacity: 0.5 }}>·</span>
+              <span>{nTask} task</span>
             </div>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function FiltriBar({ filtro, setFiltro }: any) {
-  return (
-    <div style={{ background: '#FFF', padding: '10px 0', borderBottom: `1px solid ${BORDER}`, overflowX: 'auto', display: 'flex', gap: 6 }}>
-      <style>{`.mastro-fchip::-webkit-scrollbar{display:none}`}</style>
-      <div style={{ width: 12, flexShrink: 0 }}/>
-      {FILTRI.map(f => (
-        <button key={f.id} onClick={() => setFiltro(f.id)} style={{
-          padding: '6px 12px', borderRadius: 14, border: 'none',
-          background: filtro === f.id ? f.color : BG_PALE,
-          color: filtro === f.id ? '#FFF' : MUTED,
-          fontSize: 10, fontWeight: 700, letterSpacing: 0.5, cursor: 'pointer', flexShrink: 0,
-          boxShadow: filtro === f.id ? `0 2px 6px ${f.color}40` : 'none',
-        }}>{f.label}</button>
-      ))}
-      <div style={{ width: 12, flexShrink: 0 }}/>
-    </div>
-  );
-}
-
-function VistaGiorno({ eventi, cantieri, team, onApriEvento, cursor, today }: any) {
-  const isToday = cursor.toDateString() === today.toDateString();
-  const nowMin = isToday ? today.getHours() * 60 + today.getMinutes() : -1;
-  return (
-    <div style={{ padding: '12px 0' }}>
-      {eventi.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: MUTED, fontSize: 13 }}>
-          <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke={BORDER} strokeWidth={1.8} style={{ display: 'block', margin: '0 auto 8px' }}><rect x={3} y={4} width={18} height={18} rx={2}/></svg>
-          Nessun lavoro programmato
-        </div>
-      ) : null}
-      {eventi.map((e: any, i: number) => {
-        const start = parseEventDate(e), end = parseEventEndDate(e);
-        const tipo = getTipo(e);
-        const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
-        const importo = eventImporto(e, cm);
-        const startMin = start.getHours() * 60 + start.getMinutes();
-        const endMin = end.getHours() * 60 + end.getMinutes();
-        const isPast = nowMin > endMin;
-        const isCurrent = nowMin >= startMin && nowMin <= endMin;
-        const isUrgent = e?.urgente;
-        return (
-          <BloccoEvento key={e?.id || i} e={e} cm={cm} tipo={tipo} importo={importo} isPast={isPast} isCurrent={isCurrent} isUrgent={isUrgent} start={start} end={end} onApriEvento={onApriEvento} />
-        );
-      })}
-      {isToday && nowMin > 0 ? (
-        <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px', margin: '8px 0' }}>
-          <div style={{ width: 38, fontSize: 10, color: TEAL, fontWeight: 700, fontFeatureSettings: '"tnum"' }}>{String(Math.floor(nowMin/60)).padStart(2,'0')}:{String(nowMin%60).padStart(2,'0')}</div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 50, background: TEAL, boxShadow: `0 0 0 4px rgba(40,160,160,0.2)` }}/>
-            <div style={{ flex: 1, height: 2, background: TEAL }}/>
-            <span style={{ fontSize: 9, color: TEAL, fontWeight: 700, letterSpacing: 1, marginLeft: 4 }}>ADESSO</span>
           </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
-function BloccoEvento({ e, cm, tipo, importo, isPast, isCurrent, isUrgent, start, end, onApriEvento }: any) {
-  const t = TIPI[tipo] || TIPI.default;
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '0 16px 8px' }}>
-      <div style={{ width: 38, fontSize: 10, color: isCurrent ? TEAL : MUTED, fontWeight: 700, fontFeatureSettings: '"tnum"', paddingTop: 4 }}>{String(start.getHours()).padStart(2,'0')}</div>
-      <div style={{ flex: 1, borderLeft: `2px solid ${BORDER}`, paddingLeft: 12 }}>
-        <div onClick={() => onApriEvento?.(e)} style={{
-          background: `linear-gradient(135deg, ${t.gradientFrom} 0%, ${t.gradientTo} 100%)`,
-          borderRadius: 10, padding: '10px 12px', color: '#FFF',
-          boxShadow: isCurrent ? `0 4px 16px ${t.color}50` : `0 2px 8px ${t.color}25`,
-          border: isCurrent ? `2px solid ${TEAL}` : 'none',
-          opacity: isPast ? 0.55 : 1, position: 'relative', cursor: 'pointer',
-        }}>
-          <div style={{ position: 'absolute', top: -1, left: -14, width: 12, height: 2, background: t.color }}/>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.85)', fontWeight: 700, letterSpacing: 0.5 }}>{t.label}{cm ? ` · ${cm?.codice || cm?.code}` : ''}</span>
-            <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-              {isUrgent ? <span style={{ fontSize: 8, color: '#FFF', background: RED, padding: '2px 6px', borderRadius: 3, fontWeight: 700 }}>URGENTE</span> : null}
-              {isPast ? <span style={{ fontSize: 8, color: '#FFF', background: 'rgba(40,160,160,0.5)', padding: '2px 6px', borderRadius: 3, fontWeight: 700 }}>FATTO</span> : null}
-            </span>
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>{cm?.cliente || cm?.cliente_nome || eventTitle(e)}</div>
-          {eventLuogo(e) ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>
-            {eventLuogo(e)}
-          </div> : null}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.18)' }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600, fontFeatureSettings: '"tnum"' }}>
-              {String(start.getHours()).padStart(2,'0')}:{String(start.getMinutes()).padStart(2,'0')} — {String(end.getHours()).padStart(2,'0')}:{String(end.getMinutes()).padStart(2,'0')}
-            </span>
-            {importo > 0 ? <span style={{ fontSize: 12, color: TEAL, fontWeight: 700, fontFeatureSettings: '"tnum"', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: 4 }}>{fmtEuro(importo)}</span> : null}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function VistaSettimana({ weekDays, cursor, setCursor, eventByDay, cantieri, maxCount, today, onApriEvento }: any) {
-  const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-  return (
-    <div>
-      <div style={{ background: '#FFF', padding: '14px 12px', display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, borderBottom: `1px solid ${BORDER}` }}>
-        {weekDays.map((d: Date, i: number) => {
-          const isT = isSameDay(d, today), isS = isSameDay(d, cursor);
-          const count = (eventByDay[d.toDateString()] || []).length;
-          const carico = maxCount > 0 ? count / maxCount : 0;
-          return (
-            <div key={i} onClick={() => setCursor(d)} style={{
-              textAlign: 'center', padding: '8px 4px', cursor: 'pointer',
-              background: isS && !isT ? 'rgba(40,160,160,0.1)' : 'transparent',
-              border: isS && !isT ? `1.5px solid ${TEAL}` : '1.5px solid transparent',
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {/* Toggle M/S/G */}
+            <div style={{
+              display: "flex", gap: 2, padding: 3,
+              background: "rgba(255,255,255,0.12)",
               borderRadius: 10,
             }}>
-              <div style={{ fontSize: 9, color: isT ? TEAL : MUTED, fontWeight: 700, letterSpacing: 0.5 }}>{DOW_FULL[i].slice(0,3)}</div>
-              {isT
-                ? <div style={{ width: 26, height: 26, background: TEAL, borderRadius: 50, margin: '4px auto 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF', fontSize: 13, fontWeight: 700, fontFeatureSettings: '"tnum"', boxShadow: '0 2px 8px rgba(40,160,160,0.5)' }}>{d.getDate()}</div>
-                : <div style={{ fontSize: 16, color: d.getDay() === 0 || d.getDay() === 6 ? '#C8D2DA' : TEXT, fontWeight: 600, marginTop: 4, fontFeatureSettings: '"tnum"' }}>{d.getDate()}</div>
-              }
-              <div style={{ margin: '6px auto 0', width: 14, height: 22, background: 'rgba(40,160,160,0.12)', borderRadius: 2, position: 'relative' }}>
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${Math.max(carico * 22, count > 0 ? 4 : 0)}px`, background: TEAL, borderRadius: 2 }}/>
-              </div>
-              <div style={{ fontSize: 8, color: count > 0 ? TEAL_DARK : '#C8D2DA', fontWeight: 700, marginTop: 3, fontFeatureSettings: '"tnum"' }}>{count || '·'}</div>
+              {[
+                { v: "mese", short: "M" },
+                { v: "settimana", short: "S" },
+                { v: "giorno", short: "G" },
+              ].map(({ v, short }) => {
+                const sel = a.view === v;
+                return (
+                  <div key={v} onClick={() => a.setView(v as any)} style={{
+                    width: 32, height: 28, borderRadius: 7,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer",
+                    background: sel ? "#FFF" : "transparent",
+                    color: sel ? TH.navy : "rgba(255,255,255,0.65)",
+                    fontSize: 11, fontWeight: 800,
+                    transition: "all 0.15s",
+                  }}>{short}</div>
+                );
+              })}
+            </div>
+
+            {/* Bottone + */}
+            <div onClick={() => setShowCreateMenu(true)} style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "#FFF", color: TH.navy,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer",
+              boxShadow: "0 3px 8px rgba(15,23,42,0.25)",
+              marginLeft: 6,
+            }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* NAV TITOLO < Mese > */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+          <div onClick={() => navTime(-1)} style={{
+            width: 32, height: 32,
+            background: "rgba(255,255,255,0.14)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 9,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer",
+          }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><polyline points="15 18 9 12 15 6"/></svg>
+          </div>
+
+          <div style={{ flex: 1, textAlign: "center" as any }}>
+            <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.1, textTransform: "capitalize" as any }}>
+              {headerTitle}
+            </div>
+            <div onClick={() => a.setSelectedDate(TODAY_ISO)} style={{ fontSize: 10, color: "#B5C8DD", fontWeight: 600, marginTop: 2, cursor: "pointer", textDecoration: "underline" }}>
+              oggi
+            </div>
+          </div>
+
+          <div onClick={() => navTime(1)} style={{
+            width: 32, height: 32,
+            background: "rgba(255,255,255,0.14)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 9,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer",
+          }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ FILTRI CHIPS NAVY/BIANCO ═══ */}
+      <div style={{
+        padding: "0 14px 10px",
+        display: "flex", gap: 6,
+        overflowX: "auto",
+        scrollbarWidth: "none" as any,
+      }}>
+        {[
+          { id: "tutti", label: "Tutti", count: nTotal },
+          { id: "eventi", label: "Eventi", count: nEventi },
+          { id: "task", label: "Task", count: nTask },
+        ].map(c => {
+          const sel = filterTipo === c.id;
+          return (
+            <div key={c.id} onClick={() => setFilterTipo(c.id as any)} style={{
+              background: sel ? TH.navy : "#FFF",
+              border: `1px solid ${sel ? TH.navy : TH.subLight}`,
+              color: sel ? "#FFF" : TH.sub,
+              borderRadius: 999,
+              padding: "6px 12px",
+              display: "inline-flex", alignItems: "center", gap: 6,
+              fontSize: 11, fontWeight: 700,
+              whiteSpace: "nowrap" as any, flexShrink: 0,
+              cursor: "pointer",
+            }}>
+              <span>{c.label}</span>
+              <span style={{
+                background: sel ? "rgba(15,27,45,0.9)" : TH.navyMuted,
+                color: "#FFF",
+                fontSize: 9, fontWeight: 800,
+                padding: "1px 6px", borderRadius: 999,
+                minWidth: 18, textAlign: "center" as any,
+              }}>{c.count}</span>
             </div>
           );
         })}
       </div>
 
-      <div style={{ padding: '14px 16px' }}>
-        <div style={{ fontSize: 11, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 10 }}>
-          {cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} · {(eventByDay[cursor.toDateString()] || []).length} LAVORI
-        </div>
-        {(eventByDay[cursor.toDateString()] || []).map((e: any, i: number) => {
-          const tipo = getTipo(e), t = TIPI[tipo] || TIPI.default;
-          const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
-          const start = parseEventDate(e);
-          const importo = eventImporto(e, cm);
-          return (
-            <div key={e?.id || i} onClick={() => onApriEvento?.(e)} style={{ display: 'flex', gap: 10, padding: '10px 0', borderTop: i > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
-              <div style={{ width: 3, background: t.color, borderRadius: 2 }}/>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, color: TEXT, fontWeight: 700, fontFeatureSettings: '"tnum"' }}>{String(start.getHours()).padStart(2,'0')}:{String(start.getMinutes()).padStart(2,'0')}</span>
-                  <span style={{ fontSize: 8, color: '#FFF', background: t.color, padding: '1px 6px', borderRadius: 3, fontWeight: 700, letterSpacing: 0.5 }}>{t.label}</span>
-                  <span style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{cm?.cliente || cm?.cliente_nome || eventTitle(e)}</span>
-                  {importo > 0 ? <span style={{ marginLeft: 'auto', fontSize: 11, color: t.color, fontWeight: 700, fontFeatureSettings: '"tnum"' }}>{fmtEuro(importo)}</span> : null}
+      {/* ═══ STRIP GIORNI SETTIMANA (sempre visibile in vista giorno) ═══ */}
+      {a.view === "giorno" && (
+        <div style={{ padding: "0 14px 12px" }}>
+          <div style={{ display: "flex", gap: 5, overflowX: "auto", scrollbarWidth: "none" as any }}>
+            {weekStrip.map((d, i) => {
+              const isTod = isoOf(d) === TODAY_ISO;
+              const isSelected = isoOf(d) === a.selectedDate;
+              const isSun = d.getDay() === 0;
+              const items = (a.eventsByDate?.[isoOf(d)]) || [];
+              return (
+                <div key={i} onClick={() => a.setSelectedDate(isoOf(d))} style={{
+                  background: isSelected ? TH.navy : "#FFF",
+                  border: isSelected ? "none" : `1px solid ${TH.borderSoft}`,
+                  borderRadius: 12,
+                  padding: "8px 10px",
+                  textAlign: "center" as any,
+                  minWidth: 46, flexShrink: 0,
+                  boxShadow: isSelected ? `0 4px 10px ${TH.navy}55` : "none",
+                  cursor: "pointer",
+                }}>
+                  <div style={{
+                    fontSize: 9, fontWeight: 800,
+                    color: isSelected ? "rgba(255,255,255,0.85)" : (isSun ? TH.red : TH.subLight),
+                    textTransform: "uppercase" as any, letterSpacing: 0.4,
+                  }}>{isTod ? "OGGI" : d.toLocaleDateString("it-IT", { weekday: "short" }).slice(0, 3)}</div>
+                  <div style={{
+                    fontSize: 16, fontWeight: 800,
+                    color: isSelected ? "#FFF" : (isSun ? TH.red : TH.ink),
+                    marginTop: 1,
+                  }}>{d.getDate()}</div>
+                  {items.length > 0 && !isSelected && (
+                    <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 3 }}>
+                      {items.slice(0, 3).map((it: any, k: number) => (
+                        <div key={k} style={{ width: 4, height: 4, background: TH.navy, borderRadius: 50 }} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{cm?.codice || cm?.code || ''} · {eventLuogo(e) || '—'}</div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════ */}
+      {/* VISTA GIORNO */}
+      {/* ═══════════════════════════════ */}
+      {a.view === "giorno" && (
+        <>
+          <div style={{ padding: "0 16px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: TH.navy, letterSpacing: 1 }}>
+              {a.selectedDate === TODAY_ISO ? "OGGI" : "GIORNO"} · {eventsOfDayFiltered.length} {eventsOfDayFiltered.length === 1 ? "IMPEGNO" : "IMPEGNI"}
+            </div>
+          </div>
+
+          <div style={{ padding: "0 14px 0" }}>
+            {eventsOfDayFiltered.length === 0 ? (
+              <div style={{
+                background: TH.bgCard,
+                border: `1px dashed ${TH.border}`,
+                borderRadius: 14,
+                padding: 24,
+                textAlign: "center" as any,
+              }}>
+                <div style={{ fontSize: 12, color: TH.sub, marginBottom: 10 }}>Nessun impegno per questo giorno</div>
+                <div onClick={() => setShowCreateMenu(true)} style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  background: TH.navy, color: "#FFF",
+                  padding: "10px 18px", borderRadius: 10,
+                  fontSize: 12, fontWeight: 800,
+                  cursor: "pointer",
+                }}>+ Aggiungi item</div>
+              </div>
+            ) : (
+              eventsOfDayFiltered.map((e) => (
+                <AgendaEventCardMobile key={e.id} event={e} onTap={setTap} onAction={handleAction} />
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ═══════════════════════════════ */}
+      {/* VISTA SETTIMANA */}
+      {/* ═══════════════════════════════ */}
+      {a.view === "settimana" && (
+        <AgendaWeekMobile
+          selectedDate={a.selectedDate}
+          eventsByDate={a.eventsByDate}
+          onSelectDay={a.setSelectedDate}
+          onTapEvent={setTap}
+        />
+      )}
+
+      {/* ═══════════════════════════════ */}
+      {/* VISTA MESE */}
+      {/* ═══════════════════════════════ */}
+      {a.view === "mese" && (
+        <AgendaMonthMobile
+          selectedDate={a.selectedDate}
+          eventsByDate={a.eventsByDate}
+          onSelectDay={a.setSelectedDate}
+          onTapEvent={setTap}
+        />
+      )}
+
+      {/* Bottom nav */}
+      {!hideBottomNav && (bottomNav ?? <AgendaBottomNav active="agenda" />)}
+
+      {/* Sheet evento */}
+      <AgendaEventSheetMobile
+        event={tap}
+        onClose={() => setTap(null)}
+        onAction={handleSheetAction}
+        onOpenCommessa={(e) => { onOpenCommessa?.(e.cmId, e.commessaCode); setTap(null); }}
+      />
+
+      {/* ═══════════════════════════════ */}
+      {/* MODAL CREA ITEM (3 scelte mockup) */}
+      {/* ═══════════════════════════════ */}
+      {showCreateMenu && (
+        <div onClick={() => setShowCreateMenu(false)} style={{
+          position: "fixed" as any, inset: 0,
+          background: "rgba(15,23,42,0.5)",
+          zIndex: 1100,
+          display: "flex", alignItems: "flex-end", justifyContent: "center",
+        }}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: "#FFF",
+            width: "100%", maxWidth: 500,
+            borderTopLeftRadius: 24, borderTopRightRadius: 24,
+            padding: "16px 18px calc(env(safe-area-inset-bottom, 0px) + 24px)",
+          }}>
+            <div style={{ width: 36, height: 4, background: TH.border, borderRadius: 2, margin: "0 auto 14px" }} />
+            <div style={{ fontSize: 19, fontWeight: 800, color: TH.ink, marginBottom: 4 }}>Cosa vuoi creare?</div>
+            <div style={{ fontSize: 11, color: TH.sub, marginBottom: 16 }}>Scegli il tipo di item da aggiungere</div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {/* EVENTO */}
+              <div onClick={() => handleNewItem("sopralluogo")} style={{
+                border: `2px solid ${TH.navy}`, background: TH.bgPill,
+                borderRadius: 12, padding: 14,
+                display: "flex", alignItems: "center", gap: 12,
+                cursor: "pointer",
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 10,
+                  background: TH.navy, color: "#FFF",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: TH.ink }}>Evento</div>
+                  <div style={{ fontSize: 11, color: TH.sub, marginTop: 2 }}>Sopralluogo, posa, riunione...</div>
+                </div>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={TH.navy} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
+              {/* TASK PERSONALE */}
+              <div onClick={() => handleNewItem("task")} style={{
+                border: `1.5px solid ${TH.border}`, background: "#FFF",
+                borderRadius: 12, padding: 14,
+                display: "flex", alignItems: "center", gap: 12,
+                cursor: "pointer",
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 10,
+                  background: "#F1F5F9", color: TH.sub,
+                  border: `2px dashed ${TH.subLight}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                    <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: TH.ink }}>Task personale</div>
+                  <div style={{ fontSize: 11, color: TH.sub, marginTop: 2 }}>Cose da fare non legate a commesse</div>
+                </div>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={TH.subLight} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
+              {/* TASK COMMESSA */}
+              <div onClick={() => handleNewItem("task")} style={{
+                border: `1.5px solid ${TH.border}`, background: "#FFF",
+                borderRadius: 12, padding: 14,
+                display: "flex", alignItems: "center", gap: 12,
+                cursor: "pointer",
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 10,
+                  background: TH.bgPill, color: TH.navy,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: TH.ink }}>Task commessa</div>
+                  <div style={{ fontSize: 11, color: TH.sub, marginTop: 2 }}>Da fare collegato a una commessa</div>
+                </div>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={TH.navy} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>
               </div>
             </div>
-          );
-        })}
-        {(eventByDay[cursor.toDateString()] || []).length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '20px 0', color: MUTED, fontSize: 12 }}>Nessun lavoro questo giorno</div>
-        ) : null}
-      </div>
+
+            <div onClick={() => setShowCreateMenu(false)} style={{
+              marginTop: 14, padding: 12,
+              background: "#F1F5F9", color: TH.sub,
+              border: `1px solid ${TH.border}`,
+              borderRadius: 10,
+              fontSize: 12, fontWeight: 800,
+              textAlign: "center" as any, cursor: "pointer",
+              letterSpacing: 0.3,
+            }}>Annulla</div>
+          </div>
+        </div>
+      )}
+
+      {/* Schermata completato */}
+      {completed && <CompletedScreen event={completed} onClose={() => setCompleted(null)} onOpenCommessa={() => { onOpenCommessa?.(completed.cmId, completed.commessaCode); setCompleted(null); }} />}
     </div>
   );
 }
 
-function VistaMese({ monthDays, cursor, setCursor, eventByDay, cantieri, maxDay, today, onApriEvento, eventiSel }: any) {
-  const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+function CompletedScreen({ event, onClose, onOpenCommessa }: { event: AgendaEvent; onClose: () => void; onOpenCommessa: () => void }) {
+  const confetti = useMemo(() => {
+    const arr: { x: number; y: number; c: string; r: number }[] = [];
+    const colors = ["#FFD166", "#2D5A87", "#F08599", "#7AA0E0", "#5FBA7D", "#F0A658"];
+    for (let i = 0; i < 26; i++) {
+      arr.push({ x: Math.random() * 100, y: Math.random() * 60, c: colors[i % colors.length], r: Math.random() * 6 + 3 });
+    }
+    return arr;
+  }, []);
+
   return (
-    <div style={{ background: '#FFF' }}>
-      <div style={{ padding: '12px 12px 4px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 6 }}>
-          {DOW.map((d, i) => <div key={i} style={{ textAlign: 'center', fontSize: 9, color: i >= 5 ? '#C8D2DA' : '#8FA8B8', fontWeight: 700 }}>{d}</div>)}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
-          {monthDays.map((d: any, i: number) => {
-            const isT = isSameDay(d.date, today);
-            const isS = isSameDay(d.date, cursor);
-            const count = (eventByDay[d.date.toDateString()] || []).length;
-            const intensita = maxDay > 0 && count > 0 ? count / maxDay : 0;
-            const bg = d.muted ? BG_SOFT
-              : isT ? TEAL
-              : count === 0 ? BG_SOFT
-              : `rgba(40,160,160,${0.1 + intensita * 0.5})`;
-            return (
-              <div key={i} onClick={() => !d.muted && setCursor(d.date)} style={{
-                aspectRatio: '1/1', background: bg, borderRadius: 6,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                cursor: d.muted ? 'default' : 'pointer',
-                border: isS && !isT ? `1.5px solid ${TEAL}` : 'none',
-                boxShadow: isT ? '0 4px 12px rgba(40,160,160,0.4)' : 'none',
-                transform: isT ? 'scale(1.05)' : 'none',
-                position: 'relative', transition: 'all 0.15s',
-              }}>
-                <div style={{ fontSize: 11, color: d.muted ? '#C8D2DA' : isT ? '#FFF' : TEXT, fontWeight: isT || count > 0 ? 700 : 500, fontFeatureSettings: '"tnum"' }}>{d.date.getDate()}</div>
-                {count > 0 && !d.muted ? <div style={{ fontSize: 7, color: isT ? '#FFF' : TEAL_DARK, fontWeight: 700, marginTop: 1, fontFeatureSettings: '"tnum"' }}>{count}</div> : null}
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 4px 4px' }}>
-          <span style={{ fontSize: 8, color: MUTED, fontWeight: 700, letterSpacing: 0.5 }}>CARICO</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontSize: 8, color: MUTED, fontWeight: 600 }}>basso</span>
-            {[0.1, 0.25, 0.4, 0.55].map(o => <div key={o} style={{ width: 12, height: 8, background: `rgba(40,160,160,${o})`, borderRadius: 2 }}/>)}
-            <span style={{ fontSize: 8, color: MUTED, fontWeight: 600 }}>alto</span>
-          </div>
-        </div>
+    <div onClick={onClose} style={{
+      position: "fixed" as any, inset: 0,
+      background: "linear-gradient(160deg, #1E3A5F 0%, #0F1B2D 100%)",
+      zIndex: 1500,
+      display: "flex", flexDirection: "column" as any,
+      alignItems: "center", justifyContent: "center",
+      padding: 28, color: "#fff", overflow: "hidden",
+    }}>
+      {confetti.map((c, i) => (
+        <div key={i} style={{
+          position: "absolute" as any,
+          top: `${c.y}%`, left: `${c.x}%`,
+          width: c.r, height: c.r, borderRadius: "50%",
+          background: c.c, opacity: 0.85,
+        }} />
+      ))}
+
+      <div style={{
+        width: 90, height: 90, borderRadius: "50%",
+        background: "#1E3A5F",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        marginBottom: 22,
+        boxShadow: "0 0 0 10px rgba(30,58,95,0.25)",
+        zIndex: 1,
+      }}>
+        <svg width={46} height={46} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </div>
+      <div style={{ fontSize: 22, fontWeight: 900, zIndex: 1, textAlign: "center" as any }}>
+        {event.tipo === "montaggio" ? "Montaggio completato!" : "Completato!"}
+      </div>
+      <div style={{ fontSize: 13, marginTop: 6, opacity: 0.92, zIndex: 1, textAlign: "center" as any }}>
+        {event.commessaCode ? `Commessa ${event.commessaCode}${event.cliente ? " · " + event.cliente : ""}` : event.titolo}
       </div>
 
-      {eventiSel.length > 0 ? (
-        <div style={{ padding: '14px 16px', borderTop: `1px solid ${BORDER}`, background: BG_SOFT }}>
-          <div style={{ fontSize: 11, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginBottom: 10 }}>
-            {cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} · {eventiSel.length} LAVORI
-          </div>
-          {eventiSel.map((e: any, i: number) => {
-            const tipo = getTipo(e), t = TIPI[tipo] || TIPI.default;
-            const cm = cantieri.find((c: any) => c?.id === e?.commessa_id);
-            const start = parseEventDate(e);
-            return (
-              <div key={e?.id || i} onClick={() => onApriEvento?.(e)} style={{ display: 'flex', gap: 10, padding: '10px 12px', borderTop: i > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer', background: '#FFF' }}>
-                <div style={{ width: 3, background: t.color, borderRadius: 2 }}/>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                    <span style={{ fontSize: 11, color: TEXT, fontWeight: 700, fontFeatureSettings: '"tnum"' }}>{String(start.getHours()).padStart(2,'0')}:{String(start.getMinutes()).padStart(2,'0')}</span>
-                    <span style={{ fontSize: 8, color: '#FFF', background: t.color, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{t.label}</span>
-                    <span style={{ fontSize: 12, color: TEXT, fontWeight: 600 }}>{cm?.cliente || eventTitle(e)}</span>
-                  </div>
-                  <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{eventLuogo(e) || ''}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
+      <div style={{ width: "100%", maxWidth: 320, marginTop: 28, display: "flex", flexDirection: "column" as any, gap: 10, zIndex: 1 }}>
+        <button onClick={(e) => { e.stopPropagation(); onOpenCommessa(); }} style={{ padding: 13, background: "#1E3A5F", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+          Vai alla commessa
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ padding: 13, background: "transparent", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          Torna all'agenda
+        </button>
+      </div>
     </div>
   );
 }
