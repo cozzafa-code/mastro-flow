@@ -134,7 +134,8 @@ export default function HomePanelMobileV2(props: any) {
   const [hiddenEventi, setHiddenEventi] = React.useState<Record<string, boolean>>({})
   const [hiddenTasks, setHiddenTasks] = React.useState<Record<string, boolean>>({})
   const { data } = useHomeMobile()
-  const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
+  const ctxRaw = useMastro()
+  const ctx: any = ctxRaw || {}
   const [editMode, setEditMode] = useState(false)
   const [order, setOrder] = useState<string[]>(DEFAULT_ORDER)
 
