@@ -237,10 +237,12 @@ export default function NewEventModal({
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
               <div>
                 <Label>Data</Label>
-                <div style={{ ...inputStyle, display: "flex", alignItems: "center", gap: 6, padding: "10px 12px", background: TH.bgPage }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TH.navy} strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
-                  <span style={{ textTransform: "capitalize" }}>{dataLabel}</span>
-                </div>
+                <input
+                  type="date"
+                  style={{ ...inputStyle, padding: "10px 12px", background: TH.white }}
+                  value={(newEvent.data || (selDate ? selDate.toISOString().split('T')[0] : ''))}
+                  onChange={e => setNewEvent((p: any) => ({ ...p, data: e.target.value }))}
+                />
               </div>
               <div>
                 <Label>Inizio</Label>
