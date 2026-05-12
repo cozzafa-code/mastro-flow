@@ -15,8 +15,8 @@ import { useHomeMobile } from '../hooks/useHomeMobile'
 import { useMastro } from './MastroContext'
 import { supabase } from '../lib/supabase'
 
-const NAVY = '#0D1F1F', NAVY_DEEP = '#0D1F1F', BG = '#E4F2F2'
-const RED = '#28A0A0', AMBER = '#4A7070', GREEN = '#28A0A0'
+const NAVY = '#1B3A5C', NAVY_DEEP = '#0F1F33', BG = '#7A8A9A'
+const RED = '#C73E1D', AMBER = '#BA7517', GREEN = '#0F6E56'
 const TEXT = '#0F1F33', MUTED = '#5C6B7A', BORDER = '#E5E7EB'
 const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre']
 const DOW_SHORT = ['LUN','MAR','MER','GIO','VEN','SAB','DOM']
