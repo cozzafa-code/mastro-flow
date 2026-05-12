@@ -657,54 +657,41 @@ function CardUrgente({ ferme, apri }: any) {
 }
 
 function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any) {
-  const top = tasks
-  const rest: any[] = []
   return (
     <>
       <CardHead title="Task" badge={tasks.length} link="vedi tutte" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>} />
       {tasks.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessuna task aperta</div> : null}
-      <div className='mastro-tasks-scroll' style={{ maxHeight: 320, overflowY: 'auto' }}><style>{.mastro-tasks-scroll::-webkit-scrollbar{display:none}}</style>
-      {top.map((t: any, i: number) => {
-        const cm = cantieri.find((c: any) => c?.id === t?.commessa_id)
-        const scad = t?.data ? new Date(t.data) : null
-        const isLate = scad && scad.getTime() < Date.now() - 86400000
-        const prio = (t?.priorita || '').toLowerCase()
-        const prioColor = prio === 'alta' ? '#28A0A0' : prio === 'media' ? '#28A0A0' : MUTED
-        const localDone = doneOptim?.[t?.id] !== undefined ? doneOptim[t.id] : !!t?.done
-        return (
-          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleTask(t?.id, localDone) }}
-              onPointerDown={(e) => e.stopPropagation()}
-              aria-label={localDone ? 'Riapri task' : 'Completa task'}
-              style={{ width: 22, height: 22, borderRadius: 5, border: '1.5px solid #C8E4E4', flexShrink: 0, background: localDone ? '#28A0A0' : '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transition: 'all 0.15s ease' }}
-            >
-              {localDone ? <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : null}
-            </button>
-            <div onClick={() => cm && apri(cm.id)} style={{ flex: 1, minWidth: 0, cursor: cm ? 'pointer' : 'default', opacity: localDone ? 0.5 : 1 }}>
-              <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3, textDecoration: localDone ? 'line-through' : 'none' }}>{(t?.testo || 'Task').replace(/[\u2705\u2611\u2713\u2714\uD83D\uDCC5]/g, '').replace(/\s+/g, ' ').trim()}</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
-                {scad ? <span style={{ fontSize: 10, color: isLate ? '#0D1F1F' : MUTED, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
-                {prio ? <span style={{ fontSize: 9, color: '#FFF', background: prioColor, padding: '2px 7px', borderRadius: 4, fontWeight: 700, letterSpacing: 0.5 }}>{prio.toUpperCase()}</span> : null}
-                {cm ? <span style={{ fontSize: 10, color: NAVY, fontWeight: 600 }}>↗ {cm?.codice || cm?.code}</span> : null}
+      <div className="mastro-tasks-scroll" style={{ maxHeight: 320, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        <style>{`.mastro-tasks-scroll::-webkit-scrollbar{display:none}.mastro-tasks-scroll{scrollbar-width:none}`}</style>
+        {tasks.map((t: any, i: number) => {
+          const cm = cantieri.find((c: any) => c?.id === t?.commessa_id)
+          const scad = t?.data ? new Date(t.data) : null
+          const isLate = scad && scad.getTime() < Date.now() - 86400000
+          const prio = (t?.priorita || '').toLowerCase()
+          const prioColor = prio === 'alta' ? '#28A0A0' : prio === 'media' ? '#28A0A0' : MUTED
+          const localDone = doneOptim?.[t?.id] !== undefined ? doneOptim[t.id] : !!t?.done
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: i < tasks.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleTask(t?.id, localDone) }}
+                onPointerDown={(e) => e.stopPropagation()}
+                aria-label={localDone ? 'Riapri task' : 'Completa task'}
+                style={{ width: 22, height: 22, borderRadius: 5, border: '1.5px solid #C8E4E4', flexShrink: 0, background: localDone ? '#28A0A0' : '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transition: 'all 0.15s ease' }}
+              >
+                {localDone ? <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : null}
+              </button>
+              <div onClick={() => cm && apri(cm.id)} style={{ flex: 1, minWidth: 0, cursor: cm ? 'pointer' : 'default', opacity: localDone ? 0.5 : 1 }}>
+                <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3, textDecoration: localDone ? 'line-through' : 'none' }}>{(t?.testo || 'Task').replace(/[\u2705\u2611\u2713\u2714\uD83D\uDCC5]/g, '').replace(/\s+/g, ' ').trim()}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
+                  {scad ? <span style={{ fontSize: 10, color: isLate ? '#0D1F1F' : MUTED, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
+                  {prio ? <span style={{ fontSize: 9, color: '#FFF', background: prioColor, padding: '2px 7px', borderRadius: 4, fontWeight: 700, letterSpacing: 0.5 }}>{prio.toUpperCase()}</span> : null}
+                  {cm ? <span style={{ fontSize: 10, color: NAVY, fontWeight: 600 }}>↗ {cm?.codice || cm?.code}</span> : null}
+                </div>
               </div>
             </div>
-          </div>
-        )
-      })}
-      {rest.length > 0 ? (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre · scorri →</div>
-          <SwipeTrack>
-            {rest.map((t: any, i: number) => (
-              <SwipeItem key={i} width="200px">
-                <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>{(t?.testo || 'Task').replace(/[\u2705\u2611\u2713\u2714\uD83D\uDCC5]/g, '').replace(/\s+/g, ' ').trim()}</div>
-                {t?.data ? <div style={{ fontSize: 9, color: MUTED, marginTop: 3, display: 'flex', alignItems: 'center', gap: 3 }}><svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/></svg>{new Date(t.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</div> : null}
-              </SwipeItem>
-            ))}
-          </SwipeTrack>
-        </div>
-      ) : null}
+          )
+        })}
+      </div>
     </>
   )
 }
