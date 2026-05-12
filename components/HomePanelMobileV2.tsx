@@ -676,7 +676,7 @@ function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleTask(t?.id, localDone) }}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label={localDone ? 'Riapri task' : 'Completa task'}
-              style={{ width: 26, height: 26, borderRadius: 6, border: localDone ? `2px solid ${GREEN}` : '2px solid #B5C2D6', flexShrink: 0, background: localDone ? GREEN : '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transition: 'all 0.15s ease' }}
+              style={{ width: 22, height: 22, borderRadius: 5, border: '1.5px solid #C8E4E4', flexShrink: 0, background: localDone ? '#28A0A0' : '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transition: 'all 0.15s ease' }}
             >
               {localDone ? <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : null}
             </button>
