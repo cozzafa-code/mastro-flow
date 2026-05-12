@@ -143,6 +143,8 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     { l: "Nuovo cliente", c: "#2D5A87", t: "USR", a: onCliente },
     { l: "Nuova commessa", c: "#92400E", t: "FLD", a: onCommessa },
     { l: "Messaggio", c: "#475A75", t: "MSG", a: onMessaggio },
+    { l: "Task", c: "#28A0A0", t: "CHK", a: () => { try { window.dispatchEvent(new CustomEvent("mastro:open-task")); } catch {} setFabOpen(false); } },
+    { l: "Indietro", c: "#5C6B7A", t: "ARR", a: () => { try { window.history.back(); } catch {} setFabOpen(false); } },
   ];
   const recent = (recentActions || []).slice(0, 3).map(ra => ({
     l: ra.label, c: "#1a2b47", t: "BCK",
@@ -165,7 +167,9 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   const AI_Sm = ({c="#fff",s=14}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>;
   const MIC_Icon = ({c="#fff",s=20}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>;
   const SND_Icon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
-  const icons = { AI: AI_Icon, CAL, USR, FLD, MSG, BCK };
+  const CHK = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+  const ARR = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
+  const icons = { AI: AI_Icon, CAL, USR, FLD, MSG, BCK, CHK, ARR };
 
   // ÔöÇÔöÇ AI functions ÔöÇÔöÇ
   const speak = (text) => {
