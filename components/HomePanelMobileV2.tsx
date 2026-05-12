@@ -668,7 +668,7 @@ function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any
         const scad = t?.data ? new Date(t.data) : null
         const isLate = scad && scad.getTime() < Date.now() - 86400000
         const prio = (t?.priorita || '').toLowerCase()
-        const prioColor = prio === 'alta' ? RED : prio === 'media' ? AMBER : MUTED
+        const prioColor = prio === 'alta' ? '#28A0A0' : prio === 'media' ? '#28A0A0' : MUTED
         const localDone = doneOptim?.[t?.id] !== undefined ? doneOptim[t.id] : !!t?.done
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
@@ -684,7 +684,7 @@ function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick }: any
               <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.3, textDecoration: localDone ? 'line-through' : 'none' }}>{t?.testo || 'Task'}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
                 {scad ? <span style={{ fontSize: 10, color: isLate ? RED : MUTED, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
-                {prio ? <span style={{ fontSize: 8, color: '#FFF', background: prioColor, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{prio.toUpperCase()}</span> : null}
+                {prio ? <span style={{ fontSize: 9, color: '#FFF', background: prioColor, padding: '2px 7px', borderRadius: 4, fontWeight: 700, letterSpacing: 0.5 }}>{prio.toUpperCase()}</span> : null}
                 {cm ? <span style={{ fontSize: 10, color: NAVY, fontWeight: 600 }}>↗ {cm?.codice || cm?.code}</span> : null}
               </div>
             </div>
