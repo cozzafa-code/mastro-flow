@@ -183,7 +183,7 @@ export default function CentroControlloOggi() {
     <div style={{ padding: "0 12px 80px", background: TH.bg, minHeight: "100vh", fontFamily: "'Manrope', -apple-system, system-ui, sans-serif" }}>
       {/* ═══ HERO TEAL ═══ */}
       <div style={{
-        background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+        paddingTop: 'max(env(safe-area-inset-top), 8px)', background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
         borderRadius: 22, padding: "14px 16px",
         position: "relative", overflow: "hidden",
         boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3)",
