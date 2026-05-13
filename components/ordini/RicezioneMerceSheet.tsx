@@ -45,10 +45,16 @@ export default function RicezioneMerceSheet({ ordineId, onClose, onCompletato, o
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { data, error } = await supabase
+      const { data: ord, error } = await supabase
         .from("ordini_fornitore")
-        .select("*, commessa:commesse(code, cliente, cognome)")
+        .select("*")
         .eq("id", ordineId).single();
+      let comm: any = null;
+      if (ord?.commessa_id) {
+        const r = await supabase.from("commesse").select("code, cliente, cognome").eq("id", ord.commessa_id).single();
+        comm = r.data;
+      }
+      const data = ord ? { ...ord, commessa: comm } : null;
       if (!mounted) return;
       if (error) { console.error(error); setLoading(false); return; }
       const o: any = data;

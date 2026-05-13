@@ -40,11 +40,21 @@ export default function OrdineDettaglioSheet({ ordineId, onClose, onRicevi, onAp
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { data, error } = await supabase
+      const { data: ord, error } = await supabase
         .from("ordini_fornitore")
-        .select("*, commessa:commesse(code, cliente, cognome, indirizzo)")
+        .select("*")
         .eq("id", ordineId)
         .single();
+      let comm: any = null;
+      if (ord?.commessa_id) {
+        const r = await supabase
+          .from("commesse")
+          .select("code, cliente, cognome, indirizzo")
+          .eq("id", ord.commessa_id)
+          .single();
+        comm = r.data;
+      }
+      const data = ord ? { ...ord, commessa: comm } : null;
       if (mounted) {
         if (error) {
           console.error("[OrdineDettaglio] ERRORE:", error);

@@ -14,21 +14,44 @@ const STATO_ATTE = ["inviato", "in_transito", "confermato", "approvazione"] as c
 const STATO_ARRI = ["arrivato", "arrivato_parziale", "verificato"] as const;
 
 export async function fetchOrdiniByAzienda(aziendaId: string): Promise<OrdineConCommessa[]> {
-  const { data, error } = await supabase
-    .from("ordini_fornitore")
-    .select("*, commessa:commesse(code, cliente, cognome)")
-    .eq("azienda_id", aziendaId)
-    .order("created_at", { ascending: false });
-  if (error) {
-    console.error("[fetchOrdiniByAzienda]", error);
+  if (!aziendaId) {
+    console.warn("[fetchOrdiniByAzienda] aziendaId vuoto");
     return [];
   }
-  return (data || []).map((o: any) => ({
-    ...o,
-    commessa_code: o.commessa?.code ?? null,
-    commessa_cliente: o.commessa?.cliente ?? null,
-    commessa_cognome: o.commessa?.cognome ?? null,
-  })) as OrdineConCommessa[];
+  // Step 1: ordini senza join
+  const { data: ordiniRaw, error: errO } = await supabase
+    .from("ordini_fornitore")
+    .select("*")
+    .eq("azienda_id", aziendaId)
+    .order("created_at", { ascending: false });
+  if (errO) {
+    console.error("[fetchOrdiniByAzienda] errore ordini:", errO);
+    return [];
+  }
+  const ordini = ordiniRaw || [];
+  console.log("[fetchOrdiniByAzienda] raw ordini:", ordini.length);
+
+  // Step 2: commesse separate per arricchire
+  const commIds = Array.from(new Set(ordini.map((o: any) => o.commessa_id).filter(Boolean)));
+  let commMap: Record<string, any> = {};
+  if (commIds.length > 0) {
+    const { data: comm, error: errC } = await supabase
+      .from("commesse")
+      .select("id, code, cliente, cognome")
+      .in("id", commIds as string[]);
+    if (errC) console.warn("[fetchOrdiniByAzienda] errore commesse:", errC);
+    for (const c of (comm || [])) commMap[(c as any).id] = c;
+  }
+
+  return ordini.map((o: any) => {
+    const c = o.commessa_id ? commMap[o.commessa_id] : null;
+    return {
+      ...o,
+      commessa_code: c?.code ?? null,
+      commessa_cliente: c?.cliente ?? null,
+      commessa_cognome: c?.cognome ?? null,
+    };
+  }) as OrdineConCommessa[];
 }
 
 export function computeKpi(ordini: OrdineConCommessa[]): OrdineKpi {
@@ -148,18 +171,29 @@ export async function salvaRicezione(
 }
 
 export async function fetchFornitori(aziendaId: string): Promise<any[]> {
+  if (!aziendaId) {
+    console.warn("[fetchFornitori] aziendaId vuoto");
+    return [];
+  }
   const { data, error } = await supabase
     .from("fornitori")
     .select("*")
     .eq("azienda_id", aziendaId)
     .eq("attivo", true)
-    .order("is_preferito", { ascending: false })
     .order("ordini_totali", { ascending: false });
   if (error) {
     console.error("[fetchFornitori]", error);
     return [];
   }
-  return data || [];
+  // Ordina lato client: preferiti prima, poi per ordini_totali
+  const sorted = (data || []).sort((a: any, b: any) => {
+    const pa = a.is_preferito ? 1 : 0;
+    const pb = b.is_preferito ? 1 : 0;
+    if (pa !== pb) return pb - pa;
+    return (b.ordini_totali || 0) - (a.ordini_totali || 0);
+  });
+  console.log("[fetchFornitori] caricati", sorted.length, "fornitori");
+  return sorted;
 }
 
 async function generaNumeroOrdine(aziendaId: string): Promise<string> {
