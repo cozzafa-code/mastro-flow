@@ -44,8 +44,8 @@ export default function CardAzioniVeloci(props: Props) {
           supabase.from('ordini_fornitore').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId).not('stato', 'in', '(verificato,completato,annullato)'),
           supabase.from('articoli_magazzino').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId).eq('attivo', true),
           supabase.from('fin_fatture_emesse').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId).gt('residuo', 0).not('stato', 'in', '(pagata,incassata,annullata)'),
-          supabase.from('clienti').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId),
-          supabase.from('appuntamenti').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId),
+          supabase.from('contatti').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId),
+          supabase.from('events').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId),
           supabase.from('operatori').select('id', { count: 'exact', head: true }).eq('azienda_id', props.aziendaId),
         ]);
         setCounts({
