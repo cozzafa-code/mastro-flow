@@ -2,6 +2,7 @@ import { DayProvider } from "@/components/day/DayProvider";
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata, Viewport } from 'next'
 import { CookieBanner } from '@/components/mastro/ui/CookieBanner'
+import { MastroDataProvider } from "@/hooks/useMastroData";
 
 export const metadata: Metadata = {
   title: 'fliwoX',
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning style={{ margin: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#0D1F1F', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', minHeight: '100vh' }}>
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 'calc(env(safe-area-inset-top, 0px) + 16px)', backgroundColor: '#0D1F1F', zIndex: 9999, pointerEvents: 'none' }} />
         <div style={{ backgroundColor: '#E4F2F2', minHeight: 'calc(100vh - env(safe-area-inset-top, 0px) - 16px)' }}>
-          <DayProvider>{children}</DayProvider>
+          <DayProvider><MastroDataProvider>{children}</MastroDataProvider></DayProvider>
           <CookieBanner />
         </div>
         <script dangerouslySetInnerHTML={{ __html: "if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));if(window.caches){caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));}}" }} />
