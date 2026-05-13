@@ -1972,7 +1972,42 @@ export default function CMDetailPanel() {
             // Stati DB: sopralluogo → preventivo → conferma_ordine → confermata → acconto_pagato → ordine → produzione → montaggio → fatturata → pagata
             const faseDb29 = (c29 as any).fase;
             const accontoOk29 = !!((c29 as any).fattura_acconto_pagata_at) || faseDb29 === 'acconto_pagato' || faseDb29 === 'ordine' || faseDb29 === 'produzione' || faseDb29 === 'montaggio';
-            const prossima = accontoOk29 ? { lbl: "CREA ORDINI FORNITORI", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { console.log("[v-event2] dispatch open-ordini", { id: selectedCM?.id }); window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } })); } } :
+            // [v-fix-prossima] Se produzione gia avviata, NON mostro "CREA ORDINI" (triplo-gate gestisce gli step intermedi)
+            const produzioneGiaAvviata29 = !!((c29 as any).produzione_iniziata_at || (c29 as any).produzioneIniziataAt);
+            const montaggioFattoOK29 = faseDb29 === 'montaggio' && !!((c29 as any).montaggio_completato_at);
+            const produzioneFattaOK29 = !!((c29 as any).produzione_completata_at);
+            let prossima: any = null;
+            if (accontoOk29 && produzioneGiaAvviata29 && !produzioneFattaOK29 && faseDb29 === 'produzione') {
+              prossima = { lbl: "MARCA PRODUZIONE COMPLETATA", bg: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)", action: async () => {
+                if (!confirm("Confermi che la produzione e' completata per " + c29.code + "?")) return;
+                try {
+                  const { supabase } = await import("@/lib/supabase");
+                  const nowIso = new Date().toISOString();
+                  const { error } = await supabase.from('commesse').update({ fase: 'montaggio', produzione_completata_at: nowIso }).eq('id', c29.id);
+                  if (error) { alert("Errore: " + error.message); return; }
+                  setSelectedCM((p: any) => p ? ({ ...p, fase: 'montaggio', produzione_completata_at: nowIso }) : p);
+                  setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: 'montaggio', produzione_completata_at: nowIso } : x));
+                  if (typeof setCcDone === 'function') { setCcDone("Produzione completata - pronto per montaggio"); setTimeout(() => setCcDone(null), 4000); }
+                } catch (e: any) { alert("Errore: " + (e?.message || e)); }
+              } };
+            } else if (faseDb29 === 'montaggio' && !montaggioFattoOK29) {
+              prossima = { lbl: "MARCA MONTAGGIO COMPLETATO", bg: "linear-gradient(135deg, #10B981 0%, #047857 100%)", action: async () => {
+                if (!confirm("Confermi che il montaggio e' stato completato per " + c29.code + "?")) return;
+                try {
+                  const { supabase } = await import("@/lib/supabase");
+                  const nowIso = new Date().toISOString();
+                  const { error } = await supabase.from('commesse').update({ fase: 'fatturata', montaggio_completato_at: nowIso }).eq('id', c29.id);
+                  if (error) { alert("Errore: " + error.message); return; }
+                  setSelectedCM((p: any) => p ? ({ ...p, fase: 'fatturata', montaggio_completato_at: nowIso }) : p);
+                  setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: 'fatturata', montaggio_completato_at: nowIso } : x));
+                  if (typeof setCcDone === 'function') { setCcDone("Montaggio completato - emetti il saldo"); setTimeout(() => setCcDone(null), 4000); }
+                } catch (e: any) { alert("Errore: " + (e?.message || e)); }
+              } };
+            } else if (accontoOk29 && !produzioneGiaAvviata29) {
+              prossima = { lbl: "CREA ORDINI FORNITORI", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { console.log("[v-event2] dispatch open-ordini", { id: selectedCM?.id }); window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } })); } };
+            }
+            // Fallback fatture o firma (codice legacy sotto)
+            prossima = prossima ||
                            haFirmato29 ? { lbl: "EMETTI FATTURA ACCONTO", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: async () => { if (typeof creaFattura !== "function") return; const fatturaCreata = await (creaFattura as any)(c29, "acconto", (Number((c29 as any).totale_finale) || 0) * 0.5, null, "Acconto 50%"); if (fatturaCreata && fatturaCreata.id) setEmettiModal(fatturaCreata); } } :
                            (tipoRis29 === "accettato" && c29.fase === "conferma_ordine") ? { lbl: "INVIA LINK FIRMA AL CLIENTE", bg: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)", action: () => setShowModalFirma(true) } :
                            tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D\'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma_ordine"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma_ordine" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma_ordine" }) : p); setShowModalFirma(true); } } :
