@@ -433,7 +433,7 @@ function SquadraWidgetV3({ team, onNavigate, editMode }: any) {
 // === FINE HELPER V3 ===
 
 export default function HomePanelMobile(props: any) {
-  const mastro: any = (() => { try { return useMastro(); } catch { return {}; } })();
+  const mastro: any = useMastro();
   const user = props?.user || mastro?.user || {};
   const commesse: any[] = props?.commesse || mastro?.commesse || mastro?.cantieri || [];
   const onNavigate = props?.onNavigate || mastro?.onNavigate || (() => {});

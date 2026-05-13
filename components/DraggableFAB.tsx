@@ -2,7 +2,7 @@
 import { useMastro } from "./MastroContext";
 import { useState, useEffect, useRef } from "react";
 export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCliente, onCommessa, onMessaggio, onLastCM, recentActions, hidden }: any) {
-  const mastroCtx = (() => { try { return useMastro(); } catch { return null; } })();
+  const mastroCtx = useMastro();
 
   const buildContext = () => {
     if (!mastroCtx) return {};

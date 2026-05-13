@@ -56,7 +56,7 @@ const PRIO: any = {
 };
 
 export default function AgendaPanel(props: any) {
-  const m: any = (() => { try { return useMastro(); } catch { return {}; } })();
+  const m: any = useMastro();
   const events: any[]   = props?.events   || m?.events   || [];
   const tasks: any[]    = props?.tasks    || m?.tasks    || [];
   const cantieri: any[] = props?.cantieri || m?.cantieri || m?.commesse || [];
