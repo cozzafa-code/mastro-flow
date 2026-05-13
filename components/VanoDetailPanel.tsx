@@ -24,15 +24,7 @@ import { generaTavolaTecnica } from "../lib/pdf-tavola-tecnica";
 import FotoMisure from "./FotoMisure";
 import AccessoriCatalogoVano from "./AccessoriCatalogoVano";
 import { supabase } from "@/lib/supabase";
-
-// ─── STATI MISURE ──────────────────────────────────────────
-const STATO_MISURE = [
-  { id: "provvisorie", label: "Provvisorie", color: "#D08008", bg: "#D0800818", icon: "", desc: "Misure non ancora verificate" },
-  { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "", desc: "Verificate sul posto, non ancora confermate" },
-  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "", desc: "Misure definitive — preventivo sbloccato" },
-  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "", desc: "Rilevate discrepanze — ricontrollare" },
-];
-const getStatoMisure = (v) => STATO_MISURE.find(s => s.id === (v?.statoMisure || "provvisorie")) || STATO_MISURE[0];
+import { STATO_MISURE, getStatoMisure } from "@/lib/vano-detail/constants";
 
 // ── Upload foto su Supabase Storage ──
 async function uploadFotoVano(userId, cmId, vanoId, file, nome) {
