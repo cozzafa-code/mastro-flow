@@ -25,33 +25,9 @@ import FotoMisure from "./FotoMisure";
 import AccessoriCatalogoVano from "./AccessoriCatalogoVano";
 import VanoMiniSVG from "./vano-detail/parts/VanoMiniSVG";
 import VanoBInput from "./vano-detail/parts/VanoBInput";
+import { uploadFotoVano, deleteFotoVano } from "@/lib/vano-detail/foto-storage";
 import { supabase } from "@/lib/supabase";
 import { STATO_MISURE, getStatoMisure } from "@/lib/vano-detail/constants";
-
-// ── Upload foto su Supabase Storage ──
-async function uploadFotoVano(userId, cmId, vanoId, file, nome) {
-  try {
-    const ext = nome.split(".").pop() || "jpg";
-    const path = `${userId}/${cmId}/${vanoId}/${Date.now()}_${nome}`;
-    const { error } = await supabase.storage
-      .from("foto-vani")
-      .upload(path, file, { contentType: `image/${ext === "jpg" ? "jpeg" : ext}`, upsert: false });
-    if (error) throw error;
-    const { data } = supabase.storage.from("foto-vani").getPublicUrl(path);
-    return data.publicUrl;
-  } catch (e) {
-    console.warn("[FOTO] Upload fallito, uso base64:", e);
-    return null;
-  }
-}
-async function deleteFotoVano(url) {
-  try {
-    const parts = url.split("/foto-vani/");
-    if (parts.length < 2) return;
-    await supabase.storage.from("foto-vani").remove([parts[1]]);
-  } catch {}
-}
-
 
 export default function VanoDetailPanel() {
   const { logEvento } = useDay();
