@@ -1,5 +1,6 @@
 "use client";
 import OrdiniSheet from "./ordini-sheet/OrdiniSheet";
+import RicezioneMerceSheet from "./ricezione-merce/RicezioneMerceSheet";
 import { createPortal as _createPortalCM } from "react-dom"; // [v-ordini-portal]
 import RilieviVaniPanel from "./RilieviVaniPanel";
 // @ts-nocheck
@@ -475,6 +476,7 @@ export default function CMDetailPanel() {
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
   const [showOrdiniSheet, setShowOrdiniSheet] = useState(false);
+    const [showRicezioneSheet, setShowRicezioneSheet] = useState(false);
     const [showModalFirma, setShowModalFirma] = useState(false);
     const [emettiModal, setEmettiModal] = useState<any>(null);
 
@@ -2151,19 +2153,13 @@ export default function CMDetailPanel() {
                   }
                   const materialeArrivatoDone29 = !!((c29 as any).materiale_arrivato_at || (c29 as any).materialeArrivatoAt);
                   const tuttoDone = ordineDone29 && materialeArrivatoDone29 && montaggioDone29;
-                  const onClickMaterialeArrivato = async () => {
-                    if (materialeArrivatoDone29) return;
-                    if (!confirm("Confermi che i materiali sono arrivati in magazzino per " + c29.code + "?")) return;
-                    try {
-                      const aziendaId = (c29 as any)?.azienda_id || 'ccca51c1-656b-4e7c-a501-55753e20da29';
-                      const sb = (await import('@/lib/supabase')).supabase;
-                      const nowIso = new Date().toISOString();
-                      const { error } = await sb.from('commesse').update({ materiale_arrivato_at: nowIso }).eq('id', c29.id);
-                      if (error) { alert("Errore: " + error.message); return; }
-                      setSelectedCM((p: any) => p ? ({ ...p, materiale_arrivato_at: nowIso }) : p);
-                      setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, materiale_arrivato_at: nowIso } : x));
-                      if (typeof setCcDone === 'function') { setCcDone("Materiale arrivato"); setTimeout(() => setCcDone(null), 3000); }
-                    } catch (e: any) { alert("Errore rete: " + (e.message || "")); }
+                  const onClickMaterialeArrivato = () => {
+                    if (materialeArrivatoDone29) {
+                      // Gia tutto arrivato, ma utente puo voler rivedere
+                      if (typeof setShowRicezioneSheet === 'function') setShowRicezioneSheet(true);
+                      return;
+                    }
+                    if (typeof setShowRicezioneSheet === 'function') setShowRicezioneSheet(true);
                   };
                   const cardStyle = (done: boolean): React.CSSProperties => ({
                     flex: 1, padding: "14px 12px", borderRadius: 12,
@@ -2311,6 +2307,29 @@ export default function CMDetailPanel() {
                     commessa={c29 as any}
                     onClose={() => setShowOrdiniSheet(false)}
                     onCompletato={() => setShowOrdiniSheet(false)}
+                  />,
+                  document.body
+                )}
+
+                {/* [v-ricezione-inline] Render RicezioneMerceSheet inline */}
+                {showRicezioneSheet && c29 && typeof window !== "undefined" && _createPortalCM(
+                  <RicezioneMerceSheet
+                    commessaId={c29.id}
+                    commessaCode={c29.code || ""}
+                    onClose={() => setShowRicezioneSheet(false)}
+                    onCompletato={async () => {
+                      setShowRicezioneSheet(false);
+                      // Refetch commessa per aggiornare materiale_arrivato_at
+                      try {
+                        const { supabase } = await import("@/lib/supabase");
+                        const { data } = await supabase.from("commesse").select("*").eq("id", c29.id).maybeSingle();
+                        if (data) {
+                          setSelectedCM((p: any) => p ? ({ ...p, ...data }) : p);
+                          setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, ...data } : x));
+                        }
+                      } catch {}
+                      if (typeof setCcDone === 'function') { setCcDone("Materiale arrivato - tutti gli ordini OK"); setTimeout(() => setCcDone(null), 4000); }
+                    }}
                   />,
                   document.body
                 )}
