@@ -27,6 +27,7 @@ import VanoMiniSVG from "./vano-detail/parts/VanoMiniSVG";
 import VanoBInput from "./vano-detail/parts/VanoBInput";
 import { uploadFotoVano, deleteFotoVano } from "@/lib/vano-detail/foto-storage";
 import ReportOverlay from "./vano-detail/overlays/ReportOverlay";
+import StatoMisurePanel from "./vano-detail/overlays/StatoMisurePanel";
 import { supabase } from "@/lib/supabase";
 import { STATO_MISURE, getStatoMisure } from "@/lib/vano-detail/constants";
 
@@ -4215,32 +4216,17 @@ export default function VanoDetailPanel() {
         />
       )}
 
-      {/* ═══ PANEL SELEZIONE STATO MISURE ═══ */}
+      {/* === PANEL SELEZIONE STATO MISURE === */}
       {showStatoMisurePanel && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "flex-end" }} onClick={() => setShowStatoMisurePanel(false)}>
-          <div style={{ width: "100%", background: T.card, borderRadius: "20px 20px 0 0", padding: "20px 16px 32px", maxWidth: 480, margin: "0 auto" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: 40, height: 4, borderRadius: 2, background: T.bdr, margin: "0 auto 16px" }} />
-            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 4 }}>Stato misure — {v.nome}</div>
-            <div style={{ fontSize: 11, color: T.sub, marginBottom: 16 }}>Imposta lo stato di validazione delle misure di questo vano</div>
-            {STATO_MISURE.map(sm => {
-              const isActive = (v.statoMisure || "provvisorie") === sm.id;
-              return (
-                <div key={sm.id} onClick={() => {
-                  updateVanoField(v.id, "statoMisure", sm.id);
-                  setSelectedVano(prev => ({ ...prev, statoMisure: sm.id }));
-                  setShowStatoMisurePanel(false);
-                }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, border: `2px solid ${isActive ? sm.color : T.bdr}`, background: isActive ? sm.bg : T.bg, marginBottom: 8, cursor: "pointer" }}>
-                  <span style={{ fontSize: 20 }}>{sm.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? sm.color : T.text }}>{sm.label}</div>
-                    <div style={{ fontSize: 10, color: T.sub }}>{sm.desc}</div>
-                  </div>
-                  {isActive && <span style={{ fontSize: 16, color: sm.color }}>●</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <StatoMisurePanel
+          vano={v}
+          theme={T}
+          onSelectStato={(statoId) => {
+            updateVanoField(v.id, "statoMisure", statoId);
+            setSelectedVano(prev => ({ ...prev, statoMisure: statoId }));
+          }}
+          onClose={() => setShowStatoMisurePanel(false)}
+        />
       )}
 
       {/* ═══ PANNELLO STRUMENTI VANO (catalogo widget configuratori) ═══ */}
