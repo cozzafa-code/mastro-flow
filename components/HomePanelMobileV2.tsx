@@ -343,9 +343,9 @@ export default function HomePanelMobileV2(props: any) {
         {false && id === 'produzione' && <CardProduzione cantieri={cantieri} apri={apriCM} />}
         {false && id === 'gestione-materiali' && <CardGestioneMateriali ordini={ctx?.ordiniFornDB || []} magazzino={ctx?.magazzinoArticoli || []} onClick={() => goto('materiali')} />}
         {id === 'clienti' && <CardClienti contatti={ctx?.contatti || ctx?.clienti || []} cantieri={cantieri} onClick={() => goto('clienti')} />}
-        {id === 'pianificazione' && <CardPianificazione aziendaId={ctx?.aziendaId || ''} onClick={(cmId) => { const cm = (cantieri||[]).find((c:any)=>c.id===cmId); if(cm) setOrganizzaCm(cm); }} />}
+        {false && id === 'pianificazione' && <CardPianificazione aziendaId={ctx?.aziendaId || ''} onClick={(cmId) => { const cm = (cantieri||[]).find((c:any)=>c.id===cmId); if(cm) setOrganizzaCm(cm); }} />}
           {id === 'statistiche' && <CardStatistiche cantieri={cantieri} onClick={() => setShowCentroFinanze(true)} />}
-          {id === 'azioni-veloci' && <CardAzioniVeloci
+          {false && id === 'azioni-veloci' && <CardAzioniVeloci
             aziendaId={aziendaIdResolved}
             onProduzione={() => setShowCentroProduzione(true)}
             onMontaggi={() => setShowCentroMontaggi(true)}
