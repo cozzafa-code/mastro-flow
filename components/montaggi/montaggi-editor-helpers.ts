@@ -1,166 +1,195 @@
-// components/montaggi/montaggi-editor-helpers.ts
-// Helper per salvataggio/cancellazione montaggi su Supabase
-
+// ═══════════════════════════════════════════════════════════
+// MASTRO ERP — Montaggi Editor v2 helpers
+// ═══════════════════════════════════════════════════════════
 import { supabase } from "@/lib/supabase";
-import { MontaggioRow, MontaggioStato } from "./montaggi-types";
+import type {
+  MontaggioRow,
+  EditorState,
+  TipoIntervento,
+  StatoMontaggio,
+  CommessaLite,
+  CaricoMap,
+} from "./montaggi-editor-types";
+import { caricoKey, fmtIso, parseIso, addDays } from "./montaggi-editor-types";
 
-export interface MontaggioFormData {
-  id?: string;
-  commessa_id: string;
-  data_montaggio: string | null;
-  ora_inizio: string | null;
-  ora_fine: string | null;
-  ore_preventivate: number | null;
-  squadra: string[];
-  stato: MontaggioStato;
-  note: string | null;
-}
-
-/**
- * Converte una row in form data (per editing).
- */
-export function rowToForm(m: MontaggioRow): MontaggioFormData {
+// === STATE INIT da row ===
+export function buildEditorState(m: MontaggioRow | null): EditorState {
   return {
-    id: m.id,
-    commessa_id: m.commessa_id,
-    data_montaggio: m.data_montaggio,
-    ora_inizio: m.ora_inizio ? m.ora_inizio.substring(0, 5) : null,
-    ora_fine: m.ora_fine ? m.ora_fine.substring(0, 5) : null,
-    ore_preventivate: m.ore_preventivate,
-    squadra: Array.isArray(m.squadra) ? m.squadra : [],
-    stato: m.stato,
-    note: m.note,
+    tipo: (m?.tipo_intervento as TipoIntervento) || "cantiere",
+    commessaId: m?.commessa_id || null,
+    contattoId: m?.contatto_id || null,
+    titolo: m?.titolo || "",
+    indirizzoOverride: m?.indirizzo_override || "",
+    telefonoOverride: m?.telefono_override || "",
+    dataInizio: m?.data_montaggio || null,
+    oraInizio: m?.ora_inizio || "09:00",
+    giorni: Number(m?.giorni_pianificati || 1),
+    oreGiorno: Number(m?.ore_preventivate || 8) / Math.max(1, Number(m?.giorni_pianificati || 1)),
+    durataMinuti: Number(m?.durata_minuti || 30),
+    squadra: (m?.squadra as string[]) || [],
+    stato: (m?.stato as StatoMontaggio) || "da_pianificare",
+    note: m?.note_misuratore || "",
   };
 }
 
-/**
- * Form vuoto per "Nuovo montaggio".
- */
-export function emptyForm(): MontaggioFormData {
-  return {
-    commessa_id: "",
-    data_montaggio: null,
-    ora_inizio: "08:00",
-    ora_fine: "17:00",
-    ore_preventivate: 8,
-    squadra: [],
-    stato: "da_pianificare",
-    note: null,
+// === PAYLOAD per Supabase ===
+export function buildPayload(s: EditorState, aziendaId: string): Partial<MontaggioRow> & { azienda_id: string } {
+  const base: Partial<MontaggioRow> & { azienda_id: string } = {
+    azienda_id: aziendaId,
+    tipo_intervento: s.tipo,
+    data_montaggio: s.dataInizio,
+    ora_inizio: s.oraInizio || null,
+    squadra: s.squadra,
+    stato: deriveStato(s),
+    note_misuratore: s.note || null,
+    commessa_id: s.commessaId || null,
+    contatto_id: s.contattoId || null,
+    titolo: s.titolo?.trim() || null,
+    indirizzo_override: s.indirizzoOverride?.trim() || null,
+    telefono_override: s.telefonoOverride?.trim() || null,
   };
+  if (s.tipo === "cantiere") {
+    base.giorni_pianificati = s.giorni;
+    base.ore_preventivate = s.oreGiorno;
+    base.durata_minuti = Math.round(s.giorni * s.oreGiorno * 60);
+  } else if (s.tipo === "intervento") {
+    base.giorni_pianificati = 1;
+    base.durata_minuti = s.durataMinuti;
+    base.ore_preventivate = Math.round((s.durataMinuti / 60) * 100) / 100;
+  } else {
+    // sopralluogo: fissa 1h
+    base.giorni_pianificati = 1;
+    base.durata_minuti = 60;
+    base.ore_preventivate = 1;
+  }
+  return base;
 }
 
-/**
- * Validazione form. Ritorna stringa errore o null se valido.
- */
-export function validateForm(f: MontaggioFormData): string | null {
-  if (!f.commessa_id) return "Commessa obbligatoria";
-  // Se ha data, deve avere stato compatibile
-  if (f.data_montaggio && f.stato === "da_pianificare") {
-    // Auto-fix lato salvataggio
-  }
-  if (f.ora_inizio && f.ora_fine && f.ora_inizio >= f.ora_fine) {
-    return "Ora fine deve essere dopo ora inizio";
-  }
-  if (f.ore_preventivate !== null && f.ore_preventivate < 0) {
-    return "Ore preventivate negative non valide";
+// stato derivato: se non c'è data o squadra → da_pianificare, altrimenti mantieni
+function deriveStato(s: EditorState): StatoMontaggio {
+  if (!s.dataInizio) return "da_pianificare";
+  if (s.tipo === "cantiere" && (!s.squadra || s.squadra.length === 0)) return "da_pianificare";
+  return s.stato === "da_pianificare" ? "programmato" : s.stato;
+}
+
+// === VALIDAZIONE ===
+export function validate(s: EditorState): string | null {
+  if (s.tipo === "cantiere") {
+    if (!s.commessaId) return "Scegli una commessa";
+    if (s.giorni < 1) return "Giorni: minimo 1";
+    if (s.oreGiorno < 1) return "Ore al giorno: minimo 1";
+  } else if (s.tipo === "intervento") {
+    const haCliente = !!(s.commessaId || s.contattoId || s.titolo?.trim());
+    if (!haCliente) return "Scegli cliente, commessa o inserisci un titolo";
+    if (s.durataMinuti < 5) return "Durata: minimo 5 minuti";
+  } else if (s.tipo === "sopralluogo") {
+    const haCliente = !!(s.commessaId || s.contattoId || s.titolo?.trim() || s.indirizzoOverride?.trim());
+    if (!haCliente) return "Inserisci cliente o indirizzo";
   }
   return null;
 }
 
-/**
- * Auto-correzione stato in base ai campi compilati.
- */
-export function autoFixStato(f: MontaggioFormData): MontaggioStato {
-  if (!f.data_montaggio || f.squadra.length === 0) {
-    return "da_pianificare";
-  }
-  // Se stato attuale è "programmato/in_corso/completato/annullato", lascia
-  if (
-    f.stato === "in_corso" ||
-    f.stato === "completato" ||
-    f.stato === "annullato"
-  ) {
-    return f.stato;
-  }
-  return "programmato";
-}
-
-/**
- * Salva (insert o update) montaggio.
- * Ritorna { ok: true, id } o { ok: false, error }.
- */
+// === SAVE / INSERT ===
 export async function saveMontaggio(
-  f: MontaggioFormData,
+  id: string | null,
+  s: EditorState,
   aziendaId: string
-): Promise<{ ok: boolean; id?: string; error?: string }> {
-  const err = validateForm(f);
+): Promise<{ ok: boolean; error?: string; id?: string }> {
+  const err = validate(s);
   if (err) return { ok: false, error: err };
-
-  const stato = autoFixStato(f);
-  const payload: any = {
-    commessa_id: f.commessa_id,
-    data_montaggio: f.data_montaggio,
-    ora_inizio: f.ora_inizio || null,
-    ora_fine: f.ora_fine || null,
-    ore_preventivate: f.ore_preventivate,
-    squadra: f.squadra,
-    stato,
-    note: f.note,
-    azienda_id: aziendaId,
-  };
-
+  const payload = buildPayload(s, aziendaId);
   try {
-    if (f.id) {
-      const { error } = await supabase
-        .from("montaggi")
-        .update(payload)
-        .eq("id", f.id);
+    if (id) {
+      const { error } = await supabase.from("montaggi").update(payload).eq("id", id);
       if (error) return { ok: false, error: error.message };
-      return { ok: true, id: f.id };
+      return { ok: true, id };
+    } else {
+      const { data, error } = await supabase.from("montaggi").insert(payload).select("id").single();
+      if (error) return { ok: false, error: error.message };
+      return { ok: true, id: data?.id };
     }
-    const { data, error } = await supabase
-      .from("montaggi")
-      .insert(payload)
-      .select("id")
-      .single();
-    if (error) return { ok: false, error: error.message };
-    return { ok: true, id: data?.id };
   } catch (e: any) {
-    return { ok: false, error: e.message || "Errore sconosciuto" };
+    return { ok: false, error: e?.message || String(e) };
   }
 }
 
-/**
- * Elimina montaggio.
- */
-export async function deleteMontaggio(
-  id: string
-): Promise<{ ok: boolean; error?: string }> {
+// === DELETE ===
+export async function deleteMontaggio(id: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const { error } = await supabase.from("montaggi").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (e: any) {
-    return { ok: false, error: e.message || "Errore sconosciuto" };
+    return { ok: false, error: e?.message || String(e) };
   }
 }
 
-/**
- * Lista squadre standard. In futuro: da DB tabella squadre.
- */
-export const SQUADRE_DEFAULT = ["sq1", "sq2", "sq3"];
+// === Costruisce mappa carico squadra:data → ore totali ===
+export function buildCaricoMap(montaggi: any[]): CaricoMap {
+  const map: CaricoMap = new Map();
+  for (const m of montaggi || []) {
+    if (!m?.data_montaggio || !m?.squadra) continue;
+    const dataInizio = parseIso(m.data_montaggio);
+    const giorni = Math.max(1, Math.floor(Number(m.giorni_pianificati || 1)));
+    const oreGiorno = m.tipo_intervento === "intervento"
+      ? (Number(m.durata_minuti || 0) / 60)
+      : Number(m.ore_preventivate || 0) / Math.max(1, giorni);
+    const sqArr: string[] = Array.isArray(m.squadra) ? m.squadra : [];
+    for (let i = 0; i < giorni; i++) {
+      const d = addDays(dataInizio, i);
+      const iso = fmtIso(d);
+      for (const sq of sqArr) {
+        const k = caricoKey(sq, iso);
+        map.set(k, (map.get(k) || 0) + oreGiorno);
+      }
+    }
+  }
+  return map;
+}
 
-/**
- * Filtra commesse compatibili per nuovo montaggio.
- * Solo commesse in fase: acconto_pagato, ordine, produzione, montaggio, fatturata.
- */
-export function commesseValide(commesse: any[]): any[] {
-  const fasiOk = new Set([
-    "acconto_pagato",
-    "ordine",
-    "produzione",
-    "montaggio",
-    "fatturata",
-  ]);
-  return (commesse || []).filter((c) => fasiOk.has(c.fase));
+// === Commesse selezionabili (fase >= acconto_pagato e non chiuse) ===
+const FASI_OK = new Set([
+  "acconto_pagato", "ordine", "produzione", "montaggio", "fatturata",
+]);
+export function commesseValide(commesse: any[]): CommessaLite[] {
+  return (commesse || [])
+    .filter((c) => c && c.id && FASI_OK.has(String(c.fase || "").toLowerCase()))
+    .map((c) => ({
+      id: c.id,
+      code: c.code,
+      cliente: c.cliente,
+      cognome: c.cognome,
+      indirizzo: c.indirizzo,
+      citta: c.citta,
+      telefono: c.telefono,
+      totale_finale: c.totale_finale,
+      totale_preventivo: c.totale_preventivo,
+      vani_count: c.vani_count,
+      fase: c.fase,
+    }));
+}
+
+// === Carica contatti (rubrica) ===
+export async function fetchContatti(aziendaId: string): Promise<any[]> {
+  if (!aziendaId) return [];
+  try {
+    const { data, error } = await supabase
+      .from("contatti")
+      .select("id, nome, cognome, telefono, email, citta, indirizzo, tipo")
+      .eq("azienda_id", aziendaId)
+      .in("tipo", ["cliente", "lead", "potenziale"])
+      .order("cognome", { ascending: true });
+    if (error) {
+      // fallback: prova senza filtro tipo
+      const { data: d2 } = await supabase
+        .from("contatti")
+        .select("id, nome, cognome, telefono, email, citta, indirizzo, tipo")
+        .eq("azienda_id", aziendaId)
+        .order("cognome", { ascending: true });
+      return d2 || [];
+    }
+    return data || [];
+  } catch {
+    return [];
+  }
 }
