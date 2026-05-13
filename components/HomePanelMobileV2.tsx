@@ -1,7 +1,8 @@
 // HomePanelMobileV2 V20 - bottom sheet evento/task + swipe calendario + no frecce
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
-import MastroProduzioneSheet from './produzione/MastroProduzioneSheet';
+import MastroProduzioneSheet from './produzione/MastroProduzioneSheet'
+import { useMastroData } from "@/hooks/useMastroData";
 import CardAzioniVeloci from "./home/CardAzioniVeloci";
 import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import CentroControlloMontaggi from "./CentroControlloMontaggi";
@@ -1143,7 +1144,11 @@ function CardSquadra({ team, cantieri, onClick }: any) {
 }
 
 function CardProduzione({ cantieri, apri }: any) {
-  const inProd = (cantieri || []).filter((c: any) => c?.fase === 'produzione' || c?.fase === 'ordine')
+  // [v-bidir] Leggo dati live dal hook globale - aggiornamenti realtime
+  const { state: md } = useMastroData()
+  const commesseGlob = (md.commesse && md.commesse.length > 0) ? md.commesse : (cantieri || [])
+  const carichiGlob = md.produzioneCarichi || []
+  const inProd = commesseGlob.filter((c: any) => c?.fase === 'produzione' || c?.fase === 'ordine')
   const top = inProd.slice(0, 3)
   
   // Capacita: default 30 vani/gg. Genera prossimi 5 giorni lavorativi
@@ -1157,9 +1162,12 @@ function CardProduzione({ cantieri, apri }: any) {
     if (dow !== 0 && dow !== 6) {
       const iso = cursor.toISOString().split('T')[0]
       // Conta carichi per quel giorno (somma vani)
-      const carico = inProd.reduce((s: number, c: any) => {
-        const dt = c?.produzione_iniziata_at?.split('T')[0]
-        if (dt === iso) return s + (Number(c?.n_vani || c?.vani_totali || 1))
+      // Carico reale: somma vani di tutti i produzione_carichi che includono questo giorno
+      const carico = carichiGlob.reduce((s: number, cr: any) => {
+        if (!cr?.data_avvio) return s
+        const dataAvvio = cr.data_avvio
+        const dataFine = cr.data_fine_prevista || cr.data_avvio
+        if (iso >= dataAvvio && iso <= dataFine) return s + (Number(cr.vani_totali) || 0)
         return s
       }, 0)
       giorni.push({ d: new Date(cursor), iso, lbl: dowLbl[dow], carico })

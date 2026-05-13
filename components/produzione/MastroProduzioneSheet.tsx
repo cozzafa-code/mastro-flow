@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useMastroData } from "@/hooks/useMastroData";
 
 type Props = {
   aziendaId: string;
@@ -48,36 +49,35 @@ export default function MastroProduzioneSheet({ aziendaId, onClose, onApriCommes
   const [selectedCarico, setSelectedCarico] = useState<Carico | null>(null);
   const [view, setView] = useState<"settimana" | "lista">("settimana");
 
+  // [v-bidir] Leggo dati live dal hook globale - realtime auto-update
+  const { state: md } = useMastroData();
+  
+  // Config: fetch one-time (rarely changes)
   useEffect(() => {
     (async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
-        const [{ data: cfg }, { data: car }] = await Promise.all([
-          supabase.from("produzione_config").select("*").eq("azienda_id", aziendaId).maybeSingle(),
-          supabase.from("produzione_carichi").select("*").eq("azienda_id", aziendaId).neq("stato", "annullato").order("data_avvio", { ascending: true }),
-        ]);
+        const { data: cfg } = await supabase.from("produzione_config").select("*").eq("azienda_id", aziendaId).maybeSingle();
         setConfig(cfg || { capacita_giornaliera_vani: 30, n_operai_produzione: 2, n_postazioni_cnc: 1, ora_inizio_giornata: "07:00", ora_fine_giornata: "17:00", giorni_lavorativi: [1,2,3,4,5] });
-        const carichiList = car || [];
-        const ids = carichiList.map((c: any) => c.commessa_id);
-        if (ids.length > 0) {
-          const { data: cms } = await supabase.from("commesse").select("id,code,cliente,fase").in("id", ids);
-          const cmMap = new Map((cms || []).map((c: any) => [c.id, c]));
-          const enriched = carichiList.map((c: any) => ({
-            ...c,
-            cm_code: cmMap.get(c.commessa_id)?.code,
-            cm_cliente: cmMap.get(c.commessa_id)?.cliente,
-            cm_fase: cmMap.get(c.commessa_id)?.fase,
-          }));
-          setCarichi(enriched);
-        } else {
-          setCarichi([]);
-        }
-      } catch (e) {
-        console.error("[MastroProduzione]", e);
-      }
-      setLoading(false);
+      } catch (e) { console.error("[MastroProduzione cfg]", e); }
     })();
   }, [aziendaId]);
+  
+  // Carichi enriched: derivati live da md.produzioneCarichi + md.commesse
+  useEffect(() => {
+    const carichiBase = (md.produzioneCarichi || []).filter((c: any) => c.stato !== "annullato");
+    const cmMap = new Map((md.commesse || []).map((c: any) => [c.id, c]));
+    const enriched = carichiBase
+      .map((c: any) => ({
+        ...c,
+        cm_code: cmMap.get(c.commessa_id)?.code,
+        cm_cliente: cmMap.get(c.commessa_id)?.cliente,
+        cm_fase: cmMap.get(c.commessa_id)?.fase,
+      }))
+      .sort((a: any, b: any) => (a.data_avvio || "").localeCompare(b.data_avvio || ""));
+    setCarichi(enriched);
+    if (md.loading === false) setLoading(false);
+  }, [md.produzioneCarichi, md.commesse, md.loading]);
 
   // Genera settimana corrente (lunedi-domenica)
   const settimana = useMemo(() => {
