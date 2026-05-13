@@ -2254,6 +2254,83 @@ export default function CMDetailPanel() {
                   document.body
                 )}
 
+                {/* [v-mont-inline] Mini-modal montaggio inline (dual-gate) */}
+                {montFormOpen && c29 && typeof window !== "undefined" && _createPortalCM(
+                  <div onClick={() => setMontFormOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+                    <div onClick={(e: any) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 420, width: "100%" }}>
+                      <div style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", marginBottom: 14 }}>Pianifica montaggio {c29.code}</div>
+
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 4 }}>DATA</div>
+                      <input
+                        type="date"
+                        value={montFormData?.data || ""}
+                        onChange={(e: any) => setMontFormData((p: any) => ({ ...(p || {}), data: e.target.value }))}
+                        style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #C8E4E4", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, marginBottom: 12 }}
+                      />
+
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 4 }}>DURATA (giorni)</div>
+                      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                        {[0.5, 1, 2, 3].map(g => (
+                          <button key={g} onClick={() => setMontGiorni(g)} style={{ flex: 1, padding: 10, borderRadius: 8, border: "1px solid " + (montGiorni === g ? "#28A0A0" : "#C8E4E4"), background: montGiorni === g ? "#28A0A0" : "#fff", color: montGiorni === g ? "#fff" : "#0D1F1F", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                            {g === 0.5 ? "½g" : g + "g"}
+                          </button>
+                        ))}
+                      </div>
+
+                      {squadreDB && squadreDB.length > 0 && (
+                        <>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 4 }}>SQUADRA</div>
+                          <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" as any }}>
+                            {squadreDB.map((sq: any) => (
+                              <div key={sq.id} onClick={() => setMontFormData((p: any) => ({ ...(p || {}), squadraId: sq.id }))} style={{ padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700, background: montFormData?.squadraId === sq.id ? "#28A0A0" : "#fff", color: montFormData?.squadraId === sq.id ? "#fff" : "#0D1F1F", border: "1px solid " + (montFormData?.squadraId === sq.id ? "#28A0A0" : "#C8E4E4") }}>
+                                {sq.nome || sq.id}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => setMontFormOpen(false)} style={{ flex: 1, padding: 12, borderRadius: 10, border: "1px solid #C8E4E4", background: "#fff", color: "#6A8484", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                        <button onClick={async () => {
+                          if (!montFormData?.data) { alert("Scegli una data"); return; }
+                          const giorni = montGiorni || 1;
+                          try {
+                            const aziendaId = (c29 as any)?.azienda_id || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+                            // Update montaggio esistente (se gia creato da trigger) oppure insert
+                            const sb = (await import('@/lib/supabase')).supabase;
+                            const existing = await sb.from('montaggi').select('id').eq('commessa_id', c29.id).limit(1).maybeSingle();
+                            const payload: any = {
+                              azienda_id: aziendaId,
+                              commessa_id: c29.id,
+                              data_montaggio: montFormData.data,
+                              stato: 'programmato',
+                              squadra: montFormData.squadraId ? [montFormData.squadraId] : [],
+                              urgente: false,
+                            };
+                            if (existing?.data?.id) {
+                              await sb.from('montaggi').update(payload).eq('id', existing.data.id);
+                            } else {
+                              await sb.from('montaggi').insert(payload);
+                            }
+                            // State locale
+                            const nuovoM = { id: existing?.data?.id || ("m_" + Date.now()), cmId: c29.id, commessa_id: c29.id, cmCode: c29.code, cliente: c29.cliente, indirizzo: c29.indirizzo || "", data: montFormData.data, orario: montFormData.orario || "08:00", durata: giorni + "g", giorni, squadraId: montFormData.squadraId, stato: "programmato" };
+                            setMontaggiDB((prev: any[]) => {
+                              const filtered = prev.filter((m: any) => String(m.cmId) !== String(c29.id) && String(m.commessa_id) !== String(c29.id));
+                              return [...filtered, nuovoM];
+                            });
+                            setMontFormOpen(false);
+                            if (typeof setCcDone === 'function') { setCcDone("Montaggio pianificato"); setTimeout(() => setCcDone(null), 3000); }
+                          } catch (e: any) {
+                            alert('Errore: ' + (e?.message || e));
+                          }
+                        }} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>CONFERMA</button>
+                      </div>
+                    </div>
+                  </div>,
+                  document.body
+                )}
+
                 {/* Link secondari */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 10 }}>
                   {ris29?.token && (
