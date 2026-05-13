@@ -141,7 +141,7 @@ function FiltersBar({ filtro, setFiltro, query, setQuery, kpi, totale, raggruppa
     { id: "aperti", label: "Aperti", count: totale - kpi.arrivati },
   ];
   return (
-    <div style={{ padding: "10px 14px", borderBottom: "1px solid " + C.border, background: C.white }}>
+    <div style={{ padding: "12px 14px 10px 14px", borderBottom: "1px solid " + C.border, background: C.white }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", background: "rgba(26, 42, 71, 0.05)", borderRadius: 9, padding: 3, marginBottom: 8 }}>
         {segs.map(s => {
           const active = raggruppa === s.id;
@@ -156,7 +156,7 @@ function FiltersBar({ filtro, setFiltro, query, setQuery, kpi, totale, raggruppa
         placeholder="Cerca numero, fornitore, commessa..."
         style={{ width: "100%", padding: "8px 12px", background: C.whiteOff, border: "1.5px solid " + C.borderStrong, borderRadius: 9, fontSize: 12, color: C.navy, fontFamily: "inherit", outline: "none", marginBottom: 8 }}
       />
-      <div style={{ display: "flex", gap: 5, overflowX: "auto", scrollbarWidth: "none" as any }}>
+      <div style={{ display: "flex", gap: 5, overflowX: "auto", scrollbarWidth: "none" as any, paddingLeft: 2, paddingRight: 2 }}>
         {chips.map(c => {
           const active = filtro === c.id;
           return (

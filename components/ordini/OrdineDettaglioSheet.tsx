@@ -154,14 +154,15 @@ function FlagRow({ ordine }: any) {
 }
 
 function Stepper({ stato }: { stato: OrdineStato }) {
+  const isDaOrdinare = stato === "da_ordinare" || stato === "approvazione";
   const steps = [
-    { id: "bozza", l: "Bozza" },
+    { id: "bozza", l: isDaOrdinare ? "Da ord." : "Bozza" },
     { id: "inviato", l: "Inviato" },
     { id: "confermato", l: "Conferm." },
     { id: "in_transito", l: "In viaggio" },
     { id: "arrivato", l: "Arrivato" },
   ];
-  const order: Record<string, number> = { bozza: 0, da_ordinare: 0, inviato: 1, confermato: 2, in_transito: 3, arrivato: 4, arrivato_parziale: 4, verificato: 4 };
+  const order: Record<string, number> = { bozza: 0, da_ordinare: 0, approvazione: 0, inviato: 1, confermato: 2, in_transito: 3, arrivato: 4, arrivato_parziale: 4, verificato: 4 };
   const currIdx = order[stato] ?? 0;
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", background: C.whiteOff, borderBottom: "1px solid " + C.border, position: "relative" }}>
@@ -219,7 +220,10 @@ function RigheArticoli({ ordine }: any) {
       <SectionTit>Articoli ({righe.length})</SectionTit>
       <div style={{ padding: "0 14px" }}>
         {righe.length === 0 ? (
-          <div style={{ padding: 16, textAlign: "center", color: C.navyFaint, fontSize: 11, fontWeight: 700 }}>Nessuna riga</div>
+          <div style={{ padding: "18px 12px", textAlign: "center", background: C.amberSoft, border: "1.5px dashed " + C.amber, borderRadius: 11, color: C.amberDark, fontSize: 12, fontWeight: 700, lineHeight: 1.4 }}>
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>Nessun articolo in questo ordine</div>
+            <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.85 }}>Modifica l'ordine per aggiungere le righe del materiale</div>
+          </div>
         ) : righe.map((r: any, i: number) => (
           <div key={r.id || i} style={{ display: "flex", alignItems: "center", background: C.whiteOff, borderRadius: 10, padding: "10px 12px", marginBottom: 5, border: "1px solid " + C.border, gap: 9 }}>
             <div style={{ background: C.amberSoft, color: C.amberDark, width: 22, height: 22, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, flex: "0 0 22px" }}>{i + 1}</div>
