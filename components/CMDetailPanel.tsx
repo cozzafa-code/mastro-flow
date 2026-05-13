@@ -2241,7 +2241,7 @@ export default function CMDetailPanel() {
                   };
                   const onClickMontaggio = () => { try { setMontFormOpen(true); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: (squadreDB && squadreDB[0]?.id) || "", note: "" }); } catch (e) { console.warn(e); } };
                   const onClickAvvia = async () => {
-                    if (!entrambeDone) return;
+                    if (!tuttoDone) return;
                     if (!confirm("Confermi l'avvio della produzione per " + c29.code + "?")) return;
                     try {
                       const aziendaId =
