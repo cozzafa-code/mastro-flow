@@ -2244,6 +2244,16 @@ export default function CMDetailPanel() {
                   );
                 })()}
 
+                {/* [v-ordini-inline] Render OrdiniSheet inline */}
+                {showOrdiniSheet && c29 && typeof window !== "undefined" && _createPortalCM(
+                  <OrdiniSheet
+                    commessa={c29 as any}
+                    onClose={() => setShowOrdiniSheet(false)}
+                    onCompletato={() => setShowOrdiniSheet(false)}
+                  />,
+                  document.body
+                )}
+
                 {/* Link secondari */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 10 }}>
                   {ris29?.token && (
