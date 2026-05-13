@@ -27,7 +27,7 @@ export default function MontaggiSheet({
   onClose,
   onApriCommessa,
 }: Props) {
-  const { montaggi: rawMontaggi, commesse } = useMastroData();
+  const _md = useMastroData(); const rawMontaggi = (_md as any)?.state?.montaggi || (_md as any)?.montaggi || []; const commesse = (_md as any)?.state?.commesse || (_md as any)?.commesse || [];
   const [view, setView] = useState<MontaggiView>("lista");
   const [filter, setFilter] = useState<MontaggiFilter>("tutti");
   const [editing, setEditing] = useState<MontaggioRow | null>(null);
