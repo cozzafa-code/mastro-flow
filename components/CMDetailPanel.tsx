@@ -2170,9 +2170,9 @@ export default function CMDetailPanel() {
                       });
                       const j = await r.json();
                       if (!r.ok) {
-                        // Fallback: apri OrdiniSheet vuoto cosi puoi creare manualmente
+                        // [v-no-alert] niente alert: apri OrdiniSheet vuoto per creazione manuale
                         window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } }));
-                        alert('Trasformatore: ' + (j.error || 'errore') + '. Apertura ordini manuale.');
+                        if (typeof setCcDone === 'function') { setCcDone('Apri ordine manuale: ' + (j.error || 'no preventivo')); setTimeout(() => setCcDone(null), 4000); }
                         return;
                       }
                       // Esito OK: aggiorna fase locale + ordini state + apri sheet
