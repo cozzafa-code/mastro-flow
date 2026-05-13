@@ -2268,16 +2268,19 @@ export default function CMDetailPanel() {
                         style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #C8E4E4", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, marginBottom: 8 }}
                       />
 
-                      {/* [v-cal-squadre-v2] Calendario disponibilita squadre - 14 giorni leggibile */}
+                      {/* [v-cal-squadre-v3] Vista settimanale 7gg scrollabile */}
                       {(() => {
                         const todayMC = new Date(); todayMC.setHours(0,0,0,0);
                         const todayISOMC = todayMC.toISOString().split("T")[0];
                         const fmtDMC = (d: Date) => d.toISOString().split("T")[0];
                         const squadsMC = (squadreDB && squadreDB.length > 0) ? squadreDB : [{ id: "default", nome: "Squadra", colore: "#28A0A0" }];
-                        const DAYS = 14;
+                        // Offset settimana (in giorni dal lunedi piu vicino oggi)
+                        const weekOffset = (montFormData?.weekOffset as number) || 0;
+                        const startWeek = new Date(todayMC);
+                        startWeek.setDate(startWeek.getDate() + weekOffset);
                         const dowLabels = ["dom","lun","mar","mer","gio","ven","sab"];
-                        const giorniMC = Array.from({ length: DAYS }, (_, i) => {
-                          const d = new Date(todayMC); d.setDate(d.getDate() + i); return d;
+                        const giorniMC = Array.from({ length: 7 }, (_, i) => {
+                          const d = new Date(startWeek); d.setDate(d.getDate() + i); return d;
                         });
                         const occupMC = new Map<string, Set<string>>();
                         squadsMC.forEach((s: any) => occupMC.set(s.id, new Set()));
@@ -2294,23 +2297,32 @@ export default function CMDetailPanel() {
                             occupMC.get(sid)!.add(fmtDMC(d));
                           }
                         });
-                        const colTpl = "100px repeat(" + DAYS + ", minmax(36px, 1fr))";
+                        const colTpl = "70px repeat(7, 1fr)";
+                        const mesi = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+                        const rangeLbl = giorniMC[0].getDate() + " " + mesi[giorniMC[0].getMonth()] + " - " + giorniMC[6].getDate() + " " + mesi[giorniMC[6].getMonth()];
                         return (
                           <div style={{ marginBottom: 14, border: "1.5px solid #C8E4E4", borderRadius: 10, padding: 12, background: "#F8FBFB" }}>
-                            <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 10 }}>
-                              Disponibilita squadre - prossimi {DAYS} giorni
+                            <div style={{ display: "flex" as any, alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                              <button onClick={() => setMontFormData((p: any) => ({ ...(p || {}), weekOffset: ((p?.weekOffset as number) || 0) - 7 }))} style={{ width: 32, height: 32, border: "1px solid #C8E4E4", borderRadius: 8, background: "#fff", color: "#28A0A0", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>&lt;</button>
+                              <div style={{ fontSize: 12, fontWeight: 800, color: "#0D1F1F", textAlign: "center" as any, flex: 1 }}>
+                                {rangeLbl}
+                                {weekOffset !== 0 && (
+                                  <span onClick={() => setMontFormData((p: any) => ({ ...(p || {}), weekOffset: 0 }))} style={{ marginLeft: 8, fontSize: 10, color: "#28A0A0", cursor: "pointer", textDecoration: "underline" }}>oggi</span>
+                                )}
+                              </div>
+                              <button onClick={() => setMontFormData((p: any) => ({ ...(p || {}), weekOffset: ((p?.weekOffset as number) || 0) + 7 }))} style={{ width: 32, height: 32, border: "1px solid #C8E4E4", borderRadius: 8, background: "#fff", color: "#28A0A0", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>&gt;</button>
                             </div>
-                            {/* Header: dow + numero */}
-                            <div style={{ display: "grid", gridTemplateColumns: colTpl, gap: 3, marginBottom: 6 }}>
+                            {/* Header dow+data */}
+                            <div style={{ display: "grid", gridTemplateColumns: colTpl, gap: 4, marginBottom: 4 }}>
                               <div></div>
                               {giorniMC.map((d, i) => {
                                 const dow = d.getDay();
                                 const weekend = dow === 0 || dow === 6;
                                 const isToday = fmtDMC(d) === todayISOMC;
                                 return (
-                                  <div key={i} style={{ textAlign: "center", padding: "2px 0" }}>
-                                    <div style={{ fontSize: 9, fontWeight: 700, color: weekend ? "#94A3B8" : "#6A8484", textTransform: "uppercase" as any }}>{dowLabels[dow]}</div>
-                                    <div style={{ fontSize: 13, fontWeight: 800, color: isToday ? "#28A0A0" : weekend ? "#94A3B8" : "#0D1F1F", marginTop: 1 }}>{d.getDate()}</div>
+                                  <div key={i} style={{ textAlign: "center" as any }}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, color: weekend ? "#94A3B8" : "#6A8484", textTransform: "uppercase" as any }}>{dowLabels[dow]}</div>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: isToday ? "#28A0A0" : weekend ? "#94A3B8" : "#0D1F1F" }}>{d.getDate()}</div>
                                   </div>
                                 );
                               })}
@@ -2320,9 +2332,9 @@ export default function CMDetailPanel() {
                               const occSet = occupMC.get(sq.id) || new Set();
                               const sqColor = sq.colore || "#28A0A0";
                               return (
-                                <div key={sq.id} style={{ display: "grid", gridTemplateColumns: colTpl, gap: 3, marginBottom: 4, alignItems: "center" as any }}>
-                                  <div style={{ fontSize: 12, fontWeight: 800, color: "#0D1F1F", padding: "6px 8px", display: "flex" as any, alignItems: "center", gap: 6 }}>
-                                    <span style={{ display: "inline-block", width: 10, height: 10, background: sqColor, borderRadius: 3 }} />
+                                <div key={sq.id} style={{ display: "grid", gridTemplateColumns: colTpl, gap: 4, marginBottom: 4, alignItems: "center" as any }}>
+                                  <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F", padding: "4px 6px", display: "flex" as any, alignItems: "center", gap: 4, overflow: "hidden" as any }}>
+                                    <span style={{ display: "inline-block", width: 8, height: 8, background: sqColor, borderRadius: 2, flexShrink: 0 }} />
                                     <span style={{ overflow: "hidden" as any, textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>{sq.nome || sq.id}</span>
                                   </div>
                                   {giorniMC.map((d, i) => {
@@ -2338,34 +2350,31 @@ export default function CMDetailPanel() {
                                         key={i}
                                         onClick={() => { if (!isPast && !occupata) setMontFormData((p: any) => ({ ...(p || {}), data: iso, squadraId: sq.id })); }}
                                         style={{
-                                          minHeight: 40,
+                                          minHeight: 44,
                                           cursor: (isPast || occupata) ? "not-allowed" : "pointer",
                                           background: selezionata ? sqColor : occupata ? "#FCA5A5" : weekend ? "#F1F5F9" : "#fff",
                                           border: "1.5px solid " + (selezionata ? sqColor : isToday ? "#28A0A0" : "#E2E8F0"),
                                           borderRadius: 6,
                                           opacity: isPast ? 0.35 : 1,
-                                          transition: "all 0.15s",
                                           display: "flex" as any,
                                           alignItems: "center",
                                           justifyContent: "center",
-                                          fontSize: 11,
-                                          fontWeight: 800,
+                                          fontSize: 14,
+                                          fontWeight: 900,
                                           color: selezionata ? "#fff" : occupata ? "#991B1B" : "transparent",
                                         }}
-                                        title={iso + (occupata ? " - OCCUPATA" : " - libera")}
                                       >
-                                        {selezionata ? "✓" : occupata ? "X" : ""}
+                                        {selezionata ? "OK" : occupata ? "X" : ""}
                                       </div>
                                     );
                                   })}
                                 </div>
                               );
                             })}
-                            <div style={{ display: "flex", gap: 14, marginTop: 10, fontSize: 11, color: "#6A8484", flexWrap: "wrap" as any }}>
-                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 14, height: 14, background: "#FCA5A5", borderRadius: 3 }} />occupata</span>
-                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 14, height: 14, background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 3 }} />libera</span>
-                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 14, height: 14, background: "#F1F5F9", borderRadius: 3 }} />weekend</span>
-                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 14, height: 14, background: "#28A0A0", borderRadius: 3 }} />selezionato</span>
+                            <div style={{ display: "flex", gap: 10, marginTop: 10, fontSize: 10, color: "#6A8484", flexWrap: "wrap" as any }}>
+                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 10, height: 10, background: "#FCA5A5", borderRadius: 2 }} />occupata</span>
+                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 10, height: 10, background: "#fff", border: "1px solid #E2E8F0", borderRadius: 2 }} />libera</span>
+                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 10, height: 10, background: "#28A0A0", borderRadius: 2 }} />selezionata</span>
                             </div>
                           </div>
                         );
