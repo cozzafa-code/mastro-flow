@@ -3197,7 +3197,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         iva_percent: iva,
         iva: ivaAmt,
         totale: importo,
-        stato: 'emessa',
+        stato: 'bozza',
         pagato: 0,
         residuo: importo,
         commessa_id: c.id,
@@ -3210,7 +3210,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       } else if (_ins.data) {
         dbId = _ins.data.id;
         dbNumero = _ins.data.numero;
-        dbStato = _ins.data.stato || 'emessa';
+        dbStato = _ins.data.stato || 'bozza';
         console.log('[creaFattura DIRECT] insert OK', _numDoc, 'id:', dbId);
       }
     } catch (e) {
