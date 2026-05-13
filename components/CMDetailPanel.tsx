@@ -1914,7 +1914,10 @@ export default function CMDetailPanel() {
                              try {
                                const r = await fetch("/api/preventivo-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cm_id: c29.id, cm_code: c29.code, cliente: (c29.cliente || "") + " " + (c29.cognome || "")}) });
                                const d = await r.json();
-                               const link = d?.url || (typeof window !== "undefined" ? window.location.origin + "/p/" + (d?.token || ris29?.token || "") : "");
+                               // [v-link-abs] forza dominio assoluto: API ritorna path "/p/XXX", non URL completo
+                               const _origin = typeof window !== "undefined" ? window.location.origin : "";
+                               const _rawUrl = d?.url || ("/p/" + (d?.token || ris29?.token || ""));
+                               const link = _rawUrl.startsWith("http") ? _rawUrl : (_origin + _rawUrl);
                                setShowSendModal({
                                  link,
                                  nome: ((c29.cliente || "") + " " + (c29.cognome || "")).trim() || "Cliente",
