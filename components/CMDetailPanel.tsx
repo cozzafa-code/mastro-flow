@@ -1436,7 +1436,36 @@ export default function CMDetailPanel() {
                 desc = "Cliente non ha ancora risposto. Sollecita o reinvia il link.";
                 tags = [{ lbl: "Inviato", bg: "#DBEAFE", fg: "#1E40AF" }, { lbl: "Pending", bg: "#FEF3C7", fg: "#92400E" }];
                 primaryLbl = "Reinvia preventivo";
-                primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+                primaryAction = async () => {
+                  // [v-reinvia-share] genera link + apre modal share (WhatsApp/Email)
+                  try {
+                    const r = await fetch("/api/preventivo-link", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ cm_id: cZ3.id, cm_code: cZ3.code, cliente: (cZ3.cliente || "") + " " + (cZ3.cognome || "") }),
+                    });
+                    const d = await r.json();
+                    const _origin = typeof window !== "undefined" ? window.location.origin : "";
+                    const _rawUrl = d?.url || ("/p/" + (d?.token || ""));
+                    const link = _rawUrl.startsWith("http") ? _rawUrl : (_origin + _rawUrl);
+                    if (typeof setShowSendModal === "function") {
+                      setShowSendModal({
+                        link,
+                        nome: ((cZ3.cliente || "") + " " + (cZ3.cognome || "")).trim() || "Cliente",
+                        tel: cZ3.telefono || cZ3.tel || "",
+                        email: cZ3.email || "",
+                        code: cZ3.code || "",
+                      });
+                    } else {
+                      // Fallback se setShowSendModal non disponibile: apri workspace
+                      setPrevWorkspace(true); setPrevTab("fiscale");
+                    }
+                  } catch (e: any) {
+                    console.warn("[reinvia] err:", e);
+                    // Fallback: apri workspace
+                    setPrevWorkspace(true); setPrevTab("fiscale");
+                  }
+                };
               } else {
                 titolo = "Genera il preventivo";
                 desc = `${totVZ3} ${totVZ3 === 1 ? "vano" : "vani"}. Stima ${stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "in calcolo"}.`;
