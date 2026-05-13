@@ -333,19 +333,19 @@ export default function HomePanelMobileV2(props: any) {
         </>
       )}
       <div style={{ padding: '12px 14px', pointerEvents: editMode ? 'none' : 'auto' }}>
-        {id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} apriCM={apriCM} onClick={() => goto('agenda')} apriSheetEvento={(e:any) => setSheetEvento(e)} />}
-        {id === 'urgente' && <CardUrgente ferme={ferme} apri={apriCM} />}
+        {false && id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} apriCM={apriCM} onClick={() => goto('agenda')} apriSheetEvento={(e:any) => setSheetEvento(e)} />}
+        {false && id === 'urgente' && <CardUrgente ferme={ferme} apri={apriCM} />}
         {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} toggleTask={toggleTask} doneOptim={doneOptim} onClick={() => goto('team')} apriSheetTask={(t:any) => setSheetTask(t)} />}
         {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} />}
         {id === 'commesse' && <CardCommesse cantieri={cantieri} apri={apriCM} />}
         {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => setShowCentroFinanze(true)} />}
         {id === 'squadra' && <CardSquadra team={team} cantieri={cantieri} onClick={() => goto('team')} />}
         {id === 'produzione' && <CardProduzione cantieri={cantieri} apri={apriCM} />}
-        {id === 'gestione-materiali' && <CardGestioneMateriali ordini={ctx?.ordiniFornDB || []} magazzino={ctx?.magazzinoArticoli || []} onClick={() => goto('materiali')} />}
+        {false && id === 'gestione-materiali' && <CardGestioneMateriali ordini={ctx?.ordiniFornDB || []} magazzino={ctx?.magazzinoArticoli || []} onClick={() => goto('materiali')} />}
         {id === 'clienti' && <CardClienti contatti={ctx?.contatti || ctx?.clienti || []} cantieri={cantieri} onClick={() => goto('clienti')} />}
-        {id === 'pianificazione' && <CardPianificazione aziendaId={ctx?.aziendaId || ''} onClick={(cmId) => { const cm = (cantieri||[]).find((c:any)=>c.id===cmId); if(cm) setOrganizzaCm(cm); }} />}
+        {false && id === 'pianificazione' && <CardPianificazione aziendaId={ctx?.aziendaId || ''} onClick={(cmId) => { const cm = (cantieri||[]).find((c:any)=>c.id===cmId); if(cm) setOrganizzaCm(cm); }} />}
           {id === 'statistiche' && <CardStatistiche cantieri={cantieri} onClick={() => setShowCentroFinanze(true)} />}
-          {id === 'azioni-veloci' && <CardAzioniVeloci
+          {false && id === 'azioni-veloci' && <CardAzioniVeloci
             aziendaId={aziendaIdResolved}
             onProduzione={() => setShowCentroProduzione(true)}
             onMontaggi={() => setShowCentroMontaggi(true)}
