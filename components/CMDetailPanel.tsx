@@ -1,6 +1,7 @@
 "use client";
 import OrdiniSheet from "./ordini-sheet/OrdiniSheet";
 import RicezioneMerceSheet from "./ricezione-merce/RicezioneMerceSheet";
+import MastroProduzioneSheet from "./produzione/MastroProduzioneSheet";
 import { createPortal as _createPortalCM } from "react-dom"; // [v-ordini-portal]
 import RilieviVaniPanel from "./RilieviVaniPanel";
 // @ts-nocheck
@@ -514,6 +515,9 @@ export default function CMDetailPanel() {
     const [showAccontoModal, setShowAccontoModal] = useState(false);
   const [showOrdiniSheet, setShowOrdiniSheet] = useState(false);
     const [showRicezioneSheet, setShowRicezioneSheet] = useState(false);
+    const [showAvviaSheet, setShowAvviaSheet] = useState(false);
+    const [avviaFormData, setAvviaFormData] = useState<{ data?: string; priorita?: number; note?: string; weekOffset?: number }>({});
+    const [allCarichi, setAllCarichi] = useState<any[]>([]);
     const [tgRecap, setTgRecap] = useState<{ ordini?: any; ricezione?: any; montaggio?: any }>({});
     const [showModalFirma, setShowModalFirma] = useState(false);
     const [emettiModal, setEmettiModal] = useState<any>(null);
@@ -2242,6 +2246,21 @@ export default function CMDetailPanel() {
                   const onClickMontaggio = () => { try { setMontFormOpen(true); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: (squadreDB && squadreDB[0]?.id) || "", note: "" }); } catch (e) { console.warn(e); } };
                   const onClickAvvia = async () => {
                     if (!tuttoDone) return;
+                    // Apre modal pianifica produzione con calendario carichi
+                    try {
+                      const { supabase } = await import("@/lib/supabase");
+                      const aziendaId = (c29 as any)?.azienda_id || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+                      const { data: car } = await supabase.from('produzione_carichi').select('*').eq('azienda_id', aziendaId).neq('stato', 'annullato');
+                      setAllCarichi(car || []);
+                      // Default data: oggi
+                      const todayISO = new Date().toISOString().split('T')[0];
+                      setAvviaFormData({ data: todayISO, priorita: 5, weekOffset: 0 });
+                      setShowAvviaSheet(true);
+                    } catch (e) {
+                      console.error('[avvia produzione] errore caricamento carichi', e);
+                    }
+                    return;
+                    // [legacy] codice originale disattivato
                     if (!confirm("Confermi l'avvio della produzione per " + c29.code + "?")) return;
                     try {
                       const aziendaId =
@@ -2424,6 +2443,158 @@ export default function CMDetailPanel() {
                     onClose={() => setShowOrdiniSheet(false)}
                     onCompletato={() => setShowOrdiniSheet(false)}
                   />,
+                  document.body
+                )}
+
+                {/* [v-avvia-inline] Modal Pianifica Produzione con calendario carichi */}
+                {showAvviaSheet && c29 && typeof window !== "undefined" && _createPortalCM(
+                  <div onClick={() => setShowAvviaSheet(false)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(13,31,31,0.6)", display: "flex" as any, alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" as any }}>
+                    <div onClick={(e: any) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 620, width: "100%", maxHeight: "90vh", overflowY: "auto" as any }}>
+                      <div style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 }}>Pianifica produzione {c29.code}</div>
+                      <div style={{ fontSize: 11, color: "#6A8484", marginBottom: 16 }}>Scegli giorno avvio. MASTRO controlla la capacita officina.</div>
+
+                      {/* Calendario settimanale carichi */}
+                      {(() => {
+                        const CAPACITA = 30;
+                        const oggi = new Date(); oggi.setHours(0,0,0,0);
+                        const todayISO = oggi.toISOString().split("T")[0];
+                        const fmtISO = (d: Date) => d.toISOString().split("T")[0];
+                        const wo = (avviaFormData?.weekOffset as number) || 0;
+                        const dow = oggi.getDay();
+                        const lunOffset = dow === 0 ? -6 : 1 - dow;
+                        const lunedi = new Date(oggi); lunedi.setDate(lunedi.getDate() + lunOffset + (wo * 7));
+                        const giorni = Array.from({ length: 7 }, (_, i) => { const d = new Date(lunedi); d.setDate(d.getDate() + i); return d; });
+                        const DOW = ["DOM","LUN","MAR","MER","GIO","VEN","SAB"];
+                        const MESI = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+
+                        const vaniPerGiorno = new Map<string, number>();
+                        (allCarichi || []).forEach((cr: any) => {
+                          const start = new Date(cr.data_avvio + "T12:00:00");
+                          const end = cr.data_fine_prevista ? new Date(cr.data_fine_prevista + "T12:00:00") : start;
+                          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                            const iso = fmtISO(d);
+                            vaniPerGiorno.set(iso, (vaniPerGiorno.get(iso) || 0) + (Number(cr.vani_totali) || 0));
+                          }
+                        });
+
+                        const colore = (p: number) => p < 60 ? "#10B981" : p < 90 ? "#F59E0B" : "#DC2626";
+                        const rangeLbl = giorni[0].getDate() + " " + MESI[giorni[0].getMonth()] + " - " + giorni[6].getDate() + " " + MESI[giorni[6].getMonth()];
+
+                        return (
+                          <div style={{ background: "#F8FBFB", border: "1.5px solid #C8E4E4", borderRadius: 10, padding: 12, marginBottom: 14 }}>
+                            {/* Header navigazione */}
+                            <div style={{ display: "flex" as any, alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                              <button onClick={() => setAvviaFormData((p: any) => ({ ...(p || {}), weekOffset: ((p?.weekOffset as number) || 0) - 1 }))} style={{ width: 32, height: 32, border: "1px solid #C8E4E4", borderRadius: 8, background: "#fff", color: "#28A0A0", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>&lt;</button>
+                              <div style={{ fontSize: 12, fontWeight: 800, color: "#0D1F1F", textAlign: "center" as any }}>
+                                {rangeLbl}
+                                {wo !== 0 && (<span onClick={() => setAvviaFormData((p: any) => ({ ...(p || {}), weekOffset: 0 }))} style={{ marginLeft: 8, fontSize: 10, color: "#28A0A0", cursor: "pointer", textDecoration: "underline" }}>oggi</span>)}
+                              </div>
+                              <button onClick={() => setAvviaFormData((p: any) => ({ ...(p || {}), weekOffset: ((p?.weekOffset as number) || 0) + 1 }))} style={{ width: 32, height: 32, border: "1px solid #C8E4E4", borderRadius: 8, background: "#fff", color: "#28A0A0", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>&gt;</button>
+                            </div>
+                            {/* Header giorni */}
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
+                              {giorni.map((d, i) => {
+                                const dw = d.getDay();
+                                const weekend = dw === 0 || dw === 6;
+                                const isToday = fmtISO(d) === todayISO;
+                                return (
+                                  <div key={i} style={{ textAlign: "center" as any }}>
+                                    <div style={{ fontSize: 9, fontWeight: 700, color: weekend ? "#94A3B8" : "#6A8484" }}>{DOW[dw]}</div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: isToday ? "#28A0A0" : weekend ? "#94A3B8" : "#0D1F1F" }}>{d.getDate()}</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {/* Celle con carico */}
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+                              {giorni.map((d, i) => {
+                                const iso = fmtISO(d);
+                                const vani = vaniPerGiorno.get(iso) || 0;
+                                const pct = Math.min(150, (vani / CAPACITA) * 100);
+                                const dw = d.getDay();
+                                const weekend = dw === 0 || dw === 6;
+                                const isPast = iso < todayISO;
+                                const selezionato = iso === avviaFormData?.data;
+                                const disabled = weekend || isPast;
+                                return (
+                                  <div
+                                    key={i}
+                                    onClick={() => { if (!disabled) setAvviaFormData((p: any) => ({ ...(p || {}), data: iso })); }}
+                                    style={{
+                                      minHeight: 70, padding: 6, borderRadius: 8, cursor: disabled ? "not-allowed" : "pointer",
+                                      background: selezionato ? "#28A0A0" : weekend ? "#F1F5F9" : "#fff",
+                                      border: "2px solid " + (selezionato ? "#1a6b6b" : weekend ? "#E2E8F0" : "#C8E4E4"),
+                                      opacity: isPast ? 0.4 : 1,
+                                      display: "flex" as any, flexDirection: "column" as any, justifyContent: "space-between", alignItems: "center"
+                                    }}
+                                  >
+                                    {!weekend && (
+                                      <>
+                                        <div style={{ fontSize: 9, fontWeight: 800, color: selezionato ? "#fff" : "#6A8484" }}>{vani}/{CAPACITA}</div>
+                                        <div style={{ width: "100%" as any, height: 6, background: selezionato ? "rgba(255,255,255,0.3)" : "#E2E8F0", borderRadius: 3, overflow: "hidden" as any }}>
+                                          <div style={{ height: "100%" as any, width: Math.min(100, pct) + "%", background: selezionato ? "#fff" : colore(pct) }} />
+                                        </div>
+                                        <div style={{ fontSize: 9, fontWeight: 800, color: selezionato ? "#fff" : colore(pct) }}>{pct.toFixed(0)}%</div>
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div style={{ display: "flex" as any, gap: 10, marginTop: 10, fontSize: 9, color: "#6A8484", flexWrap: "wrap" as any }}>
+                              <span><span style={{ display: "inline-block" as any, width: 10, height: 10, background: "#10B981", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />libero</span>
+                              <span><span style={{ display: "inline-block" as any, width: 10, height: 10, background: "#F59E0B", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />pieno</span>
+                              <span><span style={{ display: "inline-block" as any, width: 10, height: 10, background: "#DC2626", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />sovraccarico</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Priorita */}
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 6 }}>PRIORITA</div>
+                      <div style={{ display: "flex" as any, gap: 6, marginBottom: 14 }}>
+                        {[{v:1,l:"URGENTE",c:"#DC2626"},{v:3,l:"ALTA",c:"#F59E0B"},{v:5,l:"NORMALE",c:"#28A0A0"},{v:8,l:"BASSA",c:"#94A3B8"}].map(o => (
+                          <button key={o.v} onClick={() => setAvviaFormData((p: any) => ({ ...(p || {}), priorita: o.v }))} style={{ flex: 1, padding: 10, borderRadius: 8, border: "1.5px solid " + (avviaFormData?.priorita === o.v ? o.c : "#C8E4E4"), background: avviaFormData?.priorita === o.v ? o.c : "#fff", color: avviaFormData?.priorita === o.v ? "#fff" : "#0D1F1F", fontSize: 10, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{o.l}</button>
+                        ))}
+                      </div>
+
+                      {/* Bottoni */}
+                      <div style={{ display: "flex" as any, gap: 8 }}>
+                        <button onClick={() => setShowAvviaSheet(false)} style={{ flex: 1, padding: 14, borderRadius: 10, border: "1px solid #C8E4E4", background: "#fff", color: "#6A8484", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                        <button onClick={async () => {
+                          if (!avviaFormData?.data) { alert("Scegli un giorno di avvio"); return; }
+                          try {
+                            const { supabase } = await import("@/lib/supabase");
+                            const aziendaId = (c29 as any)?.azienda_id || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+                            const vaniTot = Number((c29 as any).n_vani || (c29 as any).vani_totali || 1);
+                            // Calcola data_fine: (vani / 10) giorni stimati, minimo 1
+                            const giorniNecessari = Math.max(1, Math.ceil(vaniTot / 10));
+                            const startD = new Date(avviaFormData.data + "T12:00:00");
+                            const endD = new Date(startD); endD.setDate(endD.getDate() + giorniNecessari - 1);
+                            // 1. INSERT in produzione_carichi
+                            const { error: errC } = await supabase.from('produzione_carichi').insert({
+                              azienda_id: aziendaId, commessa_id: c29.id,
+                              data_avvio: avviaFormData.data,
+                              data_fine_prevista: endD.toISOString().split('T')[0],
+                              vani_totali: vaniTot,
+                              priorita: avviaFormData?.priorita || 5,
+                              stato: 'pianificato',
+                              note: avviaFormData?.note || null,
+                            });
+                            if (errC) { alert("Errore pianificazione: " + errC.message); return; }
+                            // 2. Avvia produzione: update commesse.produzione_iniziata_at + fase
+                            const nowIso = new Date().toISOString();
+                            const { error: errF } = await supabase.from('commesse').update({ fase: 'produzione', produzione_iniziata_at: nowIso }).eq('id', c29.id);
+                            if (errF) { alert("Errore avvio: " + errF.message); return; }
+                            setSelectedCM((p: any) => p ? ({ ...p, fase: 'produzione', produzione_iniziata_at: nowIso }) : p);
+                            setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: 'produzione', produzione_iniziata_at: nowIso } : x));
+                            setShowAvviaSheet(false);
+                            if (typeof setCcDone === 'function') { setCcDone("Produzione avviata - " + avviaFormData.data); setTimeout(() => setCcDone(null), 4000); }
+                          } catch (e: any) { alert("Errore: " + (e?.message || e)); }
+                        }} style={{ flex: 2, padding: 14, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", color: "#fff", fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>AVVIA IN PRODUZIONE →</button>
+                      </div>
+                    </div>
+                  </div>,
                   document.body
                 )}
 
