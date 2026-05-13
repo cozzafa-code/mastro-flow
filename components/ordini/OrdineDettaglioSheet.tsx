@@ -98,7 +98,7 @@ export default function OrdineDettaglioSheet({ ordineId, onClose, onRicevi, onAp
 
 function CloseBtn({ onClick }: { onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{ position: "absolute", top: 14, right: 14, width: 32, height: 32, background: C.whiteOff, border: "none", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.navy, zIndex: 5 }}>
+    <button onClick={onClick} style={{ position: "absolute", top: 12, right: 12, width: 30, height: 30, background: "rgba(255,255,255,0.95)", border: "1px solid " + C.borderStrong, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.navy, zIndex: 10, boxShadow: "0 2px 6px rgba(26, 42, 71, 0.10)" }}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
@@ -109,13 +109,13 @@ function CloseBtn({ onClick }: { onClick: () => void }) {
 function DetailHead({ ordine, onApriCommessa }: any) {
   const dataCreato = ordine.created_at ? new Date(ordine.created_at).toLocaleDateString("it-IT", { day: "2-digit", month: "short" }) : "";
   return (
-    <div style={{ padding: "16px 18px 14px 18px", background: "linear-gradient(180deg, " + C.amberSoft + " 0%, " + C.white + " 100%)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-        <span style={{ background: C.whiteOff, color: C.navyDim, padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 800, letterSpacing: 0.5, fontFamily: "monospace" }}>{ordine.numero || "—"}</span>
-        <span style={{ fontSize: 9, fontWeight: 700, color: C.navyFaint, textTransform: "uppercase", letterSpacing: 0.4 }}>creato {dataCreato}</span>
+    <div style={{ padding: "14px 52px 16px 18px", background: "linear-gradient(180deg, " + C.amberSoft + " 0%, " + C.white + " 100%)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+        <span style={{ background: C.white, color: C.navy, padding: "4px 9px", borderRadius: 6, fontSize: 10, fontWeight: 800, letterSpacing: 0.5, fontFamily: "monospace", border: "1px solid " + C.borderStrong }}>{ordine.numero || "—"}</span>
+        <span style={{ fontSize: 9, fontWeight: 800, color: C.amberDark, textTransform: "uppercase", letterSpacing: 0.5 }}>creato {dataCreato}</span>
       </div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: C.navy, letterSpacing: -0.3, marginBottom: 4 }}>{ordine.fornitore}</div>
-      <div style={{ fontSize: 12, color: C.navyDim, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.navy, letterSpacing: -0.4, marginBottom: 5, lineHeight: 1.1 }}>{ordine.fornitore}</div>
+      <div style={{ fontSize: 12, color: C.navyDim, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         {ordine.commessa_code ? (
           <span onClick={() => ordine.commessa_id && onApriCommessa?.(ordine.commessa_id)} style={{ background: C.amberSoft, color: C.amberDark, padding: "2px 7px", borderRadius: 5, fontSize: 10, fontWeight: 800, letterSpacing: 0.3, cursor: onApriCommessa ? "pointer" : "default" }}>{ordine.commessa_code}</span>
         ) : (
