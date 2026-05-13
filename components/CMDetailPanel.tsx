@@ -1643,8 +1643,19 @@ export default function CMDetailPanel() {
               titolo = "Lavorazione in corso";
               desc = "Materiali ricevuti. Produzione in officina. Marca completata quando finita.";
               tags = [{ lbl: "In lavorazione", bg: "#FEF3C7", fg: "#92400E" }];
-              primaryLbl = "Marca completata";
-              primaryAction = () => { try { setPrevWorkspace(true); setPrevTab("fiscale"); } catch (e) { console.warn(e); } };
+              primaryLbl = "Marca produzione completata";
+              primaryAction = async () => {
+                if (!confirm("Confermi che la produzione di " + (cZ3.code || cZ3.id) + " e completata? La commessa avanza a montaggio.")) return;
+                try {
+                  const { supabase } = await import("@/lib/supabase");
+                  const nowIso = new Date().toISOString();
+                  const { error } = await supabase.from("commesse").update({ fase: "montaggio", produzione_completata_at: nowIso }).eq("id", cZ3.id);
+                  if (error) { alert("Errore: " + error.message); return; }
+                  setSelectedCM((p: any) => p ? ({ ...p, fase: "montaggio", produzione_completata_at: nowIso }) : p);
+                  setCantieri((cs: any[]) => cs.map((x: any) => x.id === cZ3.id ? { ...x, fase: "montaggio", produzione_completata_at: nowIso } : x));
+                  if (typeof setCcDone === "function") { setCcDone("Produzione completata - pronto montaggio"); setTimeout(() => setCcDone(null), 4000); }
+                } catch (e: any) { alert("Errore: " + (e?.message || e)); }
+              };
             } else if (_faseDb === "montaggio") {
               eyebrow = "Fase corrente · Montaggio";
               const haGiaMontaggio = !!(cZ3.montaggiDB || []).find?.((m: any) => m.cmId === cZ3.id);
@@ -1656,10 +1667,18 @@ export default function CMDetailPanel() {
                 ? [{ lbl: "Programmato", bg: "#FEF3C7", fg: "#92400E" }]
                 : [{ lbl: "Da pianificare", bg: "#FEF3C7", fg: "#92400E" }];
               primaryLbl = haGiaMontaggio ? "MARCA COMPLETATO" : "ORGANIZZA MONTAGGIO";
-              primaryAction = () => {
+              primaryAction = async () => {
                 try {
                   if (haGiaMontaggio) {
-                    setPrevWorkspace(true); setPrevTab("fiscale");
+                    // Marca montaggio completato + avanza fase a fatturata
+                    if (!confirm("Confermi che il montaggio di " + (cZ3.code || cZ3.id) + " e completato? La commessa avanza a fatturata.")) return;
+                    const { supabase } = await import("@/lib/supabase");
+                    const nowIso = new Date().toISOString();
+                    const { error } = await supabase.from("commesse").update({ fase: "fatturata", montaggio_completato_at: nowIso }).eq("id", cZ3.id);
+                    if (error) { alert("Errore: " + error.message); return; }
+                    setSelectedCM((p: any) => p ? ({ ...p, fase: "fatturata", montaggio_completato_at: nowIso }) : p);
+                    setCantieri((cs: any[]) => cs.map((x: any) => x.id === cZ3.id ? { ...x, fase: "fatturata", montaggio_completato_at: nowIso } : x));
+                    if (typeof setCcDone === "function") { setCcDone("Montaggio completato - emetti saldo"); setTimeout(() => setCcDone(null), 4000); }
                   } else if (typeof creaMontaggio === "function") {
                     if (!confirm(`Pianificare il montaggio per ${cZ3.code}?\n\nVerrà creato un evento da assegnare a squadra e data nella sezione Montaggi.`)) return;
                     const m = (creaMontaggio as any)(cZ3);
