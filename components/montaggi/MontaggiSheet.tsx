@@ -218,7 +218,7 @@ export default function MontaggiSheet({
         onClick={() => setEditing({} as MontaggioRow)}
         style={{
           position: "absolute",
-          bottom: 24,
+          bottom: 90,
           right: 16,
           height: 56,
           padding: "0 22px 0 18px",

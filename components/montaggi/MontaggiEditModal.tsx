@@ -34,12 +34,38 @@ export default function MontaggiEditModal({ montaggio, onClose }: Props) {
         style={{
           background: C.white,
           borderRadius: "20px 20px 0 0",
-          padding: 20,
+          padding: "20px 20px 110px 20px",
           width: "100%",
           maxWidth: 420,
           boxShadow: C.shadowLg,
+          position: "relative",
         }}
       >
+        <button
+          onClick={onClose}
+          aria-label="Chiudi"
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            width: 32,
+            height: 32,
+            borderRadius: 10,
+            background: C.whiteOff,
+            border: "none",
+            color: C.navyText,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
         <div
           style={{
             width: 40,
