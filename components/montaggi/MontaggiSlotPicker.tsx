@@ -95,7 +95,7 @@ export default function MontaggiSlotPicker({
         background: "rgba(26, 42, 71, 0.65)",
         zIndex: 40,
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: 16,
+        padding: "16px 16px 90px 16px",
       }}
     >
       <div
@@ -103,7 +103,7 @@ export default function MontaggiSlotPicker({
           background: C.white,
           borderRadius: 18,
           width: "100%", maxWidth: 380,
-          maxHeight: "92vh",
+          maxHeight: "calc(92vh - 80px)",
           display: "flex", flexDirection: "column",
           overflow: "hidden",
           boxShadow: C.shadowLg,
