@@ -308,8 +308,7 @@ export default function HomePanelMobileV2(props: any) {
   const montaggi = ctx?.montaggi || []
   const ferme = cantieri.filter((c: any) => {
     const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
-    return ((Date.now() - upd) / 86400000) >
-      <ProduzioneBridge /> 5 && (c?.fase === 'preventivo' || c?.fase === 'sopralluogo')
+    return ((Date.now() - upd) / 86400000) > 5 && (c?.fase === 'preventivo' || c?.fase === 'sopralluogo')
   })
   const daIncassare = fattureDB.reduce((s: number, f: any) => s + (f?.pagata ? 0 : Number(f?.totale || 0)), 0)
   const daIncassareLabel = daIncassare >= 1000 ? `${(daIncassare / 1000).toFixed(1)}k€` : `${Math.round(daIncassare)}€`
@@ -331,6 +330,7 @@ export default function HomePanelMobileV2(props: any) {
       boxShadow: '0 1px 4px rgba(15,31,51,0.08)',
       animation: editMode ? 'mastroWiggle 0.5s ease-in-out infinite alternate' : undefined,
     }}>
+      <ProduzioneBridge />
       {editMode && (
         <>
           <style>{`@keyframes mastroWiggle { from { transform: rotate(-0.4deg); } to { transform: rotate(0.4deg); } }`}</style>
