@@ -2170,7 +2170,8 @@ export default function CMDetailPanel() {
                       });
                       const j = await r.json();
                       if (!r.ok) {
-                        // [v-no-alert] niente alert: apri OrdiniSheet vuoto per creazione manuale
+                        // [v-direct-sheet] apri OrdiniSheet locale + dispatch globale (doppio canale)
+                        if (typeof setShowOrdiniSheet === 'function') setShowOrdiniSheet(true);
                         window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } }));
                         if (typeof setCcDone === 'function') { setCcDone('Apri ordine manuale: ' + (j.error || 'no preventivo')); setTimeout(() => setCcDone(null), 4000); }
                         return;
@@ -2179,7 +2180,8 @@ export default function CMDetailPanel() {
                       setSelectedCM((p: any) => p ? ({ ...p, materiale_ordinato_at: new Date().toISOString() }) : p);
                       setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, materiale_ordinato_at: new Date().toISOString() } : x));
                       if (typeof setCcDone === 'function') { setCcDone((j.n_ordini || 0) + ' bozze ordini create'); setTimeout(() => setCcDone(null), 3000); }
-                      // Apri OrdiniSheet per la review
+                      // [v-direct-sheet] Apri OrdiniSheet locale + dispatch globale
+                      if (typeof setShowOrdiniSheet === 'function') setShowOrdiniSheet(true);
                       window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM, justCreated: true } }));
                     } catch (e: any) {
                       alert('Errore rete: ' + (e.message || ''));
