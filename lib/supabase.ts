@@ -13,22 +13,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    storageKey: "sb-session",
-    storage: {
-      getItem: (key: string) => {
-        if (typeof document === "undefined") return null;
-        const match = document.cookie.match(new RegExp("(^| )" + key + "=([^;]+)"));
-        return match ? decodeURIComponent(match[2]) : null;
-      },
-      setItem: (key: string, value: string) => {
-        if (typeof document === "undefined") return;
-        document.cookie = key + "=" + encodeURIComponent(value) + "; path=/; max-age=31536000; SameSite=Lax";
-      },
-      removeItem: (key: string) => {
-        if (typeof document === "undefined") return;
-        document.cookie = key + "=; path=/; max-age=0";
-      },
-    },
   },
 });
 
