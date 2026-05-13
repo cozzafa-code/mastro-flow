@@ -80,7 +80,7 @@ export default function OrdineDettaglioSheet({ ordineId, onClose, onRicevi, onAp
           <div style={{ padding: 40, textAlign: "center", color: C.navyFaint, fontSize: 13, fontWeight: 700 }}>Caricamento...</div>
         ) : (
           <>
-            <div style={{ flex: 1, overflowY: "auto", paddingBottom: 80 }}>
+            <div style={{ flex: 1, overflowY: "auto", paddingBottom: 100 }}>
               <DetailHead ordine={ordine} onApriCommessa={onApriCommessa} />
               <Stepper stato={ordine.stato as OrdineStato} />
               <InfoConsegna ordine={ordine} />
@@ -316,7 +316,7 @@ function ActionBar({ ordine, busy, onRicevi, onInvia }: any) {
     primaryBg = C.greenBright;
   }
   return (
-    <div style={{ position: "sticky", bottom: 0, background: C.white, padding: "12px 14px 16px 14px", borderTop: "1px solid " + C.border, display: "flex", gap: 8 }}>
+    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: C.white, padding: "12px 14px 16px 14px", borderTop: "1px solid " + C.border, display: "flex", gap: 8, boxShadow: "0 -4px 16px rgba(26, 42, 71, 0.08)", zIndex: 5 }}>
       <button style={{ padding: "12px 14px", borderRadius: 12, background: C.whiteOff, color: C.navy, border: "1.5px solid " + C.borderStrong, fontSize: 13, fontWeight: 800, cursor: "pointer", flex: "0 0 100px" }}>Modifica</button>
       <button onClick={primaryAction} disabled={busy} style={{ flex: 1, padding: "12px 14px", borderRadius: 12, background: primaryBg, color: C.white, border: "none", fontSize: 13, fontWeight: 800, cursor: busy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">

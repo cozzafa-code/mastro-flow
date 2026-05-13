@@ -144,7 +144,7 @@ export default function RicezioneMerceSheet({ ordineId, onClose, onCompletato, o
     <div style={{ position: "fixed", inset: 0, background: "rgba(26,42,71,0.55)", zIndex: 60, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
       <div style={{ width: "100%", maxWidth: 420, height: "100vh", background: C.white, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <Header ordine={ordine} onClose={onClose} progresso={progresso} righeTot={righe.length} onTuttiOk={markTuttiOk} query={query} setQuery={setQuery} />
-        <div style={{ flex: 1, overflowY: "auto", paddingBottom: 100 }}>
+        <div style={{ flex: 1, overflowY: "auto", paddingBottom: 120 }}>
           {filtered.map((r) => (
             <Riga
               key={r.id}
@@ -339,7 +339,7 @@ function ActionBar({ busy, allOk, someOk, onConferma }: any) {
   const bg = allOk ? C.greenBright : someOk ? C.amber : C.navyFaint;
   const fg = someOk && !allOk ? C.navy : C.white;
   return (
-    <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 420, background: C.white, padding: "12px 14px 16px 14px", borderTop: "1px solid " + C.border, display: "flex", gap: 7 }}>
+    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: C.white, padding: "12px 14px 16px 14px", borderTop: "1px solid " + C.border, display: "flex", gap: 7, boxShadow: "0 -4px 16px rgba(26, 42, 71, 0.08)", zIndex: 5 }}>
       <button onClick={onConferma} disabled={busy} style={{ flex: 1, padding: "13px 12px", borderRadius: 11, background: bg, color: fg, border: "none", fontSize: 14, fontWeight: 800, cursor: busy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
         {busy ? "Salvataggio..." : label}
       </button>
