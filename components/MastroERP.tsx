@@ -3217,8 +3217,14 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       console.warn('[creaFattura DB] exception:', e);
     }
     
+    // [UUID-GUARD] se INSERT DB fallito -> blocca, niente fat_xxx fantasma
+    if (!dbId) {
+      alert("Errore: impossibile salvare la fattura sul DB. Riprova o contatta assistenza.");
+      return null;
+    }
+
     const fattura = {
-      id: dbId || ("fat_" + Date.now()),
+      id: dbId, // UUID DB reale, sempre
       dbId, // tracker se persistita
       numero: dbNumero ? Number(String(dbNumero).split('-').pop()) : num, // numero ui per legacy compat
       numeroFull: dbNumero || `${tipo === 'acconto' ? 'ACC' : tipo === 'saldo' ? 'SAL' : 'FAT'}-${anno}-${String(num).padStart(4,'0')}`,
