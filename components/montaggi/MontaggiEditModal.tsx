@@ -71,18 +71,18 @@ export default function MontaggiEditModalV2({ montaggio, commesse, montaggiTutti
   }, [state.contattoId, contatti]);
 
   const commessaLabel = commessaSel
-    ? `${commessaSel.code || ""} · ${commessaSel.cliente || ""} ${commessaSel.cognome || ""}`.trim()
+    ? `${commessaSel.code || ""} . ${commessaSel.cliente || ""} ${commessaSel.cognome || ""}`.trim()
     : null;
   const commessaSub = commessaSel
     ? [
       commessaSel.vani_count ? `${commessaSel.vani_count} vani` : null,
-      (commessaSel.totale_finale || commessaSel.totale_preventivo) ? `€${Math.round(commessaSel.totale_finale || commessaSel.totale_preventivo || 0).toLocaleString("it-IT")}` : null,
+      (commessaSel.totale_finale || commessaSel.totale_preventivo) ? `EUR ${Math.round(commessaSel.totale_finale || commessaSel.totale_preventivo || 0).toLocaleString("it-IT")}` : null,
       commessaSel.indirizzo || commessaSel.citta || null,
-    ].filter(Boolean).join(" · ")
+    ].filter(Boolean).join(" . ")
     : null;
   const contattoLabel = contattoSel ? `${contattoSel.nome || ""} ${contattoSel.cognome || ""}`.trim() : null;
   const contattoSub = contattoSel
-    ? [contattoSel.telefono || "no tel", contattoSel.citta].filter(Boolean).join(" · ")
+    ? [contattoSel.telefono || "no tel", contattoSel.citta].filter(Boolean).join(" . ")
     : null;
 
   function tryClose() {
@@ -93,16 +93,18 @@ export default function MontaggiEditModalV2({ montaggio, commesse, montaggiTutti
     onClose();
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     setErr(null);
     setSaving(true);
     const res = await saveMontaggio(montaggio?.id || null, state, aziendaId);
     setSaving(false);
     if (!res.ok) {
       setErr(res.error || "Errore salvataggio");
-      return;
+      console.error("[MONTAGGI] save error:", res.error);
+      return false;
     }
     onClose();
+    return true;
   }
 
   async function handleDelete() {
@@ -140,7 +142,7 @@ export default function MontaggiEditModalV2({ montaggio, commesse, montaggiTutti
   const isNew = !montaggio?.id;
   const titoli = {
     cantiere: { t: "Pianifica cantiere", s: "Lavoro multi-giorno con squadra" },
-    intervento: { t: "Nuovo intervento", s: "Lavoro breve · minuti / ore" },
+    intervento: { t: "Nuovo intervento", s: "Lavoro breve - minuti / ore" },
     sopralluogo: { t: "Nuovo sopralluogo", s: "Visita per preventivo" },
   };
   const tt = titoli[state.tipo];
@@ -262,9 +264,13 @@ export default function MontaggiEditModalV2({ montaggio, commesse, montaggiTutti
       {confirmExit && (
         <MontaggiExitConfirm
           saving={saving}
-          onSaveAndClose={async () => { setConfirmExit(false); await handleSave(); }}
+          error={err}
+          onSaveAndClose={async () => {
+            const ok = await handleSave();
+            if (ok) setConfirmExit(false);
+          }}
           onDiscardAndClose={() => { setConfirmExit(false); onClose(); }}
-          onContinue={() => setConfirmExit(false)}
+          onContinue={() => { setConfirmExit(false); setErr(null); }}
         />
       )}
     </>
