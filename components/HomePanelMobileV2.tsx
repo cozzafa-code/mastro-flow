@@ -1,6 +1,7 @@
 // HomePanelMobileV2 V20 - bottom sheet evento/task + swipe calendario + no frecce
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
+import MastroProduzioneSheet from './produzione/MastroProduzioneSheet';
 import CardAzioniVeloci from "./home/CardAzioniVeloci";
 import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import CentroControlloMontaggi from "./CentroControlloMontaggi";
@@ -130,6 +131,20 @@ class CardSafe extends React.Component<{children: React.ReactNode, name?: string
     if (this.state.hasError) return <div style={{padding:12,background:'#FEE2E2',borderRadius:8,fontSize:11,color:'#991B1B'}}>Card {this.props.name} non caricabile</div>
     return this.props.children as any
   }
+}
+
+
+// [v-prod-bridge] Componente wrapper per gestione modal produzione
+function ProduzioneBridge() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const h = () => setOpen(true);
+    window.addEventListener('mastro:open-produzione', h);
+    return () => window.removeEventListener('mastro:open-produzione', h);
+  }, []);
+  if (!open) return null;
+  const aziendaId = (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id'))) || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+  return <MastroProduzioneSheet aziendaId={aziendaId} onClose={() => setOpen(false)} onApriCommessa={(id: string) => { window.dispatchEvent(new CustomEvent('mastro:apri-commessa', { detail: id })); }} />;
 }
 
 export default function HomePanelMobileV2(props: any) {
@@ -293,7 +308,8 @@ export default function HomePanelMobileV2(props: any) {
   const montaggi = ctx?.montaggi || []
   const ferme = cantieri.filter((c: any) => {
     const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
-    return ((Date.now() - upd) / 86400000) > 5 && (c?.fase === 'preventivo' || c?.fase === 'sopralluogo')
+    return ((Date.now() - upd) / 86400000) >
+      <ProduzioneBridge /> 5 && (c?.fase === 'preventivo' || c?.fase === 'sopralluogo')
   })
   const daIncassare = fattureDB.reduce((s: number, f: any) => s + (f?.pagata ? 0 : Number(f?.totale || 0)), 0)
   const daIncassareLabel = daIncassare >= 1000 ? `${(daIncassare / 1000).toFixed(1)}k€` : `${Math.round(daIncassare)}€`
@@ -1158,7 +1174,7 @@ function CardProduzione({ cantieri, apri }: any) {
   
   return (
     <>
-      <CardHead title="Produzione" badge={inProd.length} link="apri" onClick={() => apri('')} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 21V8l9-5 9 5v13"/><path d="M9 22V12h6v10"/></svg>} />
+      <CardHead title="Produzione" badge={inProd.length} link="apri" onClick={() => window.dispatchEvent(new CustomEvent('mastro:open-produzione'))} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 21V8l9-5 9 5v13"/><path d="M9 22V12h6v10"/></svg>} />
       
       {/* KPI riga */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8, marginBottom: 10 }}>
@@ -1184,7 +1200,7 @@ function CardProduzione({ cantieri, apri }: any) {
             const pct = Math.min(100, (g.carico / CAPACITA) * 100)
             const isOggi = g.iso === oggi.toISOString().split('T')[0]
             return (
-              <div key={i} onClick={() => apri('')} style={{ flex: 1, cursor: 'pointer' }}>
+              <div key={i} onClick={() => window.dispatchEvent(new CustomEvent('mastro:open-produzione'))} style={{ flex: 1, cursor: 'pointer' }}>
                 <div style={{ fontSize: 8, fontWeight: 700, color: isOggi ? '#28A0A0' : MUTED, textAlign: 'center' as any, marginBottom: 2 }}>{g.lbl}</div>
                 <div style={{ fontSize: 10, fontWeight: 800, color: '#0F1F33', textAlign: 'center' as any, marginBottom: 3 }}>{g.d.getDate()}</div>
                 <div style={{ height: 24, background: '#E2E8F0', borderRadius: 4, position: 'relative' as any, overflow: 'hidden' as any }}>
@@ -1218,7 +1234,7 @@ function CardProduzione({ cantieri, apri }: any) {
       )}
       
       {/* CTA finale */}
-      <div onClick={() => apri('')} style={{ marginTop: 10, padding: 10, background: 'linear-gradient(135deg, #1E3A5F, #0F1B2D)', color: '#fff', borderRadius: 8, textAlign: 'center' as any, fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: 0.5 }}>
+      <div onClick={() => window.dispatchEvent(new CustomEvent('mastro:open-produzione'))} style={{ marginTop: 10, padding: 10, background: 'linear-gradient(135deg, #1E3A5F, #0F1B2D)', color: '#fff', borderRadius: 8, textAlign: 'center' as any, fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: 0.5 }}>
         APRI CALENDARIO PRODUZIONE →
       </div>
     </>
