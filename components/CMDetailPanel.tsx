@@ -8,7 +8,7 @@ import RilieviVaniPanel from "./RilieviVaniPanel";
 // MASTRO ERP · CMDetailPanel
 // Estratto S6: ~938 righe (Dettaglio commessa)
 // 
-import React, { useState } from "react";
+import React, { useState, useEffect} from "react";
 import { useRealtimeCommessa } from "../hooks/useRealtimeCommessa";
 import PassaggiSaltati from "./PassaggiSaltati";
 import VanoCardPreventivo from "./VanoCardPreventivo";
