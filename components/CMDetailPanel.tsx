@@ -2120,7 +2120,35 @@ export default function CMDetailPanel() {
                     background: done ? "#ECFDF5" : "#fff",
                     cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const,
                   });
-                  const onClickOrdine = () => { try { window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } })); } catch (e) { console.warn(e); } };
+                  const onClickOrdine = async () => {
+                    try {
+                      const aziendaId =
+                        (c29 as any)?.azienda_id
+                        || (c29 as any)?.aziendaId
+                        || (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId')))
+                        || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+                      const r = await fetch('/api/ordini/trasforma', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ aziendaId, commessaId: c29.id }),
+                      });
+                      const j = await r.json();
+                      if (!r.ok) {
+                        // Fallback: apri OrdiniSheet vuoto cosi puoi creare manualmente
+                        window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } }));
+                        alert('Trasformatore: ' + (j.error || 'errore') + '. Apertura ordini manuale.');
+                        return;
+                      }
+                      // Esito OK: aggiorna fase locale + ordini state + apri sheet
+                      setSelectedCM((p: any) => p ? ({ ...p, materiale_ordinato_at: new Date().toISOString() }) : p);
+                      setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, materiale_ordinato_at: new Date().toISOString() } : x));
+                      if (typeof setCcDone === 'function') { setCcDone((j.n_ordini || 0) + ' bozze ordini create'); setTimeout(() => setCcDone(null), 3000); }
+                      // Apri OrdiniSheet per la review
+                      window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM, justCreated: true } }));
+                    } catch (e: any) {
+                      alert('Errore rete: ' + (e.message || ''));
+                    }
+                  };
                   const onClickMontaggio = () => { try { setMontFormOpen(true); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: (squadreDB && squadreDB[0]?.id) || "", note: "" }); } catch (e) { console.warn(e); } };
                   const onClickAvvia = async () => {
                     if (!entrambeDone) return;
