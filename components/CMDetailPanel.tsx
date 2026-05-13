@@ -2413,6 +2413,116 @@ export default function CMDetailPanel() {
                         );
                       })()}
 
+                      {/* [v-timeline-ore] Timeline oraria quando ORE attivo + squadra+giorno selezionati */}
+                      {montFormData?.durataUnit === "h" && montFormData?.data && montFormData?.squadraId && (() => {
+                        const dataSel = montFormData.data;
+                        const squadraSel = montFormData.squadraId;
+                        // Trovo tutti montaggi esistenti per quella squadra in quel giorno
+                        const montaggiGiorno = (montaggiDB || []).filter((m: any) => {
+                          const sid = m.squadraId || (Array.isArray(m.squadra) && m.squadra[0]) || null;
+                          const dt = m.data || m.data_montaggio;
+                          return sid === squadraSel && dt === dataSel;
+                        });
+                        // Slot orari 6-20 (15 ore)
+                        const oraInizioSel = (montFormData?.oraInizio as string) || "08:00";
+                        const oreSel = (montFormData?.durataOre as number) || 1;
+                        const HOURS = Array.from({ length: 15 }, (_, i) => i + 6); // 6..20
+                        const hToMin = (s: string) => { const [h, m] = s.split(":").map(Number); return h * 60 + (m || 0); };
+                        const minToH = (mn: number) => { const h = Math.floor(mn / 60); const m = mn % 60; return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0"); };
+                        const occupSlot = new Set<number>();
+                        montaggiGiorno.forEach((m: any) => {
+                          const oi = m.ora_inizio || m.oraInizio;
+                          const of_ = m.ora_fine || m.oraFine;
+                          if (!oi) return;
+                          const startMin = hToMin(oi);
+                          const endMin = of_ ? hToMin(of_) : startMin + 60 * Number(m.ore_preventivate || m.durataOre || 1);
+                          for (let mn = startMin; mn < endMin; mn += 30) occupSlot.add(mn);
+                        });
+                        const startSelMin = hToMin(oraInizioSel);
+                        const endSelMin = startSelMin + oreSel * 60;
+                        return (
+                          <div style={{ marginBottom: 14, border: "1.5px solid #C8E4E4", borderRadius: 10, padding: 12, background: "#F8FBFB" }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F", marginBottom: 8 }}>
+                              TIMELINE {dataSel} - Squadra: {(squadreDB || []).find((s: any) => s.id === squadraSel)?.nome || squadraSel}
+                            </div>
+                            {montaggiGiorno.length > 0 && (
+                              <div style={{ fontSize: 10, color: "#6A8484", marginBottom: 8 }}>
+                                {montaggiGiorno.length} intervento{montaggiGiorno.length > 1 ? "i" : ""} gia pianificat{montaggiGiorno.length > 1 ? "i" : "o"}
+                              </div>
+                            )}
+                            {/* Timeline grid: 1 riga, 30 slot da 30min (15h x 2) */}
+                            <div style={{ position: "relative" as any, display: "grid", gridTemplateColumns: "30px 1fr", gap: 4 }}>
+                              <div style={{ display: "flex" as any, flexDirection: "column" as any, gap: 0 }}>
+                                {HOURS.map(h => (
+                                  <div key={h} style={{ height: 30, fontSize: 9, fontWeight: 700, color: "#6A8484", textAlign: "right" as any, paddingRight: 2, lineHeight: "30px" }}>{h}:00</div>
+                                ))}
+                              </div>
+                              <div style={{ position: "relative" as any, border: "1px solid #E2E8F0", borderRadius: 4, background: "#fff", height: HOURS.length * 30 }}>
+                                {/* Linee separatori ore */}
+                                {HOURS.map((h, i) => (
+                                  <div key={h} style={{ position: "absolute" as any, top: i * 30, left: 0, right: 0, height: 1, background: "#F1F5F9" }} />
+                                ))}
+                                {/* Slot occupati esistenti */}
+                                {Array.from(occupSlot).map(mn => {
+                                  const topPx = ((mn - 6 * 60) / 60) * 30;
+                                  if (topPx < 0 || topPx > HOURS.length * 30) return null;
+                                  return (
+                                    <div key={mn} style={{ position: "absolute" as any, top: topPx, left: 2, right: 2, height: 15, background: "#FCA5A5", borderRadius: 2, opacity: 0.7 }} />
+                                  );
+                                })}
+                                {/* Etichette montaggi esistenti */}
+                                {montaggiGiorno.map((m: any, idx: number) => {
+                                  const oi = m.ora_inizio || m.oraInizio; if (!oi) return null;
+                                  const startMin = hToMin(oi);
+                                  const ore = Number(m.ore_preventivate || m.durataOre || 1);
+                                  const topPx = ((startMin - 6 * 60) / 60) * 30;
+                                  const heightPx = ore * 30;
+                                  return (
+                                    <div key={idx} style={{ position: "absolute" as any, top: topPx, left: 4, right: 4, height: heightPx, background: "#DC2626", color: "#fff", borderRadius: 4, padding: "2px 6px", fontSize: 9, fontWeight: 800, display: "flex" as any, alignItems: "center" }}>
+                                      {oi} - {m.cmCode || "altro"}
+                                    </div>
+                                  );
+                                })}
+                                {/* Slot selezionato corrente (drag visualizer) */}
+                                {(() => {
+                                  const topPx = ((startSelMin - 6 * 60) / 60) * 30;
+                                  const heightPx = oreSel * 30;
+                                  if (topPx < 0 || topPx + heightPx > HOURS.length * 30) return null;
+                                  // Check overlap
+                                  let overlap = false;
+                                  for (let mn = startSelMin; mn < endSelMin; mn += 30) {
+                                    if (occupSlot.has(mn)) { overlap = true; break; }
+                                  }
+                                  return (
+                                    <div style={{ position: "absolute" as any, top: topPx, left: 4, right: 4, height: heightPx, background: overlap ? "rgba(220,38,38,0.4)" : "#28A0A0", border: "2px solid " + (overlap ? "#DC2626" : "#1a6b6b"), borderRadius: 4, padding: "2px 6px", fontSize: 10, fontWeight: 900, color: "#fff", display: "flex" as any, alignItems: "center", justifyContent: "center" as any, boxShadow: "0 2px 6px rgba(0,0,0,0.2)" }}>
+                                      {overlap ? "CONFLITTO" : (oraInizioSel + " - " + minToH(endSelMin) + " (" + oreSel + "h)")}
+                                    </div>
+                                  );
+                                })()}
+                                {/* Slot cliccabili per cambio ora inizio */}
+                                {HOURS.flatMap(h => [0, 30].map(min => {
+                                  const mn = h * 60 + min;
+                                  const topPx = ((mn - 6 * 60) / 60) * 30;
+                                  return (
+                                    <div
+                                      key={mn}
+                                      onClick={() => setMontFormData((p: any) => ({ ...(p || {}), oraInizio: minToH(mn) }))}
+                                      style={{ position: "absolute" as any, top: topPx, left: 0, right: 0, height: 15, cursor: "pointer", zIndex: 1 }}
+                                      title={"Inizio " + minToH(mn)}
+                                    />
+                                  );
+                                }))}
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", gap: 8, marginTop: 10, fontSize: 10, color: "#6A8484", flexWrap: "wrap" as any }}>
+                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 10, height: 10, background: "#DC2626", borderRadius: 2 }} />gia pianificato</span>
+                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 10, height: 10, background: "#28A0A0", borderRadius: 2 }} />nuovo intervento</span>
+                              <span style={{ marginLeft: "auto" as any, fontSize: 10, color: "#28A0A0", fontWeight: 700 }}>Tap timeline per spostare</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       {/* [v-durata-counter] Switch giorni/ore + counter +/- */}
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 6 }}>DURATA</div>
                       <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
@@ -2469,6 +2579,12 @@ export default function CMDetailPanel() {
                             // Update montaggio esistente (se gia creato da trigger) oppure insert
                             const sb = (await import('@/lib/supabase')).supabase;
                             const existing = await sb.from('montaggi').select('id').eq('commessa_id', c29.id).limit(1).maybeSingle();
+                            const isOreMode = montFormData?.durataUnit === 'h';
+                            const oreSel = (montFormData?.durataOre as number) || 8;
+                            const oraInizioSel = (montFormData?.oraInizio as string) || '08:00';
+                            const hToMinPL = (s: string) => { const [h, m] = s.split(':').map(Number); return h * 60 + (m || 0); };
+                            const minToHPL = (mn: number) => { const h = Math.floor(mn / 60); const m = mn % 60; return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'); };
+                            const oraFineSel = isOreMode ? minToHPL(hToMinPL(oraInizioSel) + oreSel * 60) : null;
                             const payload: any = {
                               azienda_id: aziendaId,
                               commessa_id: c29.id,
@@ -2476,6 +2592,9 @@ export default function CMDetailPanel() {
                               stato: 'programmato',
                               squadra: montFormData.squadraId ? [montFormData.squadraId] : [],
                               urgente: false,
+                              ora_inizio: isOreMode ? oraInizioSel : '08:00',
+                              ora_fine: isOreMode ? oraFineSel : null,
+                              ore_preventivate: isOreMode ? oreSel : (giorni * 8),
                             };
                             if (existing?.data?.id) {
                               await sb.from('montaggi').update(payload).eq('id', existing.data.id);
