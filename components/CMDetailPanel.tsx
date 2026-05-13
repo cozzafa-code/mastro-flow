@@ -2149,7 +2149,22 @@ export default function CMDetailPanel() {
                       </button>
                     );
                   }
-                  const entrambeDone = ordineDone29 && montaggioDone29;
+                  const materialeArrivatoDone29 = !!(c29 as any).materiale_arrivato_at;
+                  const tuttoDone = ordineDone29 && materialeArrivatoDone29 && montaggioDone29;
+                  const onClickMaterialeArrivato = async () => {
+                    if (materialeArrivatoDone29) return;
+                    if (!confirm("Confermi che i materiali sono arrivati in magazzino per " + c29.code + "?")) return;
+                    try {
+                      const aziendaId = (c29 as any)?.azienda_id || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+                      const sb = (await import('@/lib/supabase')).supabase;
+                      const nowIso = new Date().toISOString();
+                      const { error } = await sb.from('commesse').update({ materiale_arrivato_at: nowIso }).eq('id', c29.id);
+                      if (error) { alert("Errore: " + error.message); return; }
+                      setSelectedCM((p: any) => p ? ({ ...p, materiale_arrivato_at: nowIso }) : p);
+                      setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, materiale_arrivato_at: nowIso } : x));
+                      if (typeof setCcDone === 'function') { setCcDone("Materiale arrivato"); setTimeout(() => setCcDone(null), 3000); }
+                    } catch (e: any) { alert("Errore rete: " + (e.message || "")); }
+                  };
                   const cardStyle = (done: boolean): React.CSSProperties => ({
                     flex: 1, padding: "14px 12px", borderRadius: 12,
                     border: done ? "1.5px solid #10B981" : "1.5px solid #C8E4E4",
@@ -2215,30 +2230,76 @@ export default function CMDetailPanel() {
                       if (typeof setCcDone === 'function') { setCcDone("Produzione avviata"); setTimeout(() => setCcDone(null), 3000); }
                     } catch (e: any) { alert("Errore rete: " + (e.message || "")); }
                   };
+                  // Step counter per progress
+                  const stepsDone = (ordineDone29 ? 1 : 0) + (materialeArrivatoDone29 ? 1 : 0) + (montaggioDone29 ? 1 : 0);
+                  const ordineCardDisabled = false;
+                  const materialeCardDisabled = !ordineDone29;
+                  const montaggioCardDisabled = !materialeArrivatoDone29;
                   return (
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 900, color: "#1E3A5F", letterSpacing: 1, marginBottom: 8 }}>PRIMA DI AVVIARE LA PRODUZIONE</div>
-                      <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-                        <button onClick={onClickOrdine} style={cardStyle(ordineDone29)}>
-                          <div style={{ fontSize: 16, marginBottom: 4 }}>{ordineDone29 ? "✓" : "○"}</div>
-                          <div style={{ fontSize: 12, fontWeight: 900, color: ordineDone29 ? "#065F46" : "#1E3A5F", marginBottom: 2 }}>ORDINA MATERIALI</div>
-                          <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4 }}>{ordineDone29 ? "Ordine inviato ai fornitori" : "Crea distinta da vani + sistema"}</div>
+                      <div style={{ display: "flex" as any, justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                        <div style={{ fontSize: 10, fontWeight: 900, color: "#1E3A5F", letterSpacing: 1 }}>PRIMA DI AVVIARE LA PRODUZIONE</div>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: "#28A0A0" }}>{stepsDone}/3</div>
+                      </div>
+                      <div style={{ display: "flex" as any, flexDirection: "column" as any, gap: 8, marginBottom: 12 }}>
+                        <button 
+                          onClick={onClickOrdine} 
+                          disabled={ordineCardDisabled}
+                          style={{ 
+                            ...cardStyle(ordineDone29), 
+                            opacity: ordineCardDisabled ? 0.4 : 1, 
+                            cursor: ordineCardDisabled ? "not-allowed" : "pointer",
+                            display: "flex" as any, alignItems: "center" as any, gap: 12, textAlign: "left" as any
+                          }}
+                        >
+                          <div style={{ fontSize: 22, flexShrink: 0 }}>{ordineDone29 ? "✓" : "1"}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 900, color: ordineDone29 ? "#065F46" : "#1E3A5F" }}>ORDINA MATERIALI</div>
+                            <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4, marginTop: 2 }}>{ordineDone29 ? "Ordine inviato ai fornitori" : "Crea distinta da vani + sistema"}</div>
+                          </div>
                         </button>
-                        <button onClick={onClickMontaggio} style={cardStyle(montaggioDone29)}>
-                          <div style={{ fontSize: 16, marginBottom: 4 }}>{montaggioDone29 ? "✓" : "○"}</div>
-                          <div style={{ fontSize: 12, fontWeight: 900, color: montaggioDone29 ? "#065F46" : "#1E3A5F", marginBottom: 2 }}>ORGANIZZA MONTAGGIO</div>
-                          <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4 }}>{montaggioDone29 ? "Squadra e data pianificate" : "Data + squadra + durata"}</div>
+                        <button 
+                          onClick={onClickMaterialeArrivato} 
+                          disabled={materialeCardDisabled}
+                          style={{ 
+                            ...cardStyle(materialeArrivatoDone29), 
+                            opacity: materialeCardDisabled ? 0.4 : 1, 
+                            cursor: materialeCardDisabled ? "not-allowed" : "pointer",
+                            display: "flex" as any, alignItems: "center" as any, gap: 12, textAlign: "left" as any
+                          }}
+                        >
+                          <div style={{ fontSize: 22, flexShrink: 0 }}>{materialeArrivatoDone29 ? "✓" : "2"}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 900, color: materialeArrivatoDone29 ? "#065F46" : "#1E3A5F" }}>MATERIALE ARRIVATO</div>
+                            <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4, marginTop: 2 }}>{materialeArrivatoDone29 ? "Materiali in magazzino" : "Conferma quando i materiali sono in officina"}</div>
+                          </div>
+                        </button>
+                        <button 
+                          onClick={onClickMontaggio} 
+                          disabled={montaggioCardDisabled}
+                          style={{ 
+                            ...cardStyle(montaggioDone29), 
+                            opacity: montaggioCardDisabled ? 0.4 : 1, 
+                            cursor: montaggioCardDisabled ? "not-allowed" : "pointer",
+                            display: "flex" as any, alignItems: "center" as any, gap: 12, textAlign: "left" as any
+                          }}
+                        >
+                          <div style={{ fontSize: 22, flexShrink: 0 }}>{montaggioDone29 ? "✓" : "3"}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 900, color: montaggioDone29 ? "#065F46" : "#1E3A5F" }}>ORGANIZZA MONTAGGIO</div>
+                            <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4, marginTop: 2 }}>{montaggioDone29 ? "Squadra e data pianificate" : "Data + squadra + durata"}</div>
+                          </div>
                         </button>
                       </div>
-                      <button onClick={onClickAvvia} disabled={!entrambeDone} style={{
+                      <button onClick={onClickAvvia} disabled={!tuttoDone} style={{
                         width: "100%", padding: 14, borderRadius: 12, border: "none",
-                        background: entrambeDone ? "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)" : "#C8E4E4",
-                        color: entrambeDone ? "#fff" : "#5C6B7A",
-                        fontSize: 13, fontWeight: 900, cursor: entrambeDone ? "pointer" : "not-allowed",
+                        background: tuttoDone ? "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)" : "#C8E4E4",
+                        color: tuttoDone ? "#fff" : "#5C6B7A",
+                        fontSize: 13, fontWeight: 900, cursor: tuttoDone ? "pointer" : "not-allowed",
                         fontFamily: "inherit", letterSpacing: 0.4,
-                        boxShadow: entrambeDone ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
+                        boxShadow: tuttoDone ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
                       }}>
-                        {entrambeDone ? "AVVIA PRODUZIONE →" : "Completa entrambe le azioni"}
+                        {tuttoDone ? "AVVIA PRODUZIONE →" : "Completa tutti i passi (" + stepsDone + "/3)"}
                       </button>
                     </div>
                   );
