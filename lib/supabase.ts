@@ -145,3 +145,10 @@ export async function updateAzienda(updates: Record<string, any>) {
   return data;
 }
 
+
+
+// [debug-singleton] Espone supabase su window per diagnostica auth/session.
+// Stripped automaticamente in production se NODE_ENV=production via tree-shaking.
+if (typeof window !== 'undefined') {
+  (window as any).supabase = supabase;
+}
