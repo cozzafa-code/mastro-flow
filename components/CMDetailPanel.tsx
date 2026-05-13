@@ -2340,14 +2340,35 @@ export default function CMDetailPanel() {
                                   {giorniMC.map((d, i) => {
                                     const iso = fmtDMC(d);
                                     const occupata = occSet.has(iso);
-                                    // Range: se questo giorno e fra data e data+giorni (e stessa squadra)
-                                    const giorniSel = (montFormData?.durataUnit === "h") ? 1 : Math.ceil(montGiorni || 1);
+                                    // Range + tipo durata: gestisce giorni interi, mezzo giorno, ore
+                                    const isOre = montFormData?.durataUnit === "h";
+                                    const oreSel = (montFormData?.durataOre as number) || 8;
+                                    const giorniSelF = montGiorni || 1; // puo essere 0.5, 1, 1.5, 2.5...
+                                    const giorniSelI = Math.ceil(giorniSelF);
                                     let inRange = false;
+                                    let cellLabel = "";
+                                    let isHalfDay = false;
                                     if (montFormData?.data && montFormData?.squadraId === sq.id) {
                                       const startD = new Date(montFormData.data + "T12:00:00");
-                                      const endD = new Date(startD); endD.setDate(endD.getDate() + giorniSel - 1);
+                                      const endD = new Date(startD); endD.setDate(endD.getDate() + giorniSelI - 1);
                                       const isoD = new Date(iso + "T12:00:00");
-                                      if (isoD >= startD && isoD <= endD) inRange = true;
+                                      if (isoD >= startD && isoD <= endD) {
+                                        inRange = true;
+                                        if (isOre) {
+                                          // Mostra ore solo sul primo giorno
+                                          if (iso === montFormData.data) cellLabel = oreSel + "h";
+                                          else cellLabel = "OK";
+                                        } else {
+                                          // E un mezzo giorno solo se ultima cella E giorniSelF non e intero
+                                          const isLast = isoD.getTime() === endD.getTime();
+                                          if (isLast && (giorniSelF % 1 !== 0)) {
+                                            isHalfDay = true;
+                                            cellLabel = "1/2";
+                                          } else {
+                                            cellLabel = "OK";
+                                          }
+                                        }
+                                      }
                                     }
                                     const selezionata = inRange;
                                     const isPast = iso < todayISOMC;
@@ -2361,19 +2382,22 @@ export default function CMDetailPanel() {
                                         style={{
                                           minHeight: 44,
                                           cursor: (isPast || occupata) ? "not-allowed" : "pointer",
-                                          background: selezionata ? sqColor : occupata ? "#FCA5A5" : weekend ? "#F1F5F9" : "#fff",
+                                          background: selezionata 
+                                            ? (isHalfDay ? "linear-gradient(to right, " + sqColor + " 50%, #fff 50%)" : sqColor)
+                                            : occupata ? "#FCA5A5" : weekend ? "#F1F5F9" : "#fff",
                                           border: "1.5px solid " + (selezionata ? sqColor : isToday ? "#28A0A0" : "#E2E8F0"),
                                           borderRadius: 6,
                                           opacity: isPast ? 0.35 : 1,
                                           display: "flex" as any,
                                           alignItems: "center",
                                           justifyContent: "center",
-                                          fontSize: 14,
+                                          fontSize: (cellLabel && cellLabel.includes("h")) ? 12 : 13,
                                           fontWeight: 900,
                                           color: selezionata ? "#fff" : occupata ? "#991B1B" : "transparent",
+                                          textShadow: selezionata ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
                                         }}
                                       >
-                                        {selezionata ? "OK" : occupata ? "X" : ""}
+                                        {selezionata ? cellLabel : occupata ? "X" : ""}
                                       </div>
                                     );
                                   })}
