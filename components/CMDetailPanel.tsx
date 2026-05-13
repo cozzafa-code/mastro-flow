@@ -2257,7 +2257,7 @@ export default function CMDetailPanel() {
                 {/* [v-mont-inline] Mini-modal montaggio inline (dual-gate) */}
                 {montFormOpen && c29 && typeof window !== "undefined" && _createPortalCM(
                   <div onClick={() => setMontFormOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-                    <div onClick={(e: any) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 420, width: "100%" }}>
+                    <div onClick={(e: any) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 620, width: "100%", maxHeight: "90vh", overflowY: "auto" as any }}>
                       <div style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", marginBottom: 14 }}>Pianifica montaggio {c29.code}</div>
 
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 4 }}>DATA</div>
@@ -2296,11 +2296,11 @@ export default function CMDetailPanel() {
                         });
                         return (
                           <div style={{ marginBottom: 12, border: "1px solid #C8E4E4", borderRadius: 8, padding: 8, background: "#F8FBFB" }}>
-                            <div style={{ fontSize: 9, fontWeight: 800, color: "#6A8484", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 6 }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: "#6A8484", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>
                               DISPONIBILITA SQUADRE - prossimi 21 giorni
                             </div>
                             {/* Header giorni */}
-                            <div style={{ display: "grid", gridTemplateColumns: "70px repeat(21, 1fr)", gap: 1, fontSize: 8, fontWeight: 700, color: "#6A8484", marginBottom: 2 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "90px repeat(21, 1fr)", gap: 2, fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 4 }}>
                               <div></div>
                               {giorniMC.map((d, i) => (
                                 <div key={i} style={{ textAlign: "center", padding: 1 }}>
@@ -2313,8 +2313,8 @@ export default function CMDetailPanel() {
                               const occSet = occupMC.get(sq.id) || new Set();
                               const sqColor = sq.colore || "#28A0A0";
                               return (
-                                <div key={sq.id} style={{ display: "grid", gridTemplateColumns: "70px repeat(21, 1fr)", gap: 1, marginBottom: 2 }}>
-                                  <div style={{ fontSize: 9, fontWeight: 700, color: "#0D1F1F", padding: "2px 4px", overflow: "hidden" as any, textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>{sq.nome || sq.id}</div>
+                                <div key={sq.id} style={{ display: "grid", gridTemplateColumns: "90px repeat(21, 1fr)", gap: 2, marginBottom: 3 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F", padding: "6px 6px", display: "flex" as any, alignItems: "center", overflow: "hidden" as any, textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>{sq.nome || sq.id}</div>
                                   {giorniMC.map((d, i) => {
                                     const iso = fmtDMC(d);
                                     const occupata = occSet.has(iso);
@@ -2327,7 +2327,7 @@ export default function CMDetailPanel() {
                                         key={i}
                                         onClick={() => { if (!isPast && !occupata) setMontFormData((p: any) => ({ ...(p || {}), data: iso, squadraId: sq.id })); }}
                                         style={{
-                                          minHeight: 18,
+                                          minHeight: 32,
                                           cursor: (isPast || occupata) ? "not-allowed" : "pointer",
                                           background: selezionata ? sqColor : occupata ? "#FCA5A5" : weekend ? "#F1F5F9" : "#fff",
                                           border: "1px solid " + (selezionata ? sqColor : "#E2E8F0"),
@@ -2341,10 +2341,10 @@ export default function CMDetailPanel() {
                                 </div>
                               );
                             })}
-                            <div style={{ display: "flex", gap: 8, marginTop: 6, fontSize: 9, color: "#6A8484" }}>
-                              <span><span style={{ display: "inline-block", width: 8, height: 8, background: "#FCA5A5", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />occupata</span>
-                              <span><span style={{ display: "inline-block", width: 8, height: 8, background: "#fff", border: "1px solid #E2E8F0", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />libera</span>
-                              <span><span style={{ display: "inline-block", width: 8, height: 8, background: "#F1F5F9", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />weekend</span>
+                            <div style={{ display: "flex", gap: 12, marginTop: 8, fontSize: 11, color: "#6A8484" }}>
+                              <span><span style={{ display: "inline-block", width: 12, height: 12, background: "#FCA5A5", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />occupata</span>
+                              <span><span style={{ display: "inline-block", width: 12, height: 12, background: "#fff", border: "1px solid #E2E8F0", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />libera</span>
+                              <span><span style={{ display: "inline-block", width: 12, height: 12, background: "#F1F5F9", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />weekend</span>
                             </div>
                           </div>
                         );
