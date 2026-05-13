@@ -102,10 +102,22 @@ export default function NuovoOrdineWizard({ aziendaId, commessaIdSuggerita, onCl
       canaleInvio: canale,
       note: note || null,
     });
-    if (!res.ok || !res.id) { setBusy(false); alert("Errore: " + (res.error || "")); return; }
+    if (!res.ok || !res.id) {
+      setBusy(false);
+      console.error("[Wizard] salvataggio fallito:", res.error);
+      alert("Salvataggio ordine fallito.\n\nMotivo: " + (res.error || "errore sconosciuto") + "\n\nControlla console per dettagli.");
+      return;
+    }
+    console.log("[Wizard] ordine creato:", res.id);
     if (invia) {
       const r2 = await inviaOrdine(res.id);
-      if (!r2.ok) { setBusy(false); alert("Bozza salvata ma invio fallito: " + (r2.error || "")); return; }
+      if (!r2.ok) {
+        setBusy(false);
+        console.error("[Wizard] invio fallito:", r2.error);
+        alert("Bozza salvata ma invio fallito: " + (r2.error || ""));
+        return;
+      }
+      console.log("[Wizard] ordine inviato");
     }
     setBusy(false);
     onCreated(res.id);

@@ -46,8 +46,14 @@ export default function OrdineDettaglioSheet({ ordineId, onClose, onRicevi, onAp
         .eq("id", ordineId)
         .single();
       if (mounted) {
-        if (error) console.error("[OrdineDettaglio]", error);
+        if (error) {
+          console.error("[OrdineDettaglio] ERRORE:", error);
+          alert("Errore caricamento ordine: " + error.message);
+        }
         const o: any = data;
+        if (!o) {
+          console.warn("[OrdineDettaglio] dati vuoti per id:", ordineId);
+        }
         setOrdine(o ? {
           ...o,
           commessa_code: o.commessa?.code,

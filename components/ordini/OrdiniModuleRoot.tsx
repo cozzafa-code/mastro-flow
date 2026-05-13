@@ -20,12 +20,12 @@ export default function OrdiniModuleRoot({ aziendaId, onClose, onApriCommessa, i
   const [view, setView] = useState<ViewMode>(initialOrdineId ? "dettaglio" : "lista");
   const [ordineId, setOrdineId] = useState<string | null>(initialOrdineId ?? null);
 
-  function aprilDettaglio(id: string) { setOrdineId(id); setView("dettaglio"); }
-  function chiudilettaglio() { setOrdineId(null); setView("lista"); }
-  function avviaRicezione(id: string) { setOrdineId(id); setView("ricezione"); }
-  function ricezioneCompletata(_id: string) { setView("lista"); setOrdineId(null); }
-  function apriWizard() { setView("wizard"); }
-  function wizardCreato(id: string) { setOrdineId(id); setView("dettaglio"); }
+  function aprilDettaglio(id: string) { console.log("[Ordini] apri dettaglio:", id); setOrdineId(id); setView("dettaglio"); }
+  function chiudilettaglio() { console.log("[Ordini] chiudi dettaglio"); setOrdineId(null); setView("lista"); }
+  function avviaRicezione(id: string) { console.log("[Ordini] avvia ricezione:", id); setOrdineId(id); setView("ricezione"); }
+  function ricezioneCompletata(_id: string) { console.log("[Ordini] ricezione completata"); setView("lista"); setOrdineId(null); }
+  function apriWizard() { console.log("[Ordini] apri wizard"); setView("wizard"); }
+  function wizardCreato(id: string) { console.log("[Ordini] wizard creato:", id); setOrdineId(id); setView("dettaglio"); }
 
   if (view === "wizard") {
     return (
