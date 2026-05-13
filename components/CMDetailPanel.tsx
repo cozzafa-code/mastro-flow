@@ -1437,7 +1437,7 @@ export default function CMDetailPanel() {
                 tags = [{ lbl: "Inviato", bg: "#DBEAFE", fg: "#1E40AF" }, { lbl: "Pending", bg: "#FEF3C7", fg: "#92400E" }];
                 primaryLbl = "Reinvia preventivo";
                 primaryAction = async () => {
-                  // [v-reinvia-share] genera link + apre modal share (WhatsApp/Email)
+                  // [v-reinvia-direct] bypass modal: genera link e apri WhatsApp direttamente
                   try {
                     const r = await fetch("/api/preventivo-link", {
                       method: "POST",
@@ -1448,22 +1448,26 @@ export default function CMDetailPanel() {
                     const _origin = typeof window !== "undefined" ? window.location.origin : "";
                     const _rawUrl = d?.url || ("/p/" + (d?.token || ""));
                     const link = _rawUrl.startsWith("http") ? _rawUrl : (_origin + _rawUrl);
-                    if (typeof setShowSendModal === "function") {
-                      setShowSendModal({
-                        link,
-                        nome: ((cZ3.cliente || "") + " " + (cZ3.cognome || "")).trim() || "Cliente",
-                        tel: cZ3.telefono || cZ3.tel || "",
-                        email: cZ3.email || "",
-                        code: cZ3.code || "",
-                      });
+                    const nome = ((cZ3.cliente || "") + " " + (cZ3.cognome || "")).trim() || "Cliente";
+                    const tel = (cZ3.telefono || cZ3.tel || "").replace(/[^0-9+]/g, "");
+                    const msg = "Ciao " + nome + ", ecco il preventivo " + (cZ3.code || "") + ". Clicca per vederlo: " + link;
+                    if (tel) {
+                      const numWA = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
+                      const wa = "https://wa.me/" + numWA + "?text=" + encodeURIComponent(msg);
+                      window.open(wa, "_blank");
+                      if (typeof setCcDone === "function") { setCcDone("Aperto WhatsApp"); setTimeout(() => setCcDone(null), 2500); }
                     } else {
-                      // Fallback se setShowSendModal non disponibile: apri workspace
-                      setPrevWorkspace(true); setPrevTab("fiscale");
+                      // No telefono: copia link in clipboard
+                      try {
+                        await navigator.clipboard.writeText(link);
+                        alert("Link copiato negli appunti:\n" + link);
+                      } catch {
+                        prompt("Copia questo link da inviare al cliente:", link);
+                      }
                     }
                   } catch (e: any) {
                     console.warn("[reinvia] err:", e);
-                    // Fallback: apri workspace
-                    setPrevWorkspace(true); setPrevTab("fiscale");
+                    alert("Errore generazione link: " + (e?.message || ""));
                   }
                 };
               } else {
