@@ -267,6 +267,36 @@ export default function CMDetailPanel() {
       setCantieri((cs: any[]) => cs.map((x: any) => x.id === cm.id ? { ...x, ...cm } : x));
     });
 
+    // [v-recap-effect] Carica recap ordini+ricezione+montaggio quando cambia commessa
+    useEffect(() => {
+      const cmId = selectedCM?.id;
+      if (!cmId) { setTgRecap({}); return; }
+      (async () => {
+        try {
+          const { supabase } = await import("@/lib/supabase");
+          const [{ data: ord }, { data: mnt }] = await Promise.all([
+            supabase.from("ordini_fornitore").select("id,fornitore,totale_stimato,totale_euro,arrivato_at,ddt_numero,ddt_data,scostamento_costo,righe").eq("commessa_id", cmId),
+            supabase.from("montaggi").select("data_montaggio,ora_inizio,ora_fine,squadra,stato,ore_preventivate").eq("commessa_id", cmId).order("data_montaggio", { ascending: true }),
+          ]);
+          const ordini = ord || [];
+          const arrivati = ordini.filter((o: any) => o.arrivato_at);
+          const totOrd = ordini.length;
+          const totEur = ordini.reduce((s: number, o: any) => s + Number(o.totale_stimato || o.totale_euro || 0), 0);
+          const totScost = ordini.reduce((s: number, o: any) => s + Number(o.scostamento_costo || 0), 0);
+          const fornitori = Array.from(new Set(ordini.map((o: any) => o.fornitore).filter(Boolean)));
+          const ultimoDdt = arrivati.length > 0 ? arrivati[arrivati.length - 1] : null;
+          const m = (mnt && mnt[0]) || null;
+          setTgRecap({
+            ordini: { n: totOrd, totEur, fornitori },
+            ricezione: { arrivati: arrivati.length, tot: totOrd, totScost, ultimoDdt },
+            montaggio: m ? { data: m.data_montaggio, ora_inizio: m.ora_inizio, ora_fine: m.ora_fine, squadra: m.squadra, ore: m.ore_preventivate } : null,
+          });
+        } catch (e) {
+          console.error("[tgRecap]", e);
+        }
+      })();
+    }, [selectedCM?.id, selectedCM?.materiale_ordinato_at, selectedCM?.materiale_arrivato_at, selectedCM?.produzione_iniziata_at]);
+
   // AUTO_PICK: se ci sono rilievi, seleziona l'ultimo. NON crea pi+ bozze automatiche.
   const [showRilieviPanel, setShowRilieviPanel] = React.useState<any>(null);
   const [autoPickDoneForCm, setAutoPickDoneForCm] = React.useState<number | null>(null);
@@ -477,6 +507,7 @@ export default function CMDetailPanel() {
     const [showAccontoModal, setShowAccontoModal] = useState(false);
   const [showOrdiniSheet, setShowOrdiniSheet] = useState(false);
     const [showRicezioneSheet, setShowRicezioneSheet] = useState(false);
+    const [tgRecap, setTgRecap] = useState<{ ordini?: any; ricezione?: any; montaggio?: any }>({});
     const [showModalFirma, setShowModalFirma] = useState(false);
     const [emettiModal, setEmettiModal] = useState<any>(null);
 
@@ -2251,7 +2282,11 @@ export default function CMDetailPanel() {
                           <div style={{ fontSize: 22, flexShrink: 0 }}>{ordineDone29 ? "✓" : "1"}</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13, fontWeight: 900, color: ordineDone29 ? "#065F46" : "#1E3A5F" }}>ORDINA MATERIALI</div>
-                            <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4, marginTop: 2 }}>{ordineDone29 ? "Ordine inviato ai fornitori" : "Crea distinta da vani + sistema"}</div>
+                            <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4, marginTop: 2 }}>
+                              {ordineDone29 
+                                ? (tgRecap?.ordini?.n ? tgRecap.ordini.n + " ordini · " + (tgRecap.ordini.fornitori?.length || 0) + " fornitori · € " + (tgRecap.ordini.totEur || 0).toLocaleString("it-IT", { minimumFractionDigits: 0 }) : "Ordine inviato ai fornitori")
+                                : "Crea distinta da vani + sistema"}
+                            </div>
                           </div>
                         </button>
                         <button 
@@ -2266,8 +2301,33 @@ export default function CMDetailPanel() {
                         >
                           <div style={{ fontSize: 22, flexShrink: 0 }}>{materialeArrivatoDone29 ? "✓" : "2"}</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 900, color: materialeArrivatoDone29 ? "#065F46" : "#1E3A5F" }}>MATERIALE ARRIVATO</div>
-                            <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4, marginTop: 2 }}>{materialeArrivatoDone29 ? "Materiali in magazzino" : "Conferma quando i materiali sono in officina"}</div>
+                            <div style={{ display: "flex" as any, alignItems: "center", gap: 6 }}>
+                              <div style={{ fontSize: 13, fontWeight: 900, color: materialeArrivatoDone29 ? "#065F46" : "#1E3A5F" }}>MATERIALE ARRIVATO</div>
+                              {(() => {
+                                const r = tgRecap?.ricezione;
+                                if (!r || !r.tot || materialeArrivatoDone29) return null;
+                                if (r.arrivati > 0) {
+                                  return <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 10, background: "#FEF3C7", color: "#92400E" }}>PARZIALE {r.arrivati}/{r.tot}</span>;
+                                }
+                                return null;
+                              })()}
+                            </div>
+                            <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4, marginTop: 2 }}>
+                              {(() => {
+                                const r = tgRecap?.ricezione;
+                                if (!r || !r.tot) return materialeArrivatoDone29 ? "Materiali in magazzino" : "Conferma quando i materiali sono in officina";
+                                if (materialeArrivatoDone29) {
+                                  const segno = r.totScost > 0 ? "+" : "";
+                                  const colore = Math.abs(r.totScost) < 0.01 ? "" : (r.totScost > 0 ? " · maggiore costo " : " · risparmio ");
+                                  return r.tot + " ordini ricevuti" + (Math.abs(r.totScost) > 0.01 ? colore + segno + "€" + Math.abs(r.totScost).toLocaleString("it-IT", { minimumFractionDigits: 0 }) : "");
+                                }
+                                if (r.arrivati > 0) {
+                                  const ultimo = r.ultimoDdt?.ddt_numero ? " · ultimo " + r.ultimoDdt.ddt_numero : "";
+                                  return r.arrivati + "/" + r.tot + " ordini arrivati" + ultimo + " · " + (r.tot - r.arrivati) + " da ricevere";
+                                }
+                                return "0/" + r.tot + " arrivati · tap per ricevere DDT";
+                              })()}
+                            </div>
                           </div>
                         </button>
                         <button 
@@ -2283,7 +2343,19 @@ export default function CMDetailPanel() {
                           <div style={{ fontSize: 22, flexShrink: 0 }}>{montaggioDone29 ? "✓" : "3"}</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13, fontWeight: 900, color: montaggioDone29 ? "#065F46" : "#1E3A5F" }}>ORGANIZZA MONTAGGIO</div>
-                            <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4, marginTop: 2 }}>{montaggioDone29 ? "Squadra e data pianificate" : "Data + squadra + durata"}</div>
+                            <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4, marginTop: 2 }}>
+                              {(() => {
+                                const m = tgRecap?.montaggio;
+                                if (!m || !m.data) return montaggioDone29 ? "Squadra e data pianificate" : "Data + squadra + durata";
+                                const mesi = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+                                const d = new Date(m.data + "T12:00:00");
+                                const dStr = d.getDate() + " " + mesi[d.getMonth()];
+                                const sqId = Array.isArray(m.squadra) ? m.squadra[0] : null;
+                                const sqNome = sqId && Array.isArray(squadreDB) ? (squadreDB.find((s: any) => s.id === sqId)?.nome || "Squadra") : "Squadra";
+                                const oraStr = m.ora_inizio && m.ora_fine ? " · " + m.ora_inizio.slice(0,5) + "-" + m.ora_fine.slice(0,5) : (m.ore ? " · " + m.ore + "h" : "");
+                                return sqNome + " · " + dStr + oraStr;
+                              })()}
+                            </div>
                           </div>
                         </button>
                       </div>
