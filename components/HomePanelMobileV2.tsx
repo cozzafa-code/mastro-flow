@@ -1127,38 +1127,100 @@ function CardSquadra({ team, cantieri, onClick }: any) {
 }
 
 function CardProduzione({ cantieri, apri }: any) {
-  const inProd = cantieri.filter((c: any) => c?.fase === 'produzione' || c?.fase === 'ordine')
-  const top = inProd.slice(0, SHOW_VERTICAL)
-  const rest = inProd.slice(SHOW_VERTICAL)
+  const inProd = (cantieri || []).filter((c: any) => c?.fase === 'produzione' || c?.fase === 'ordine')
+  const top = inProd.slice(0, 3)
+  
+  // Capacita: default 30 vani/gg. Genera prossimi 5 giorni lavorativi
+  const CAPACITA = 30
+  const oggi = new Date(); oggi.setHours(0,0,0,0)
+  const giorni: { d: Date; iso: string; lbl: string; carico: number }[] = []
+  const dowLbl = ['DOM','LUN','MAR','MER','GIO','VEN','SAB']
+  let cursor = new Date(oggi)
+  while (giorni.length < 5) {
+    const dow = cursor.getDay()
+    if (dow !== 0 && dow !== 6) {
+      const iso = cursor.toISOString().split('T')[0]
+      // Conta carichi per quel giorno (somma vani)
+      const carico = inProd.reduce((s: number, c: any) => {
+        const dt = c?.produzione_iniziata_at?.split('T')[0]
+        if (dt === iso) return s + (Number(c?.n_vani || c?.vani_totali || 1))
+        return s
+      }, 0)
+      giorni.push({ d: new Date(cursor), iso, lbl: dowLbl[dow], carico })
+    }
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  const totVaniSettimana = giorni.reduce((s, g) => s + g.carico, 0)
+  const capacitaSettimana = CAPACITA * giorni.length
+  const pctMedio = capacitaSettimana > 0 ? Math.round((totVaniSettimana / capacitaSettimana) * 100) : 0
+  
+  const colorePct = (p: number) => p < 60 ? '#10B981' : p < 90 ? '#F59E0B' : '#DC2626'
+  
   return (
     <>
-      <CardHead title="Produzione" badge={inProd.length} link="apri" onClick={() => apri('')} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={3}/></svg>} />
-      {inProd.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun lavoro in produzione</div> : null}
-      {top.map((c: any, i: number) => (
-        <div key={i} onClick={() => apri(c?.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</span>
-              <span style={{ fontSize: 8, color: '#FFF', background: c?.fase === 'produzione' ? AMBER : NAVY, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
+      <CardHead title="Produzione" badge={inProd.length} link="apri" onClick={() => apri('')} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 21V8l9-5 9 5v13"/><path d="M9 22V12h6v10"/></svg>} />
+      
+      {/* KPI riga */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8, marginBottom: 10 }}>
+        <div style={{ background: '#F2FAFA', borderRadius: 8, padding: '8px 6px', textAlign: 'center' as any }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, textTransform: 'uppercase' as any, letterSpacing: 0.3 }}>ATTIVE</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: '#1E3A5F', marginTop: 2 }}>{inProd.length}</div>
+        </div>
+        <div style={{ background: '#F2FAFA', borderRadius: 8, padding: '8px 6px', textAlign: 'center' as any }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, textTransform: 'uppercase' as any, letterSpacing: 0.3 }}>VANI/SETT</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: '#1E3A5F', marginTop: 2 }}>{totVaniSettimana}</div>
+        </div>
+        <div style={{ background: '#F2FAFA', borderRadius: 8, padding: '8px 6px', textAlign: 'center' as any }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, textTransform: 'uppercase' as any, letterSpacing: 0.3 }}>CARICO</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: colorePct(pctMedio), marginTop: 2 }}>{pctMedio}%</div>
+        </div>
+      </div>
+      
+      {/* Barre capacita prossimi 5 giorni */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, textTransform: 'uppercase' as any, letterSpacing: 0.3, marginBottom: 6 }}>OFFICINA · PROSSIMI 5 GIORNI</div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {giorni.map((g, i) => {
+            const pct = Math.min(100, (g.carico / CAPACITA) * 100)
+            const isOggi = g.iso === oggi.toISOString().split('T')[0]
+            return (
+              <div key={i} onClick={() => apri('')} style={{ flex: 1, cursor: 'pointer' }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: isOggi ? '#28A0A0' : MUTED, textAlign: 'center' as any, marginBottom: 2 }}>{g.lbl}</div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#0F1F33', textAlign: 'center' as any, marginBottom: 3 }}>{g.d.getDate()}</div>
+                <div style={{ height: 24, background: '#E2E8F0', borderRadius: 4, position: 'relative' as any, overflow: 'hidden' as any }}>
+                  <div style={{ position: 'absolute' as any, bottom: 0, left: 0, right: 0, height: pct + '%', background: colorePct(pct), transition: 'height 0.3s' }} />
+                </div>
+                <div style={{ fontSize: 8, fontWeight: 700, color: pct > 0 ? colorePct(pct) : MUTED, textAlign: 'center' as any, marginTop: 2 }}>{g.carico}/{CAPACITA}</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      
+      {/* Top 3 commesse in produzione */}
+      {top.length > 0 && (
+        <>
+          <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, textTransform: 'uppercase' as any, letterSpacing: 0.3, marginBottom: 6 }}>IN LAVORAZIONE ORA</div>
+          {top.map((c: any, i: number) => (
+            <div key={i} onClick={() => apri(c?.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 ? '1px solid ' + BORDER : 'none', cursor: 'pointer' }}>
+              <div style={{ width: 4, height: 28, background: c?.fase === 'produzione' ? '#F59E0B' : '#1E3A5F', borderRadius: 2, flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 11, color: TEXT, fontWeight: 800 }}>{c?.codice || c?.code}</span>
+                  <span style={{ fontSize: 8, color: '#FFF', background: c?.fase === 'produzione' ? '#F59E0B' : '#1E3A5F', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}{c?.n_vani ? ' · ' + c.n_vani + ' vani' : ''}</div>
+              </div>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <div style={{ fontSize: 11, color: TEXT, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}</div>
-          </div>
-          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      ))}
-      {rest.length > 0 ? (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri · scorri →</div>
-          <SwipeTrack>
-            {rest.map((c: any, i: number) => (
-              <SwipeItem key={i} width="180px" onClick={() => apri(c?.id)}>
-                <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}</div>
-              </SwipeItem>
-            ))}
-          </SwipeTrack>
-        </div>
-      ) : null}
+          ))}
+        </>
+      )}
+      
+      {/* CTA finale */}
+      <div onClick={() => apri('')} style={{ marginTop: 10, padding: 10, background: 'linear-gradient(135deg, #1E3A5F, #0F1B2D)', color: '#fff', borderRadius: 8, textAlign: 'center' as any, fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: 0.5 }}>
+        APRI CALENDARIO PRODUZIONE →
+      </div>
     </>
   )
 }
