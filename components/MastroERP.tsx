@@ -751,6 +751,33 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     return () => { cancelled = true; };
   }, []);
 
+  // === REALTIME GLOBALE HOME: commesse + montaggi + ordini_fornitore ===
+  // Pattern identico a useFurgoni / useMagazzino. Counter home sempre live.
+  // Patch 13 mag 2026 - audit bidirezionale 10 card.
+  useEffect(() => {
+    if (!aziendaId) return;
+    const refetchAll = async () => {
+      try {
+        const [rC, rM, rO] = await Promise.all([
+          supabase.from('commesse').select('*').eq('azienda_id', aziendaId),
+          supabase.from('montaggi').select('*').eq('azienda_id', aziendaId),
+          supabase.from('ordini_fornitore').select('*').eq('azienda_id', aziendaId),
+        ]);
+        if (rC.data) setCantieri(rC.data as any[]);
+        if (rM.data) setMontaggiDB(rM.data as any[]);
+        if (rO.data) setOrdiniFornDB(rO.data as any[]);
+      } catch (e) {
+        console.warn('[realtime-home] refetch fail', e);
+      }
+    };
+    const ch = supabase.channel(`home-${aziendaId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'commesse', filter: `azienda_id=eq.${aziendaId}` }, refetchAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'montaggi', filter: `azienda_id=eq.${aziendaId}` }, refetchAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordini_fornitore', filter: `azienda_id=eq.${aziendaId}` }, refetchAll)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [aziendaId]);
+
   // Persist + cloud sync effects
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "cantieri", cantieri), [cantieri]);
   useVaniSync(cantieri, userId, isUuid);
