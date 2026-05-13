@@ -247,6 +247,8 @@ export default function MontaggiSheet({
 
       <MontaggiEditModal
         montaggio={editing}
+        commesse={commesse}
+        aziendaId={state.aziendaId || ""}
         onClose={() => setEditing(null)}
       />
     </div>
