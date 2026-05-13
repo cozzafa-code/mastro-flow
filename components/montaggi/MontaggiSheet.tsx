@@ -36,20 +36,22 @@ export default function MontaggiSheet({
   const montaggi = useMemo<MontaggioRow[]>(() => {
     if (!rawMontaggi) return [];
     const cMap = new Map((commesse || []).map((c: any) => [c.id, c]));
-    return rawMontaggi.map((m: any) => {
-      const c: any = cMap.get(m.commessa_id);
-      return {
-        ...m,
-        commessa_code: c?.code,
-        commessa_cliente: c?.cliente,
-        commessa_cognome: c?.cognome,
-        commessa_indirizzo: c?.indirizzo,
-        commessa_citta: c?.citta,
-        commessa_telefono: c?.telefono,
-        commessa_vani_count: c?.vani_count || 0,
-        commessa_totale: c?.totale_finale || c?.totale_preventivo || 0,
-      };
-    });
+    return rawMontaggi
+      .filter((m: any) => m.commessa_id && cMap.has(m.commessa_id))
+      .map((m: any) => {
+        const c: any = cMap.get(m.commessa_id);
+        return {
+          ...m,
+          commessa_code: c?.code,
+          commessa_cliente: c?.cliente,
+          commessa_cognome: c?.cognome,
+          commessa_indirizzo: c?.indirizzo,
+          commessa_citta: c?.citta,
+          commessa_telefono: c?.telefono,
+          commessa_vani_count: c?.vani_count || 0,
+          commessa_totale: c?.totale_finale || c?.totale_preventivo || 0,
+        };
+      });
   }, [rawMontaggi, commesse]);
 
   const stats = useMemo(() => {
