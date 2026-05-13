@@ -2268,17 +2268,17 @@ export default function CMDetailPanel() {
                         style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #C8E4E4", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, marginBottom: 8 }}
                       />
 
-                      {/* [v-cal-squadre] Mini calendario disponibilita squadre - 21 giorni */}
+                      {/* [v-cal-squadre-v2] Calendario disponibilita squadre - 14 giorni leggibile */}
                       {(() => {
                         const todayMC = new Date(); todayMC.setHours(0,0,0,0);
                         const todayISOMC = todayMC.toISOString().split("T")[0];
                         const fmtDMC = (d: Date) => d.toISOString().split("T")[0];
                         const squadsMC = (squadreDB && squadreDB.length > 0) ? squadreDB : [{ id: "default", nome: "Squadra", colore: "#28A0A0" }];
-                        // Genera 21 giorni a partire da oggi
-                        const giorniMC = Array.from({ length: 21 }, (_, i) => {
+                        const DAYS = 14;
+                        const dowLabels = ["dom","lun","mar","mer","gio","ven","sab"];
+                        const giorniMC = Array.from({ length: DAYS }, (_, i) => {
                           const d = new Date(todayMC); d.setDate(d.getDate() + i); return d;
                         });
-                        // Mappa occupazione: per ogni squadra, set di date occupate (ISO)
                         const occupMC = new Map<string, Set<string>>();
                         squadsMC.forEach((s: any) => occupMC.set(s.id, new Set()));
                         (montaggiDB || []).forEach((m: any) => {
@@ -2294,32 +2294,43 @@ export default function CMDetailPanel() {
                             occupMC.get(sid)!.add(fmtDMC(d));
                           }
                         });
+                        const colTpl = "100px repeat(" + DAYS + ", minmax(36px, 1fr))";
                         return (
-                          <div style={{ marginBottom: 12, border: "1px solid #C8E4E4", borderRadius: 8, padding: 8, background: "#F8FBFB" }}>
-                            <div style={{ fontSize: 11, fontWeight: 800, color: "#6A8484", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>
-                              DISPONIBILITA SQUADRE - prossimi 21 giorni
+                          <div style={{ marginBottom: 14, border: "1.5px solid #C8E4E4", borderRadius: 10, padding: 12, background: "#F8FBFB" }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 10 }}>
+                              Disponibilita squadre - prossimi {DAYS} giorni
                             </div>
-                            {/* Header giorni */}
-                            <div style={{ display: "grid", gridTemplateColumns: "90px repeat(21, 1fr)", gap: 2, fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 4 }}>
+                            {/* Header: dow + numero */}
+                            <div style={{ display: "grid", gridTemplateColumns: colTpl, gap: 3, marginBottom: 6 }}>
                               <div></div>
-                              {giorniMC.map((d, i) => (
-                                <div key={i} style={{ textAlign: "center", padding: 1 }}>
-                                  {d.getDate()}
-                                </div>
-                              ))}
+                              {giorniMC.map((d, i) => {
+                                const dow = d.getDay();
+                                const weekend = dow === 0 || dow === 6;
+                                const isToday = fmtDMC(d) === todayISOMC;
+                                return (
+                                  <div key={i} style={{ textAlign: "center", padding: "2px 0" }}>
+                                    <div style={{ fontSize: 9, fontWeight: 700, color: weekend ? "#94A3B8" : "#6A8484", textTransform: "uppercase" as any }}>{dowLabels[dow]}</div>
+                                    <div style={{ fontSize: 13, fontWeight: 800, color: isToday ? "#28A0A0" : weekend ? "#94A3B8" : "#0D1F1F", marginTop: 1 }}>{d.getDate()}</div>
+                                  </div>
+                                );
+                              })}
                             </div>
                             {/* Righe squadre */}
                             {squadsMC.map((sq: any) => {
                               const occSet = occupMC.get(sq.id) || new Set();
                               const sqColor = sq.colore || "#28A0A0";
                               return (
-                                <div key={sq.id} style={{ display: "grid", gridTemplateColumns: "90px repeat(21, 1fr)", gap: 2, marginBottom: 3 }}>
-                                  <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F", padding: "6px 6px", display: "flex" as any, alignItems: "center", overflow: "hidden" as any, textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>{sq.nome || sq.id}</div>
+                                <div key={sq.id} style={{ display: "grid", gridTemplateColumns: colTpl, gap: 3, marginBottom: 4, alignItems: "center" as any }}>
+                                  <div style={{ fontSize: 12, fontWeight: 800, color: "#0D1F1F", padding: "6px 8px", display: "flex" as any, alignItems: "center", gap: 6 }}>
+                                    <span style={{ display: "inline-block", width: 10, height: 10, background: sqColor, borderRadius: 3 }} />
+                                    <span style={{ overflow: "hidden" as any, textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>{sq.nome || sq.id}</span>
+                                  </div>
                                   {giorniMC.map((d, i) => {
                                     const iso = fmtDMC(d);
                                     const occupata = occSet.has(iso);
                                     const selezionata = iso === montFormData?.data && montFormData?.squadraId === sq.id;
                                     const isPast = iso < todayISOMC;
+                                    const isToday = iso === todayISOMC;
                                     const dow = d.getDay();
                                     const weekend = dow === 0 || dow === 6;
                                     return (
@@ -2327,24 +2338,34 @@ export default function CMDetailPanel() {
                                         key={i}
                                         onClick={() => { if (!isPast && !occupata) setMontFormData((p: any) => ({ ...(p || {}), data: iso, squadraId: sq.id })); }}
                                         style={{
-                                          minHeight: 32,
+                                          minHeight: 40,
                                           cursor: (isPast || occupata) ? "not-allowed" : "pointer",
                                           background: selezionata ? sqColor : occupata ? "#FCA5A5" : weekend ? "#F1F5F9" : "#fff",
-                                          border: "1px solid " + (selezionata ? sqColor : "#E2E8F0"),
-                                          borderRadius: 2,
-                                          opacity: isPast ? 0.3 : 1,
+                                          border: "1.5px solid " + (selezionata ? sqColor : isToday ? "#28A0A0" : "#E2E8F0"),
+                                          borderRadius: 6,
+                                          opacity: isPast ? 0.35 : 1,
+                                          transition: "all 0.15s",
+                                          display: "flex" as any,
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          fontSize: 11,
+                                          fontWeight: 800,
+                                          color: selezionata ? "#fff" : occupata ? "#991B1B" : "transparent",
                                         }}
                                         title={iso + (occupata ? " - OCCUPATA" : " - libera")}
-                                      />
+                                      >
+                                        {selezionata ? "✓" : occupata ? "X" : ""}
+                                      </div>
                                     );
                                   })}
                                 </div>
                               );
                             })}
-                            <div style={{ display: "flex", gap: 12, marginTop: 8, fontSize: 11, color: "#6A8484" }}>
-                              <span><span style={{ display: "inline-block", width: 12, height: 12, background: "#FCA5A5", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />occupata</span>
-                              <span><span style={{ display: "inline-block", width: 12, height: 12, background: "#fff", border: "1px solid #E2E8F0", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />libera</span>
-                              <span><span style={{ display: "inline-block", width: 12, height: 12, background: "#F1F5F9", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />weekend</span>
+                            <div style={{ display: "flex", gap: 14, marginTop: 10, fontSize: 11, color: "#6A8484", flexWrap: "wrap" as any }}>
+                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 14, height: 14, background: "#FCA5A5", borderRadius: 3 }} />occupata</span>
+                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 14, height: 14, background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 3 }} />libera</span>
+                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 14, height: 14, background: "#F1F5F9", borderRadius: 3 }} />weekend</span>
+                              <span style={{ display: "flex" as any, alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 14, height: 14, background: "#28A0A0", borderRadius: 3 }} />selezionato</span>
                             </div>
                           </div>
                         );
