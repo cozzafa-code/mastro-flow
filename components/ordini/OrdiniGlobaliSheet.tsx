@@ -44,8 +44,15 @@ export default function OrdiniGlobaliSheet({ aziendaId, onClose, onApriOrdine, o
 
   useEffect(() => {
     let mounted = true;
+    console.log("[OrdiniGlobaliSheet] aziendaId ricevuto:", aziendaId);
+    if (!aziendaId) {
+      console.error("[OrdiniGlobaliSheet] aziendaId VUOTO! ordini = 0 garantiti");
+      setLoading(false);
+      return;
+    }
     fetchOrdiniByAzienda(aziendaId).then(d => {
       if (mounted) {
+        console.log("[OrdiniGlobaliSheet] caricati", d.length, "ordini");
         setOrdini(d);
         setLoading(false);
       }
