@@ -2265,8 +2265,90 @@ export default function CMDetailPanel() {
                         type="date"
                         value={montFormData?.data || ""}
                         onChange={(e: any) => setMontFormData((p: any) => ({ ...(p || {}), data: e.target.value }))}
-                        style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #C8E4E4", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, marginBottom: 12 }}
+                        style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #C8E4E4", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, marginBottom: 8 }}
                       />
+
+                      {/* [v-cal-squadre] Mini calendario disponibilita squadre - 21 giorni */}
+                      {(() => {
+                        const todayMC = new Date(); todayMC.setHours(0,0,0,0);
+                        const todayISOMC = todayMC.toISOString().split("T")[0];
+                        const fmtDMC = (d: Date) => d.toISOString().split("T")[0];
+                        const squadsMC = (squadreDB && squadreDB.length > 0) ? squadreDB : [{ id: "default", nome: "Squadra", colore: "#28A0A0" }];
+                        // Genera 21 giorni a partire da oggi
+                        const giorniMC = Array.from({ length: 21 }, (_, i) => {
+                          const d = new Date(todayMC); d.setDate(d.getDate() + i); return d;
+                        });
+                        // Mappa occupazione: per ogni squadra, set di date occupate (ISO)
+                        const occupMC = new Map<string, Set<string>>();
+                        squadsMC.forEach((s: any) => occupMC.set(s.id, new Set()));
+                        (montaggiDB || []).forEach((m: any) => {
+                          const sid = m.squadraId || (Array.isArray(m.squadra) && m.squadra[0]) || null;
+                          if (!sid) return;
+                          if (!occupMC.has(sid)) occupMC.set(sid, new Set());
+                          const dt = m.data || m.data_montaggio;
+                          if (!dt) return;
+                          const gg = Number(m.giorni || 1);
+                          const start = new Date(dt + "T12:00:00");
+                          for (let i = 0; i < Math.ceil(gg); i++) {
+                            const d = new Date(start); d.setDate(d.getDate() + i);
+                            occupMC.get(sid)!.add(fmtDMC(d));
+                          }
+                        });
+                        return (
+                          <div style={{ marginBottom: 12, border: "1px solid #C8E4E4", borderRadius: 8, padding: 8, background: "#F8FBFB" }}>
+                            <div style={{ fontSize: 9, fontWeight: 800, color: "#6A8484", textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 6 }}>
+                              DISPONIBILITA SQUADRE - prossimi 21 giorni
+                            </div>
+                            {/* Header giorni */}
+                            <div style={{ display: "grid", gridTemplateColumns: "70px repeat(21, 1fr)", gap: 1, fontSize: 8, fontWeight: 700, color: "#6A8484", marginBottom: 2 }}>
+                              <div></div>
+                              {giorniMC.map((d, i) => (
+                                <div key={i} style={{ textAlign: "center", padding: 1 }}>
+                                  {d.getDate()}
+                                </div>
+                              ))}
+                            </div>
+                            {/* Righe squadre */}
+                            {squadsMC.map((sq: any) => {
+                              const occSet = occupMC.get(sq.id) || new Set();
+                              const sqColor = sq.colore || "#28A0A0";
+                              return (
+                                <div key={sq.id} style={{ display: "grid", gridTemplateColumns: "70px repeat(21, 1fr)", gap: 1, marginBottom: 2 }}>
+                                  <div style={{ fontSize: 9, fontWeight: 700, color: "#0D1F1F", padding: "2px 4px", overflow: "hidden" as any, textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>{sq.nome || sq.id}</div>
+                                  {giorniMC.map((d, i) => {
+                                    const iso = fmtDMC(d);
+                                    const occupata = occSet.has(iso);
+                                    const selezionata = iso === montFormData?.data && montFormData?.squadraId === sq.id;
+                                    const isPast = iso < todayISOMC;
+                                    const dow = d.getDay();
+                                    const weekend = dow === 0 || dow === 6;
+                                    return (
+                                      <div
+                                        key={i}
+                                        onClick={() => { if (!isPast && !occupata) setMontFormData((p: any) => ({ ...(p || {}), data: iso, squadraId: sq.id })); }}
+                                        style={{
+                                          minHeight: 18,
+                                          cursor: (isPast || occupata) ? "not-allowed" : "pointer",
+                                          background: selezionata ? sqColor : occupata ? "#FCA5A5" : weekend ? "#F1F5F9" : "#fff",
+                                          border: "1px solid " + (selezionata ? sqColor : "#E2E8F0"),
+                                          borderRadius: 2,
+                                          opacity: isPast ? 0.3 : 1,
+                                        }}
+                                        title={iso + (occupata ? " - OCCUPATA" : " - libera")}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })}
+                            <div style={{ display: "flex", gap: 8, marginTop: 6, fontSize: 9, color: "#6A8484" }}>
+                              <span><span style={{ display: "inline-block", width: 8, height: 8, background: "#FCA5A5", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />occupata</span>
+                              <span><span style={{ display: "inline-block", width: 8, height: 8, background: "#fff", border: "1px solid #E2E8F0", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />libera</span>
+                              <span><span style={{ display: "inline-block", width: 8, height: 8, background: "#F1F5F9", borderRadius: 2, marginRight: 3, verticalAlign: "middle" }} />weekend</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 4 }}>DURATA (giorni)</div>
                       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
