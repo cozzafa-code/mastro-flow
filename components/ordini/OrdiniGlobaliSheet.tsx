@@ -25,6 +25,7 @@ const C = {
 };
 
 type Filtro = "tutti" | "urgenti" | "bloccanti" | "aperti";
+type Raggruppa = "stato" | "fornitore" | "commessa" | "data";
 
 interface Props {
   aziendaId: string;
@@ -39,6 +40,7 @@ export default function OrdiniGlobaliSheet({ aziendaId, onClose, onApriOrdine, o
   const [filtro, setFiltro] = useState<Filtro>("tutti");
   const [query, setQuery] = useState("");
   const [collapsedArrivati, setCollapsedArrivati] = useState(true);
+  const [raggruppa, setRaggruppa] = useState<Raggruppa>("stato");
 
   useEffect(() => {
     let mounted = true;
@@ -66,7 +68,7 @@ export default function OrdiniGlobaliSheet({ aziendaId, onClose, onApriOrdine, o
           onClose={onClose}
           onAdd={onNuovoOrdine}
         />
-        <FiltersBar filtro={filtro} setFiltro={setFiltro} query={query} setQuery={setQuery} kpi={kpi} totale={ordini.length} />
+        <FiltersBar filtro={filtro} setFiltro={setFiltro} query={query} setQuery={setQuery} kpi={kpi} totale={ordini.length} raggruppa={raggruppa} setRaggruppa={setRaggruppa} />
         <div style={{ flex: 1, overflowY: "auto", paddingBottom: 90 }}>
           {loading ? (
             <div style={{ padding: 40, textAlign: "center", color: C.navyFaint, fontSize: 13, fontWeight: 700 }}>Caricamento...</div>
@@ -74,33 +76,7 @@ export default function OrdiniGlobaliSheet({ aziendaId, onClose, onApriOrdine, o
             <div style={{ padding: 40, textAlign: "center", color: C.navyFaint, fontSize: 13, fontWeight: 700 }}>Nessun ordine trovato</div>
           ) : (
             <>
-              {gruppi.bloccanti.length > 0 && (
-                <Section icon="alert" tone="red" label="Bloccanti" count={gruppi.bloccanti.length}>
-                  {gruppi.bloccanti.map(o => <OrdineCard key={o.id} ordine={o} onClick={() => onApriOrdine(o.id)} />)}
-                </Section>
-              )}
-              {gruppi.inAttesa.length > 0 && (
-                <Section icon="clock" tone="amber" label="In attesa" count={gruppi.inAttesa.length}>
-                  {gruppi.inAttesa.map(o => <OrdineCard key={o.id} ordine={o} onClick={() => onApriOrdine(o.id)} />)}
-                </Section>
-              )}
-              {gruppi.altri.length > 0 && (
-                <Section icon="dot" tone="navy" label="Altri" count={gruppi.altri.length}>
-                  {gruppi.altri.map(o => <OrdineCard key={o.id} ordine={o} onClick={() => onApriOrdine(o.id)} />)}
-                </Section>
-              )}
-              {gruppi.arrivati.length > 0 && (
-                <Section
-                  icon="check"
-                  tone="green"
-                  label="Arrivati"
-                  count={gruppi.arrivati.length}
-                  collapsed={collapsedArrivati}
-                  onToggle={() => setCollapsedArrivati(v => !v)}
-                >
-                  {!collapsedArrivati && gruppi.arrivati.map(o => <OrdineCard key={o.id} ordine={o} onClick={() => onApriOrdine(o.id)} />)}
-                </Section>
-              )}
+              <GroupedList ordini={filtered} raggruppa={raggruppa} collapsedArrivati={collapsedArrivati} onToggleArrivati={() => setCollapsedArrivati(v => !v)} onApri={onApriOrdine} gruppi={gruppi} />
             </>
           )}
         </div>
@@ -151,7 +127,13 @@ function KpiGrid({ kpi }: any) {
   );
 }
 
-function FiltersBar({ filtro, setFiltro, query, setQuery, kpi, totale }: any) {
+function FiltersBar({ filtro, setFiltro, query, setQuery, kpi, totale, raggruppa, setRaggruppa }: any) {
+  const segs: { id: string; label: string }[] = [
+    { id: "stato", label: "Stato" },
+    { id: "fornitore", label: "Fornitore" },
+    { id: "commessa", label: "Commessa" },
+    { id: "data", label: "Data" },
+  ];
   const chips: { id: Filtro; label: string; count: number; tone?: string }[] = [
     { id: "tutti", label: "Tutti", count: totale },
     { id: "urgenti", label: "Urgenti", count: 0, tone: "red" },
@@ -160,6 +142,14 @@ function FiltersBar({ filtro, setFiltro, query, setQuery, kpi, totale }: any) {
   ];
   return (
     <div style={{ padding: "10px 14px", borderBottom: "1px solid " + C.border, background: C.white }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", background: "rgba(26, 42, 71, 0.05)", borderRadius: 9, padding: 3, marginBottom: 8 }}>
+        {segs.map(s => {
+          const active = raggruppa === s.id;
+          return (
+            <button key={s.id} onClick={() => setRaggruppa(s.id)} style={{ padding: "7px 4px", borderRadius: 7, background: active ? C.white : "transparent", color: active ? C.navy : C.navyDim, fontSize: 11, fontWeight: active ? 800 : 700, textAlign: "center", cursor: "pointer", border: "none", boxShadow: active ? "0 1px 3px rgba(26, 42, 71, 0.10)" : "none" }}>{s.label}</button>
+          );
+        })}
+      </div>
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -281,5 +271,87 @@ function OrdineCard({ ordine, onClick }: { ordine: OrdineConCommessa; onClick: (
         {isUrgente && !isBloccante && <span style={{ background: C.amber, color: C.navy, padding: "1px 5px", borderRadius: 3, fontSize: 8, fontWeight: 800, letterSpacing: 0.4 }}>URGENTE</span>}
       </div>
     </div>
+  );
+}
+
+function GroupedList({ ordini, raggruppa, collapsedArrivati, onToggleArrivati, onApri, gruppi }: any) {
+  if (raggruppa === "stato") {
+    return (
+      <>
+        {gruppi.bloccanti.length > 0 && (
+          <Section icon="alert" tone="red" label="Bloccanti" count={gruppi.bloccanti.length}>
+            {gruppi.bloccanti.map((o: any) => <OrdineCard key={o.id} ordine={o} onClick={() => onApri(o.id)} />)}
+          </Section>
+        )}
+        {gruppi.inAttesa.length > 0 && (
+          <Section icon="clock" tone="amber" label="In attesa" count={gruppi.inAttesa.length}>
+            {gruppi.inAttesa.map((o: any) => <OrdineCard key={o.id} ordine={o} onClick={() => onApri(o.id)} />)}
+          </Section>
+        )}
+        {gruppi.altri.length > 0 && (
+          <Section icon="dot" tone="navy" label="Altri" count={gruppi.altri.length}>
+            {gruppi.altri.map((o: any) => <OrdineCard key={o.id} ordine={o} onClick={() => onApri(o.id)} />)}
+          </Section>
+        )}
+        {gruppi.arrivati.length > 0 && (
+          <Section icon="check" tone="green" label="Arrivati" count={gruppi.arrivati.length} collapsed={collapsedArrivati} onToggle={onToggleArrivati}>
+            {!collapsedArrivati && gruppi.arrivati.map((o: any) => <OrdineCard key={o.id} ordine={o} onClick={() => onApri(o.id)} />)}
+          </Section>
+        )}
+      </>
+    );
+  }
+  if (raggruppa === "fornitore") {
+    const byForn: Record<string, any[]> = {};
+    for (const o of ordini) {
+      const k = o.fornitore || "—";
+      if (!byForn[k]) byForn[k] = [];
+      byForn[k].push(o);
+    }
+    const entries = Object.entries(byForn).sort((a, b) => b[1].length - a[1].length);
+    return (
+      <>
+        {entries.map(([forn, list]) => (
+          <Section key={forn} icon="dot" tone="navy" label={forn} count={list.length}>
+            {list.map((o: any) => <OrdineCard key={o.id} ordine={o} onClick={() => onApri(o.id)} />)}
+          </Section>
+        ))}
+      </>
+    );
+  }
+  if (raggruppa === "commessa") {
+    const byCom: Record<string, any[]> = {};
+    for (const o of ordini) {
+      const k = o.commessa_code || "SCORTA";
+      if (!byCom[k]) byCom[k] = [];
+      byCom[k].push(o);
+    }
+    const entries = Object.entries(byCom).sort((a, b) => a[0].localeCompare(b[0]));
+    return (
+      <>
+        {entries.map(([com, list]) => (
+          <Section key={com} icon="dot" tone="amber" label={com} count={list.length}>
+            {list.map((o: any) => <OrdineCard key={o.id} ordine={o} onClick={() => onApri(o.id)} />)}
+          </Section>
+        ))}
+      </>
+    );
+  }
+  // data
+  const byData: Record<string, any[]> = {};
+  for (const o of ordini) {
+    const d = o.consegna_prevista || o.created_at;
+    const k = d ? new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short" }) : "Senza data";
+    if (!byData[k]) byData[k] = [];
+    byData[k].push(o);
+  }
+  return (
+    <>
+      {Object.entries(byData).map(([data, list]) => (
+        <Section key={data} icon="dot" tone="navy" label={data} count={list.length}>
+          {list.map((o: any) => <OrdineCard key={o.id} ordine={o} onClick={() => onApri(o.id)} />)}
+        </Section>
+      ))}
+    </>
   );
 }
