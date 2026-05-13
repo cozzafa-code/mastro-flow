@@ -2094,15 +2094,89 @@ export default function CMDetailPanel() {
                 )}
 
                 {/* Bottone prossima azione */}
-                <button onClick={prossima.action} style={{
-                  width: "100%", padding: 14, borderRadius: 12, border: "none",
-                  background: prossima.bg, color: "#fff",
-                  fontSize: 13, fontWeight: 900, cursor: "pointer",
-                  fontFamily: "inherit", letterSpacing: 0.4,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                }}>
-                  {prossima.lbl} →
-                </button>
+                {(() => {
+                  // Dual-gate post-acconto: 2 card parallele + AVVIA PRODUZIONE
+                  const ordineDone29 = !!(c29 as any).materiale_ordinato_at;
+                  const montaggioDone29 = Array.isArray(montaggiDB) && montaggiDB.some((m: any) => String(m.cmId) === String(c29.id) || String(m.commessa_id) === String(c29.id));
+                  const produzioneIniziataC29 = !!(c29 as any).produzione_iniziata_at || faseDb29 === 'produzione' || faseDb29 === 'montaggio';
+                  const showDualGate = accontoOk29 && !produzioneIniziataC29;
+                  if (!showDualGate) {
+                    return (
+                      <button onClick={prossima.action} style={{
+                        width: "100%", padding: 14, borderRadius: 12, border: "none",
+                        background: prossima.bg, color: "#fff",
+                        fontSize: 13, fontWeight: 900, cursor: "pointer",
+                        fontFamily: "inherit", letterSpacing: 0.4,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      }}>
+                        {prossima.lbl} →
+                      </button>
+                    );
+                  }
+                  const entrambeDone = ordineDone29 && montaggioDone29;
+                  const cardStyle = (done: boolean): React.CSSProperties => ({
+                    flex: 1, padding: "14px 12px", borderRadius: 12,
+                    border: done ? "1.5px solid #10B981" : "1.5px solid #C8E4E4",
+                    background: done ? "#ECFDF5" : "#fff",
+                    cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const,
+                  });
+                  const onClickOrdine = () => { try { window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } })); } catch (e) { console.warn(e); } };
+                  const onClickMontaggio = () => { try { setMontFormOpen(true); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: (squadreDB && squadreDB[0]?.id) || "", note: "" }); } catch (e) { console.warn(e); } };
+                  const onClickAvvia = async () => {
+                    if (!entrambeDone) return;
+                    if (!confirm("Confermi l'avvio della produzione per " + c29.code + "?")) return;
+                    try {
+                      const aziendaId =
+                        (c29 as any)?.azienda_id
+                        || (c29 as any)?.aziendaId
+                        || (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId')))
+                        || 'ccca51c1-656b-4e7c-a501-55753e20da29';
+                      const r = await fetch('/api/commessa/avanza-fase', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          aziendaId,
+                          commessaId: c29.id,
+                          faseDa: 'acconto_pagato',
+                          faseA: 'ordine',
+                          payload: { produzione_iniziata_at: new Date().toISOString() },
+                        }),
+                      });
+                      const j = await r.json();
+                      if (!r.ok) { alert("Errore: " + (j.error || "sconosciuto")); return; }
+                      setSelectedCM((p: any) => p ? ({ ...p, fase: 'ordine', produzione_iniziata_at: new Date().toISOString() }) : p);
+                      setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: 'ordine', produzione_iniziata_at: new Date().toISOString() } : x));
+                      if (typeof setCcDone === 'function') { setCcDone("Produzione avviata"); setTimeout(() => setCcDone(null), 3000); }
+                    } catch (e: any) { alert("Errore rete: " + (e.message || "")); }
+                  };
+                  return (
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 900, color: "#1E3A5F", letterSpacing: 1, marginBottom: 8 }}>PRIMA DI AVVIARE LA PRODUZIONE</div>
+                      <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+                        <button onClick={onClickOrdine} style={cardStyle(ordineDone29)}>
+                          <div style={{ fontSize: 16, marginBottom: 4 }}>{ordineDone29 ? "✓" : "○"}</div>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: ordineDone29 ? "#065F46" : "#1E3A5F", marginBottom: 2 }}>ORDINA MATERIALI</div>
+                          <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4 }}>{ordineDone29 ? "Ordine inviato ai fornitori" : "Crea distinta da vani + sistema"}</div>
+                        </button>
+                        <button onClick={onClickMontaggio} style={cardStyle(montaggioDone29)}>
+                          <div style={{ fontSize: 16, marginBottom: 4 }}>{montaggioDone29 ? "✓" : "○"}</div>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: montaggioDone29 ? "#065F46" : "#1E3A5F", marginBottom: 2 }}>ORGANIZZA MONTAGGIO</div>
+                          <div style={{ fontSize: 10, color: "#5C6B7A", lineHeight: 1.4 }}>{montaggioDone29 ? "Squadra e data pianificate" : "Data + squadra + durata"}</div>
+                        </button>
+                      </div>
+                      <button onClick={onClickAvvia} disabled={!entrambeDone} style={{
+                        width: "100%", padding: 14, borderRadius: 12, border: "none",
+                        background: entrambeDone ? "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)" : "#C8E4E4",
+                        color: entrambeDone ? "#fff" : "#5C6B7A",
+                        fontSize: 13, fontWeight: 900, cursor: entrambeDone ? "pointer" : "not-allowed",
+                        fontFamily: "inherit", letterSpacing: 0.4,
+                        boxShadow: entrambeDone ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
+                      }}>
+                        {entrambeDone ? "AVVIA PRODUZIONE →" : "Completa entrambe le azioni"}
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 {/* Link secondari */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 10 }}>
