@@ -55,7 +55,7 @@ export function usePipelineActions(commessa_id: string | null, azienda_id: strin
       // Carica commessa
       const { data: cm } = await supabase
         .from("commesse")
-        .select("fase, fase_corrente, ops_fase_corrente")
+        .select("fase, ops_fase_corrente")
         .eq("id", commessa_id)
         .single();
 
