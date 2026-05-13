@@ -248,12 +248,15 @@ export default function MontaggiSheet({
         <span>Nuovo</span>
       </button>
 
-      <MontaggiEditModal
-        montaggio={editing}
-        commesse={commesse}
-        aziendaId={aziendaId}
-        onClose={() => setEditing(null)}
-      />
+      {editing && (
+        <MontaggiEditModal
+          montaggio={editing && Object.keys(editing).length > 0 ? editing : null}
+          commesse={commesse}
+          montaggiTutti={montaggi}
+          aziendaId={aziendaId}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }
