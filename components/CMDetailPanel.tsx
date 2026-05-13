@@ -2,6 +2,7 @@
 import OrdiniSheet from "./ordini-sheet/OrdiniSheet";
 import RicezioneMerceSheet from "./ricezione-merce/RicezioneMerceSheet";
 import MastroProduzioneSheet from "./produzione/MastroProduzioneSheet";
+import { calcolaStimaProduzione } from "../hooks/useStimaProduzione";
 import { createPortal as _createPortalCM } from "react-dom"; // [v-ordini-portal]
 import RilieviVaniPanel from "./RilieviVaniPanel";
 // @ts-nocheck
@@ -516,8 +517,9 @@ export default function CMDetailPanel() {
   const [showOrdiniSheet, setShowOrdiniSheet] = useState(false);
     const [showRicezioneSheet, setShowRicezioneSheet] = useState(false);
     const [showAvviaSheet, setShowAvviaSheet] = useState(false);
-    const [avviaFormData, setAvviaFormData] = useState<{ data?: string; priorita?: number; note?: string; weekOffset?: number }>({});
+    const [avviaFormData, setAvviaFormData] = useState<{ data?: string; priorita?: number; note?: string; weekOffset?: number; durataValue?: number; durataUnit?: "giorni" | "ore"; }>({});
     const [allCarichi, setAllCarichi] = useState<any[]>([]);
+    const [stimaProd, setStimaProd] = useState<any>(null);
     const [tgRecap, setTgRecap] = useState<{ ordini?: any; ricezione?: any; montaggio?: any }>({});
     const [showModalFirma, setShowModalFirma] = useState(false);
     const [emettiModal, setEmettiModal] = useState<any>(null);
@@ -2514,7 +2516,36 @@ export default function CMDetailPanel() {
                                 const dw = d.getDay();
                                 const weekend = dw === 0 || dw === 6;
                                 const isPast = iso < todayISO;
-                                const selezionato = iso === avviaFormData?.data;
+                                // Range selezione (esclude weekend per giorni)
+                                const isOreModeSel = avviaFormData?.durataUnit === "ore";
+                                const durataNum = avviaFormData?.durataValue || 1;
+                                const giorniLavSel = isOreModeSel ? 1 : Math.ceil(durataNum);
+                                let selezionato = false;
+                                let labelCella = "";
+                                if (avviaFormData?.data) {
+                                  const startSel = new Date(avviaFormData.data + "T12:00:00");
+                                  // Conta solo giorni lavorativi
+                                  let giorniContati = 0;
+                                  let cur = new Date(startSel);
+                                  while (giorniContati < giorniLavSel) {
+                                    const dwCur = cur.getDay();
+                                    if (dwCur !== 0 && dwCur !== 6) {
+                                      if (fmtISO(cur) === iso) {
+                                        selezionato = true;
+                                        if (isOreModeSel && iso === avviaFormData.data) labelCella = durataNum + "h";
+                                        else if (!isOreModeSel) {
+                                          giorniContati += 1;
+                                          if (giorniContati === giorniLavSel && (durataNum % 1 !== 0)) labelCella = "1/2";
+                                          else labelCella = "OK";
+                                        }
+                                        break;
+                                      }
+                                      giorniContati += 1;
+                                    }
+                                    if (giorniContati >= giorniLavSel) break;
+                                    cur.setDate(cur.getDate() + 1);
+                                  }
+                                }
                                 const disabled = weekend || isPast;
                                 return (
                                   <div
@@ -2551,6 +2582,57 @@ export default function CMDetailPanel() {
                       })()}
 
                       {/* Priorita */}
+                      {/* [v-tempo-prod] Tempo produzione - stima catalogo + override */}
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ display: "flex" as any, alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484" }}>TEMPO PRODUZIONE</div>
+                          {stimaProd?.origine === "catalogo" && (
+                            <div style={{ fontSize: 9, fontWeight: 700, color: "#28A0A0", padding: "2px 8px", borderRadius: 10, background: "#D1FAE5" }}>
+                              STIMA MASTRO: {stimaProd.giorni_stimati}{stimaProd.giorni_stimati === 1 ? "g" : "g"} ({stimaProd.ore_totali}h)
+                            </div>
+                          )}
+                        </div>
+                        {stimaProd?.dettaglio_testo && stimaProd.origine === "catalogo" && (
+                          <div style={{ fontSize: 9, color: "#94A3B8", marginBottom: 8, fontStyle: "italic" as any }}>{stimaProd.dettaglio_testo}</div>
+                        )}
+                        {/* Toggle GIORNI/ORE */}
+                        <div style={{ display: "flex" as any, gap: 6, marginBottom: 8 }}>
+                          <button onClick={() => setAvviaFormData((p: any) => ({ ...(p || {}), durataUnit: "giorni", durataValue: stimaProd?.giorni_stimati || 1 }))} style={{ flex: 1, padding: 10, borderRadius: 8, border: "1.5px solid " + ((avviaFormData?.durataUnit || "giorni") === "giorni" ? "#28A0A0" : "#C8E4E4"), background: (avviaFormData?.durataUnit || "giorni") === "giorni" ? "#28A0A0" : "#fff", color: (avviaFormData?.durataUnit || "giorni") === "giorni" ? "#fff" : "#0D1F1F", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>GIORNI</button>
+                          <button onClick={() => setAvviaFormData((p: any) => ({ ...(p || {}), durataUnit: "ore", durataValue: stimaProd?.ore_totali || 8 }))} style={{ flex: 1, padding: 10, borderRadius: 8, border: "1.5px solid " + (avviaFormData?.durataUnit === "ore" ? "#28A0A0" : "#C8E4E4"), background: avviaFormData?.durataUnit === "ore" ? "#28A0A0" : "#fff", color: avviaFormData?.durataUnit === "ore" ? "#fff" : "#0D1F1F", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>ORE</button>
+                        </div>
+                        {/* Counter */}
+                        <div style={{ display: "flex" as any, gap: 0, alignItems: "stretch" as any }}>
+                          <button onClick={() => {
+                            const isOre = avviaFormData?.durataUnit === "ore";
+                            const cur = avviaFormData?.durataValue || (isOre ? 8 : 1);
+                            const step = isOre ? 1 : 0.5;
+                            const min = isOre ? 1 : 0.5;
+                            setAvviaFormData((p: any) => ({ ...(p || {}), durataValue: Math.max(min, cur - step) }));
+                          }} style={{ width: 50, padding: 12, borderRadius: "10px 0 0 10px", border: "1.5px solid #C8E4E4", borderRight: "none", background: "#fff", color: "#28A0A0", fontSize: 22, fontWeight: 900, cursor: "pointer" }}>-</button>
+                          <div style={{ flex: 1, padding: 12, border: "1.5px solid #C8E4E4", borderLeft: "none", borderRight: "none", background: "#F8FBFB", display: "flex" as any, alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: "#0D1F1F" }}>
+                            {(() => {
+                              const v = avviaFormData?.durataValue || 1;
+                              const u = avviaFormData?.durataUnit || "giorni";
+                              if (u === "ore") return v + " ore";
+                              const label = v === 0.5 ? "1/2 giorno" : v === 1 ? "1 giorno" : v + " giorni";
+                              return label;
+                            })()}
+                          </div>
+                          <button onClick={() => {
+                            const isOre = avviaFormData?.durataUnit === "ore";
+                            const cur = avviaFormData?.durataValue || (isOre ? 8 : 1);
+                            const step = isOre ? 1 : 0.5;
+                            setAvviaFormData((p: any) => ({ ...(p || {}), durataValue: cur + step }));
+                          }} style={{ width: 50, padding: 12, borderRadius: "0 10px 10px 0", border: "1.5px solid #C8E4E4", borderLeft: "none", background: "#fff", color: "#28A0A0", fontSize: 22, fontWeight: 900, cursor: "pointer" }}>+</button>
+                        </div>
+                        {/* Override hint */}
+                        {avviaFormData?.durataValue !== stimaProd?.giorni_stimati && stimaProd?.origine === "catalogo" && avviaFormData?.durataUnit === "giorni" && (
+                          <div style={{ fontSize: 9, color: "#F59E0B", marginTop: 6, fontWeight: 700 }}>
+                            Override manuale - stima MASTRO era {stimaProd.giorni_stimati}g
+                          </div>
+                        )}
+                      </div>
+
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 6 }}>PRIORITA</div>
                       <div style={{ display: "flex" as any, gap: 6, marginBottom: 14 }}>
                         {[{v:1,l:"URGENTE",c:"#DC2626"},{v:3,l:"ALTA",c:"#F59E0B"},{v:5,l:"NORMALE",c:"#28A0A0"},{v:8,l:"BASSA",c:"#94A3B8"}].map(o => (
@@ -2695,10 +2777,32 @@ export default function CMDetailPanel() {
                             const { supabase } = await import("@/lib/supabase");
                             const aziendaId = (c29 as any)?.azienda_id || 'ccca51c1-656b-4e7c-a501-55753e20da29';
                             const vaniTot = Number((c29 as any).n_vani || (c29 as any).vani_totali || 1);
-                            const giorniNecessari = Math.max(1, Math.ceil(vaniTot / 10));
-                            const startD = new Date(avviaFormData.data + "T12:00:00");
-                            const endD = new Date(startD); endD.setDate(endD.getDate() + giorniNecessari - 1);
-                            const { error: errC } = await supabase.from('produzione_carichi').insert({ azienda_id: aziendaId, commessa_id: c29.id, data_avvio: avviaFormData.data, data_fine_prevista: endD.toISOString().split('T')[0], vani_totali: vaniTot, priorita: avviaFormData?.priorita || 5, stato: 'pianificato', note: avviaFormData?.note || null });
+                            const isOreModeFinal = avviaFormData?.durataUnit === "ore";
+                            const durataValueFinal = avviaFormData?.durataValue || 1;
+                            const giorniLavorativiFinal = isOreModeFinal ? 1 : Math.ceil(durataValueFinal);
+                            // Calcola data_fine saltando weekend
+                            let endCur = new Date(avviaFormData.data + "T12:00:00");
+                            let contati = 0;
+                            const targetGG = giorniLavorativiFinal;
+                            while (contati < targetGG) {
+                              const dwTmp = endCur.getDay();
+                              if (dwTmp !== 0 && dwTmp !== 6) contati += 1;
+                              if (contati < targetGG) endCur.setDate(endCur.getDate() + 1);
+                            }
+                            const tempoStimaOrigine = (stimaProd?.origine === "catalogo" && durataValueFinal === stimaProd?.giorni_stimati) ? "catalogo" : "manuale";
+                            const { error: errC } = await supabase.from('produzione_carichi').insert({
+                              azienda_id: aziendaId, commessa_id: c29.id,
+                              data_avvio: avviaFormData.data,
+                              data_fine_prevista: endCur.toISOString().split('T')[0],
+                              vani_totali: vaniTot,
+                              priorita: avviaFormData?.priorita || 5,
+                              stato: 'pianificato',
+                              note: avviaFormData?.note || null,
+                              giorni_pianificati: isOreModeFinal ? null : durataValueFinal,
+                              ore_pianificate: isOreModeFinal ? durataValueFinal : Math.round(durataValueFinal * 8),
+                              unita_tempo: isOreModeFinal ? 'ore' : 'giorni',
+                              tempo_stima_origine: tempoStimaOrigine,
+                            });
                             if (errC) { alert("Errore pianificazione: " + errC.message); return; }
                             const nowIso = new Date().toISOString();
                             const { error: errF } = await supabase.from('commesse').update({ fase: 'produzione', produzione_iniziata_at: nowIso }).eq('id', c29.id);
