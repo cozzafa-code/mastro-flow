@@ -27,7 +27,10 @@ export default function MontaggiSheet({
   onClose,
   onApriCommessa,
 }: Props) {
-  const _md = useMastroData(); const rawMontaggi = (_md as any)?.state?.montaggi || (_md as any)?.montaggi || []; const commesse = (_md as any)?.state?.commesse || (_md as any)?.commesse || [];
+  const { state } = useMastroData();
+  const rawMontaggi = state.montaggi || [];
+  const commesse = state.commesse || [];
+  const aziendaId = state.aziendaId || "";
   const [view, setView] = useState<MontaggiView>("lista");
   const [filter, setFilter] = useState<MontaggiFilter>("tutti");
   const [editing, setEditing] = useState<MontaggioRow | null>(null);
@@ -247,6 +250,8 @@ export default function MontaggiSheet({
 
       <MontaggiEditModal
         montaggio={editing}
+        commesse={commesse}
+        aziendaId={aziendaId}
         onClose={() => setEditing(null)}
       />
     </div>
