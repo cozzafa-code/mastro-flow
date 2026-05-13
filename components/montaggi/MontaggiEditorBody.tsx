@@ -31,8 +31,8 @@ export default function MontaggiEditorBody({
   const dataLabel = state.dataInizio ? fmtDataInputIt(state.dataInizio) : "";
   const riepDataLabel = state.dataInizio
     ? (state.tipo === "cantiere"
-      ? `Da ${fmtDataBreve(state.dataInizio)} · ${state.giorni} ${state.giorni === 1 ? "giorno" : "giorni"}`
-      : `${fmtDataBreve(state.dataInizio)} · ${state.oraInizio}`)
+      ? `Da ${fmtDataBreve(state.dataInizio)} - ${state.giorni} ${state.giorni === 1 ? "giorno" : "giorni"}`
+      : `${fmtDataBreve(state.dataInizio)} - ${state.oraInizio}`)
     : "";
 
   return (
@@ -47,14 +47,52 @@ export default function MontaggiEditorBody({
             onOpen={onOpenSlot}
           />
           {state.dataInizio && <Banner label={riepDataLabel} value={totLabel} />}
-          {commessaLabel && (
-            <PickerRow
-              label={commessaLabel}
-              sub={commessaSub || ""}
-              onClick={onOpenCommessa}
-              variant="amber"
-            />
-          )}
+
+          <Field label="Per quale lavoro" hint="commessa / cliente / titolo">
+            {commessaLabel ? (
+              <PickerRow
+                label={commessaLabel}
+                sub={commessaSub || ""}
+                onClick={onOpenCommessa}
+                variant="amber"
+              />
+            ) : contattoLabel ? (
+              <PickerRow
+                label={contattoLabel}
+                sub={contattoSub || ""}
+                onClick={onOpenContatto}
+                variant="green"
+              />
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={onOpenCommessa}
+                    style={btnHalf(C.amberSoft, C.amberDark)}
+                  >
+                    Da commessa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onOpenContatto}
+                    style={btnHalf(C.greenSoft, C.green)}
+                  >
+                    Da rubrica
+                  </button>
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <input
+                    type="text"
+                    value={state.titolo}
+                    onChange={(e) => setState({ titolo: e.target.value })}
+                    placeholder="oppure scrivi un titolo libero (es. Cantiere via Roma 10)"
+                    style={inputStyle}
+                  />
+                </div>
+              </>
+            )}
+          </Field>
         </>
       )}
 
@@ -89,7 +127,7 @@ export default function MontaggiEditorBody({
           </Field>
           <FieldDataDurata
             label="Data e durata"
-            hint="Tap 'Pianifica'"
+            hint="Tap Pianifica"
             value={dataLabel}
             onOpen={onOpenSlot}
           />
@@ -122,7 +160,7 @@ export default function MontaggiEditorBody({
               type="text"
               value={state.indirizzoOverride}
               onChange={(e) => setState({ indirizzoOverride: e.target.value })}
-              placeholder="Via, n., città"
+              placeholder="Via, n., citta"
               style={inputStyle}
             />
           </Field>
@@ -152,16 +190,29 @@ export default function MontaggiEditorBody({
         </>
       )}
 
-      {/* NOTE */}
       <Field label="Note" hint="opzionale">
         <textarea
           value={state.note}
           onChange={(e) => setState({ note: e.target.value })}
           rows={2}
-          placeholder="Es. portare coprifili 40mm, citofono guasto…"
+          placeholder="Es. portare coprifili 40mm, citofono guasto..."
           style={{ ...inputStyle, fontFamily: "inherit", resize: "vertical" }}
         />
       </Field>
     </>
   );
+}
+
+function btnHalf(bg: string, fg: string): React.CSSProperties {
+  return {
+    flex: 1,
+    padding: "12px 8px",
+    borderRadius: 10,
+    background: bg,
+    color: fg,
+    border: "1.5px dashed " + fg,
+    fontSize: 12,
+    fontWeight: 800,
+    cursor: "pointer",
+  };
 }
