@@ -23,7 +23,6 @@ import { FF, FM, ICO, Ico, I, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-
 import { generaTavolaTecnica } from "../lib/pdf-tavola-tecnica";
 import FotoMisure from "./FotoMisure";
 import AccessoriCatalogoVano from "./AccessoriCatalogoVano";
-import VanoMiniSVG from "./vano-detail/parts/VanoMiniSVG";
 import VanoBInput from "./vano-detail/parts/VanoBInput";
 import { uploadFotoVano, deleteFotoVano } from "@/lib/vano-detail/foto-storage";
 import ReportOverlay from "./vano-detail/overlays/ReportOverlay";
