@@ -7,7 +7,6 @@ import type {
   RigaOrdine,
   RigaVerificata,
   TipoOrdine,
-  STATO_BLOCCANTI,
 } from "./ordini-types";
 
 const STATO_BLOC = ["errore", "da_ordinare"] as const;
@@ -17,7 +16,7 @@ const STATO_ARRI = ["arrivato", "arrivato_parziale", "verificato"] as const;
 export async function fetchOrdiniByAzienda(aziendaId: string): Promise<OrdineConCommessa[]> {
   const { data, error } = await supabase
     .from("ordini_fornitore")
-    .select(\`*, commessa:commesse(code, cliente, cognome)\`)
+    .select("*, commessa:commesse(code, cliente, cognome)")
     .eq("azienda_id", aziendaId)
     .order("created_at", { ascending: false });
   if (error) {
@@ -70,7 +69,7 @@ export function filtraOrdini(ordini: OrdineConCommessa[], filtro: string, query:
       (o.numero || "").toLowerCase().includes(q) ||
       (o.fornitore || "").toLowerCase().includes(q) ||
       (o.commessa_code || "").toLowerCase().includes(q) ||
-      (o.cliente || (o as any).commessa_cliente || "").toLowerCase().includes(q)
+      (o.commessa_cliente || "").toLowerCase().includes(q)
     );
   }
   return result;
@@ -95,7 +94,7 @@ export function buildRigheVerificate(righe: RigaOrdine[], precedenti?: RigaVerif
   });
 }
 
-export function calcolaProgressoRicezione(rv: RigaVerificata[]): { fatti: number; totale: number; pct: number; pendenti: number; problemi: number } {
+export function calcolaProgressoRicezione(rv: RigaVerificata[]) {
   const totale = rv.length;
   const fatti = rv.filter(r => r.arrivato_ok).length;
   const pendenti = rv.filter(r => r.qta_pendente > 0 && r.backorder === "attendi").length;
@@ -109,7 +108,7 @@ export function determinaStatoOrdine(rv: RigaVerificata[]): OrdineStato {
   return "arrivato";
 }
 
-export function calcolaScostamento(rv: RigaVerificata[]): { ordinato: number; ricevuto: number; scostamento: number } {
+export function calcolaScostamento(rv: RigaVerificata[]) {
   let ordinato = 0, ricevuto = 0;
   for (const r of rv) {
     ordinato += r.qta_richiesta * (r.costo_reale || 0);
@@ -118,7 +117,12 @@ export function calcolaScostamento(rv: RigaVerificata[]): { ordinato: number; ri
   return { ordinato, ricevuto, scostamento: ricevuto - ordinato };
 }
 
-export async function salvaRicezione(ordineId: string, rv: RigaVerificata[], ddt: { numero: string; data: string }, opzioni: { fatturaNumero?: string | null; importoFatturato?: number | null; note?: string | null; operatoreId?: string | null }): Promise<{ ok: boolean; stato: OrdineStato; error?: string }> {
+export async function salvaRicezione(
+  ordineId: string,
+  rv: RigaVerificata[],
+  ddt: { numero: string; data: string },
+  opzioni: { fatturaNumero?: string | null; importoFatturato?: number | null; note?: string | null; operatoreId?: string | null }
+): Promise<{ ok: boolean; stato: OrdineStato; error?: string }> {
   const stato = determinaStatoOrdine(rv);
   const scost = calcolaScostamento(rv);
   const now = new Date().toISOString();
@@ -158,7 +162,37 @@ export async function fetchFornitori(aziendaId: string): Promise<any[]> {
   return data || [];
 }
 
-export async function creaOrdineBozza(aziendaId: string, payload: { tipo: TipoOrdine; commessaId?: string | null; fornitore: string; fornitoreId?: string | null; righe: RigaOrdine[]; consegnaPrevista?: string | null; consegnaIndirizzo?: string | null; consegnaTipo?: string; note?: string | null; canaleInvio?: string }): Promise<{ ok: boolean; id?: string; error?: string }> {
+async function generaNumeroOrdine(aziendaId: string): Promise<string> {
+  const anno = new Date().getFullYear();
+  const prefix = "OF-" + anno + "-";
+  const { data } = await supabase
+    .from("ordini_fornitore")
+    .select("numero")
+    .eq("azienda_id", aziendaId)
+    .like("numero", prefix + "%")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const last = data?.[0]?.numero || "";
+  const m = last.match(/(\d+)$/);
+  const next = m ? parseInt(m[1], 10) + 1 : 1;
+  return prefix + String(next).padStart(3, "0");
+}
+
+export async function creaOrdineBozza(
+  aziendaId: string,
+  payload: {
+    tipo: TipoOrdine;
+    commessaId?: string | null;
+    fornitore: string;
+    fornitoreId?: string | null;
+    righe: RigaOrdine[];
+    consegnaPrevista?: string | null;
+    consegnaIndirizzo?: string | null;
+    consegnaTipo?: string;
+    note?: string | null;
+    canaleInvio?: string;
+  }
+): Promise<{ ok: boolean; id?: string; error?: string }> {
   const totaleEuro = payload.righe.reduce((s, r) => s + (r.totale_riga || 0), 0);
   const categoriaPrincipale = payload.righe[0]?.categoria || "ALTRO";
   const numero = await generaNumeroOrdine(aziendaId);
@@ -188,21 +222,6 @@ export async function creaOrdineBozza(aziendaId: string, payload: { tipo: TipoOr
     .single();
   if (error) return { ok: false, error: error.message };
   return { ok: true, id: data?.id };
-}
-
-async function generaNumeroOrdine(aziendaId: string): Promise<string> {
-  const anno = new Date().getFullYear();
-  const { data } = await supabase
-    .from("ordini_fornitore")
-    .select("numero")
-    .eq("azienda_id", aziendaId)
-    .like("numero", \`OF-\${anno}-%\`)
-    .order("created_at", { ascending: false })
-    .limit(1);
-  const last = data?.[0]?.numero || "";
-  const m = last.match(/(\d+)$/);
-  const next = m ? parseInt(m[1], 10) + 1 : 1;
-  return \`OF-\${anno}-\${String(next).padStart(3, "0")}\`;
 }
 
 export async function inviaOrdine(ordineId: string): Promise<{ ok: boolean; error?: string }> {
