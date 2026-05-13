@@ -2340,7 +2340,16 @@ export default function CMDetailPanel() {
                                   {giorniMC.map((d, i) => {
                                     const iso = fmtDMC(d);
                                     const occupata = occSet.has(iso);
-                                    const selezionata = iso === montFormData?.data && montFormData?.squadraId === sq.id;
+                                    // Range: se questo giorno e fra data e data+giorni (e stessa squadra)
+                                    const giorniSel = (montFormData?.durataUnit === "h") ? 1 : Math.ceil(montGiorni || 1);
+                                    let inRange = false;
+                                    if (montFormData?.data && montFormData?.squadraId === sq.id) {
+                                      const startD = new Date(montFormData.data + "T12:00:00");
+                                      const endD = new Date(startD); endD.setDate(endD.getDate() + giorniSel - 1);
+                                      const isoD = new Date(iso + "T12:00:00");
+                                      if (isoD >= startD && isoD <= endD) inRange = true;
+                                    }
+                                    const selezionata = inRange;
                                     const isPast = iso < todayISOMC;
                                     const isToday = iso === todayISOMC;
                                     const dow = d.getDay();
@@ -2380,13 +2389,37 @@ export default function CMDetailPanel() {
                         );
                       })()}
 
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 4 }}>DURATA (giorni)</div>
-                      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                        {[0.5, 1, 2, 3].map(g => (
-                          <button key={g} onClick={() => setMontGiorni(g)} style={{ flex: 1, padding: 10, borderRadius: 8, border: "1px solid " + (montGiorni === g ? "#28A0A0" : "#C8E4E4"), background: montGiorni === g ? "#28A0A0" : "#fff", color: montGiorni === g ? "#fff" : "#0D1F1F", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                            {g === 0.5 ? "½g" : g + "g"}
-                          </button>
-                        ))}
+                      {/* [v-durata-counter] Switch giorni/ore + counter +/- */}
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#6A8484", marginBottom: 6 }}>DURATA</div>
+                      <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                        <button onClick={() => setMontFormData((p: any) => ({ ...(p || {}), durataUnit: "g" }))} style={{ flex: 1, padding: 10, borderRadius: 8, border: "1.5px solid " + ((!montFormData?.durataUnit || montFormData?.durataUnit === "g") ? "#28A0A0" : "#C8E4E4"), background: (!montFormData?.durataUnit || montFormData?.durataUnit === "g") ? "#28A0A0" : "#fff", color: (!montFormData?.durataUnit || montFormData?.durataUnit === "g") ? "#fff" : "#0D1F1F", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>GIORNI</button>
+                        <button onClick={() => setMontFormData((p: any) => ({ ...(p || {}), durataUnit: "h" }))} style={{ flex: 1, padding: 10, borderRadius: 8, border: "1.5px solid " + (montFormData?.durataUnit === "h" ? "#28A0A0" : "#C8E4E4"), background: montFormData?.durataUnit === "h" ? "#28A0A0" : "#fff", color: montFormData?.durataUnit === "h" ? "#fff" : "#0D1F1F", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>ORE</button>
+                      </div>
+                      <div style={{ display: "flex", gap: 0, marginBottom: 14, alignItems: "stretch" as any }}>
+                        <button onClick={() => {
+                          const isOre = montFormData?.durataUnit === "h";
+                          if (isOre) {
+                            const cur = (montFormData?.durataOre as number) || 8;
+                            setMontFormData((p: any) => ({ ...(p || {}), durataOre: Math.max(1, cur - 1) }));
+                          } else {
+                            setMontGiorni(Math.max(0.5, (montGiorni || 1) - 0.5));
+                          }
+                        }} style={{ width: 50, padding: 12, borderRadius: "10px 0 0 10px", border: "1.5px solid #C8E4E4", borderRight: "none", background: "#fff", color: "#28A0A0", fontSize: 22, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>-</button>
+                        <div style={{ flex: 1, padding: 12, border: "1.5px solid #C8E4E4", borderLeft: "none", borderRight: "none", background: "#F8FBFB", display: "flex" as any, alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, color: "#0D1F1F" }}>
+                          {montFormData?.durataUnit === "h" 
+                            ? ((montFormData?.durataOre as number) || 8) + " ore"
+                            : (montGiorni === 0.5 ? "½" : montGiorni) + (montGiorni === 1 ? " giorno" : " giorni")
+                          }
+                        </div>
+                        <button onClick={() => {
+                          const isOre = montFormData?.durataUnit === "h";
+                          if (isOre) {
+                            const cur = (montFormData?.durataOre as number) || 8;
+                            setMontFormData((p: any) => ({ ...(p || {}), durataOre: cur + 1 }));
+                          } else {
+                            setMontGiorni((montGiorni || 1) + 0.5);
+                          }
+                        }} style={{ width: 50, padding: 12, borderRadius: "0 10px 10px 0", border: "1.5px solid #C8E4E4", borderLeft: "none", background: "#fff", color: "#28A0A0", fontSize: 22, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>+</button>
                       </div>
 
                       {squadreDB && squadreDB.length > 0 && (
