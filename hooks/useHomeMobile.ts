@@ -135,7 +135,7 @@ const FASI_FERMO = ['sopralluogo', 'preventivo', 'conferma_ordine', 'ordine_conf
 // ───────── hook ─────────
 
 export function useHomeMobile(): { data: HomeData; loading: boolean } {
-  const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
+  const ctx: any = useMastro()
 
   const data = useMemo<HomeData>(() => {
     const today = new Date()
