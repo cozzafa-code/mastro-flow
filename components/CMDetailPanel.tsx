@@ -275,7 +275,7 @@ export default function CMDetailPanel() {
         try {
           const { supabase } = await import("@/lib/supabase");
           const [{ data: ord }, { data: mnt }] = await Promise.all([
-            supabase.from("ordini_fornitore").select("id,fornitore,totale_stimato,totale_euro,arrivato_at,ddt_numero,ddt_data,scostamento_costo,righe").eq("commessa_id", cmId),
+            supabase.from("ordini_fornitore").select("id,fornitore,totale_stimato,totale_euro,arrivato_at,ddt_numero,ddt_data,scostamento_costo,tipo,righe,righe_verificate").eq("commessa_id", cmId),
             supabase.from("montaggi").select("data_montaggio,ora_inizio,ora_fine,squadra,stato,ore_preventivate").eq("commessa_id", cmId).order("data_montaggio", { ascending: true }),
           ]);
           const ordini = ord || [];
@@ -286,9 +286,16 @@ export default function CMDetailPanel() {
           const fornitori = Array.from(new Set(ordini.map((o: any) => o.fornitore).filter(Boolean)));
           const ultimoDdt = arrivati.length > 0 ? arrivati[arrivati.length - 1] : null;
           const m = (mnt && mnt[0]) || null;
+          const dettagliFornitori = ordini.map((o: any) => ({
+            id: o.id,
+            fornitore: o.fornitore || "Fornitore",
+            tipo: o.tipo || "componenti",
+            arrivato: !!o.arrivato_at,
+            ddt: o.ddt_numero || null,
+          }));
           setTgRecap({
             ordini: { n: totOrd, totEur, fornitori },
-            ricezione: { arrivati: arrivati.length, tot: totOrd, totScost, ultimoDdt },
+            ricezione: { arrivati: arrivati.length, tot: totOrd, totScost, ultimoDdt, dettagli: dettagliFornitori },
             montaggio: m ? { data: m.data_montaggio, ora_inizio: m.ora_inizio, ora_fine: m.ora_fine, squadra: m.squadra, ore: m.ore_preventivate } : null,
           });
         } catch (e) {
@@ -2328,6 +2335,40 @@ export default function CMDetailPanel() {
                                 return "0/" + r.tot + " arrivati · tap per ricevere DDT";
                               })()}
                             </div>
+                            {/* [v-ricez-strip] Barra progresso + chip fornitori */}
+                            {tgRecap?.ricezione?.tot ? (() => {
+                              const r = tgRecap.ricezione;
+                              const pct = r.tot > 0 ? (r.arrivati / r.tot) * 100 : 0;
+                              const det = r.dettagli || [];
+                              return (
+                                <div style={{ marginTop: 8 }}>
+                                  {/* Barra orizzontale */}
+                                  <div style={{ display: "flex" as any, gap: 2, height: 8, borderRadius: 4, overflow: "hidden" as any, background: "#E2E8F0", marginBottom: 8 }}>
+                                    {det.map((d: any, i: number) => (
+                                      <div key={i} title={d.fornitore + (d.arrivato ? " (arrivato)" : " (da arrivare)")} style={{ flex: 1, background: d.arrivato ? "#10B981" : "#CBD5E1" }} />
+                                    ))}
+                                  </div>
+                                  {/* Chip fornitori */}
+                                  <div style={{ display: "flex" as any, gap: 4, flexWrap: "wrap" as any }}>
+                                    {det.slice(0, 8).map((d: any, i: number) => (
+                                      <div key={i} style={{ display: "inline-flex" as any, alignItems: "center", gap: 3, padding: "2px 8px", borderRadius: 10, fontSize: 9, fontWeight: 700, background: d.arrivato ? "#D1FAE5" : "#F1F5F9", color: d.arrivato ? "#065F46" : "#64748B", border: "1px solid " + (d.arrivato ? "#10B981" : "#CBD5E1") }}>
+                                        <span style={{ width: 6, height: 6, borderRadius: "50%" as any, background: d.arrivato ? "#10B981" : "#94A3B8", display: "inline-block" as any }} />
+                                        {d.fornitore.length > 12 ? d.fornitore.slice(0, 12) + "…" : d.fornitore}
+                                      </div>
+                                    ))}
+                                    {det.length > 8 && (
+                                      <div style={{ padding: "2px 8px", borderRadius: 10, fontSize: 9, fontWeight: 700, background: "#F1F5F9", color: "#64748B" }}>
+                                        +{det.length - 8}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* Percentuale */}
+                                  <div style={{ fontSize: 9, fontWeight: 800, color: "#28A0A0", marginTop: 6 }}>
+                                    {pct.toFixed(0)}% completato
+                                  </div>
+                                </div>
+                              );
+                            })() : null}
                           </div>
                         </button>
                         <button 
