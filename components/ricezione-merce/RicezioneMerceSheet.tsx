@@ -108,6 +108,38 @@ export default function RicezioneMerceSheet({ commessaId, commessaCode, onClose,
     })();
   }, [commessaId]);
 
+  const salvaBozza = async () => {
+    // Salva DDT + righe verificate come bozza per ordini NON ancora confermati
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const daSalvare = ordini.filter(o => !o.arrivato_at && (
+        o.ddt_numero || 
+        o.fattura_numero || 
+        o.importo_fatturato != null || 
+        o.righe.some(r => r.arrivato_ok || r.qta_arrivata !== r.qta || r.costo_reale !== r.costo_unit)
+      ));
+      if (daSalvare.length === 0) return;
+      await Promise.all(daSalvare.map(o => supabase.from("ordini_fornitore").update({
+        ddt_numero: o.ddt_numero || null,
+        ddt_data: o.ddt_data || null,
+        fattura_numero: o.fattura_numero || null,
+        importo_fatturato: o.importo_fatturato || null,
+        righe_verificate: o.righe.map(r => ({
+          id: r.id, qta_arrivata: r.qta_arrivata, costo_reale: r.costo_reale,
+          arrivato_ok: r.arrivato_ok, note: r.note || null,
+        })),
+      }).eq("id", o.id)));
+      console.log("[RicezioneMerce] bozza salvata per " + daSalvare.length + " ordini");
+    } catch (e) {
+      console.error("[RicezioneMerce] errore salva bozza", e);
+    }
+  };
+
+  const onCloseConSalva = async () => {
+    await salvaBozza();
+    onClose();
+  };
+
   const toggleOrdine = (id: string) => {
     setExpanded(prev => {
       const next = new Set(prev);
@@ -131,7 +163,10 @@ export default function RicezioneMerceSheet({ commessaId, commessaCode, onClose,
   };
 
   // Tutti righe flaggate ok
-  const ordineCompleto = (o: Ordine) => o.righe.length > 0 && o.righe.every(r => r.arrivato_ok);
+  const ordineCompleto = (o: Ordine) => {
+    if (o.righe.length === 0) return !!(o as any)._finitoOk; // Per ordini prodotto finito
+    return o.righe.every(r => r.arrivato_ok);
+  };
   
   // Calcola scostamento per ordine
   const scostamentoOrdine = (o: Ordine) => {
@@ -200,13 +235,18 @@ export default function RicezioneMerceSheet({ commessaId, commessaCode, onClose,
     <div style={{ position: "fixed", inset: 0, zIndex: 99999, background: C.bg, display: "flex", flexDirection: "column", overflowY: "auto" }}>
       {/* Header sticky */}
       <div style={{ position: "sticky", top: 0, zIndex: 10, background: C.dark, color: "#fff", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
-        <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#fff", fontSize: 24, cursor: "pointer", padding: 4 }}>&times;</button>
+        <button onClick={onCloseConSalva} style={{ background: "transparent", border: "none", color: "#fff", fontSize: 24, cursor: "pointer", padding: 4 }} title="Chiudi salvando le modifiche">&times;</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.7, letterSpacing: 1 }}>RICEZIONE MERCE</div>
           <div style={{ fontSize: 16, fontWeight: 800 }}>{commessaCode}</div>
         </div>
-        <div style={{ fontSize: 12, fontWeight: 800, padding: "6px 12px", borderRadius: 16, background: ordiniArrivati === totOrdini && totOrdini > 0 ? C.green : C.teal }}>
-          {ordiniArrivati}/{totOrdini}
+        <div style={{ display: "flex" as any, flexDirection: "column" as any, alignItems: "flex-end" as any, gap: 2 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, padding: "6px 12px", borderRadius: 16, background: ordiniArrivati === totOrdini && totOrdini > 0 ? C.green : C.teal }}>
+            {ordiniArrivati}/{totOrdini} arrivati
+          </div>
+          {ordiniArrivati > 0 && ordiniArrivati < totOrdini && (
+            <div style={{ fontSize: 9, color: "#94A3B8" }}>Parziale: chiudi e torna quando arrivano gli altri</div>
+          )}
         </div>
       </div>
 
@@ -256,7 +296,14 @@ export default function RicezioneMerceSheet({ commessaId, commessaCode, onClose,
                           <button onClick={() => flagTutte(o.id)} style={{ fontSize: 10, fontWeight: 700, color: C.teal, background: "transparent", border: "1px solid " + C.teal, padding: "4px 10px", borderRadius: 6, cursor: "pointer" }}>Flagga tutte</button>
                         </div>
                         {o.righe.length === 0 ? (
-                          <div style={{ fontSize: 11, color: C.sub, padding: 8 }}>Nessuna riga in questo ordine. Inserisci direttamente DDT in fondo.</div>
+                          <div style={{ background: "#FEF3C7", border: "1px solid " + C.amber, borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#92400E", marginBottom: 6 }}>ORDINE PRODOTTO FINITO</div>
+                          <div style={{ fontSize: 11, color: "#92400E", marginBottom: 10 }}>Conferma se il prodotto e arrivato e in buono stato. Poi inserisci DDT in fondo.</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", padding: 10, borderRadius: 6, border: "1px solid " + C.border }}>
+                            <input type="checkbox" checked={(o as any)._finitoOk || false} onChange={(e) => updateOrdine(o.id, "_finitoOk" as any, e.target.checked)} style={{ width: 22, height: 22, accentColor: C.green }} />
+                            <div style={{ fontSize: 12, fontWeight: 700, color: C.dark }}>{(o as any)._finitoOk ? "Confermato arrivato e in buono stato" : "Conferma arrivo e qualita prodotto"}</div>
+                          </div>
+                        </div>
                         ) : o.righe.map(r => {
                           const scostRiga = ((r.qta_arrivata || 0) * (r.costo_reale || 0)) - (r.qta * (r.costo_unit || 0));
                           return (
