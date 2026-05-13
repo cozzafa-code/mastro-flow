@@ -74,17 +74,23 @@ function deriveStato(s: EditorState): StatoMontaggio {
 
 // === VALIDAZIONE ===
 export function validate(s: EditorState): string | null {
+  // Tutti i tipi richiedono almeno UN identificativo (commessa OPPURE contatto OPPURE titolo OPPURE indirizzo)
+  const haIdentificativo = !!(
+    s.commessaId ||
+    s.contattoId ||
+    s.titolo?.trim() ||
+    s.indirizzoOverride?.trim()
+  );
+  if (!haIdentificativo) {
+    if (s.tipo === "cantiere") return "Scegli commessa, cliente o aggiungi un titolo";
+    if (s.tipo === "intervento") return "Scegli cliente, commessa o inserisci un titolo";
+    return "Inserisci cliente, commessa o indirizzo";
+  }
   if (s.tipo === "cantiere") {
-    if (!s.commessaId) return "Scegli una commessa";
     if (s.giorni < 1) return "Giorni: minimo 1";
     if (s.oreGiorno < 1) return "Ore al giorno: minimo 1";
   } else if (s.tipo === "intervento") {
-    const haCliente = !!(s.commessaId || s.contattoId || s.titolo?.trim());
-    if (!haCliente) return "Scegli cliente, commessa o inserisci un titolo";
     if (s.durataMinuti < 5) return "Durata: minimo 5 minuti";
-  } else if (s.tipo === "sopralluogo") {
-    const haCliente = !!(s.commessaId || s.contattoId || s.titolo?.trim() || s.indirizzoOverride?.trim());
-    if (!haCliente) return "Inserisci cliente o indirizzo";
   }
   return null;
 }
