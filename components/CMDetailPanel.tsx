@@ -21,6 +21,7 @@ import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import { useMastro } from "./MastroContext";
 import SchedaFinanziariaCommessa from "./finanze/SchedaFinanziariaCommessa";
 import CardPLCommessa from "./finanze/CardPLCommessa";
+import ModalEmettiAcconto from "./finanze/ModalEmettiAcconto";
 import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey, markPreventivoInviato, setFaseCommessa } from "./mastro-constants";
 import { buildSnapshot, creaFascicolo, getFascicoliCommessa, revocaFascicolo } from "../lib/fascicolo-service";
 import { generaFascicoloGeometraPDF } from "../lib/pdf-fascicolo";
@@ -475,6 +476,7 @@ export default function CMDetailPanel() {
     const [showAccontoModal, setShowAccontoModal] = useState(false);
   const [showOrdiniSheet, setShowOrdiniSheet] = useState(false);
     const [showModalFirma, setShowModalFirma] = useState(false);
+    const [emettiModal, setEmettiModal] = useState<any>(null);
 
     // v43: se fase=conferma e firma non ancora ricevuta, apri ModalFirma automaticamente
     // (deve stare DOPO useState di showModalFirma per evitare TDZ)
@@ -1892,7 +1894,7 @@ export default function CMDetailPanel() {
             const faseDb29 = (c29 as any).fase;
             const accontoOk29 = !!((c29 as any).fattura_acconto_pagata_at) || faseDb29 === 'acconto_pagato' || faseDb29 === 'ordine' || faseDb29 === 'produzione' || faseDb29 === 'montaggio';
             const prossima = accontoOk29 ? { lbl: "CREA ORDINI FORNITORI", bg: "linear-gradient(135deg, #1E3A5F 0%, #0F1B2D 100%)", action: () => { console.log("[v-event2] dispatch open-ordini", { id: selectedCM?.id }); window.dispatchEvent(new CustomEvent("mastro:open-ordini", { detail: { commessa: selectedCM } })); } } :
-                           haFirmato29 ? { lbl: "EMETTI FATTURA ACCONTO", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { if (typeof creaFattura === "function") (creaFattura as any)(c29, "acconto", (Number((c29 as any).totale_finale) || 0) * 0.5, null, "Acconto 50%"); } } :
+                           haFirmato29 ? { lbl: "EMETTI FATTURA ACCONTO", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: async () => { if (typeof creaFattura !== "function") return; const fatturaCreata = await (creaFattura as any)(c29, "acconto", (Number((c29 as any).totale_finale) || 0) * 0.5, null, "Acconto 50%"); if (fatturaCreata && fatturaCreata.id) setEmettiModal(fatturaCreata); } } :
                            (tipoRis29 === "accettato" && c29.fase === "conferma_ordine") ? { lbl: "INVIA LINK FIRMA AL CLIENTE", bg: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)", action: () => setShowModalFirma(true) } :
                            tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D\'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma_ordine"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma_ordine" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma_ordine" }) : p); setShowModalFirma(true); } } :
                            tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
@@ -5689,6 +5691,34 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                           <button onClick={() => { setAccontoImporto(String(Math.round(totIvaCC * fattPerc / 100))); setShowAccontoModal(true); }} style={{ width: "100%", padding: 11, borderRadius: 8, border: `1px solid ${T.acc}`, background: `${T.acc}08`, color: T.acc, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.euro} /> Crea fattura €{fmtCC(Math.round(totIvaCC * fattPerc / 100))}</button>
 
                           {/* · MODAL IMPORTO ACCONTO · */}
+                          {emettiModal && (
+                            <ModalEmettiAcconto
+                              fattura={emettiModal}
+                              aziendaId={
+                                (selectedCM as any)?.azienda_id
+                                || (selectedCM as any)?.aziendaId
+                                || (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId')))
+                                || 'ccca51c1-656b-4e7c-a501-55753e20da29'
+                              }
+                              onClose={() => setEmettiModal(null)}
+                              onAnteprimaPDF={(f) => {
+                                try {
+                                  if (typeof (ctx as any)?.generaFatturaPDF === 'function') {
+                                    (ctx as any).generaFatturaPDF(f);
+                                  } else if (typeof generaFatturaPDF === 'function') {
+                                    (generaFatturaPDF as any)(f);
+                                  } else {
+                                    alert('PDF non disponibile in questa vista. La fattura e salvata come bozza.');
+                                  }
+                                } catch (e) { console.warn('anteprima PDF err:', e); }
+                              }}
+                              onInviata={(fatturaId) => {
+                                if (typeof setFattureDB === 'function') {
+                                  (setFattureDB as any)((prev: any[]) => Array.isArray(prev) ? prev.map((f: any) => f.id === fatturaId ? { ...f, stato: 'inviata' } : f) : prev);
+                                }
+                              }}
+                            />
+                          )}
                           {showAccontoModal && (
                             <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
                               <div style={{ background: T.card, borderRadius: 16, padding: 24, width: "100%", maxWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
