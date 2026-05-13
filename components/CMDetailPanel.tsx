@@ -2174,8 +2174,11 @@ export default function CMDetailPanel() {
                   // Dual-gate post-acconto: 2 card parallele + AVVIA PRODUZIONE
                   const ordineDone29 = !!((c29 as any).materiale_ordinato_at || (c29 as any).materialeOrdinatoAt);
                   const montaggioDone29 = Array.isArray(montaggiDB) && montaggiDB.some((m: any) => String(m.cmId) === String(c29.id) || String(m.commessa_id) === String(c29.id));
-                  const produzioneIniziataC29 = !!((c29 as any).produzione_iniziata_at || (c29 as any).produzioneIniziataAt) || faseDb29 === 'produzione' || faseDb29 === 'montaggio';
-                  const showDualGate = accontoOk29 && !produzioneIniziataC29;
+                  // produzione iniziata SOLO se cliccato AVVIA PRODUZIONE (timestamp) oppure montaggio
+                  const produzioneIniziataC29 = !!((c29 as any).produzione_iniziata_at || (c29 as any).produzioneIniziataAt) || faseDb29 === 'montaggio' || faseDb29 === 'fatturata' || faseDb29 === 'pagata';
+                  // Triplo-gate visibile per: acconto_pagato (post-pagamento), ordine (ordini inviati), produzione (se non manualmente avviata)
+                  const tripletShouldShow = accontoOk29 && !produzioneIniziataC29 && (faseDb29 === 'acconto_pagato' || faseDb29 === 'ordine' || faseDb29 === 'produzione');
+                  const showDualGate = tripletShouldShow;
                   if (!showDualGate) {
                     return (
                       <button onClick={prossima.action} style={{
