@@ -104,8 +104,8 @@ export default function OrdineDettaglioSheet({ ordineId, onClose, onRicevi, onAp
 
 function CloseBtn({ onClick }: { onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{ position: "absolute", top: 12, right: 12, width: 30, height: 30, background: "rgba(255,255,255,0.95)", border: "1px solid " + C.borderStrong, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.navy, zIndex: 10, boxShadow: "0 2px 6px rgba(26, 42, 71, 0.10)" }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">
+    <button onClick={onClick} aria-label="Chiudi" style={{ position: "absolute", top: 14, right: 14, width: 42, height: 42, background: C.navy, border: "none", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.white, zIndex: 20, boxShadow: "0 4px 12px rgba(26, 42, 71, 0.30)" }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
     </button>
@@ -115,7 +115,7 @@ function CloseBtn({ onClick }: { onClick: () => void }) {
 function DetailHead({ ordine, onApriCommessa }: any) {
   const dataCreato = ordine.created_at ? new Date(ordine.created_at).toLocaleDateString("it-IT", { day: "2-digit", month: "short" }) : "";
   return (
-    <div style={{ padding: "14px 52px 16px 18px", background: "linear-gradient(180deg, " + C.amberSoft + " 0%, " + C.white + " 100%)" }}>
+    <div style={{ padding: "14px 68px 16px 18px", background: "linear-gradient(180deg, " + C.amberSoft + " 0%, " + C.white + " 100%)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
         <span style={{ background: C.white, color: C.navy, padding: "4px 9px", borderRadius: 6, fontSize: 10, fontWeight: 800, letterSpacing: 0.5, fontFamily: "monospace", border: "1px solid " + C.borderStrong }}>{ordine.numero || "—"}</span>
         <span style={{ fontSize: 9, fontWeight: 800, color: C.amberDark, textTransform: "uppercase", letterSpacing: 0.5 }}>creato {dataCreato}</span>
