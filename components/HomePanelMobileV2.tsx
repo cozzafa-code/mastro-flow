@@ -6,6 +6,7 @@ import { useMastroData } from "@/hooks/useMastroData";
 import CardAzioniVeloci from "./home/CardAzioniVeloci";
 import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import CentroControlloMontaggi from "./CentroControlloMontaggi";
+import MontaggiSheet from "@/components/montaggi/MontaggiSheet";
 import CentroControlloOrdini from "./CentroControlloOrdini";
 import CentroControlloMagazzino from "./CentroControlloMagazzino";
 import CentroPreparazioneFurgoni from "./CentroPreparazioneFurgoni";
@@ -456,13 +457,7 @@ export default function HomePanelMobileV2(props: any) {
           onClose={() => setOrganizzaCm(null)}
         />
       )}
-      {showCentroMontaggi && (
-        <CentroControlloMontaggi
-          aziendaId={aziendaIdResolved}
-          onClose={() => setShowCentroMontaggi(false)}
-          onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroMontaggi(false); setOrganizzaCm(cm); } }}
-        />
-      )}
+      <MontaggiSheet open={showCentroMontaggi} onClose={() => setShowCentroMontaggi(false)} onApriCommessa={(cmId) => { const cm = (cantieri||[]).find((c) => c.id===cmId); if(cm) { setShowCentroMontaggi(false); setOrganizzaCm(cm); } }} />
       {showCentroProduzione && (
         <CentroControlloProduzione
           aziendaId={aziendaIdResolved}
