@@ -2132,9 +2132,9 @@ export default function CMDetailPanel() {
                 {/* Bottone prossima azione */}
                 {(() => {
                   // Dual-gate post-acconto: 2 card parallele + AVVIA PRODUZIONE
-                  const ordineDone29 = !!(c29 as any).materiale_ordinato_at;
+                  const ordineDone29 = !!((c29 as any).materiale_ordinato_at || (c29 as any).materialeOrdinatoAt);
                   const montaggioDone29 = Array.isArray(montaggiDB) && montaggiDB.some((m: any) => String(m.cmId) === String(c29.id) || String(m.commessa_id) === String(c29.id));
-                  const produzioneIniziataC29 = !!(c29 as any).produzione_iniziata_at || faseDb29 === 'produzione' || faseDb29 === 'montaggio';
+                  const produzioneIniziataC29 = !!((c29 as any).produzione_iniziata_at || (c29 as any).produzioneIniziataAt) || faseDb29 === 'produzione' || faseDb29 === 'montaggio';
                   const showDualGate = accontoOk29 && !produzioneIniziataC29;
                   if (!showDualGate) {
                     return (
@@ -2149,7 +2149,7 @@ export default function CMDetailPanel() {
                       </button>
                     );
                   }
-                  const materialeArrivatoDone29 = !!(c29 as any).materiale_arrivato_at;
+                  const materialeArrivatoDone29 = !!((c29 as any).materiale_arrivato_at || (c29 as any).materialeArrivatoAt);
                   const tuttoDone = ordineDone29 && materialeArrivatoDone29 && montaggioDone29;
                   const onClickMaterialeArrivato = async () => {
                     if (materialeArrivatoDone29) return;
