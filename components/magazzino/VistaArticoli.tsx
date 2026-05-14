@@ -1,6 +1,7 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import { ArticoloMagazzino, STATO_SCORTA_COLOR, STATO_SCORTA_LABEL, ABC_COLOR } from "../../hooks/useMagazzinoTop";
+import { ModalCarico, ModalScarico, ModalRettifica, ModalNuovoArticolo, ModalCreaOrdine, ModalNuovoReso } from "./ModaliMagazzino";
 
 const NAVY = "#1B3A5C";
 const NAVY_DEEP = "#0F1F33";
@@ -15,6 +16,11 @@ type Filter = "tutti" | "sotto" | "profili" | "vetri" | "ferramenta" | "a" | "b"
 export default function VistaArticoli({ mag }: { mag: any }) {
   const [filter, setFilter] = useState<Filter>("tutti");
   const [query, setQuery] = useState("");
+  const [openArt, setOpenArt] = useState<any | null>(null);
+  const [actionKind, setActionKind] = useState<"carico"|"scarico"|"rettifica"|"ordina"|null>(null);
+  const [showNuovo, setShowNuovo] = useState(false);
+  const [showReso, setShowReso] = useState(false);
+  const aziendaId = (mag.articoli[0] as any)?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29";
 
   const articoli: ArticoloMagazzino[] = mag.articoli || [];
 
@@ -60,6 +66,22 @@ export default function VistaArticoli({ mag }: { mag: any }) {
       {/* KPI box 4 stati */}
       <KpiRow kpi={mag.kpi} />
 
+      {/* Bottoni azione */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 9 }}>
+        <button onClick={() => setShowNuovo(true)} style={{
+          flex: 1, padding: "11px 6px",
+          background: "linear-gradient(180deg, #0F6E56, #0a4d3c)",
+          color: "#fff", borderRadius: 9, fontSize: 11.5, fontWeight: 800,
+          letterSpacing: 0.4, textTransform: "uppercase", border: "none", cursor: "pointer",
+        }}>+ NUOVO ARTICOLO</button>
+        <button onClick={() => setShowReso(true)} style={{
+          padding: "11px 13px",
+          background: "linear-gradient(180deg, #5C2D8C, #3D1E5E)",
+          color: "#fff", borderRadius: 9, fontSize: 11, fontWeight: 800,
+          letterSpacing: 0.3, textTransform: "uppercase", border: "none", cursor: "pointer",
+        }}>RESO</button>
+      </div>
+
       {/* Ricerca */}
       <div style={{ background: "#fff", borderRadius: 10, padding: "8px 10px", marginBottom: 9, display: "flex", alignItems: "center", gap: 8 }}>
         <SearchIcon />
@@ -90,14 +112,14 @@ export default function VistaArticoli({ mag }: { mag: any }) {
       {/* Sotto minimo (priorità) */}
       {filter === "tutti" && sottoMinimo.length > 0 && (
         <Sez title="Sotto minimo" count={sottoMinimo.length}>
-          {sottoMinimo.map(a => <CardArticolo key={a.id} a={a} />)}
+          {sottoMinimo.map(a => <CardArticolo key={a.id} a={a} onClick={() => setOpenArt(a)} />)}
         </Sez>
       )}
 
       {/* OK */}
       {filter === "tutti" && ok.length > 0 && (
         <Sez title="Disponibili OK" count={ok.length}>
-          {ok.slice(0, 20).map(a => <CardArticolo key={a.id} a={a} />)}
+          {ok.slice(0, 20).map(a => <CardArticolo key={a.id} a={a} onClick={() => setOpenArt(a)} />)}
         </Sez>
       )}
 
@@ -109,10 +131,79 @@ export default function VistaArticoli({ mag }: { mag: any }) {
               Nessun articolo trovato
             </div>
           ) : (
-            filtered.map(a => <CardArticolo key={a.id} a={a} />)
+            filtered.map(a => <CardArticolo key={a.id} a={a} onClick={() => setOpenArt(a)} />)
           )}
         </Sez>
       )}
+
+      {/* MODALI */}
+      {openArt && !actionKind && (
+        <MenuAzioniArticolo articolo={openArt} onClose={() => setOpenArt(null)} onPick={(k) => setActionKind(k)} />
+      )}
+      {openArt && actionKind === "carico" && (
+        <ModalCarico mag={mag} articolo={openArt} onClose={() => { setActionKind(null); setOpenArt(null); }} />
+      )}
+      {openArt && actionKind === "scarico" && (
+        <ModalScarico mag={mag} articolo={openArt} onClose={() => { setActionKind(null); setOpenArt(null); }} />
+      )}
+      {openArt && actionKind === "rettifica" && (
+        <ModalRettifica mag={mag} articolo={openArt} onClose={() => { setActionKind(null); setOpenArt(null); }} />
+      )}
+      {openArt && actionKind === "ordina" && (
+        <ModalCreaOrdine mag={mag} aziendaId={aziendaId} articolo={openArt} onClose={() => { setActionKind(null); setOpenArt(null); }} />
+      )}
+      {showNuovo && (
+        <ModalNuovoArticolo mag={mag} aziendaId={aziendaId} onClose={() => setShowNuovo(false)} />
+      )}
+      {showReso && (
+        <ModalNuovoReso mag={mag} aziendaId={aziendaId} onClose={() => setShowReso(false)} />
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// MENU AZIONI ARTICOLO
+// ============================================================
+function MenuAzioniArticolo({ articolo, onClose, onPick }: any) {
+  const azioni = [
+    { k: "carico", label: "CARICO", desc: "Aggiungi al magazzino", color: "#0F6E56" },
+    { k: "scarico", label: "SCARICO", desc: "Preleva per commessa", color: "#C73E1D" },
+    { k: "rettifica", label: "RETTIFICA", desc: "Correggi scorta", color: "#E8B05C" },
+    { k: "ordina", label: "ORDINA", desc: "Crea ordine fornitore", color: "#28A0A0" },
+  ];
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 2000,
+      background: "rgba(15,31,51,0.75)", backdropFilter: "blur(4px)",
+      display: "flex", alignItems: "flex-end", justifyContent: "center",
+    }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: "#F1F4F7", borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        width: "100%", maxWidth: 480, padding: 14,
+      }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 9.5, color: "#5C6B7A", fontFamily: "SF Mono, monospace", fontWeight: 700 }}>{articolo.codice}</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#1B3A5C" }}>{articolo.nome}</div>
+          <div style={{ fontSize: 11, color: "#5C6B7A", marginTop: 2 }}>Scorta: <b style={{ color: "#1B3A5C" }}>{articolo.scorta_attuale}</b> {articolo.unita_misura}</div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+          {azioni.map((az) => (
+            <button key={az.k} onClick={() => onPick(az.k)} style={{
+              padding: "14px 10px", background: az.color, color: "#fff",
+              borderRadius: 10, border: "none", cursor: "pointer", textAlign: "left",
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>{az.label}</div>
+              <div style={{ fontSize: 10, opacity: 0.85, marginTop: 2, fontWeight: 600 }}>{az.desc}</div>
+            </button>
+          ))}
+        </div>
+        <button onClick={onClose} style={{
+          width: "100%", marginTop: 10, padding: 11,
+          background: "#fff", color: "#5C6B7A", border: "1px solid #D8DEE5",
+          borderRadius: 9, fontSize: 11, fontWeight: 700, cursor: "pointer",
+        }}>Annulla</button>
+      </div>
     </div>
   );
 }
@@ -121,7 +212,8 @@ export default function VistaArticoli({ mag }: { mag: any }) {
 // CARD ARTICOLO con cablaggi
 // ============================================================
 
-function CardArticolo({ a }: { a: ArticoloMagazzino }) {
+function CardArticolo({ a, onClick }: { a: ArticoloMagazzino; onClick?: () => void }) {
+  const cardClick = onClick;
   return (
     <div style={{ padding: "11px 0", borderBottom: "1px solid #E5EAF0" }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
