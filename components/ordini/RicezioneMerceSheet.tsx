@@ -108,7 +108,7 @@ export default function RicezioneMerceSheet({ ordineId, aziendaId, onClose, onCo
     }
   }
 
-  async function handleConfermaRicezione(ddt: { numero: string; data: string }) {
+  async function handleConfermaRicezione(ddt: { numero: string; data: string; fotoUrls?: string[]; fatturaNumero?: string; note?: string }) {
     if (!ordine) return;
     const tuttiOk = verifiche.every((v) => v.stato === "ok");
     const tuttiVerificati = verifiche.every((v) => v.stato);
@@ -116,11 +116,16 @@ export default function RicezioneMerceSheet({ ordineId, aziendaId, onClose, onCo
       if (!confirm("Alcune righe non sono ancora verificate. Continuare comunque?")) return;
     }
 
-    const res = await salvaRicezione({
-      ordineId, verifiche,
-      ddtNumero: ddt.numero, ddtData: ddt.data,
-      operatoreId: undefined,
-    });
+    const res = await salvaRicezione(
+      ordineId,
+      verifiche,
+      { numero: ddt.numero, data: ddt.data },
+      {
+        fatturaNumero: ddt.fatturaNumero || null,
+        fotoUrls: ddt.fotoUrls,
+        note: ddt.note,
+      }
+    );
     if (!res.ok) {
       alert("Errore salvataggio: " + (res.error || "—"));
       return;
@@ -213,7 +218,7 @@ export default function RicezioneMerceSheet({ ordineId, aziendaId, onClose, onCo
         })}
       </div>
 
-      <DDTFooter onConferma={handleConfermaRicezione} />
+      <DDTFooter aziendaId={aziendaId} ordineId={ordineId} onConferma={handleConfermaRicezione} />
     </div>
   );
 }

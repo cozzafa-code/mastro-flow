@@ -156,7 +156,7 @@ export async function salvaRicezione(
   ordineId: string,
   rv: RigaVerificata[],
   ddt: { numero: string; data: string },
-  opzioni: { fatturaNumero?: string | null; importoFatturato?: number | null; note?: string | null; operatoreId?: string | null }
+  opzioni: { fatturaNumero?: string | null; importoFatturato?: number | null; note?: string | null; operatoreId?: string | null; fotoUrls?: string[]; note?: string; }
 ): Promise<{ ok: boolean; stato: OrdineStato; error?: string }> {
   const stato = determinaStatoOrdine(rv);
   const scost = calcolaScostamento(rv);
