@@ -8,6 +8,7 @@ import StatsBarChart from "./stats/StatsBarChart";
 import StatsTopFornitori from "./stats/StatsTopFornitori";
 import StatsTopArticoli from "./stats/StatsTopArticoli";
 import StatsAlertInflazione from "./stats/StatsAlertInflazione";
+import { exportStatsToPdf, exportStatsToExcel, ExportPayload } from "./stats/stats-export";
 
 interface Props {
   aziendaId: string;
@@ -132,7 +133,30 @@ export default function StatisticheOrdiniSheet({ aziendaId, onClose }: Props) {
         onChangeAnnoConfronto={setAnnoConfronto}
         anniDisponibili={anniDisponibili}
         onClose={onClose}
-        onExport={() => alert("Export PDF/Excel - in arrivo")}
+        onExport={(formato: "pdf" | "excel") => {
+          const payload: ExportPayload = {
+            annoCorrente,
+            annoConfronto,
+            kpiCorrente: {
+              spesa_totale: annoCorrenteData?.spesa_totale || 0,
+              n_ordini: annoCorrenteData?.n_ordini || 0,
+              n_righe: annoCorrenteData?.n_righe_totali || 0,
+              n_fornitori: annoCorrenteData?.n_fornitori || 0,
+            },
+            kpiConfronto: annoConfrontoData ? {
+              spesa_totale: annoConfrontoData.spesa_totale,
+              n_ordini: annoConfrontoData.n_ordini,
+              n_righe: annoConfrontoData.n_righe_totali,
+              n_fornitori: annoConfrontoData.n_fornitori,
+            } : null,
+            deltaPct,
+            topFornitori,
+            topArticoli,
+            statsMese: statsMese.map((m) => ({ anno: m.anno, mese: m.mese, spesa: m.spesa })),
+          };
+          if (formato === "pdf") exportStatsToPdf(payload);
+          else exportStatsToExcel(payload);
+        }}
       />
 
       <StatsKpiBig

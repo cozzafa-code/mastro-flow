@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 "use client";
 
 interface Props {
@@ -7,10 +9,11 @@ interface Props {
   onChangeAnnoConfronto: (a: number) => void;
   anniDisponibili: number[];
   onClose: () => void;
-  onExport: () => void;
+  onExport: (formato: "pdf" | "excel") => void;
 }
 
 export default function StatsHeader(p: Props) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div style={{
       position: "sticky", top: 0,
@@ -34,14 +37,46 @@ export default function StatsHeader(p: Props) {
             Confronto multi-anno
           </div>
         </div>
-        <div onClick={p.onExport} style={{
-          width: 34, height: 34, borderRadius: 9,
-          background: "rgba(255,255,255,0.1)", display: "flex",
-          alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer"
-        }}>
-          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2}>
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-          </svg>
+        <div style={{ position: "relative" }}>
+          <div onClick={() => setMenuOpen(!menuOpen)} style={{
+            width: 34, height: 34, borderRadius: 9,
+            background: menuOpen ? "#E8B05C" : "rgba(255,255,255,0.1)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: menuOpen ? "#1A2A47" : "#fff", cursor: "pointer"
+          }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+          </div>
+          {menuOpen && (
+            <>
+              <div onClick={() => setMenuOpen(false)} style={{
+                position: "fixed", inset: 0, zIndex: 100, background: "transparent"
+              }} />
+              <div style={{
+                position: "absolute", top: 40, right: 0, zIndex: 101,
+                background: "#fff", borderRadius: 10,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                padding: 6, minWidth: 170
+              }}>
+                <div onClick={() => { setMenuOpen(false); p.onExport("pdf"); }} style={menuItemStyle}>
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#C44545" strokeWidth={2}>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  Esporta PDF
+                </div>
+                <div onClick={() => { setMenuOpen(false); p.onExport("excel"); }} style={menuItemStyle}>
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#1F5A3F" strokeWidth={2}>
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="9" y1="3" x2="9" y2="21" />
+                    <line x1="3" y1="9" x2="21" y2="9" />
+                  </svg>
+                  Esporta Excel
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
