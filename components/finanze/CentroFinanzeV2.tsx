@@ -8,6 +8,8 @@ import VistaCashflow from "./v2/VistaCashflow";
 import VistaAttive from "./v2/VistaAttive";
 import VistaPassive from "./v2/VistaPassive";
 import VistaF24Iva from "./v2/VistaF24Iva";
+import VistaAnalisi from "./v2/VistaAnalisi";
+import VistaTasse from "./v2/VistaTasse";
 import FabFinanzeV2 from "./v2/FabFinanzeV2";
 
 // Modal PRO multi-riga (nuovo)
@@ -28,7 +30,7 @@ export const TEAL = "#28A0A0";
 export const BG = "#7A8A9A";
 export const MUTED = "#5C6B7A";
 
-type Mode = "cashflow" | "attive" | "passive" | "f24iva";
+type Mode = "cashflow" | "attive" | "passive" | "analisi" | "tasse" | "f24iva";
 
 interface Props {
   aziendaId: string;
@@ -117,10 +119,11 @@ export default function CentroFinanzeV2({ aziendaId, onClose }: Props) {
           borderRadius: 10, padding: 2, marginTop: 12,
         }}>
           {([
-            { v: "cashflow", l: "Cashflow" },
+            { v: "cashflow", l: "Cash" },
             { v: "attive", l: "Attive", c: fatt.kpi?.n_aperte },
             { v: "passive", l: "Passive", c: spese.kpiFatt?.n_da_pagare },
-            { v: "f24iva", l: "F24/IVA", c: tasse.kpi?.n_aperte },
+            { v: "analisi", l: "Analisi" },
+            { v: "tasse", l: "Tasse" },
           ] as { v: Mode; l: string; c?: number }[]).map((t) => {
             const act = mode === t.v;
             return (
@@ -182,6 +185,12 @@ export default function CentroFinanzeV2({ aziendaId, onClose }: Props) {
                 onPagamento={(id) => setShowPagFornit({ open: true, fatturaId: id })}
               />
             )}
+            {mode === "analisi" && (
+              <VistaAnalisi aziendaId={aziendaId} />
+            )}
+            {mode === "tasse" && (
+              <VistaTasse aziendaId={aziendaId} />
+            )}
             {mode === "f24iva" && (
               <VistaF24Iva
                 liquidazioni={tasse.liquidazioni}
@@ -204,7 +213,7 @@ export default function CentroFinanzeV2({ aziendaId, onClose }: Props) {
         onNuovaSpesa={() => { setFabOpen(false); setShowSpesa(true); }}
         onPagamentoOut={() => { setFabOpen(false); setShowPagFornit({ open: true }); }}
         onFatturaRic={() => { setFabOpen(false); setShowNuovaFatturaRic(true); }}
-        onTasse={() => { setFabOpen(false); setMode("f24iva"); }}
+        onTasse={() => { setFabOpen(false); setMode("tasse"); }}
       />
 
       {/* MODAL legacy collegati */}
