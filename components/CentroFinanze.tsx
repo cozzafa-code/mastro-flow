@@ -356,7 +356,7 @@ export default function CentroFinanze({ aziendaId, onClose }: Props) {
   );
 }
 
-function SectionLabel({ Ico, title, sub }: any) {
+export function SectionLabel({ Ico, title, sub }: any) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
       <Ico size={11} color={MUTED} />
@@ -366,7 +366,7 @@ function SectionLabel({ Ico, title, sub }: any) {
   );
 }
 
-function AlertCard({ alert, onDismiss, expanded }: any) {
+export function AlertCard({ alert, onDismiss, expanded }: any) {
   const sevMeta: Record<string, any> = { critical: PASTEL.red, warning: PASTEL.amber, info: PASTEL.blue };
   const m = sevMeta[alert.severity] || PASTEL.blue;
   const tipoIco: Record<string, any> = {
@@ -422,7 +422,7 @@ function ScadenzaRiga({ ev, expanded }: any) {
   );
 }
 
-function CashflowChart({ cashflow, kpi }: any) {
+export function CashflowChart({ cashflow, kpi }: any) {
   if (cashflow.length === 0) return <div style={{ padding: 30, color: MUTED, textAlign: 'center' as const }}>Nessun dato cashflow</div>;
   const max = Math.max(...cashflow.map((g: any) => g.saldo_previsto), 0);
   const min = Math.min(...cashflow.map((g: any) => g.saldo_previsto), 0);
@@ -483,7 +483,7 @@ function CashflowChart({ cashflow, kpi }: any) {
   );
 }
 
-function FabBtn({ Ico, label, color, onClick }: any) {
+export function FabBtn({ Ico, label, color, onClick }: any) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ background: '#fff', color: TEXT, padding: '7px 12px', borderRadius: 10, fontSize: 11, fontWeight: 700, boxShadow: '0 2px 8px rgba(15,27,45,0.18)' }}>{label}</div>
@@ -555,7 +555,7 @@ function TabFatture({ fatture, kpi, filtro, setFiltro, search, setSearch, onApri
   );
 }
 
-function FatturaRiga({ fattura, onApri, onPagamento }: any) {
+export function FatturaRiga({ fattura, onApri, onPagamento }: any) {
   const statoMeta: Record<string, any> = {
     pagata: { col: PASTEL.green, label: 'PAGATA' },
     scaduta: { col: PASTEL.red, label: 'SCADUTA' },
@@ -752,7 +752,7 @@ function TabUscite({
   );
 }
 
-function SpesaRiga({ spesa, onElimina }: any) {
+export function SpesaRiga({ spesa, onElimina }: any) {
   const meta = CATEGORIE_SPESA.find(c => c.val === spesa.categoria);
   const d = new Date(spesa.data).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
   return (
@@ -915,7 +915,7 @@ function PLRiga({ commessa, onApri }: any) {
   );
 }
 
-function ModalDettaglioPL({ commessa, onClose }: any) {
+export function ModalDettaglioPL({ commessa, onClose }: any) {
   const m = statoPLMeta(commessa.stato_pl);
   const col = (PASTEL as any)[m.tone] || PASTEL.navy;
   const inUtile = commessa.utile_reale >= 0;
@@ -1115,7 +1115,7 @@ function EventoFiscaleRiga({ ev }: any) {
 }
 
 // =============== MODALI ===============
-function ModalNuovaFattura({ onClose, onCrea }: any) {
+export function ModalNuovaFattura({ onClose, onCrea }: any) {
   const [cliente, setCliente] = useState('');
   const [piva, setPiva] = useState('');
   const [email, setEmail] = useState('');
@@ -1207,7 +1207,7 @@ function ModalNuovaFattura({ onClose, onCrea }: any) {
   );
 }
 
-function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegistra }: any) {
+export function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegistra }: any) {
   const [fatturaId, setFatturaId] = useState(fatturaIdPreselect || '');
   const [importo, setImporto] = useState('');
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
@@ -1284,7 +1284,7 @@ function ModalRegistraPagamento({ fatture, fatturaIdPreselect, onClose, onRegist
   );
 }
 
-function ModalDettaglioFattura({ fattura, getPagamenti, onClose, onRegistraPagamento, onAnnulla }: any) {
+export function ModalDettaglioFattura({ fattura, getPagamenti, onClose, onRegistraPagamento, onAnnulla }: any) {
   const [pagamenti, setPagamenti] = React.useState<any[]>([]);
   React.useEffect(() => { getPagamenti().then(setPagamenti); }, []);
   const statoMeta: Record<string, any> = {
@@ -1346,7 +1346,7 @@ function ModalDettaglioFattura({ fattura, getPagamenti, onClose, onRegistraPagam
   );
 }
 
-function ModalNuovaSpesa({ aziendaId, onClose, onCrea }: any) {
+export function ModalNuovaSpesa({ aziendaId, onClose, onCrea }: any) {
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
   const [importo, setImporto] = useState('');
   const [categoria, setCategoria] = useState('carburante');
@@ -1470,7 +1470,7 @@ function ModalNuovaSpesa({ aziendaId, onClose, onCrea }: any) {
   );
 }
 
-function ModalPagamentoFornitore({ fatture, fatturaIdPreselect, onClose, onRegistra }: any) {
+export function ModalPagamentoFornitore({ fatture, fatturaIdPreselect, onClose, onRegistra }: any) {
   const [fatturaId, setFatturaId] = useState(fatturaIdPreselect || '');
   const [importo, setImporto] = useState('');
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
@@ -1547,7 +1547,7 @@ function ModalPagamentoFornitore({ fatture, fatturaIdPreselect, onClose, onRegis
   );
 }
 
-function ModalNuovaFatturaRicevuta({ onClose, onCrea }: any) {
+export function ModalNuovaFatturaRicevuta({ onClose, onCrea }: any) {
   const [numero, setNumero] = useState('');
   const [dataRic, setDataRic] = useState(new Date().toISOString().split('T')[0]);
   const [dataScad, setDataScad] = useState(new Date(Date.now() + 30*86400000).toISOString().split('T')[0]);
@@ -1626,7 +1626,7 @@ function ModalNuovaFatturaRicevuta({ onClose, onCrea }: any) {
   );
 }
 
-function ModalDettaglioFattRic({ fattura, getPagamenti, onClose, onPaga, onAnnulla }: any) {
+export function ModalDettaglioFattRic({ fattura, getPagamenti, onClose, onPaga, onAnnulla }: any) {
   const [pagamenti, setPagamenti] = React.useState<any[]>([]);
   React.useEffect(() => { getPagamenti().then(setPagamenti); }, []);
 
@@ -1693,7 +1693,7 @@ const selectStyle: React.CSSProperties = {
   borderRadius: 8, fontSize: 12, color: TEXT, fontFamily: 'inherit', background: '#fff',
 };
 
-function ModalShell({ color, icon: Ico, title, sub, onClose, children }: any) {
+export function ModalShell({ color, icon: Ico, title, sub, onClose, children }: any) {
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,27,45,0.6)', zIndex: 9900 }} />
@@ -1723,7 +1723,7 @@ function ModalShell({ color, icon: Ico, title, sub, onClose, children }: any) {
   );
 }
 
-function Sezione({ titolo, children }: any) {
+export function Sezione({ titolo, children }: any) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ fontSize: 9, color: MUTED, letterSpacing: 1, fontWeight: 800, marginBottom: 6 }}>{titolo}</div>
@@ -1732,11 +1732,11 @@ function Sezione({ titolo, children }: any) {
   );
 }
 
-function FieldRow({ children }: any) {
+export function FieldRow({ children }: any) {
   return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>{children}</div>;
 }
 
-function Field({ label, value, setValue, placeholder, type = 'text' }: any) {
+export function Field({ label, value, setValue, placeholder, type = 'text' }: any) {
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{ fontSize: 10, color: MUTED, marginBottom: 3, fontWeight: 700 }}>{label}</div>
@@ -1748,7 +1748,7 @@ function Field({ label, value, setValue, placeholder, type = 'text' }: any) {
   );
 }
 
-function TextareaField({ label, value, setValue, placeholder }: any) {
+export function TextareaField({ label, value, setValue, placeholder }: any) {
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{ fontSize: 10, color: MUTED, marginBottom: 3, fontWeight: 700 }}>{label}</div>
@@ -1760,19 +1760,19 @@ function TextareaField({ label, value, setValue, placeholder }: any) {
   );
 }
 
-function ModalFooter({ children }: any) {
+export function ModalFooter({ children }: any) {
   return (
     <div style={{ background: '#fff', borderTop: '1px solid #E5EAF0', padding: '12px 14px', display: 'flex', gap: 8, position: 'sticky' as const, bottom: 0, marginTop: 8, marginLeft: -14, marginRight: -14 }}>{children}</div>
   );
 }
 
-function BtnPrimary({ color, onClick, disabled, children }: any) {
+export function BtnPrimary({ color, onClick, disabled, children }: any) {
   return (
     <button onClick={onClick} disabled={disabled} style={{ flex: 1, padding: '12px 14px', borderRadius: 10, background: disabled ? '#C5CED6' : color.solid, color: '#fff', border: 'none', fontSize: 12, fontWeight: 800, cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>{children}</button>
   );
 }
 
-function BtnSecondary({ onClick, children }: any) {
+export function BtnSecondary({ onClick, children }: any) {
   return (
     <button onClick={onClick} style={{ flex: 1, padding: '12px 14px', borderRadius: 10, background: '#fff', color: TEXT, border: '1px solid #E5EAF0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{children}</button>
   );

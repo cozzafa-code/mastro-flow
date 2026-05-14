@@ -10,40 +10,31 @@ import VistaPassive from "./v2/VistaPassive";
 import VistaF24Iva from "./v2/VistaF24Iva";
 import FabFinanzeV2 from "./v2/FabFinanzeV2";
 
-// fliwoX palette teal (allineato a Home V2)
+// Riuso modal del legacy (esportati)
+import {
+  ModalNuovaFattura,
+  ModalRegistraPagamento,
+  ModalNuovaSpesa,
+  ModalPagamentoFornitore,
+  ModalNuovaFatturaRicevuta,
+  ModalDettaglioFattura,
+  ModalDettaglioFattRic,
+} from "../CentroFinanze";
+
 export const NAVY = "#1B3A5C";
 export const NAVY_DEEP = "#0F1F33";
 export const TEAL = "#28A0A0";
-export const TEAL_DARK = "#1a6b6b";
-export const AMBER = "#E8B05C";
-export const GREEN = "#0F6E56";
-export const RED = "#C73E1D";
 export const BG = "#7A8A9A";
-export const TEXT = "#1B3A5C";
 export const MUTED = "#5C6B7A";
-export const BORDER = "#E5EAF0";
 
 type Mode = "cashflow" | "attive" | "passive" | "f24iva";
 
 interface Props {
   aziendaId: string;
   onClose: () => void;
-  onCreaFattura?: () => void;
-  onPagamentoRicevuto?: (fatturaId?: string) => void;
-  onNuovaSpesa?: () => void;
-  onPagamentoFornitore?: (fatturaId?: string) => void;
-  onFatturaRicevuta?: () => void;
 }
 
-export default function CentroFinanzeV2({
-  aziendaId,
-  onClose,
-  onCreaFattura,
-  onPagamentoRicevuto,
-  onNuovaSpesa,
-  onPagamentoFornitore,
-  onFatturaRicevuta,
-}: Props) {
+export default function CentroFinanzeV2({ aziendaId, onClose }: Props) {
   const fin = useFinanze(aziendaId);
   const fatt = useFattureFinanze(aziendaId);
   const spese = useSpese(aziendaId);
@@ -54,14 +45,26 @@ export default function CentroFinanzeV2({
   const [filtroAtt, setFiltroAtt] = useState<FiltroFatture>("tutte");
   const [filtroPass, setFiltroPass] = useState<FiltroFattRic>("tutte");
 
-  const fatturato = fin.kpi?.utile_mese != null ? Math.round(fin.kpi.incassi_30gg || 0) : 0;
+  // Modal states (riuso legacy)
+  const [showNuovaFattura, setShowNuovaFattura] = useState(false);
+  const [showPagamento, setShowPagamento] = useState<{ open: boolean; fatturaId?: string }>({ open: false });
+  const [showSpesa, setShowSpesa] = useState(false);
+  const [showPagFornit, setShowPagFornit] = useState<{ open: boolean; fatturaId?: string }>({ open: false });
+  const [showNuovaFatturaRic, setShowNuovaFatturaRic] = useState(false);
+  const [dettaglioId, setDettaglioId] = useState<string | null>(null);
+  const [dettaglioFattRicId, setDettaglioFattRicId] = useState<string | null>(null);
+
+  const fatturaCorrente = dettaglioId ? fatt.fatture.find((f) => f.id === dettaglioId) : null;
+  const fatturaRicCorrente = dettaglioFattRicId ? spese.fattRicevute.find((f) => f.id === dettaglioFattRicId) : null;
+
+  const fatturato = fin.kpi?.incassi_30gg != null ? Math.round(fin.kpi.incassi_30gg) : 0;
 
   return (
     <div style={{
       position: "fixed", inset: 0, background: BG, zIndex: 9800,
       display: "flex", flexDirection: "column",
     }}>
-      {/* Header navy gradient */}
+      {/* Header */}
       <div style={{
         background: `linear-gradient(180deg, ${NAVY}, ${NAVY_DEEP})`,
         color: "#fff", padding: "14px 14px 12px", position: "relative",
@@ -72,7 +75,7 @@ export default function CentroFinanzeV2({
             width: 34, height: 34, borderRadius: "50%",
             background: "rgba(255,255,255,0.1)", border: "none", color: "#fff",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 17, cursor: "pointer",
+            cursor: "pointer",
           }}>
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">
               <line x1={18} y1={6} x2={6} y2={18} /><line x1={6} y1={6} x2={18} y2={18} />
@@ -83,14 +86,13 @@ export default function CentroFinanzeV2({
               Centro Finanze
             </div>
             <div style={{ fontSize: 17, fontWeight: 800, marginTop: 1, lineHeight: 1.1 }}>
-              EUR {fatturato.toLocaleString("it-IT")} fatturato {new Date().getFullYear()}
+              EUR {fatturato.toLocaleString("it-IT")} incassi 30gg
             </div>
           </div>
           <div style={{
             width: 34, height: 34, borderRadius: 9,
             background: "rgba(40,160,160,0.25)", color: TEAL,
             display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer",
           }} title="Statistiche">
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
               <line x1={18} y1={20} x2={18} y2={10} /><line x1={12} y1={20} x2={12} y2={4} /><line x1={6} y1={20} x2={6} y2={14} />
@@ -100,7 +102,6 @@ export default function CentroFinanzeV2({
             width: 34, height: 34, borderRadius: 9,
             background: TEAL, color: "#fff",
             display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer",
             boxShadow: "0 2px 6px rgba(40,160,160,0.4)",
           }} title="Export SDI">
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -145,7 +146,7 @@ export default function CentroFinanzeV2({
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 90 }}>
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 160 }}>
         {fin.loading ? (
           <div style={{ padding: 40, textAlign: "center", color: MUTED, fontSize: 13 }}>
             Caricamento dati finanziari...
@@ -167,7 +168,7 @@ export default function CentroFinanzeV2({
                 kpi={fatt.kpi}
                 filtro={filtroAtt}
                 onFiltroChange={setFiltroAtt}
-                onPagamento={(id) => onPagamentoRicevuto?.(id)}
+                onPagamento={(id) => setShowPagamento({ open: true, fatturaId: id })}
               />
             )}
             {mode === "passive" && (
@@ -177,7 +178,7 @@ export default function CentroFinanzeV2({
                 kpi={spese.kpiFatt}
                 filtro={filtroPass}
                 onFiltroChange={setFiltroPass}
-                onPagamento={(id) => onPagamentoFornitore?.(id)}
+                onPagamento={(id) => setShowPagFornit({ open: true, fatturaId: id })}
               />
             )}
             {mode === "f24iva" && (
@@ -197,13 +198,88 @@ export default function CentroFinanzeV2({
       <FabFinanzeV2
         open={fabOpen}
         onToggle={() => setFabOpen((v) => !v)}
-        onNuovaFattura={() => { setFabOpen(false); onCreaFattura?.(); }}
-        onPagamentoIn={() => { setFabOpen(false); onPagamentoRicevuto?.(); }}
-        onNuovaSpesa={() => { setFabOpen(false); onNuovaSpesa?.(); }}
-        onPagamentoOut={() => { setFabOpen(false); onPagamentoFornitore?.(); }}
-        onFatturaRic={() => { setFabOpen(false); onFatturaRicevuta?.(); }}
+        onNuovaFattura={() => { setFabOpen(false); setShowNuovaFattura(true); }}
+        onPagamentoIn={() => { setFabOpen(false); setShowPagamento({ open: true }); }}
+        onNuovaSpesa={() => { setFabOpen(false); setShowSpesa(true); }}
+        onPagamentoOut={() => { setFabOpen(false); setShowPagFornit({ open: true }); }}
+        onFatturaRic={() => { setFabOpen(false); setShowNuovaFatturaRic(true); }}
         onTasse={() => { setFabOpen(false); setMode("f24iva"); }}
       />
+
+      {/* MODAL legacy collegati */}
+      {showNuovaFattura && (
+        <ModalNuovaFattura
+          onClose={() => setShowNuovaFattura(false)}
+          onCrea={async (d: any) => {
+            const res = await fatt.creaFattura(d);
+            if (res.ok) { setShowNuovaFattura(false); setMode("attive"); }
+            else alert("Errore: " + (res.error || "sconosciuto"));
+          }}
+        />
+      )}
+      {showPagamento.open && (
+        <ModalRegistraPagamento
+          fatture={fatt.fatture.filter((f) => ["aperta","parziale","scaduta"].includes(f.stato_calcolato))}
+          fatturaIdPreselect={showPagamento.fatturaId}
+          onClose={() => setShowPagamento({ open: false })}
+          onRegistra={async (fId: string, p: any) => {
+            const res = await fatt.registraPagamento(fId, p);
+            if (res.ok) setShowPagamento({ open: false });
+            else alert("Errore: " + (res.error || "sconosciuto"));
+          }}
+        />
+      )}
+      {showSpesa && (
+        <ModalNuovaSpesa
+          aziendaId={aziendaId}
+          onClose={() => setShowSpesa(false)}
+          onCrea={async (d: any) => {
+            const res = await spese.creaSpesa(d);
+            if (res.ok) { setShowSpesa(false); setMode("passive"); }
+            else alert("Errore: " + (res.error || "sconosciuto"));
+          }}
+        />
+      )}
+      {showPagFornit.open && (
+        <ModalPagamentoFornitore
+          fatture={spese.fattRicevute.filter((f) => ["da_pagare","scaduta"].includes(f.stato_calcolato))}
+          fatturaIdPreselect={showPagFornit.fatturaId}
+          onClose={() => setShowPagFornit({ open: false })}
+          onRegistra={async (fId: string, p: any) => {
+            const res = await spese.registraPagamentoFornitore(fId, p);
+            if (res.ok) setShowPagFornit({ open: false });
+            else alert("Errore: " + (res.error || "sconosciuto"));
+          }}
+        />
+      )}
+      {showNuovaFatturaRic && (
+        <ModalNuovaFatturaRicevuta
+          onClose={() => setShowNuovaFatturaRic(false)}
+          onCrea={async (d: any) => {
+            const res = await spese.creaFatturaRicevuta(d);
+            if (res.ok) { setShowNuovaFatturaRic(false); setMode("passive"); }
+            else alert("Errore: " + (res.error || "sconosciuto"));
+          }}
+        />
+      )}
+      {fatturaCorrente && (
+        <ModalDettaglioFattura
+          fattura={fatturaCorrente}
+          getPagamenti={fatt.getPagamentiPerFattura}
+          onClose={() => setDettaglioId(null)}
+          onRegistraPagamento={(fId: string) => { setDettaglioId(null); setShowPagamento({ open: true, fatturaId: fId }); }}
+          onAnnulla={async (fId: string) => { await fatt.annullaFattura(fId); setDettaglioId(null); }}
+        />
+      )}
+      {fatturaRicCorrente && (
+        <ModalDettaglioFattRic
+          fattura={fatturaRicCorrente}
+          getPagamenti={spese.getPagamentiFatturaRicevuta}
+          onClose={() => setDettaglioFattRicId(null)}
+          onPaga={(fId: string) => { setDettaglioFattRicId(null); setShowPagFornit({ open: true, fatturaId: fId }); }}
+          onAnnulla={async (fId: string) => { await spese.annullaFatturaRicevuta(fId); setDettaglioFattRicId(null); }}
+        />
+      )}
     </div>
   );
 }
