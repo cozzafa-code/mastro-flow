@@ -6,7 +6,6 @@ const NAVY = "#1B3A5C";
 const TEAL = "#28A0A0";
 const GREEN = "#0F6E56";
 const RED = "#C73E1D";
-const AMBER = "#E8B05C";
 const MUTED = "#5C6B7A";
 const TXT_SOFT = "#8794A6";
 
@@ -36,22 +35,29 @@ function stripColor(s: string): { bg: string; tx: string; lbl: string } {
 
 function fmtData(d?: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
+  try { return new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short" }); }
+  catch { return "—"; }
+}
+
+function fmtEuro(n?: number | null): string {
+  if (n == null || isNaN(n)) return "0";
+  return Number(n).toLocaleString("it-IT", { maximumFractionDigits: 0 });
 }
 
 export default function VistaAttive({ fatture, kpi, filtro, onFiltroChange, onPagamento }: Props) {
-  // Conteggi per pill
+  const safeFatture = fatture || [];
+
   const conteggi: Record<FiltroFatture, number> = {
-    tutte: fatture.length,
-    aperte: fatture.filter((f) => f.stato_calcolato === "aperta").length,
-    scadute: fatture.filter((f) => f.stato_calcolato === "scaduta").length,
-    parziali: fatture.filter((f) => f.stato_calcolato === "parziale").length,
-    pagate: fatture.filter((f) => f.stato_calcolato === "pagata").length,
+    tutte: safeFatture.length,
+    aperte: safeFatture.filter((f) => f.stato_calcolato === "aperta").length,
+    scadute: safeFatture.filter((f) => f.stato_calcolato === "scaduta").length,
+    parziali: safeFatture.filter((f) => f.stato_calcolato === "parziale").length,
+    pagate: safeFatture.filter((f) => f.stato_calcolato === "pagata").length,
   };
 
   const filtrate = filtro === "tutte"
-    ? fatture
-    : fatture.filter((f) => {
+    ? safeFatture
+    : safeFatture.filter((f) => {
         if (filtro === "aperte") return f.stato_calcolato === "aperta";
         if (filtro === "scadute") return f.stato_calcolato === "scaduta";
         if (filtro === "parziali") return f.stato_calcolato === "parziale";
@@ -61,22 +67,20 @@ export default function VistaAttive({ fatture, kpi, filtro, onFiltroChange, onPa
 
   return (
     <div style={{ padding: "12px 0 0" }}>
-      {/* KPI riga */}
       {kpi && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 7, padding: "0 14px 10px" }}>
-          <KpiCell val={`${kpi.n_aperte}`} lbl="APERTE" tone={NAVY} />
-          <KpiCell val={`${kpi.n_scadute}`} lbl="SCADUTE" tone={RED} />
-          <KpiCell val={`€${(kpi.totale_da_incassare / 1000).toFixed(1)}k`} lbl="DA INCASSARE" tone={GREEN} />
+          <KpiCell val={`${kpi.n_aperte || 0}`} lbl="APERTE" tone={NAVY} />
+          <KpiCell val={`${kpi.n_scadute || 0}`} lbl="SCADUTE" tone={RED} />
+          <KpiCell val={`€${((kpi.importo_aperto || 0) / 1000).toFixed(1)}k`} lbl="DA INCASSARE" tone={GREEN} />
         </div>
       )}
 
-      {/* Filtri pill */}
-      <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 14px 10px", scrollbarWidth: "none" as any }}>
+      <div className="fin-pillrow" style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 14px 10px", scrollbarWidth: "none" as any }}>
         <style>{`.fin-pillrow::-webkit-scrollbar{display:none}`}</style>
         {FILTRI.map((p) => {
           const act = filtro === p.v;
           return (
-            <button key={p.v} onClick={() => onFiltroChange(p.v)} className="fin-pillrow" style={{
+            <button key={p.v} onClick={() => onFiltroChange(p.v)} style={{
               padding: "6px 11px", borderRadius: 99,
               background: act ? NAVY : "#fff",
               color: act ? "#fff" : NAVY,
@@ -96,7 +100,6 @@ export default function VistaAttive({ fatture, kpi, filtro, onFiltroChange, onPa
         })}
       </div>
 
-      {/* Cards fatture */}
       {filtrate.length === 0 ? (
         <div style={{ padding: "32px 14px", textAlign: "center", color: MUTED, fontSize: 12 }}>
           Nessuna fattura {filtro !== "tutte" ? `"${filtro}"` : ""} trovata
@@ -104,6 +107,7 @@ export default function VistaAttive({ fatture, kpi, filtro, onFiltroChange, onPa
       ) : (
         filtrate.map((f) => {
           const sc = stripColor(f.stato_calcolato);
+          const clienteLabel = f.cliente_display || f.cliente_nome || f.cliente_ragione_sociale || f.cliente || "Cliente";
           return (
             <div key={f.id} style={{
               background: "#fff", borderRadius: 13, margin: "8px 10px",
@@ -115,11 +119,11 @@ export default function VistaAttive({ fatture, kpi, filtro, onFiltroChange, onPa
               <div style={{ padding: 12, display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 800, color: NAVY, lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {f.cliente_nome || "Cliente"}
+                    {clienteLabel}
                   </div>
                   <div style={{ fontSize: 9.5, color: TXT_SOFT, marginTop: 2, fontWeight: 600 }}>
                     N° {f.numero || "—"} · {fmtData(f.data_emissione)}
-                    {f.scadenza && ` · scad. ${fmtData(f.scadenza)}`}
+                    {f.data_scadenza && ` · scad. ${fmtData(f.data_scadenza)}`}
                   </div>
                   {f.commessa_code && (
                     <div style={{
@@ -133,11 +137,11 @@ export default function VistaAttive({ fatture, kpi, filtro, onFiltroChange, onPa
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: NAVY, lineHeight: 1 }}>
-                    €{f.totale_lordo.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
+                    €{fmtEuro(f.totale)}
                   </div>
-                  {f.totale_pagato > 0 && f.stato_calcolato !== "pagata" && (
+                  {(f.pagato || 0) > 0 && f.stato_calcolato !== "pagata" && (
                     <div style={{ fontSize: 9.5, color: GREEN, fontWeight: 700, marginTop: 2 }}>
-                      pag. €{f.totale_pagato.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
+                      pag. €{fmtEuro(f.pagato)}
                     </div>
                   )}
                   {f.stato_calcolato !== "pagata" && onPagamento && (

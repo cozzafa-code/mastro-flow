@@ -34,20 +34,29 @@ function stripColor(s: string): { bg: string; tx: string; lbl: string } {
 
 function fmtData(d?: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
+  try { return new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short" }); }
+  catch { return "—"; }
+}
+
+function fmtEuro(n?: number | null): string {
+  if (n == null || isNaN(n)) return "0";
+  return Number(n).toLocaleString("it-IT", { maximumFractionDigits: 0 });
 }
 
 export default function VistaPassive({ fatture, spese, kpi, filtro, onFiltroChange, onPagamento }: Props) {
+  const safe = fatture || [];
+  const safeSpese = spese || [];
+
   const conteggi: Record<FiltroFattRic, number> = {
-    tutte: fatture.length,
-    da_pagare: fatture.filter((f) => f.stato_calcolato === "da_pagare").length,
-    scadute: fatture.filter((f) => f.stato_calcolato === "scaduta").length,
-    pagate: fatture.filter((f) => f.stato_calcolato === "pagata").length,
+    tutte: safe.length,
+    da_pagare: safe.filter((f) => f.stato_calcolato === "da_pagare").length,
+    scadute: safe.filter((f) => f.stato_calcolato === "scaduta").length,
+    pagate: safe.filter((f) => f.stato_calcolato === "pagata").length,
   };
 
   const filtrate = filtro === "tutte"
-    ? fatture
-    : fatture.filter((f) => {
+    ? safe
+    : safe.filter((f) => {
         if (filtro === "da_pagare") return f.stato_calcolato === "da_pagare";
         if (filtro === "scadute") return f.stato_calcolato === "scaduta";
         if (filtro === "pagate") return f.stato_calcolato === "pagata";
@@ -56,18 +65,16 @@ export default function VistaPassive({ fatture, spese, kpi, filtro, onFiltroChan
 
   return (
     <div style={{ padding: "12px 0 0" }}>
-      {/* KPI */}
       {kpi && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 7, padding: "0 14px 10px" }}>
-          <KpiCell val={`${kpi.n_da_pagare}`} lbl="DA PAGARE" tone={NAVY} />
-          <KpiCell val={`${kpi.n_scadute}`} lbl="SCADUTE" tone={RED} />
-          <KpiCell val={`€${(kpi.totale_da_pagare / 1000).toFixed(1)}k`} lbl="TOT" tone="#8B6926" />
+          <KpiCell val={`${kpi.n_da_pagare || 0}`} lbl="DA PAGARE" tone={NAVY} />
+          <KpiCell val={`${kpi.n_scadute || 0}`} lbl="SCADUTE" tone={RED} />
+          <KpiCell val={`€${((kpi.importo_da_pagare || 0) / 1000).toFixed(1)}k`} lbl="TOT" tone="#8B6926" />
         </div>
       )}
 
-      {/* Filtri pill */}
-      <div className="passive-pillrow" style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 14px 10px", scrollbarWidth: "none" as any }}>
-        <style>{`.passive-pillrow::-webkit-scrollbar{display:none}`}</style>
+      <div className="pass-pillrow" style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 14px 10px", scrollbarWidth: "none" as any }}>
+        <style>{`.pass-pillrow::-webkit-scrollbar{display:none}`}</style>
         {FILTRI.map((p) => {
           const act = filtro === p.v;
           return (
@@ -91,7 +98,6 @@ export default function VistaPassive({ fatture, spese, kpi, filtro, onFiltroChan
         })}
       </div>
 
-      {/* Section: Fatture passive */}
       <div style={{
         margin: "0 14px 4px", padding: "7px 12px",
         background: "rgba(255,255,255,0.5)", borderRadius: 8,
@@ -123,16 +129,16 @@ export default function VistaPassive({ fatture, spese, kpi, filtro, onFiltroChan
               <div style={{ padding: 12, display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 800, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {f.fornitore_nome || "Fornitore"}
+                    {f.fornitore || "Fornitore"}
                   </div>
                   <div style={{ fontSize: 9.5, color: TXT_SOFT, marginTop: 2, fontWeight: 600 }}>
-                    N° {f.numero || "—"} · {fmtData(f.data_emissione)}
-                    {f.scadenza && ` · scad. ${fmtData(f.scadenza)}`}
+                    N° {f.numero || "—"} · {fmtData(f.data_ricezione)}
+                    {f.data_scadenza && ` · scad. ${fmtData(f.data_scadenza)}`}
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: NAVY, lineHeight: 1 }}>
-                    €{f.totale_lordo.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
+                    €{fmtEuro(f.totale)}
                   </div>
                   {f.stato_calcolato !== "pagata" && onPagamento && (
                     <button onClick={() => onPagamento(f.id)} style={{
@@ -150,8 +156,7 @@ export default function VistaPassive({ fatture, spese, kpi, filtro, onFiltroChan
         })
       )}
 
-      {/* Section: Spese rapide */}
-      {spese.length > 0 && (
+      {safeSpese.length > 0 && (
         <>
           <div style={{
             margin: "16px 14px 4px", padding: "7px 12px",
@@ -162,10 +167,10 @@ export default function VistaPassive({ fatture, spese, kpi, filtro, onFiltroChan
           }}>
             <span>Spese rapide</span>
             <span style={{ background: NAVY, color: "#fff", padding: "2px 7px", borderRadius: 99, fontSize: 10 }}>
-              {spese.length}
+              {safeSpese.length}
             </span>
           </div>
-          {spese.slice(0, 10).map((s) => (
+          {safeSpese.slice(0, 10).map((s) => (
             <div key={s.id} style={{
               background: "#fff", margin: "6px 10px", padding: "9px 12px",
               borderRadius: 10, boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
@@ -173,14 +178,14 @@ export default function VistaPassive({ fatture, spese, kpi, filtro, onFiltroChan
             }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 700, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {s.descrizione}
+                  {s.descrizione || s.categoria || "Spesa"}
                 </div>
                 <div style={{ fontSize: 9.5, color: TXT_SOFT, marginTop: 2 }}>
-                  {s.categoria} · {fmtData(s.data)}
+                  {s.categoria || "—"} · {fmtData(s.data)}
                 </div>
               </div>
               <div style={{ fontSize: 14, fontWeight: 800, color: RED, marginLeft: 8 }}>
-                −€{s.importo.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
+                −€{fmtEuro(s.importo)}
               </div>
             </div>
           ))}
