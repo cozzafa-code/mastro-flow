@@ -7,7 +7,7 @@ import CardAzioniVeloci from "./home/CardAzioniVeloci";
 import OrganizzaLavoriPanel from "./OrganizzaLavoriPanel";
 import CentroControlloMontaggi from "./CentroControlloMontaggi";
 import MontaggiSheet from "@/components/montaggi/MontaggiSheet";
-import OrdiniModuleRoot from "@/components/ordini/OrdiniModuleRoot";
+import CentroControlloOrdini from "./CentroControlloOrdini";
 import CentroControlloMagazzino from "./CentroControlloMagazzino";
 import CentroPreparazioneFurgoni from "./CentroPreparazioneFurgoni";
 import CentroClienti from "./CentroClienti";
@@ -466,9 +466,10 @@ export default function HomePanelMobileV2(props: any) {
         />
       )}
       {showCentroOrdini && (
-        <OrdiniModuleRoot
+        <CentroControlloOrdini
           aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroOrdini(false)}
+          onApriOrdine={(ordId: string) => { console.log('apri ordine', ordId); }}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroOrdini(false); setOrganizzaCm(cm); } }}
         />
       )}
