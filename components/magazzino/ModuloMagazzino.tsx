@@ -42,6 +42,7 @@ interface Props {
 
 export default function ModuloMagazzino({ aziendaId, onClose, vistaIniziale = "articoli" }: Props) {
   const [vista, setVista] = useState<ModuloVista>(vistaIniziale);
+  const [showOrdineMulti, setShowOrdineMulti] = useState(false);
   const mag = useMagazzinoTop(aziendaId);
 
   // Vista corrente
