@@ -14,8 +14,8 @@ export default function DettaglioHeader({ ord, onClose, onMenu, onApriCommessa }
   const fornitore = (ord as any).fornitore_nome || "—";
   const commessaCode = (ord as any).commessa?.code || "—";
   const cognome = (ord as any).commessa?.cognome || (ord as any).commessa?.cliente || "—";
-  const tot = ord.totale_imponibile || 0;
-  const nRighe = ((ord as any).righe || []).length || ord.numero_righe || 0;
+  const tot = (ord as any).totale_euro || 0;
+  const nRighe = ((ord as any).righe || []).length || (((ord as any).righe || []).length) || 0;
 
   return (
     <div style={{
@@ -75,11 +75,11 @@ export default function DettaglioHeader({ ord, onClose, onMenu, onApriCommessa }
         color: "rgba(255,255,255,0.85)"
       }}>
         <span><strong style={{ color: "#fff" }}>{nRighe}</strong> righe</span>
-        {ord.data_consegna_richiesta && (
+        {(ord as any).consegna_prevista && (
           <>
             <span style={{ opacity: 0.5 }}>·</span>
             <span>scadenza <strong style={{ color: "#fff" }}>
-              {new Date(ord.data_consegna_richiesta).toLocaleDateString("it-IT", { day: "2-digit", month: "short" })}
+              {new Date((ord as any).consegna_prevista).toLocaleDateString("it-IT", { day: "2-digit", month: "short" })}
             </strong></span>
           </>
         )}

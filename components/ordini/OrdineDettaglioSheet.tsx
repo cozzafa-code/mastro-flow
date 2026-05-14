@@ -58,18 +58,9 @@ export default function OrdineDettaglioSheet({
         fornitore_categoria: forn?.categoria,
       } as any;
       setOrdine(enriched);
-      // 4) righe (priorita: array json o tabella separata)
+      // 4) righe dal JSONB
       const righeJson = (ord as any).righe;
-      if (Array.isArray(righeJson) && righeJson.length > 0) {
-        setRighe(righeJson);
-      } else {
-        const { data: rs } = await supabase
-          .from("ordini_fornitore_righe")
-          .select("*")
-          .eq("ordine_id", ordineId)
-          .order("posizione", { ascending: true });
-        setRighe((rs || []) as any);
-      }
+      setRighe(Array.isArray(righeJson) ? righeJson : []);
       setLoading(false);
     })();
   }, [ordineId]);

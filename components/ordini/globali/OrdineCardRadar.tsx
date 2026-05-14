@@ -72,7 +72,7 @@ export default function OrdineCardRadar({ ord, onClick, onQrClick }: Props) {
             <div style={{
               fontSize: 17, fontWeight: 800, color: "#1A2A47",
               lineHeight: 1
-            }}>EUR {formatNum(ord.totale_imponibile || 0)}</div>
+            }}>EUR {formatNum((ord as any).totale_euro || 0)}</div>
             <div style={{
               fontSize: 8.5, color: "#8893A8", fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "0.5px", marginTop: 3
@@ -143,9 +143,9 @@ function Quad({ icon, lbl, val, valColor }: any) {
 }
 
 function isInRitardo(o: OrdineConCommessa): boolean {
-  if (!o.data_consegna_richiesta) return false;
+  if (!(o as any).consegna_prevista) return false;
   if (["arrivato", "verificato"].includes(o.stato || "")) return false;
-  return new Date(o.data_consegna_richiesta) < new Date();
+  return new Date((o as any).consegna_prevista) < new Date();
 }
 
 function getColors(stato: OrdineStato, isRitardo: boolean) {
@@ -169,7 +169,7 @@ function getColors(stato: OrdineStato, isRitardo: boolean) {
 
 function computeProgress(o: OrdineConCommessa): { pct: number; received: number; totRighe: number } {
   const righeRaw = (o as any).righe;
-  const totRighe = Array.isArray(righeRaw) ? righeRaw.length : (o.numero_righe || 0);
+  const totRighe = Array.isArray(righeRaw) ? righeRaw.length : ((((o as any).righe || []).length) || 0);
   let received = 0;
   if (Array.isArray((o as any).righe_verificate)) {
     received = (o as any).righe_verificate.filter((r: any) => r.stato === "ok" || r.stato === "parziale").length;
@@ -179,8 +179,8 @@ function computeProgress(o: OrdineConCommessa): { pct: number; received: number;
 }
 
 function formatScadenza(o: OrdineConCommessa): string {
-  if (!o.data_consegna_richiesta) return "—";
-  const d = new Date(o.data_consegna_richiesta);
+  if (!(o as any).consegna_prevista) return "—";
+  const d = new Date((o as any).consegna_prevista);
   return d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
 }
 

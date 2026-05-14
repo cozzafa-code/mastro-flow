@@ -10,6 +10,9 @@ import GlobaliFilters, { ActiveFilter } from "./globali/GlobaliFilters";
 import OrdineCardRadar from "./globali/OrdineCardRadar";
 import OrdineCardTimeline from "./globali/OrdineCardTimeline";
 import OrdineCardHero from "./globali/OrdineCardHero";
+import StatisticheOrdiniSheet from "./StatisticheOrdiniSheet";
+import OrdineDettaglioSheet from "./OrdineDettaglioSheet";
+import RicezioneMerceSheet from "./RicezioneMerceSheet";
 
 interface Props {
   aziendaId: string;
@@ -36,6 +39,9 @@ export default function OrdiniGlobaliSheet({
   const [filtroStato, setFiltroStato] = useState("tutti");
   const [query, setQuery] = useState("");
   const [filtriAvanzati, setFiltriAvanzati] = useState<ActiveFilter[]>([]);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [dettaglioOrdineId, setDettaglioOrdineId] = useState<string | null>(null);
+  const [ricezioneOrdineId, setRicezioneOrdineId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!aziendaId) return;
@@ -102,7 +108,7 @@ export default function OrdiniGlobaliSheet({
     inTransito: counts.in_transito,
     inRitardo: counts.in_ritardo,
     valoreAperto: ordini.filter((o) => !["arrivato", "verificato"].includes(o.stato || ""))
-      .reduce((s, o) => s + (o.totale_imponibile || 0), 0),
+      .reduce((s, o) => s + ((o as any).totale_euro || 0), 0),
   }), [ordini, counts]);
 
   const gruppi = useMemo(() => buildGruppi(filtered, raggruppa), [filtered, raggruppa]);
@@ -121,7 +127,7 @@ export default function OrdiniGlobaliSheet({
         query={query}
         onQuery={setQuery}
         onClose={onClose}
-        onOpenStats={() => onApriStatistiche?.()}
+        onOpenStats={() => setStatsOpen(true)}
         onOpenScanner={() => onApriScanner?.()}
         onOpenSettings={() => { /* TODO settings */ }}
       />
@@ -176,14 +182,14 @@ export default function OrdiniGlobaliSheet({
               <div style={{
                 color: "#5A6478", fontWeight: 700, fontSize: 10.5,
                 letterSpacing: "0.3px", textTransform: "none"
-              }}>EUR {formatNum(g.ordini.reduce((s, o) => s + (o.totale_imponibile || 0), 0))}</div>
+              }}>EUR {formatNum(g.ordini.reduce((s, o) => s + ((o as any).totale_euro || 0), 0))}</div>
             </div>
 
             <div style={{ margin: "0 10px", paddingBottom: 8 }}>
               {g.ordini.map((o) => {
                 const props = {
                   ord: o,
-                  onClick: () => onApriOrdine(o.id),
+                  onClick: () => setDettaglioOrdineId(o.id),
                   onQrClick: () => { /* TODO QR */ },
                   onScan: () => onApriScanner?.(),
                 };
@@ -194,6 +200,32 @@ export default function OrdiniGlobaliSheet({
             </div>
           </div>
         ))
+      )}
+
+      {statsOpen && (
+        <StatisticheOrdiniSheet
+          aziendaId={aziendaId}
+          onClose={() => setStatsOpen(false)}
+        />
+      )}
+
+      {dettaglioOrdineId && (
+        <OrdineDettaglioSheet
+          ordineId={dettaglioOrdineId}
+          aziendaId={aziendaId}
+          onClose={() => setDettaglioOrdineId(null)}
+          onApriRicezione={(id) => { setDettaglioOrdineId(null); setRicezioneOrdineId(id); }}
+          onApriCommessa={(cmId) => { setDettaglioOrdineId(null); onApriCommessa(cmId); }}
+        />
+      )}
+
+      {ricezioneOrdineId && (
+        <RicezioneMerceSheet
+          ordineId={ricezioneOrdineId}
+          aziendaId={aziendaId}
+          onClose={() => setRicezioneOrdineId(null)}
+          onCompleted={() => { setRicezioneOrdineId(null); fetchOrdiniByAzienda(aziendaId).then(setOrdini); }}
+        />
       )}
 
       <div onClick={() => { /* TODO nuovo ordine */ }} style={{
@@ -209,9 +241,9 @@ export default function OrdiniGlobaliSheet({
 }
 
 function isInRitardo(o: OrdineConCommessa): boolean {
-  if (!o.data_consegna_richiesta) return false;
+  if (!(o as any).consegna_prevista) return false;
   if (["arrivato", "verificato"].includes(o.stato || "")) return false;
-  return new Date(o.data_consegna_richiesta) < new Date();
+  return new Date((o as any).consegna_prevista) < new Date();
 }
 
 interface Gruppo { key: string; label: string; color: string; ordini: OrdineConCommessa[]; }

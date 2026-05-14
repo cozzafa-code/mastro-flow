@@ -52,15 +52,7 @@ export default function RicezioneMerceSheet({ ordineId, aziendaId, onClose, onCo
       setOrdine({ ...ord, commessa: cm, fornitore_nome: forn?.nome } as any);
 
       const righeJson = (ord as any).righe;
-      let righeArr: RigaOrdine[] = [];
-      if (Array.isArray(righeJson) && righeJson.length > 0) {
-        righeArr = righeJson;
-      } else {
-        const { data: rs } = await supabase.from("ordini_fornitore_righe")
-          .select("*").eq("ordine_id", ordineId)
-          .order("posizione", { ascending: true });
-        righeArr = (rs || []) as any;
-      }
+      const righeArr: RigaOrdine[] = Array.isArray(righeJson) ? righeJson : [];
       setRighe(righeArr);
 
       const precedenti = (ord as any).righe_verificate as RigaVerificata[] | undefined;

@@ -57,7 +57,7 @@ export default function OrdineCardTimeline({ ord, onClick }: Props) {
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: "#1A2A47" }}>
-            EUR {formatNum(ord.totale_imponibile || 0)}
+            EUR {formatNum((ord as any).totale_euro || 0)}
           </div>
         </div>
       </div>

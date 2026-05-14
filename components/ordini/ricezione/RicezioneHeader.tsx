@@ -69,7 +69,7 @@ export default function RicezioneHeader({ ord, ricevuti, totRighe, onClose, onMe
             {commessaCode} - {cognome}
           </div>
           <div style={{ fontWeight: 800, fontSize: 14, color: "#fff" }}>
-            EUR {formatNum(ord.totale_imponibile || 0)}
+            EUR {formatNum((ord as any).totale_euro || 0)}
           </div>
         </div>
       </div>

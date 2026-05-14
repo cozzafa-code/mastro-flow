@@ -21,7 +21,7 @@ export default function OrdineCardHero({ ord, onClick, onScan }: Props) {
         "linear-gradient(135deg,#243558 0%,#1A2A47 100%)";
 
   const righeArr = ((ord as any).righe || []) as any[];
-  const totRighe = righeArr.length || ord.numero_righe || 0;
+  const totRighe = righeArr.length || (((ord as any).righe || []).length) || 0;
   const received = ((ord as any).righe_verificate || []).filter((r: any) => r.stato === "ok").length;
 
   return (
@@ -57,7 +57,7 @@ export default function OrdineCardHero({ ord, onClick, onScan }: Props) {
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: "#E8B05C", lineHeight: 1 }}>
-              EUR {formatNum(ord.totale_imponibile || 0)}
+              EUR {formatNum((ord as any).totale_euro || 0)}
             </div>
           </div>
         </div>
