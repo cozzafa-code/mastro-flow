@@ -178,6 +178,20 @@ export function useFattureFinanze(aziendaId: string | null) {
     commessa_code?: string | null;
     note?: string;
     righe?: any[];
+    // PRO multi-riga
+    cliente_sdi?: string;
+    tipo_documento_sdi?: string;
+    bollo?: number;
+    ecobonus_tipo?: string;
+    sconto_in_fattura?: boolean;
+    riepilogo_iva?: any[];
+    bene_significativo_calc?: any;
+    causale_forfettario?: string;
+    modalita_pagamento?: string;
+    perc_acconto?: number;
+    totale_imponibile?: number;
+    totale_iva?: number;
+    totale?: number;
   }): Promise<{ ok: boolean; id?: string; error?: string }> {
     if (!aziendaId) return { ok: false, error: 'Azienda non definita' };
 
@@ -201,6 +215,13 @@ export function useFattureFinanze(aziendaId: string | null) {
     const iva_importo = +(args.imponibile * args.iva_percent / 100).toFixed(2);
     const totale = +(args.imponibile + iva_importo).toFixed(2);
 
+    // PRO: se ricevuto totale_imponibile da modal multi-riga, uso quello
+    const finalImp     = args.totale_imponibile != null ? args.totale_imponibile : args.imponibile;
+    const finalIva     = args.totale_iva != null ? args.totale_iva : iva_importo;
+    const finalTotale  = args.totale != null ? args.totale : totale;
+    const finalIvaPct  = args.iva_percent != null ? args.iva_percent : 22;
+    const finalBollo   = args.bollo || 0;
+
     const { data, error } = await supabase.from('fin_fatture_emesse').insert({
       azienda_id: aziendaId,
       numero: nuovoNumero,
@@ -215,17 +236,28 @@ export function useFattureFinanze(aziendaId: string | null) {
       cliente_indirizzo: args.cliente_indirizzo || null,
       cliente_citta: args.cliente_citta || null,
       cliente_provincia: args.cliente_provincia || null,
-      imponibile: args.imponibile,
-      iva_percent: args.iva_percent,
-      iva: iva_importo,
-      totale: totale,
+      cliente_sdi: args.cliente_sdi || null,
+      imponibile: finalImp,
+      iva_percent: finalIvaPct,
+      iva: finalIva,
+      totale: finalTotale,
       pagato: 0,
-      residuo: totale,
+      residuo: finalTotale,
       stato: 'emessa',
-      tipo: args.tipo,
+      tipo: args.tipo || 'unica',
       commessa_code: args.commessa_code || null,
       note: args.note || null,
       righe: args.righe ? JSON.stringify(args.righe) : null,
+      // === Campi PRO ===
+      tipo_documento_sdi: args.tipo_documento_sdi || 'TD01',
+      bollo: finalBollo,
+      ecobonus_tipo: args.ecobonus_tipo || null,
+      sconto_in_fattura: args.sconto_in_fattura || false,
+      riepilogo_iva: args.riepilogo_iva ? JSON.stringify(args.riepilogo_iva) : null,
+      bene_significativo_calc: args.bene_significativo_calc ? JSON.stringify(args.bene_significativo_calc) : null,
+      causale_forfettario: args.causale_forfettario || null,
+      modalita_pagamento: args.modalita_pagamento || null,
+      perc_acconto: args.perc_acconto || null,
     }).select('id').single();
 
     if (error) return { ok: false, error: error.message };

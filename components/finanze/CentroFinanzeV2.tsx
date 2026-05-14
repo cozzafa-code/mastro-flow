@@ -10,9 +10,10 @@ import VistaPassive from "./v2/VistaPassive";
 import VistaF24Iva from "./v2/VistaF24Iva";
 import FabFinanzeV2 from "./v2/FabFinanzeV2";
 
-// Riuso modal del legacy (esportati)
+// Modal PRO multi-riga (nuovo)
+import ModalNuovaFatturaPro from "./v2/ModalNuovaFatturaPro";
+// Riuso modal del legacy (esportati) per le altre azioni
 import {
-  ModalNuovaFattura,
   ModalRegistraPagamento,
   ModalNuovaSpesa,
   ModalPagamentoFornitore,
@@ -208,7 +209,8 @@ export default function CentroFinanzeV2({ aziendaId, onClose }: Props) {
 
       {/* MODAL legacy collegati */}
       {showNuovaFattura && (
-        <ModalNuovaFattura
+        <ModalNuovaFatturaPro
+          aziendaId={aziendaId}
           onClose={() => setShowNuovaFattura(false)}
           onCrea={async (d: any) => {
             const res = await fatt.creaFattura(d);
