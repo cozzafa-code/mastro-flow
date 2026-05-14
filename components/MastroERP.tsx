@@ -38,6 +38,7 @@ import { getAziendaId, loadAllData, saveCantiere, saveEvent, deleteEventDB, save
 import { MastroContext } from "./MastroContext";
 import { usePreventivoNotifier } from "../lib/preventivo-notifier";
 import PreventivoRispostaToast from "./PreventivoRispostaToast";
+import { ModuloMagazzino } from "./magazzino";
 import { MastroUpdateBanner } from "./MastroUpdateBanner";
 import SettingsPanel from "./SettingsPanel";
 import SettingsMobile from "./SettingsMobile";
@@ -4213,6 +4214,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       <div style={S.app}>
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && <PanelErrorBoundary name="Home">{renderHome()}</PanelErrorBoundary>}
+        {tab === "magazzino" && <PanelErrorBoundary name="Magazzino"><ModuloMagazzino aziendaId={String((typeof window !== "undefined" && (window as any).__AZIENDA_ID__) || "ccca51c1-656b-4e7c-a501-55753e20da29")} onClose={() => setTab("home")} /></PanelErrorBoundary>}
         {tab === "commesse" && <PanelErrorBoundary name="Commesse">{renderCommesse()}</PanelErrorBoundary>}
         {selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
         {tab === "clienti" && <PanelErrorBoundary name="Clienti">{renderClienti()}</PanelErrorBoundary>}
@@ -6184,7 +6186,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
-      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : tab === "team" ? "team" : "home"} onNavigate={(t) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }} />
+      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : tab === "team" ? "team" : tab === "magazzino" ? "magazzino" : "home"} onNavigate={(t) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }} />
     </>
     </MastroContext.Provider>
   );
