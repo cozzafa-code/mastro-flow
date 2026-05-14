@@ -13,6 +13,8 @@ import OrdineCardHero from "./globali/OrdineCardHero";
 import StatisticheOrdiniSheet from "./StatisticheOrdiniSheet";
 import OrdineDettaglioSheet from "./OrdineDettaglioSheet";
 import RicezioneMerceSheet from "./RicezioneMerceSheet";
+import QrScannerSheet from "./qr/QrScannerSheet";
+import QrShowModal from "./qr/QrShowModal";
 
 interface Props {
   aziendaId: string;
@@ -42,6 +44,8 @@ export default function OrdiniGlobaliSheet({
   const [statsOpen, setStatsOpen] = useState(false);
   const [dettaglioOrdineId, setDettaglioOrdineId] = useState<string | null>(null);
   const [ricezioneOrdineId, setRicezioneOrdineId] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [qrShowOrdine, setQrShowOrdine] = useState<OrdineConCommessa | null>(null);
 
   useEffect(() => {
     if (!aziendaId) return;
@@ -128,7 +132,7 @@ export default function OrdiniGlobaliSheet({
         onQuery={setQuery}
         onClose={onClose}
         onOpenStats={() => setStatsOpen(true)}
-        onOpenScanner={() => onApriScanner?.()}
+        onOpenScanner={() => setScannerOpen(true)}
         onOpenSettings={() => { /* TODO settings */ }}
       />
 
@@ -190,7 +194,7 @@ export default function OrdiniGlobaliSheet({
                 const props = {
                   ord: o,
                   onClick: () => setDettaglioOrdineId(o.id),
-                  onQrClick: () => { /* TODO QR */ },
+                  onQrClick: () => setQrShowOrdine(o),
                   onScan: () => onApriScanner?.(),
                 };
                 if (cardStyle === "B") return <OrdineCardTimeline key={o.id} {...props} />;
@@ -216,6 +220,34 @@ export default function OrdiniGlobaliSheet({
           onClose={() => setDettaglioOrdineId(null)}
           onApriRicezione={(id) => { setDettaglioOrdineId(null); setRicezioneOrdineId(id); }}
           onApriCommessa={(cmId) => { setDettaglioOrdineId(null); onApriCommessa(cmId); }}
+        />
+      )}
+
+      {scannerOpen && (
+        <QrScannerSheet
+          onClose={() => setScannerOpen(false)}
+          onScanResult={async (token, rigaCode) => {
+            setScannerOpen(false);
+            // Trova ordine via token chiamando RPC
+            const { data, error } = await supabase.rpc("portale_ordine_via_token", { p_token: token });
+            if (error || !data?.ok) {
+              alert("QR non riconosciuto o scaduto");
+              return;
+            }
+            const ordineId = (data as any).ordine?.id;
+            if (ordineId) {
+              setRicezioneOrdineId(ordineId);
+            }
+          }}
+        />
+      )}
+
+      {qrShowOrdine && (
+        <QrShowModal
+          ordineId={qrShowOrdine.id}
+          numero={qrShowOrdine.numero || undefined}
+          fornitore={(qrShowOrdine as any).fornitore_nome}
+          onClose={() => setQrShowOrdine(null)}
         />
       )}
 
