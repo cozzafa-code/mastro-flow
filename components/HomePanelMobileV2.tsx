@@ -498,6 +498,11 @@ export default function HomePanelMobileV2(props: any) {
         <CentroFinanze
           aziendaId={aziendaIdResolved}
           onClose={() => setShowCentroFinanze(false)}
+          onCreaFattura={() => window.dispatchEvent(new CustomEvent('mastro:fin:nuova-fattura'))}
+          onPagamentoRicevuto={(fId) => window.dispatchEvent(new CustomEvent('mastro:fin:pagamento-in', { detail: { fatturaId: fId } }))}
+          onNuovaSpesa={() => window.dispatchEvent(new CustomEvent('mastro:fin:nuova-spesa'))}
+          onPagamentoFornitore={(fId) => window.dispatchEvent(new CustomEvent('mastro:fin:pagamento-out', { detail: { fatturaId: fId } }))}
+          onFatturaRicevuta={() => window.dispatchEvent(new CustomEvent('mastro:fin:fattura-ricevuta'))}
         />
       )}
     </div>
