@@ -1,3 +1,4 @@
+// cache-bust-20260514213840
 // HomePanelMobileV2 V20 - bottom sheet evento/task + swipe calendario + no frecce
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
