@@ -9,6 +9,7 @@ import VistaLabor from "./VistaLabor";
 import VistaMappa from "./VistaMappa";
 import VistaCycleCount from "./VistaCycleCount";
 import OrdineRapido30s from "./OrdineRapido30s";
+import { VistaFurgoniContenuto, VistaCantieriContenuto, VistaLocalizzazioneArticoli } from "./ViewsCrossModulo";
 import ScannerQR from "./ScannerQR";
 import { VistaAbcAnalysis, VistaGroupBuying, VistaWavePicking } from "./VisteMagazzinoSet1";
 import { VistaQcHold, VistaResi, VistaDockSlots, VistaCrossDock } from "./VisteMagazzinoSet2";
@@ -28,7 +29,7 @@ export type ModuloVista =
   | "articoli" | "movimenti" | "riordini" | "inventario"
   | "abc" | "wave" | "qc" | "resi" | "dock" | "groupbuying"
   | "labor" | "crossdock" | "mappa" | "cyclecount"
-  | "ordine30s" | "scanner";
+  | "ordine30s" | "scanner" | "furgoni" | "cantieri" | "localizzazione";
 
 interface Props {
   aziendaId: string;
@@ -59,6 +60,9 @@ export default function ModuloMagazzino({ aziendaId, onClose, vistaIniziale = "a
       case "cyclecount": return <VistaCycleCount mag={mag} />;
       case "ordine30s": return <OrdineRapido30s mag={mag} onBack={() => setVista("riordini")} />;
       case "scanner": return <ScannerQR mag={mag} onBack={() => setVista("articoli")} />;
+      case "furgoni": return <VistaFurgoniContenuto aziendaId={aziendaId} />;
+      case "cantieri": return <VistaCantieriContenuto aziendaId={aziendaId} />;
+      case "localizzazione": return <VistaLocalizzazioneArticoli aziendaId={aziendaId} />;
       default: return <VistaArticoli mag={mag} />;
     }
   };
@@ -164,12 +168,23 @@ export default function ModuloMagazzino({ aziendaId, onClose, vistaIniziale = "a
             background: "#fff", borderRadius: 10, padding: "8px 6px", marginTop: 5,
             display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 4,
           }}>
+            <QuickAction icon={<TruckIcon2 size={14} />} label="Furgoni" onClick={() => setVista("furgoni")} color={AMBER} />
+            <QuickAction icon={<BuildIcon size={14} />} label="Cantieri" onClick={() => setVista("cantieri")} color={"#5C2D8C"} />
+            <QuickAction icon={<MapPinIcon size={14} />} label="Dove" onClick={() => setVista("localizzazione")} color={TEAL} />
             <QuickAction icon={<CalIcon size={14} />} label="Dock" onClick={() => setVista("dock")} />
             <QuickAction icon={<LinkIcon size={14} />} label="X-Dock" onClick={() => setVista("crossdock")} color={TEAL} />
             <QuickAction icon={<TargetIcon size={14} />} label="Conta" onClick={() => setVista("cyclecount")} />
+          </div>
+          <div style={{
+            background: "#fff", borderRadius: 10, padding: "8px 6px", marginTop: 5,
+            display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 4,
+          }}>
             <QuickAction icon={<TrendIcon size={14} />} label="Team" onClick={() => setVista("labor")} color={GREEN} />
             <QuickAction icon={<BoltIcon size={14} />} label="30s" onClick={() => setVista("ordine30s")} color={AMBER} />
             <QuickAction icon={<QrIcon size={14} />} label="Scan" onClick={() => setVista("scanner")} color={NAVY} />
+            <QuickAction icon={<UsersIcon size={14} />} label="Gruppo" onClick={() => setVista("groupbuying")} color={GREEN} />
+            <QuickAction icon={<ShieldIcon size={14} />} label="QC" onClick={() => setVista("qc")} count={mag.qcHolds.filter((q: any) => q.stato === "in_attesa").length} color={AMBER} />
+            <QuickAction icon={<RotateIcon size={14} />} label="Resi" onClick={() => setVista("resi")} count={mag.resi.length} color={"#5C2D8C"} />
           </div>
         </div>
       )}
@@ -283,4 +298,20 @@ const CalIcon = ({ size = 16 }) => ico(size, <><rect x="3" y="4" width="18" heig
 const LinkIcon = ({ size = 16 }) => ico(size, <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>);
 const TargetIcon = ({ size = 16 }) => ico(size, <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>);
 const TrendIcon = ({ size = 16 }) => ico(size, <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>);
+const TruckIcon2 = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+    <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+    <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+  </svg>
+);
+const BuildIcon = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
+  </svg>
+);
+const MapPinIcon = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+);
 const BoltIcon = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>);
