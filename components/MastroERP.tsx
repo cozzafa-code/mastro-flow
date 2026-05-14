@@ -4213,7 +4213,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       <MastroUpdateBanner />
       <div style={S.app}>
         {/* Content */}
-        {tab === "home" && !selectedCM && !selectedMsg && <PanelErrorBoundary name="Home">{renderHome()}</PanelErrorBoundary>}
+        {tab === "home" && !selectedCM && !selectedMsg && (<><button onClick={() => setTab("magazzino")} style={{position:"fixed",top:80,right:12,zIndex:999,background:"#28A0A0",color:"#fff",padding:"10px 16px",borderRadius:8,fontSize:12,fontWeight:800,letterSpacing:0.4,textTransform:"uppercase",border:"none",boxShadow:"0 4px 12px rgba(40,160,160,0.4)",cursor:"pointer"}}>MAGAZZINO TOP 80</button><PanelErrorBoundary name="Home">{renderHome()}</PanelErrorBoundary></>)}
         {tab === "magazzino" && <PanelErrorBoundary name="Magazzino"><ModuloMagazzino aziendaId={String((typeof window !== "undefined" && (window as any).__AZIENDA_ID__) || "ccca51c1-656b-4e7c-a501-55753e20da29")} onClose={() => setTab("home")} /></PanelErrorBoundary>}
         {tab === "commesse" && <PanelErrorBoundary name="Commesse">{renderCommesse()}</PanelErrorBoundary>}
         {selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
