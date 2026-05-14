@@ -16,6 +16,7 @@ import RicezioneMerceSheet from "./RicezioneMerceSheet";
 import QrScannerSheet from "./qr/QrScannerSheet";
 import QrShowModal from "./qr/QrShowModal";
 import NuovoOrdineWizard from "./NuovoOrdineWizard";
+import { usePreferenze } from "@/hooks/usePreferenze";
 
 interface Props {
   aziendaId: string;
@@ -32,13 +33,28 @@ export default function OrdiniGlobaliSheet({
 }: Props) {
   const [ordini, setOrdini] = useState<OrdineConCommessa[]>([]);
   const [loading, setLoading] = useState(true);
-  const [raggruppa, setRaggruppa] = useState<GroupingKey>("stato");
-  const [cardStyle, setCardStyle] = useState<CardStyle>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("mastro_ordini_card_style") as CardStyle) || "A";
-    }
-    return "A";
-  });
+  const { preferenze, setPreferenza } = usePreferenze();
+  const [raggruppa, setRaggruppaState] = useState<GroupingKey>(
+    (preferenze.ordini_raggruppa as GroupingKey) || "stato"
+  );
+  const [cardStyle, setCardStyleState] = useState<CardStyle>(
+    (preferenze.ordini_card_style as CardStyle) || "A"
+  );
+
+  // Sync preferenze da DB quando arrivano
+  useEffect(() => {
+    if (preferenze.ordini_raggruppa) setRaggruppaState(preferenze.ordini_raggruppa as GroupingKey);
+    if (preferenze.ordini_card_style) setCardStyleState(preferenze.ordini_card_style as CardStyle);
+  }, [preferenze.ordini_raggruppa, preferenze.ordini_card_style]);
+
+  const setRaggruppa = (k: GroupingKey) => {
+    setRaggruppaState(k);
+    setPreferenza("ordini_raggruppa", k);
+  };
+  const setCardStyle = (s: CardStyle) => {
+    setCardStyleState(s);
+    setPreferenza("ordini_card_style", s);
+  };
   const [filtroStato, setFiltroStato] = useState("tutti");
   const [query, setQuery] = useState("");
   const [filtriAvanzati, setFiltriAvanzati] = useState<ActiveFilter[]>([]);
@@ -69,11 +85,7 @@ export default function OrdiniGlobaliSheet({
     return () => { supabase.removeChannel(ch); };
   }, [aziendaId]);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("mastro_ordini_card_style", cardStyle);
-    }
-  }, [cardStyle]);
+
 
   const filtered = useMemo(() => {
     let res = ordini;
