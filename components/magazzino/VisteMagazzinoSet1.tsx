@@ -116,10 +116,27 @@ function AbcBox({ classe, data, bg, color, desc }: any) {
 // ============================================================
 
 export function VistaGroupBuying({ mag }: { mag: any }) {
+  const [showInfo, setShowInfo] = useState(false);
   const campagne: GroupBuying[] = mag.groupBuying || [];
 
   return (
     <div>
+      <button onClick={() => setShowInfo(true)} style={{
+        width: "100%", padding: 12, marginBottom: 9,
+        background: "linear-gradient(180deg, #E8B05C, #8B6926)",
+        color: "#fff", borderRadius: 11, fontSize: 12, fontWeight: 800,
+        letterSpacing: 0.5, textTransform: "uppercase", border: "none", cursor: "pointer",
+      }}>+ ORGANIZZA ACQUISTO GRUPPO</button>
+      {showInfo && (
+        <div onClick={() => setShowInfo(false)} style={{ position: "fixed", inset: 0, background: "rgba(15,31,51,0.75)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: 20, maxWidth: 400, textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#1B3A5C", marginBottom: 10 }}>Acquisto gruppo</div>
+            <div style={{ fontSize: 12, color: "#5C6B7A", lineHeight: 1.5 }}>Per organizzare una campagna serve raccogliere almeno 3 serramentisti vicini. Funzione disponibile a partire dal lancio Q3/2026.</div>
+            <button onClick={() => setShowInfo(false)} style={{ marginTop: 14, padding: "8px 18px", background: "#28A0A0", color: "#fff", border: "none", borderRadius: 7, fontSize: 11, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase", cursor: "pointer" }}>OK</button>
+          </div>
+        </div>
+      )}
+
       <AlertCard
         kind="good"
         title={`${campagne.length} campagne attive · €1.140 risparmiati`}

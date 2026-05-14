@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { ArticoloMagazzino } from "../../hooks/useMagazzinoTop";
+import { supabase } from "../../lib/supabase";
 
 const NAVY = "#1B3A5C";
 const NAVY_DEEP = "#0F1F33";
@@ -51,10 +52,42 @@ export default function OrdineRapido30s({ mag, onBack, articoloPreselezionato }:
   const percProg = ((30 - tempoRimasto) / 30) * 100;
 
   const inviaOrdine = async () => {
-    setInviato(true);
+    if (!articolo) return;
+    if (!articolo.fornitore_id) {
+      alert("Articolo senza fornitore assegnato");
+      return;
+    }
     setStep(4);
-    // TODO: chiamata API /api/ordine-rapido-pec
-    setTimeout(() => onBack(), 2000);
+    const azId = (articolo as any).azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29";
+    const consegna = new Date();
+    consegna.setDate(consegna.getDate() + (articolo.lead_time_giorni || 7));
+    const righe = [{
+      articolo_id: articolo.id,
+      codice: articolo.codice,
+      nome: articolo.nome,
+      quantita: quantita,
+      unita_misura: articolo.unita_misura,
+      prezzo_unitario: prezzoUnit,
+      subtotale: totale,
+    }];
+    const { error } = await supabase.from("ordini_fornitore").insert({
+      azienda_id: azId,
+      fornitore_id: articolo.fornitore_id,
+      fornitore_nome: articolo.fornitore_nome,
+      data_ordine: new Date().toISOString().split("T")[0],
+      consegna_prevista: consegna.toISOString().split("T")[0],
+      stato: "da_inviare",
+      righe,
+      totale_euro: totale,
+      note: "Ordine rapido 30s",
+    });
+    if (error) {
+      alert("Errore: " + error.message);
+      setStep(3);
+      return;
+    }
+    setInviato(true);
+    setTimeout(() => onBack(), 1500);
   };
 
   if (!articolo) {

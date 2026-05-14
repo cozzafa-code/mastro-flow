@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { QcHold, ResoCliente, DockSlot, CrossDockMatch } from "../../hooks/useMagazzinoTop";
 import { ModalNuovoXdock, ModalNuovoDockSlot } from "./ModaliMagazzino2";
+import { ModalNuovoReso } from "./ModaliMagazzino";
 
 const NAVY = "#1B3A5C";
 const TEAL = "#28A0A0";
@@ -92,6 +93,8 @@ function QcRow({ h, onDecidi, richiamo }: { h: QcHold; onDecidi: (d: string) => 
 // ============================================================
 
 export function VistaResi({ mag }: { mag: any }) {
+  const [openReso, setOpenReso] = useState(false);
+  const aziendaId = (mag.articoli[0] as any)?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29";
   const resi: ResoCliente[] = mag.resi || [];
 
   const cnts = {
@@ -111,6 +114,14 @@ export function VistaResi({ mag }: { mag: any }) {
           <KpiBox label="Scarti" value={cnts.no} color={RED} />
         </div>
       </div>
+
+      <button onClick={() => setOpenReso(true)} style={{
+        width: "100%", padding: 12, marginBottom: 9,
+        background: "linear-gradient(180deg, #5C2D8C, #3D1E5E)",
+        color: "#fff", borderRadius: 11, fontSize: 12, fontWeight: 800,
+        letterSpacing: 0.5, textTransform: "uppercase", border: "none", cursor: "pointer",
+      }}>+ NUOVO RESO</button>
+      {openReso && <ModalNuovoReso mag={mag} aziendaId={aziendaId} onClose={() => setOpenReso(false)} />}
 
       <Sez title="Resi attivi" count={resi.length}>
         {resi.length === 0 ? (
