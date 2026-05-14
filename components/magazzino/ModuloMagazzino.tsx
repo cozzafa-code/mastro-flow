@@ -11,6 +11,7 @@ import VistaCycleCount from "./VistaCycleCount";
 import OrdineRapido30s from "./OrdineRapido30s";
 import { VistaFurgoniContenuto, VistaCantieriContenuto, VistaLocalizzazioneArticoli } from "./ViewsCrossModulo";
 import VistaListaSpesa from "./VistaListaSpesa";
+import VistaRicezioneOrdini from "./VistaRicezioneOrdini";
 import ModalOrdineMultiRiga from "./ModalOrdineMultiRiga";
 import ScannerQR from "./ScannerQR";
 import { VistaAbcAnalysis, VistaGroupBuying, VistaWavePicking } from "./VisteMagazzinoSet1";
@@ -31,7 +32,7 @@ export type ModuloVista =
   | "articoli" | "movimenti" | "riordini" | "inventario"
   | "abc" | "wave" | "qc" | "resi" | "dock" | "groupbuying"
   | "labor" | "crossdock" | "mappa" | "cyclecount"
-  | "ordine30s" | "scanner" | "furgoni" | "cantieri" | "localizzazione" | "lista";
+  | "ordine30s" | "scanner" | "furgoni" | "cantieri" | "localizzazione" | "lista" | "ricezione";
 
 interface Props {
   aziendaId: string;
@@ -66,6 +67,7 @@ export default function ModuloMagazzino({ aziendaId, onClose, vistaIniziale = "a
       case "cantieri": return <VistaCantieriContenuto aziendaId={aziendaId} />;
       case "localizzazione": return <VistaLocalizzazioneArticoli aziendaId={aziendaId} />;
       case "lista": return <VistaListaSpesa aziendaId={aziendaId} mag={mag} />;
+      case "ricezione": return <VistaRicezioneOrdini aziendaId={aziendaId} mag={mag} />;
       default: return <VistaArticoli mag={mag} />;
     }
   };
@@ -167,6 +169,7 @@ export default function ModuloMagazzino({ aziendaId, onClose, vistaIniziale = "a
             />
             <QuickAction icon={<ListIcon size={14} />} label="Lista" onClick={() => setVista("lista")} color={GREEN} />
             <QuickAction icon={<CartIcon size={14} />} label="Nuovo Ord." onClick={() => setShowOrdineMulti(true)} color={TEAL} />
+            <QuickAction icon={<InboxIcon size={14} />} label="Ricevi DDT" onClick={() => setVista("ricezione")} color={AMBER} />
           </div>
           <div style={{
             background: "#fff", borderRadius: 10, padding: "8px 6px", marginTop: 5,
@@ -188,6 +191,7 @@ export default function ModuloMagazzino({ aziendaId, onClose, vistaIniziale = "a
             <QuickAction icon={<QrIcon size={14} />} label="Scan" onClick={() => setVista("scanner")} color={NAVY} />
             <QuickAction icon={<ListIcon size={14} />} label="Lista" onClick={() => setVista("lista")} color={GREEN} />
             <QuickAction icon={<CartIcon size={14} />} label="Nuovo Ord." onClick={() => setShowOrdineMulti(true)} color={TEAL} />
+            <QuickAction icon={<InboxIcon size={14} />} label="Ricevi DDT" onClick={() => setVista("ricezione")} color={AMBER} />
             <QuickAction icon={<ShieldIcon size={14} />} label="QC" onClick={() => setVista("qc")} count={mag.qcHolds.filter((q: any) => q.stato === "in_attesa").length} color={AMBER} />
             <QuickAction icon={<RotateIcon size={14} />} label="Resi" onClick={() => setVista("resi")} count={mag.resi.length} color={"#5C2D8C"} />
           </div>
@@ -319,6 +323,12 @@ const CartIcon = ({ size = 14 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+  </svg>
+);
+const InboxIcon = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
   </svg>
 );
 const TruckIcon2 = ({ size = 14 }) => (
