@@ -43,13 +43,25 @@ export async function fetchOrdiniByAzienda(aziendaId: string): Promise<OrdineCon
     for (const c of (comm || [])) commMap[(c as any).id] = c;
   }
 
+  // Step 3: fornitori per arricchire nome
+  const fornIds = Array.from(new Set(ordini.map((o: any) => o.fornitore_id).filter(Boolean)));
+  let fornMap: Record<string, any> = {};
+  if (fornIds.length > 0) {
+    const { data: forn } = await supabase
+      .from('fornitori')
+      .select('id, nome, categoria')
+      .in('id', fornIds as string[]);
+    for (const f of (forn || [])) fornMap[(f as any).id] = f;
+  }
+
   return ordini.map((o: any) => {
     const c = o.commessa_id ? commMap[o.commessa_id] : null;
+    const f = o.fornitore_id ? fornMap[o.fornitore_id] : null;
     return {
       ...o,
-      commessa_code: c?.code ?? null,
-      commessa_cliente: c?.cliente ?? null,
-      commessa_cognome: c?.cognome ?? null,
+      commessa: c ? { code: c.code, cliente: c.cliente, cognome: c.cognome } : null,
+      fornitore_nome: f?.nome || o.fornitore || null,
+      fornitore_categoria: f?.categoria || null,
     };
   }) as OrdineConCommessa[];
 }
