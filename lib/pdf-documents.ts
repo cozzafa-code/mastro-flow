@@ -215,6 +215,153 @@ export function generaFatturaPDF(fat: any, ctx: any) {
   doc.save(`fattura_${fat.numero}_${fat.anno}_${fat.clienteNome?.replace(/\s/g, "_") || "cliente"}.pdf`);
 }
 
+// Variante che ritorna il PDF come data URI (per anteprima inline in iframe)
+// Stessa logica di generaFatturaPDF ma senza salvare il file
+export function generaFatturaPDFDataUri(fat: any, ctx: any): string {
+  const { aziendaInfo } = ctx;
+  const az = aziendaInfo || {};
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.width;
+
+  const tipoLabel: Record<string, string> = {
+    acconto: "FATTURA ACCONTO",
+    saldo:   "FATTURA SALDO",
+    unica:   "FATTURA",
+  };
+
+  miniHeader(doc, az, tipoLabel[fat.tipo] || "FATTURA", C.green);
+
+  let y = 28;
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...C.sub as [number,number,number]);
+  const azLines = [
+    az.indirizzo || "",
+    [az.cap, az.citta].filter(Boolean).join(" "),
+    az.piva ? `P.IVA ${az.piva}` : "",
+    az.cf ? `C.F. ${az.cf}` : "",
+    az.pec || "",
+    az.sdi ? `SDI ${az.sdi}` : "",
+  ].filter(Boolean);
+  doc.text(azLines, 12, y);
+
+  const clienteLines = [
+    `${fat.clienteNome || fat.cliente || ""}`,
+    fat.clienteIndirizzo || fat.indirizzo || "",
+    fat.clientePiva || fat.piva ? `P.IVA ${fat.clientePiva || fat.piva}` : "",
+    fat.clienteCf || fat.cf ? `C.F. ${fat.clienteCf || fat.cf}` : "",
+    fat.clienteSdi || fat.sdi ? `SDI ${fat.clienteSdi || fat.sdi}` : "",
+    fat.clientePec || fat.pec || "",
+  ].filter(Boolean);
+
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.text("DESTINATARIO", W / 2 + 4, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...C.dark as [number,number,number]);
+  doc.text(clienteLines, W / 2 + 4, y + 5);
+
+  y = Math.max(y + azLines.length * 5, y + clienteLines.length * 5) + 10;
+
+  doc.setFillColor(...C.bg as [number,number,number]);
+  doc.roundedRect(12, y, W - 24, 18, 3, 3, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C.dark as [number,number,number]);
+
+  const fRows = [
+    ["N Fattura", `${fat.numero || "BOZZA"}/${fat.anno || new Date().getFullYear()}`],
+    ["Data",       fat.data || new Date().toLocaleDateString("it-IT")],
+    ["Scadenza",   fat.scadenza || "-"],
+    ["Commessa",   fat.cmCode || fat.commessa_code || "-"],
+  ];
+  fRows.forEach(([k, v], i) => {
+    const x = 14 + i * ((W - 28) / 4);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.sub as [number,number,number]);
+    doc.setFontSize(7);
+    doc.text(k, x, y + 6);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.dark as [number,number,number]);
+    doc.setFontSize(10);
+    doc.text(String(v), x, y + 13);
+  });
+
+  y += 24;
+
+  // Tabella riga unica fattura
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.text("DESCRIZIONE", 14, y);
+  doc.text("IMPONIBILE", W - 80, y, { align: "right" });
+  doc.text("IVA", W - 50, y, { align: "right" });
+  doc.text("TOTALE", W - 14, y, { align: "right" });
+
+  y += 4;
+  doc.setDrawColor(...C.bdr as [number,number,number]);
+  doc.line(12, y, W - 12, y);
+  y += 6;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(...C.dark as [number,number,number]);
+
+  const imponibile = Number(fat.imponibile) || 0;
+  const ivaAmt = Number(fat.ivaAmt || fat.iva || 0);
+  const ivaPerc = Number(fat.iva_percent || fat.ivaPerc || (fat.iva && fat.iva < 30 ? fat.iva : 10));
+  const totale = Number(fat.importo || fat.totale) || imponibile + ivaAmt;
+
+  const desc = fat.note
+    || (fat.tipo === "acconto" ? "Acconto su fornitura e posa serramenti"
+      : fat.tipo === "saldo" ? "Saldo a completamento lavori"
+        : "Fornitura e posa serramenti");
+
+  doc.text(desc, 14, y);
+  doc.text(`EUR ${imponibile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}`, W - 80, y, { align: "right" });
+  doc.text(`${ivaPerc}%`, W - 50, y, { align: "right" });
+  doc.text(`EUR ${totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}`, W - 14, y, { align: "right" });
+
+  y += 14;
+
+  // Box totale finale
+  doc.setFillColor(...C.bg as [number,number,number]);
+  doc.roundedRect(W - 80, y, 68, 18, 3, 3, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.text("TOTALE DOCUMENTO", W - 76, y + 6);
+  doc.setFontSize(14);
+  doc.setTextColor(...C.dark as [number,number,number]);
+  doc.text(`EUR ${totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}`, W - 76, y + 14);
+
+  y += 26;
+
+  // Watermark BOZZA se non ancora persistita
+  if (!fat.id || String(fat.id).startsWith("fat_") || fat.stato === "bozza") {
+    doc.setTextColor(220, 220, 220);
+    doc.setFontSize(70);
+    doc.setFont("helvetica", "bold");
+    doc.text("BOZZA", W / 2, 160, { align: "center", angle: 30 });
+  }
+
+  // Pagamento info
+  doc.setFontSize(8);
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.setFont("helvetica", "bold");
+  doc.text("MODALITA PAGAMENTO", 12, y);
+  doc.setFont("helvetica", "normal");
+  doc.text("Bonifico bancario", 12, y + 5);
+  if (az.iban) doc.text(`IBAN: ${az.iban}`, 12, y + 10);
+  if (fat.scadenza) doc.text(`Scadenza: ${fat.scadenza}`, 12, y + 15);
+
+  // Ritorna data URI invece di salvare
+  return doc.output("datauristring");
+}
+
 // ─────────────────────────────────────────────────────────
 // ORDINE FORNITORE
 // ─────────────────────────────────────────────────────────

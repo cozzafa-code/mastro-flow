@@ -3292,14 +3292,23 @@ export default function CMDetailPanel() {
                       totaleCommessa={totale29}
                       fatture={fattCmIdScheda as any}
                       fmtEur={fmtEur29}
-                      onCreaFattura={(tipo, importo, scadenza, note) => {
+                      aziendaInfo={typeof aziendaInfo !== "undefined" ? aziendaInfo : undefined}
+                      commessa={c29}
+                      onCreaFattura={async (tipo, importo, scadenza, note) => {
+                        let fattCreata: any = null;
                         if (typeof creaFattura === "function") {
-                          (creaFattura as any)(c29, tipo, importo, scadenza, note);
+                          try {
+                            fattCreata = await (creaFattura as any)(c29, tipo, importo, scadenza, note);
+                          } catch (e) {
+                            console.error("[onCreaFattura] errore", e);
+                            return null;
+                          }
                         }
                         if (typeof setCcDone === "function") {
-                          setCcDone("Fattura creata");
+                          setCcDone("Fattura bozza creata");
                           setTimeout(() => setCcDone(null), 3000);
                         }
+                        return fattCreata;
                       }}
                       onMarcaPagata={async (fatturaId, metodoPag) => {
                         try {

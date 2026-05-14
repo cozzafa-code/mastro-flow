@@ -25,7 +25,9 @@ interface Props {
   commessa: any; // selectedCM
   totaleCommessa: number; // calcolato dall'host
   fatture: Fattura[]; // gia' filtrate per cmId
-  onCreaFattura: (tipo: FatturaTipo, importo: number, scadenza: string, note: string) => void;
+  onCreaFattura: (tipo: FatturaTipo, importo: number, scadenza: string, note: string) => Promise<any> | any;
+  aziendaInfo?: any;
+  commessa?: any;
   onMarcaPagata: (fatturaId: string, metodoPag: string) => void;
   onGeneraPDF?: (fattura: Fattura) => void;
   onSollecitaWhatsApp?: (fattura: Fattura) => void;
@@ -86,7 +88,7 @@ function defaultFmtEur(n: number): string {
 
 export default function SchedaFinanziariaCommessa({
   commessa, totaleCommessa, fatture,
-  onCreaFattura, onMarcaPagata, onGeneraPDF, onSollecitaWhatsApp, onAnnullaFattura,
+  onCreaFattura, onMarcaPagata, onGeneraPDF, onSollecitaWhatsApp, onAnnullaFattura, aziendaInfo, commessa,
   fmtEur = defaultFmtEur,
 }: Props) {
   const [showWizard, setShowWizard] = useState(false);
@@ -96,6 +98,7 @@ export default function SchedaFinanziariaCommessa({
   // ===== KPI =====
   const fatturato = fatture.reduce((s, f) => s + (f.importo || 0), 0);
   const pagato = fatture.filter(f => f.pagata).reduce((s, f) => s + (f.importo || 0), 0);
+  const [showInviaModal, setShowInviaModal] = useState<any>(null);
   const inScadenza = fatture.filter(f => !f.pagata && statoOf(f) === "in_scadenza").reduce((s, f) => s + (f.importo || 0), 0);
   const scaduto = fatture.filter(f => !f.pagata && statoOf(f) === "scaduta").reduce((s, f) => s + (f.importo || 0), 0);
   const residuo = Math.max(0, totaleCommessa - fatturato);
@@ -308,10 +311,15 @@ export default function SchedaFinanziariaCommessa({
           suggerimento={suggerimento}
           fmtEur={fmtEur}
           onCancel={() => setShowWizard(false)}
-          onConfirm={(tipo, importo, scadenza, note) => {
-            onCreaFattura(tipo, importo, scadenza, note);
+          onConfirm={async (tipo, importo, scadenza, note) => {
+            const fattCreata = await Promise.resolve(onCreaFattura(tipo, importo, scadenza, note));
             setShowWizard(false);
+            if (fattCreata && (fattCreata.id || fattCreata.dbId)) {
+              setShowInviaModal(fattCreata);
+            }
           }}
+          aziendaInfo={aziendaInfo}
+          commessa={commessa}
         />
       )}
 
@@ -325,6 +333,17 @@ export default function SchedaFinanziariaCommessa({
             onMarcaPagata(showPagataModal.id, metodo);
             setShowPagataModal(null);
           }}
+        />
+      )}
+
+      {/* MODAL INVIA FATTURA dopo creazione bozza */}
+      {showInviaModal && (
+        <ModalInviaFattura
+          fattura={showInviaModal}
+          commessa={commessa}
+          aziendaInfo={aziendaInfo}
+          fmtEur={fmtEur}
+          onClose={() => setShowInviaModal(null)}
         />
       )}
     </div>
@@ -342,17 +361,22 @@ function Kpi({ label, value, sub, color }: { label: string; value: string; sub: 
 }
 
 // ===== WIZARD NUOVA FATTURA =====
-function WizardNuovaFattura({ totaleCommessa, giaFatturato, giaPagato, residuo, suggerimento, fmtEur, onCancel, onConfirm }: {
+function WizardNuovaFattura({ totaleCommessa, giaFatturato, giaPagato, residuo, suggerimento, fmtEur, onCancel, onConfirm, aziendaInfo, commessa }: {
   totaleCommessa: number; giaFatturato: number; giaPagato: number; residuo: number;
   suggerimento: { tipo: FatturaTipo; importo: number; lbl: string } | null;
   fmtEur: (n: number) => string;
   onCancel: () => void;
-  onConfirm: (tipo: FatturaTipo, importo: number, scadenza: string, note: string) => void;
+  onConfirm: (tipo: FatturaTipo, importo: number, scadenza: string, note: string) => void | Promise<void>;
+  aziendaInfo?: any;
+  commessa?: any;
 }) {
   const [tipo, setTipo] = useState<FatturaTipo>(suggerimento?.tipo || "acconto");
   const [importo, setImporto] = useState<string>(suggerimento ? String(suggerimento.importo) : String(Math.round(totaleCommessa * 0.5)));
   const [scadenzaGg, setScadenzaGg] = useState<number>(30);
   const [note, setNote] = useState<string>("");
+  const [step, setStep] = useState<"dati" | "anteprima">("dati");
+  const [pdfUri, setPdfUri] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
 
   const importoNum = parseFloat(importo) || 0;
   const dopoFatt = giaFatturato + importoNum;
@@ -370,6 +394,48 @@ function WizardNuovaFattura({ totaleCommessa, giaFatturato, giaPagato, residuo, 
 
   const valid = importoNum > 0 && importoNum <= residuo + 1; // tolleranza 1€
 
+  // STEP ANTEPRIMA: mostra PDF inline
+  if (step === "anteprima") {
+    return (
+      <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 14 }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: T.card, borderRadius: 18, width: "100%", maxWidth: 600, maxHeight: "94vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ padding: "16px 18px", borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 900, color: T.acc, letterSpacing: 0.8 }}>ANTEPRIMA FATTURA</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: T.text, marginTop: 2 }}>{TIPO_LABEL[tipo]} - {fmtEur(importoNum)}</div>
+            </div>
+            <div onClick={onCancel} style={{ width: 30, height: 30, borderRadius: "50%", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: T.sub }}>x</div>
+          </div>
+          <div style={{ flex: 1, background: "#525659", padding: 0, overflow: "hidden" }}>
+            {pdfUri ? (
+              <iframe src={pdfUri} style={{ width: "100%", height: "100%", border: "none" }} title="Anteprima fattura" />
+            ) : (
+              <div style={{ padding: 40, color: "#fff", textAlign: "center" }}>Generazione anteprima...</div>
+            )}
+          </div>
+          <div style={{ padding: "12px 14px", borderTop: `1px solid ${T.bdr}`, display: "flex", gap: 8 }}>
+            <button onClick={() => setStep("dati")} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              MODIFICA
+            </button>
+            <button disabled={submitting} onClick={async () => {
+              setSubmitting(true);
+              try {
+                await onConfirm(tipo, importoNum, scadenzaIso, note);
+              } finally {
+                setSubmitting(false);
+              }
+            }} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none",
+              background: submitting ? T.gray : "linear-gradient(135deg, #28A0A0 0%, #1A7A7A 100%)",
+              color: "#fff", fontSize: 13, fontWeight: 800, cursor: submitting ? "wait" : "pointer" }}>
+              {submitting ? "Creazione..." : `CONFERMA E CREA BOZZA · ${fmtEur(importoNum)}`}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // STEP DATI (originale)
   return (
     <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 14 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: T.card, borderRadius: 18, width: "100%", maxWidth: 420, maxHeight: "92vh", overflowY: "auto", padding: "20px 18px" }}>
@@ -522,6 +588,127 @@ function ModalMarcaPagata({ fattura, fmtEur, onCancel, onConfirm }: {
             ✓ CONFERMA PAGAMENTO
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ===== MODAL INVIA FATTURA AL CLIENTE =====
+function ModalInviaFattura({ fattura, commessa, aziendaInfo, fmtEur, onClose }: {
+  fattura: any;
+  commessa?: any;
+  aziendaInfo?: any;
+  fmtEur: (n: number) => string;
+  onClose: () => void;
+}) {
+  const [inviando, setInviando] = useState<string | null>(null);
+  const [inviato, setInviato] = useState(false);
+
+  async function invia(canale: "email" | "whatsapp" | "altro") {
+    const fatturaId = fattura.dbId || fattura.id;
+    if (!fatturaId || String(fatturaId).startsWith("fat_")) {
+      alert("Fattura non persistita su DB, impossibile inviare");
+      return;
+    }
+    const aziendaId = (typeof window !== "undefined" && (sessionStorage.getItem("mastro:aziendaId") || localStorage.getItem("mastro:aziendaId")))
+      || commessa?.azienda_id
+      || aziendaInfo?.id
+      || "ccca51c1-656b-4e7c-a501-55753e20da29";
+    setInviando(canale);
+    try {
+      const r = await fetch("/api/fatture/invia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aziendaId, fatturaId, canale }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        alert("Errore invio: " + (j.error || "sconosciuto"));
+        setInviando(null);
+        return;
+      }
+      setInviato(true);
+
+      // Apri canale fisico in base alla scelta
+      const importoTot = Number(fattura.totale || fattura.importo) || 0;
+      const messaggio = `Ciao, ti ho inviato la fattura ${fattura.numero || ""} per EUR ${fmtEur(importoTot)} relativa alla commessa ${commessa?.code || ""}. Per pagamento bonifico: IBAN ${aziendaInfo?.iban || "(da inserire)"}.`;
+      if (canale === "whatsapp") {
+        const tel = (commessa?.telefono || "").replace(/[^0-9+]/g, "");
+        if (tel) {
+          window.open(`https://wa.me/${tel.replace(/^\+/, "")}?text=${encodeURIComponent(messaggio)}`, "_blank");
+        }
+      } else if (canale === "email") {
+        const email = commessa?.email || "";
+        if (email) {
+          window.open(`mailto:${email}?subject=${encodeURIComponent("Fattura " + (fattura.numero || ""))}&body=${encodeURIComponent(messaggio)}`, "_blank");
+        }
+      }
+
+      setTimeout(() => { onClose(); }, 1200);
+    } catch (e: any) {
+      alert("Errore invio: " + (e?.message || "sconosciuto"));
+      setInviando(null);
+    }
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 14 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: T.card, borderRadius: 18, width: "100%", maxWidth: 380, padding: "22px 20px" }}>
+
+        {inviato ? (
+          <div style={{ textAlign: "center", padding: "16px 8px" }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: "50%",
+              background: "#D8EBDF", color: "#1F5A3F",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              marginBottom: 14, fontSize: 28
+            }}>OK</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: T.text }}>Fattura inviata</div>
+            <div style={{ fontSize: 12, color: T.sub, marginTop: 6 }}>
+              Stato: <strong>inviata</strong>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 11, fontWeight: 900, color: T.acc, letterSpacing: 0.8 }}>FATTURA CREATA</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: T.text, marginTop: 3 }}>
+              {fattura.numero || fattura.numeroFull || "BOZZA"}
+            </div>
+            <div style={{ fontSize: 13, color: T.sub, marginTop: 2 }}>
+              {fmtEur(Number(fattura.totale || fattura.importo) || 0)} - {commessa?.cliente || "cliente"}
+            </div>
+
+            <div style={{ marginTop: 16, padding: "10px 12px", background: T.bg, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
+              <div style={{ fontSize: 10, fontWeight: 900, color: T.sub, letterSpacing: 0.5, marginBottom: 4 }}>STATO</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.amber }}>Bozza - non ancora inviata al cliente</div>
+            </div>
+
+            <div style={{ fontSize: 10, fontWeight: 900, color: T.sub, letterSpacing: 0.5, marginTop: 18, marginBottom: 8 }}>INVIA AL CLIENTE</div>
+
+            <button disabled={inviando !== null} onClick={() => invia("email")}
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.text, fontSize: 13, fontWeight: 700, cursor: inviando ? "wait" : "pointer", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 16 }}>@</span>
+              <span style={{ flex: 1, textAlign: "left" }}>{inviando === "email" ? "Invio email..." : "Invia via Email"}</span>
+            </button>
+
+            <button disabled={inviando !== null} onClick={() => invia("whatsapp")}
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.text, fontSize: 13, fontWeight: 700, cursor: inviando ? "wait" : "pointer", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 16 }}>WA</span>
+              <span style={{ flex: 1, textAlign: "left" }}>{inviando === "whatsapp" ? "Invio WhatsApp..." : "Invia via WhatsApp"}</span>
+            </button>
+
+            <button disabled={inviando !== null} onClick={() => invia("altro")}
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "none", background: T.bg, color: T.sub, fontSize: 12, fontWeight: 700, cursor: inviando ? "wait" : "pointer", marginBottom: 10 }}>
+              {inviando === "altro" ? "Marca come inviata..." : "Marca solo come inviata (no canale)"}
+            </button>
+
+            <button onClick={onClose} disabled={inviando !== null}
+              style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", background: "transparent", color: T.sub, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+              Resta in bozza, invio dopo
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
