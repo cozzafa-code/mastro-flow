@@ -10,6 +10,7 @@ import VistaPassive from "./v2/VistaPassive";
 import VistaF24Iva from "./v2/VistaF24Iva";
 import VistaAnalisi from "./v2/VistaAnalisi";
 import VistaTasse from "./v2/VistaTasse";
+import VistaSdiOcr from "./v2/VistaSdiOcr";
 import FabFinanzeV2 from "./v2/FabFinanzeV2";
 
 // Modal PRO multi-riga (nuovo)
@@ -30,7 +31,7 @@ export const TEAL = "#28A0A0";
 export const BG = "#7A8A9A";
 export const MUTED = "#5C6B7A";
 
-type Mode = "cashflow" | "attive" | "passive" | "analisi" | "tasse" | "f24iva";
+type Mode = "cashflow" | "attive" | "passive" | "analisi" | "tasse" | "sdi_ocr" | "f24iva";
 
 interface Props {
   aziendaId: string;
@@ -124,6 +125,7 @@ export default function CentroFinanzeV2({ aziendaId, onClose }: Props) {
             { v: "passive", l: "Passive", c: spese.kpiFatt?.n_da_pagare },
             { v: "analisi", l: "Analisi" },
             { v: "tasse", l: "Tasse" },
+            { v: "sdi_ocr", l: "SDI/OCR" },
           ] as { v: Mode; l: string; c?: number }[]).map((t) => {
             const act = mode === t.v;
             return (
@@ -190,6 +192,9 @@ export default function CentroFinanzeV2({ aziendaId, onClose }: Props) {
             )}
             {mode === "tasse" && (
               <VistaTasse aziendaId={aziendaId} />
+            )}
+            {mode === "sdi_ocr" && (
+              <VistaSdiOcr aziendaId={aziendaId} />
             )}
             {mode === "f24iva" && (
               <VistaF24Iva
