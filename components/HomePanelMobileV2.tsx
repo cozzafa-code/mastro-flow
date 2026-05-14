@@ -9,6 +9,7 @@ import CentroControlloMontaggi from "./CentroControlloMontaggi";
 import MontaggiSheet from "@/components/montaggi/MontaggiSheet";
 import OrdiniGlobaliSheet from "./ordini/OrdiniGlobaliSheet";
 import CentroControlloMagazzino from "./CentroControlloMagazzino";
+import { ModuloMagazzino } from "./magazzino";
 import CentroPreparazioneFurgoni from "./CentroPreparazioneFurgoni";
 import CentroClienti from "./CentroClienti";
 import CentroControlloProduzione from "./CentroControlloProduzione";
@@ -155,6 +156,7 @@ export default function HomePanelMobileV2(props: any) {
   const [showCentroProduzione, setShowCentroProduzione] = React.useState(false);
   const [showCentroOrdini, setShowCentroOrdini] = React.useState(false);
   const [showCentroMagazzino, setShowCentroMagazzino] = React.useState(false);
+  const [showMagazzinoTop, setShowMagazzinoTop] = React.useState(false);
   const [showCentroFurgoni, setShowCentroFurgoni] = React.useState(false);
   const [showCentroClienti, setShowCentroClienti] = React.useState(false);
   const [showCentroFinanze, setShowCentroFinanze] = React.useState(false);
@@ -368,7 +370,7 @@ export default function HomePanelMobileV2(props: any) {
             onProduzione={() => setShowCentroProduzione(true)}
             onMontaggi={() => setShowCentroMontaggi(true)}
             onOrdini={() => setShowCentroOrdini(true)}
-            onMagazzino={() => setShowCentroMagazzino(true)}
+            onMagazzino={() => setShowMagazzinoTop(true)}
             onFurgoni={() => setShowCentroFurgoni(true)}
             onFatturazione={() => setShowCentroFinanze(true)}
             onClienti={() => setShowCentroClienti(true)}
@@ -471,6 +473,12 @@ export default function HomePanelMobileV2(props: any) {
           onClose={() => setShowCentroOrdini(false)}
           onApriOrdine={(ordId: string) => { console.log('apri ordine', ordId); }}
           onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroOrdini(false); setOrganizzaCm(cm); } }}
+        />
+      )}
+      {showMagazzinoTop && (
+        <ModuloMagazzino
+          aziendaId={String((typeof window !== "undefined" && (window as any).__AZIENDA_ID__) || "ccca51c1-656b-4e7c-a501-55753e20da29")}
+          onClose={() => setShowMagazzinoTop(false)}
         />
       )}
       {showCentroMagazzino && (
