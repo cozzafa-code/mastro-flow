@@ -1,6 +1,5 @@
 "use client";
-import React, { useState } from "react";
-import { supabase } from "../../lib/supabase";
+import React from "react";
 
 const NAVY = "#1B3A5C";
 const TEAL = "#28A0A0";
@@ -103,25 +102,7 @@ export default function VistaInventario({ mag }: { mag: any }) {
             {netto < 0 ? "−" : "+"} €{Math.abs(netto)}
           </b>
         </div>
-        <button onClick={async () => {
-          const { data } = await supabase.from("v_magazzino_articoli_full").select("codice,nome,unita_misura,scorta_attuale,prezzo_acquisto,scaffale_codice,fornitore_nome,abc_class");
-          if (!data) return;
-          const csv = ["codice;nome;um;scorta;prezzo;valore;scaffale;fornitore;classe_abc"];
-          let totV = 0;
-          data.forEach((r) => {
-            const v = (r.scorta_attuale || 0) * (r.prezzo_acquisto || 0);
-            totV += v;
-            csv.push(r.codice + ";" + r.nome + ";" + (r.unita_misura || "") + ";" + r.scorta_attuale + ";" + (r.prezzo_acquisto || 0) + ";" + v.toFixed(2) + ";" + (r.scaffale_codice || "") + ";" + (r.fornitore_nome || "") + ";" + (r.abc_class || ""));
-          });
-          csv.push(";;;;;" + totV.toFixed(2) + ";;;TOTALE");
-          const blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "inventario-" + new Date().toISOString().split("T")[0] + ".csv";
-          a.click();
-          URL.revokeObjectURL(url);
-        }} style={{
+        <button style={{
           padding: "11px 14px", background: NAVY, color: "#fff",
           borderRadius: 9, fontSize: 11, fontWeight: 800,
           letterSpacing: 0.3, textTransform: "uppercase", border: "none", cursor: "pointer",
