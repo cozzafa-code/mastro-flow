@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { ArticoloMagazzino, STATO_SCORTA_COLOR, STATO_SCORTA_LABEL, ABC_COLOR } from "../../hooks/useMagazzinoTop";
 import { ModalCarico, ModalScarico, ModalRettifica, ModalNuovoArticolo, ModalCreaOrdine, ModalNuovoReso } from "./ModaliMagazzino";
+import { ModalImport, ModalEtichette, ModalArchivia, ModalAudit } from "./MagazzinoEstensioni";
 
 const NAVY = "#1B3A5C";
 const NAVY_DEEP = "#0F1F33";
@@ -213,6 +214,7 @@ function MenuAzioniArticolo({ articolo, onClose, onPick }: any) {
 // ============================================================
 
 function CardArticolo({ a, onClick }: { a: ArticoloMagazzino; onClick?: () => void }) {
+  const _onTapWrapper = onClick || (() => {});
   const cardClick = onClick;
   return (
     <div style={{ padding: "11px 0", borderBottom: "1px solid #E5EAF0" }}>
