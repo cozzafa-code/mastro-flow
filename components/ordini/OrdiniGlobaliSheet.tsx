@@ -15,6 +15,7 @@ import OrdineDettaglioSheet from "./OrdineDettaglioSheet";
 import RicezioneMerceSheet from "./RicezioneMerceSheet";
 import QrScannerSheet from "./qr/QrScannerSheet";
 import QrShowModal from "./qr/QrShowModal";
+import NuovoOrdineWizard from "./NuovoOrdineWizard";
 
 interface Props {
   aziendaId: string;
@@ -46,6 +47,7 @@ export default function OrdiniGlobaliSheet({
   const [ricezioneOrdineId, setRicezioneOrdineId] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [qrShowOrdine, setQrShowOrdine] = useState<OrdineConCommessa | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
     if (!aziendaId) return;
@@ -242,6 +244,18 @@ export default function OrdiniGlobaliSheet({
         />
       )}
 
+      {wizardOpen && (
+        <NuovoOrdineWizard
+          aziendaId={aziendaId}
+          onClose={() => setWizardOpen(false)}
+          onCreato={(ordineId: string) => {
+            setWizardOpen(false);
+            fetchOrdiniByAzienda(aziendaId).then(setOrdini);
+            setDettaglioOrdineId(ordineId);
+          }}
+        />
+      )}
+
       {qrShowOrdine && (
         <QrShowModal
           ordineId={qrShowOrdine.id}
@@ -260,7 +274,7 @@ export default function OrdiniGlobaliSheet({
         />
       )}
 
-      <div onClick={() => { /* TODO nuovo ordine */ }} style={{
+      <div onClick={() => setWizardOpen(true)} style={{
         position: "fixed", bottom: 100, right: 20, width: 54, height: 54,
         borderRadius: "50%", background: "#28A0A0", color: "#fff",
         display: "flex", alignItems: "center", justifyContent: "center",
