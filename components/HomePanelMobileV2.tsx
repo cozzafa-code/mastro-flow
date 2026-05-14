@@ -12,7 +12,7 @@ import CentroControlloMagazzino from "./CentroControlloMagazzino";
 import CentroPreparazioneFurgoni from "./CentroPreparazioneFurgoni";
 import CentroClienti from "./CentroClienti";
 import CentroControlloProduzione from "./CentroControlloProduzione";
-import CentroFinanze from "./CentroFinanze";
+import CentroFinanze from "./finanze/CentroFinanzeV2";
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
 import { useMastro } from './MastroContext'
