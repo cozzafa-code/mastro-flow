@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { ModalRiconciliaFattura } from "./ModaliFinaliMagazzino";
 
 const NAVY = "#1B3A5C";
 const NAVY_DEEP = "#0F1F33";
@@ -35,6 +36,7 @@ export default function VistaRicezioneOrdini({ aziendaId, mag }: Props) {
   const [ordini, setOrdini] = useState<OrdineRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [openRic, setOpenRic] = useState<OrdineRow | null>(null);
+  const [openFatt, setOpenFatt] = useState<OrdineRow | null>(null);
 
   const reload = async () => {
     setLoading(true);
@@ -80,6 +82,13 @@ export default function VistaRicezioneOrdini({ aziendaId, mag }: Props) {
         </div>
       ) : ordini.map(o => <CardOrdine key={o.id} o={o} onOpen={() => setOpenRic(o)} />)}
 
+      {openFatt && (
+        <ModalRiconciliaFattura
+          ordine={openFatt}
+          onClose={() => setOpenFatt(null)}
+          onDone={() => { setOpenFatt(null); reload(); }}
+        />
+      )}
       {openRic && (
         <ModalRicezioneDDT
           ordine={openRic}

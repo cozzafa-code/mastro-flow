@@ -4,6 +4,7 @@ import { ArticoloMagazzino, STATO_SCORTA_COLOR, STATO_SCORTA_LABEL, ABC_COLOR } 
 import { ModalCarico, ModalScarico, ModalRettifica, ModalCreaOrdine, ModalNuovoReso } from "./ModaliMagazzino";
 import ModalNuovoArticoloV2 from "./ModalNuovoArticoloV2";
 import ModalImportMagazzino from "./ModalImportMagazzino";
+import { ModalArchiviaArticolo, ModalAuditArticolo, ModalStampaEtichette } from "./ModaliFinaliMagazzino";
 
 const NAVY = "#1B3A5C";
 const NAVY_DEEP = "#0F1F33";
@@ -24,6 +25,10 @@ export default function VistaArticoli({ mag }: { mag: any }) {
   const [showNuovo, setShowNuovo] = useState(false);
   const [showResoGen, setShowResoGen] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showArchivia, setShowArchivia] = useState<any | null>(null);
+  const [showAudit, setShowAudit] = useState<any | null>(null);
+  const [showEtichette, setShowEtichette] = useState(false);
+  const [showArchiviati, setShowArchiviati] = useState(false);
 
   const articoli: ArticoloMagazzino[] = mag.articoli || [];
 
@@ -82,6 +87,9 @@ export default function VistaArticoli({ mag }: { mag: any }) {
         </BtnPrimary>
         <BtnPrimary onClick={() => setShowImport(true)} color={"#2D5A8C"}>
           <UploadIcon size={13} /> IMPORT
+        </BtnPrimary>
+        <BtnPrimary onClick={() => setShowEtichette(true)} color={"#5C2D8C"}>
+          <PrintIcon size={13} /> QR
         </BtnPrimary>
         <BtnPrimary onClick={() => setShowResoGen(true)} color={"#5C2D8C"}>
           <RotateIcon size={12} /> RESO
@@ -150,6 +158,25 @@ export default function VistaArticoli({ mag }: { mag: any }) {
           mag={mag}
           aziendaId={(articoli[0] as any)?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29"}
           onClose={() => setShowResoGen(false)}
+        />
+      )}
+      {showArchivia && (
+        <ModalArchiviaArticolo
+          articolo={showArchivia}
+          onClose={() => setShowArchivia(null)}
+          onDone={() => { setShowArchivia(null); mag.reload(); }}
+        />
+      )}
+      {showAudit && (
+        <ModalAuditArticolo
+          articolo={showAudit}
+          onClose={() => setShowAudit(null)}
+        />
+      )}
+      {showEtichette && (
+        <ModalStampaEtichette
+          articoli={articoli}
+          onClose={() => setShowEtichette(false)}
         />
       )}
       {showImport && (
@@ -385,6 +412,13 @@ const TruckIcon = ({ size = 13 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
     <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
     <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+  </svg>
+);
+const PrintIcon = ({ size = 13 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 6 2 18 2 18 9"/>
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+    <rect x="6" y="14" width="12" height="8"/>
   </svg>
 );
 const UploadIcon = ({ size = 13 }) => (
