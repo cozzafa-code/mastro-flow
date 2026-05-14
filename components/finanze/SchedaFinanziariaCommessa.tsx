@@ -27,7 +27,6 @@ interface Props {
   fatture: Fattura[]; // gia' filtrate per cmId
   onCreaFattura: (tipo: FatturaTipo, importo: number, scadenza: string, note: string) => Promise<any> | any;
   aziendaInfo?: any;
-  commessa?: any;
   onMarcaPagata: (fatturaId: string, metodoPag: string) => void;
   onGeneraPDF?: (fattura: Fattura) => void;
   onSollecitaWhatsApp?: (fattura: Fattura) => void;
@@ -88,7 +87,7 @@ function defaultFmtEur(n: number): string {
 
 export default function SchedaFinanziariaCommessa({
   commessa, totaleCommessa, fatture,
-  onCreaFattura, onMarcaPagata, onGeneraPDF, onSollecitaWhatsApp, onAnnullaFattura, aziendaInfo, commessa,
+  onCreaFattura, onMarcaPagata, onGeneraPDF, onSollecitaWhatsApp, onAnnullaFattura, aziendaInfo,
   fmtEur = defaultFmtEur,
 }: Props) {
   const [showWizard, setShowWizard] = useState(false);
