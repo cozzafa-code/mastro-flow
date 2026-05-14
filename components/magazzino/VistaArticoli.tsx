@@ -1,7 +1,8 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import { ArticoloMagazzino, STATO_SCORTA_COLOR, STATO_SCORTA_LABEL, ABC_COLOR } from "../../hooks/useMagazzinoTop";
-import { ModalCarico, ModalScarico, ModalRettifica, ModalNuovoArticolo, ModalCreaOrdine, ModalNuovoReso } from "./ModaliMagazzino";
+import { ModalCarico, ModalScarico, ModalRettifica, ModalCreaOrdine, ModalNuovoReso } from "./ModaliMagazzino";
+import ModalNuovoArticoloV2 from "./ModalNuovoArticoloV2";
 import ModalImportMagazzino from "./ModalImportMagazzino";
 
 const NAVY = "#1B3A5C";
@@ -138,7 +139,7 @@ export default function VistaArticoli({ mag }: { mag: any }) {
         />
       )}
       {showNuovo && (
-        <ModalNuovoArticolo
+        <ModalNuovoArticoloV2
           mag={mag}
           aziendaId={(articoli[0] as any)?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29"}
           onClose={() => setShowNuovo(false)}
