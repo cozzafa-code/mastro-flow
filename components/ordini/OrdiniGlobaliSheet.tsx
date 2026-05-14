@@ -248,7 +248,7 @@ export default function OrdiniGlobaliSheet({
         <NuovoOrdineWizard
           aziendaId={aziendaId}
           onClose={() => setWizardOpen(false)}
-          onCreato={(ordineId: string) => {
+          onCreated={(ordineId: string) => {
             setWizardOpen(false);
             fetchOrdiniByAzienda(aziendaId).then(setOrdini);
             setDettaglioOrdineId(ordineId);
