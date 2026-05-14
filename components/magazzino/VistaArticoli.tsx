@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { ArticoloMagazzino, STATO_SCORTA_COLOR, STATO_SCORTA_LABEL, ABC_COLOR } from "../../hooks/useMagazzinoTop";
 import { ModalCarico, ModalScarico, ModalRettifica, ModalNuovoArticolo, ModalCreaOrdine, ModalNuovoReso } from "./ModaliMagazzino";
+import ModalImportMagazzino from "./ModalImportMagazzino";
 
 const NAVY = "#1B3A5C";
 const NAVY_DEEP = "#0F1F33";
@@ -21,6 +22,7 @@ export default function VistaArticoli({ mag }: { mag: any }) {
   const [modal, setModal] = useState<ModalKind>(null);
   const [showNuovo, setShowNuovo] = useState(false);
   const [showResoGen, setShowResoGen] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const articoli: ArticoloMagazzino[] = mag.articoli || [];
 
@@ -76,6 +78,9 @@ export default function VistaArticoli({ mag }: { mag: any }) {
       <div style={{ display: "flex", gap: 7, marginBottom: 9 }}>
         <BtnPrimary onClick={() => setShowNuovo(true)} color={GREEN}>
           <PlusIcon size={13} /> NUOVO
+        </BtnPrimary>
+        <BtnPrimary onClick={() => setShowImport(true)} color={"#2D5A8C"}>
+          <UploadIcon size={13} /> IMPORT
         </BtnPrimary>
         <BtnPrimary onClick={() => setShowResoGen(true)} color={"#5C2D8C"}>
           <RotateIcon size={12} /> RESO
@@ -144,6 +149,13 @@ export default function VistaArticoli({ mag }: { mag: any }) {
           mag={mag}
           aziendaId={(articoli[0] as any)?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29"}
           onClose={() => setShowResoGen(false)}
+        />
+      )}
+      {showImport && (
+        <ModalImportMagazzino
+          aziendaId={(articoli[0] as any)?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29"}
+          onClose={() => setShowImport(false)}
+          onDone={() => mag.reload()}
         />
       )}
     </div>
@@ -372,6 +384,13 @@ const TruckIcon = ({ size = 13 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
     <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
     <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+  </svg>
+);
+const UploadIcon = ({ size = 13 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/>
+    <line x1="12" y1="3" x2="12" y2="15"/>
   </svg>
 );
 const RotateIcon = ({ size = 12 }) => (
