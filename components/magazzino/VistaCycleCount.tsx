@@ -1,6 +1,7 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { CycleCountSched } from "../../hooks/useMagazzinoTop";
+import { ModalRegistraConta } from "./ModaliMagazzino2";
 
 const NAVY = "#1B3A5C";
 const NAVY_DEEP = "#0F1F33";
@@ -11,6 +12,8 @@ const GREEN = "#0F6E56";
 const MUTED = "#5C6B7A";
 
 export default function VistaCycleCount({ mag }: { mag: any }) {
+  const [openConta, setOpenConta] = useState<CycleCountSched | null>(null);
+  const aziendaId = (mag.articoli[0] as any)?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29";
   const scheds: CycleCountSched[] = mag.cycleScheds || [];
   const oggi = scheds.filter(s => s.urgenza === "oggi" || s.urgenza === "scaduta");
   const accuracy = mag.accuracy || 98.2;
@@ -86,11 +89,12 @@ export default function VistaCycleCount({ mag }: { mag: any }) {
         <div style={{ flex: 1, fontSize: 11, color: NAVY, fontWeight: 700 }}>
           Prossima: <b>{oggi[0]?.zona || "oggi 14:30"}</b>
         </div>
-        <button style={{
+        <button onClick={() => setOpenConta(oggi[0] || ({ id: "", zona: "Generica", abc_class: null, cadenza_giorni: 30, ultima_conta_at: null, prossima_conta_at: null, urgenza: "futura", n_articoli_zona: mag.articoli?.length || 0 } as any))} style={{
           padding: "11px 14px", background: TEAL, color: "#fff",
           borderRadius: 9, fontSize: 11, fontWeight: 800,
           letterSpacing: 0.3, textTransform: "uppercase", border: "none", cursor: "pointer",
         }}>CONTA ORA</button>
+      {openConta && <ModalRegistraConta mag={mag} aziendaId={aziendaId} schedule={{ id: openConta.id, zona: openConta.zona, abc_class: openConta.abc_class }} onClose={() => setOpenConta(null)} />}
       </div>
     </div>
   );

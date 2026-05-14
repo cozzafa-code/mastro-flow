@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { AbcRiepilogo, GroupBuying, WavePick, ABC_COLOR } from "../../hooks/useMagazzinoTop";
+import { ModalNuovaWave } from "./ModaliMagazzino2";
 
 const NAVY = "#1B3A5C";
 const TEAL = "#28A0A0";
@@ -201,6 +202,7 @@ function GroupCard({ c, onAderisci }: { c: GroupBuying; onAderisci: (q: number) 
 // ============================================================
 
 export function VistaWavePicking({ mag }: { mag: any }) {
+  const [openWave, setOpenWave] = useState(false);
   const waves: WavePick[] = mag.waves || [];
 
   return (
@@ -220,6 +222,14 @@ export function VistaWavePicking({ mag }: { mag: any }) {
           </div>
         ) : waves.map(w => <WaveCard key={w.id} w={w} />)}
       </div>
+
+      <button onClick={() => setOpenWave(true)} style={{
+        width: "100%", padding: 12, marginBottom: 9,
+        background: "linear-gradient(180deg, #28A0A0, #1a6b6b)",
+        color: "#fff", borderRadius: 11, fontSize: 12, fontWeight: 800,
+        letterSpacing: 0.5, textTransform: "uppercase", border: "none", cursor: "pointer",
+      }}>+ NUOVA WAVE</button>
+      {openWave && <ModalNuovaWave mag={mag} onClose={() => setOpenWave(false)} />}
 
       <div style={sezStyle}>
         <SezTit>Confronto modalità (5 commesse)</SezTit>

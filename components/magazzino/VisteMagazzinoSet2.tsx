@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { QcHold, ResoCliente, DockSlot, CrossDockMatch } from "../../hooks/useMagazzinoTop";
+import { ModalNuovoXdock, ModalNuovoDockSlot } from "./ModaliMagazzino2";
 
 const NAVY = "#1B3A5C";
 const TEAL = "#28A0A0";
@@ -168,6 +169,7 @@ function ResoRow({ r }: { r: ResoCliente }) {
 // ============================================================
 
 export function VistaDockSlots({ mag }: { mag: any }) {
+  const [openDock, setOpenDock] = useState(false);
   const slots: DockSlot[] = mag.dockSlots || [];
   const conflitti = slots.filter(s => s.in_conflitto);
 
@@ -176,6 +178,14 @@ export function VistaDockSlots({ mag }: { mag: any }) {
       {conflitti.length > 0 && (
         <AlertCard kind="warn" title={`Conflitto ${conflitti.length} appuntamenti`} sub="Stesso orario · sposta uno" icon="alert" />
       )}
+
+      <button onClick={() => setOpenDock(true)} style={{
+        width: "100%", padding: 12, marginBottom: 9,
+        background: "linear-gradient(180deg, #28A0A0, #1a6b6b)",
+        color: "#fff", borderRadius: 11, fontSize: 12, fontWeight: 800,
+        letterSpacing: 0.5, textTransform: "uppercase", border: "none", cursor: "pointer",
+      }}>+ PRENOTA SLOT</button>
+      {openDock && <ModalNuovoDockSlot mag={mag} onClose={() => setOpenDock(false)} />}
 
       <Sez title="Slot oggi">
         {slots.length === 0 ? (
@@ -221,6 +231,8 @@ function DockRow({ s }: { s: DockSlot }) {
 // ============================================================
 
 export function VistaCrossDock({ mag }: { mag: any }) {
+  const [openXdock, setOpenXdock] = useState(false);
+  const aziendaId = (mag.articoli[0] as any)?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29";
   const xdocks: CrossDockMatch[] = mag.crossDock || [];
 
   return (
@@ -231,6 +243,14 @@ export function VistaCrossDock({ mag }: { mag: any }) {
         sub="Risparmio stimato −4.2h/mese picking · −€85"
         icon="link"
       />
+
+      <button onClick={() => setOpenXdock(true)} style={{
+        width: "100%", padding: 12, marginBottom: 9,
+        background: "linear-gradient(180deg, #28A0A0, #1a6b6b)",
+        color: "#fff", borderRadius: 11, fontSize: 12, fontWeight: 800,
+        letterSpacing: 0.5, textTransform: "uppercase", border: "none", cursor: "pointer",
+      }}>+ NUOVO CROSS-DOCK</button>
+      {openXdock && <ModalNuovoXdock mag={mag} aziendaId={aziendaId} onClose={() => setOpenXdock(false)} />}
 
       <Sez title="Match automatico AI" count={xdocks.length}>
         {xdocks.length === 0 ? (
