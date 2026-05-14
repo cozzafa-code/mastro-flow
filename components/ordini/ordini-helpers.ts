@@ -274,3 +274,73 @@ export async function aggiornaStatoOrdine(ordineId: string, stato: OrdineStato):
     .eq("id", ordineId);
   return { ok: !error, error: error?.message };
 }
+
+
+// ============================================================================
+// SCOSTAMENTO PREZZO - soglie 5% warn / 15% block
+// ============================================================================
+
+export const soglieScostamento = {
+  warn: 5,   // %
+  block: 15, // %
+};
+
+export interface ScostamentoResult {
+  pct: number;             // scostamento percentuale (positivo = aumento)
+  deltaUnit: number;       // delta euro per unita
+  deltaTotale: number;     // delta euro totale (deltaUnit * qta)
+  livello: "none" | "warn" | "block";
+}
+
+export function computeScostamento(
+  costoOrdinato: number,
+  costoReale: number,
+  qtaArrivata: number
+): ScostamentoResult {
+  if (!costoOrdinato || costoOrdinato === 0) {
+    return { pct: 0, deltaUnit: 0, deltaTotale: 0, livello: "none" };
+  }
+  const deltaUnit = costoReale - costoOrdinato;
+  const pct = (deltaUnit / costoOrdinato) * 100;
+  const deltaTotale = deltaUnit * (qtaArrivata || 0);
+  const absPct = Math.abs(pct);
+  let livello: "none" | "warn" | "block" = "none";
+  if (absPct >= soglieScostamento.block) livello = "block";
+  else if (absPct >= soglieScostamento.warn) livello = "warn";
+  return { pct, deltaUnit, deltaTotale, livello };
+}
+
+export interface AlertScostamentoPayload {
+  aziendaId: string;
+  ordineId: string;
+  rigaId: string;
+  fornitoreId: string;
+  codiceArticolo: string;
+  descrizione: string;
+  costoOrdinato: number;
+  costoReale: number;
+  pct: number;
+  deltaTotale: number;
+  livello: "warn" | "block" | "none";
+}
+
+export async function saveAlertScostamento(p: AlertScostamentoPayload): Promise<void> {
+  if (p.livello === "none") return;
+  try {
+    await supabase.from("alert_scostamento_prezzo").insert({
+      azienda_id: p.aziendaId,
+      ordine_id: p.ordineId,
+      riga_id: p.rigaId,
+      fornitore_id: p.fornitoreId || null,
+      codice_articolo: p.codiceArticolo,
+      descrizione: p.descrizione,
+      costo_ordinato: p.costoOrdinato,
+      costo_reale: p.costoReale,
+      scostamento_pct: p.pct,
+      delta_totale: p.deltaTotale,
+      livello: p.livello,
+    });
+  } catch (e) {
+    console.warn("[saveAlertScostamento]", e);
+  }
+}
