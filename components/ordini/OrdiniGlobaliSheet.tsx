@@ -197,7 +197,7 @@ export default function OrdiniGlobaliSheet({
       )}
 
       <div onClick={() => { /* TODO nuovo ordine */ }} style={{
-        position: "fixed", bottom: 24, right: 20, width: 54, height: 54,
+        position: "fixed", bottom: 100, right: 20, width: 54, height: 54,
         borderRadius: "50%", background: "#28A0A0", color: "#fff",
         display: "flex", alignItems: "center", justifyContent: "center",
         boxShadow: "0 6px 20px rgba(40,160,160,0.5)",
