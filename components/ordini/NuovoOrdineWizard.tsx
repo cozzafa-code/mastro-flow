@@ -50,10 +50,12 @@ export default function NuovoOrdineWizard({ aziendaId, commessaIdSuggerita, onCl
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (!aziendaId) return;
     fetchFornitori(aziendaId).then(setFornitori);
   }, [aziendaId]);
 
   useEffect(() => {
+    if (!aziendaId) return;
     if (step === 2 && tipo === "commessa" && commessePick.length === 0) {
       supabase.from("commesse").select("id, code, cliente, cognome, indirizzo").eq("azienda_id", aziendaId).not("fase", "in", "(pagata,persa,annullata,chiusa)").order("created_at", { ascending: false }).limit(50).then(({ data }) => {
         setCommessePick((data || []) as Commessa[]);
