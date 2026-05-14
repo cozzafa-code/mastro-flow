@@ -33,6 +33,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "@vis.gl/react-google-maps": "^1.8.3",
+    "@zxing/library": "^0.23.0",
     "bcryptjs": "^3.0.3",
     "fabric": "^5.3.0",
     "jspdf": "^4.2.1",
