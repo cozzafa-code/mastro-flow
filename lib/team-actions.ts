@@ -4,6 +4,12 @@
 import { supabase } from "@/lib/supabase";
 
 async function getCtx() {
+  // [galassia] Prova prima da localStorage (funziona senza auth Supabase)
+  const azFromStorage = typeof window !== 'undefined'
+    ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id'))
+    : null;
+  if (azFromStorage) return { user: null as any, azienda_id: azFromStorage };
+  // Fallback: auth Supabase
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("not_authenticated");
   const { data: prof } = await supabase
