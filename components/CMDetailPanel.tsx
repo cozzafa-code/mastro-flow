@@ -304,7 +304,7 @@ export default function CMDetailPanel() {
           console.error("[tgRecap]", e);
         }
       })();
-    }, [selectedCM?.id, selectedCM?.materiale_ordinato_at, selectedCM?.materiale_arrivato_at, selectedCM?.produzione_iniziata_at]);
+    }, [selectedCM?.id, selectedCM?.fase, selectedCM?.materiale_ordinato_at, selectedCM?.materiale_arrivato_at, selectedCM?.produzione_iniziata_at]);
 
   // AUTO_PICK: se ci sono rilievi, seleziona l'ultimo. NON crea pi+ bozze automatiche.
   const [showRilieviPanel, setShowRilieviPanel] = React.useState<any>(null);
