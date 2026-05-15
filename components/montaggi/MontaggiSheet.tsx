@@ -20,12 +20,16 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onApriCommessa?: (commessaId: string) => void;
+  montaggiOverride?: any[];
+  commesseOverride?: any[];
 }
 
 export default function MontaggiSheet({
   open,
   onClose,
   onApriCommessa,
+  montaggiOverride,
+  commesseOverride,
 }: Props) {
   const { state, actions } = useMastroData();
   // [galassia] Forza refetch montaggi se array vuoto al mount
@@ -34,8 +38,8 @@ export default function MontaggiSheet({
       actions.refetchTable('montaggi');
     }
   }, [state.aziendaId]);
-  const rawMontaggi = state.montaggi || [];
-  const commesse = state.commesse || [];
+  const rawMontaggi = (montaggiOverride && montaggiOverride.length > 0) ? montaggiOverride : (state.montaggi || []);
+  const commesse = (commesseOverride && commesseOverride.length > 0) ? commesseOverride : (state.commesse || []);
   const aziendaId = state.aziendaId || "";
   const [view, setView] = useState<MontaggiView>("lista");
   const [filter, setFilter] = useState<MontaggiFilter>("tutti");
