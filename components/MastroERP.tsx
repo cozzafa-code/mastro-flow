@@ -3064,6 +3064,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const renderAgenda = () => (
     <AgendaMobileNew
       cantieri={cantieri}
+      montaggiDB={montaggiDB}
       hideBottomNav
       onOpenCommessa={(cmId, code) => {
         const target = (cantieri || []).find((c: any) => c.id === cmId || c.code === code);

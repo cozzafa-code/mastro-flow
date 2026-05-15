@@ -151,7 +151,7 @@ function commesseToEvents(cantieri: any[]): AgendaEvent[] {
   return out;
 }
 
-export function useAgendaMobile(externalCantieri?: any[]) {
+export function useAgendaMobile(externalCantieri?: any[], externalMontaggi?: any[]) {
   const [internalEvents, setInternalEvents] = useState<AgendaEvent[]>(MOCK_EVENTS);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(TODAY);
@@ -159,12 +159,35 @@ export function useAgendaMobile(externalCantieri?: any[]) {
   const [view, setView] = useState<"giorno" | "settimana" | "mese" | "problemi">("giorno");
   const [extraEvents, setExtraEvents] = useState<AgendaEvent[]>([]);
 
+  const montaggiEvents = useMemo<AgendaEvent[]>(() => {
+    if (!Array.isArray(externalMontaggi) || externalMontaggi.length === 0) return [];
+    return externalMontaggi.map((mt: any) => {
+      const cm = Array.isArray(externalCantieri) ? externalCantieri.find((c: any) => c.id === mt.commessa_id) : null;
+      const ora = mt.ora_inizio ? String(mt.ora_inizio).slice(0,5) : '08:00';
+      const oraFine = mt.ora_fine ? String(mt.ora_fine).slice(0,5) : '13:00';
+      return {
+        id: 'mt-' + mt.id,
+        tipo: 'montaggio' as any,
+        oraInizio: ora,
+        oraFine,
+        data: mt.data_montaggio || '',
+        titolo: cm?.cliente || 'Montaggio',
+        commessaCode: cm?.code || '',
+        cliente: cm?.cliente || '',
+        indirizzo: cm?.indirizzo || '',
+        cmId: mt.commessa_id,
+        squadra: Array.isArray(mt.squadra) ? mt.squadra.join(', ') : (mt.squadra || ''),
+        stato: mt.stato || 'conferma',
+      };
+    });
+  }, [externalMontaggi, externalCantieri]);
+
   const events = useMemo<AgendaEvent[]>(() => {
-    if (Array.isArray(externalCantieri) && externalCantieri.length > 0) {
-      return [...commesseToEvents(externalCantieri), ...extraEvents];
-    }
-    return [...internalEvents, ...extraEvents];
-  }, [externalCantieri, extraEvents, internalEvents]);
+    const base = Array.isArray(externalCantieri) && externalCantieri.length > 0
+      ? commesseToEvents(externalCantieri)
+      : internalEvents;
+    return [...base, ...montaggiEvents, ...extraEvents];
+  }, [externalCantieri, extraEvents, internalEvents, montaggiEvents]);
 
   useEffect(() => {
     if (Array.isArray(externalCantieri) && externalCantieri.length > 0) return;

@@ -108,7 +108,7 @@ interface Props {
 }
 
 export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], onOpenCommessa, onCreateEvent }: Props) {
-  const a: any = useAgendaMobile(cantieri);
+  const a: any = useAgendaMobile(cantieri, props?.montaggiDB || []);
   const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('giorno');
   const [cursor, setCursor] = useState(new Date());
   const [filtro, setFiltro] = useState<string>('tutti');
