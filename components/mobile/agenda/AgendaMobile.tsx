@@ -103,12 +103,13 @@ interface Props {
   bottomNav?: React.ReactNode;
   hideBottomNav?: boolean;
   cantieri?: any[];
+  montaggiDB?: any[];
   onOpenCommessa?: (cmId: string | undefined, code: string | undefined) => void;
   onCreateEvent?: (kind: string, dateIso: string) => void;
 }
 
-export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], onOpenCommessa, onCreateEvent }: Props) {
-  const a: any = useAgendaMobile(cantieri, props?.montaggiDB || []);
+export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], montaggiDB = [], onOpenCommessa, onCreateEvent }: Props) {
+  const a: any = useAgendaMobile(cantieri, montaggiDB);
   const [view, setView] = useState<'giorno' | 'settimana' | 'mese'>('giorno');
   const [cursor, setCursor] = useState(new Date());
   const [filtro, setFiltro] = useState<string>('tutti');
