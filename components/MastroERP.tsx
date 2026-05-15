@@ -3964,7 +3964,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   };
 
   // Assegna documento universale a commessa/step
-  const assegnaDocUniversale = (cmId: number, tipo: string) => {
+  const assegnaDocUniversale = async (cmId: number, tipo: string) => {
     const res = inboxResult;
     if (!res) return;
     const allegato = { id: Date.now(), tipo, nome: res.file, data: new Date().toLocaleDateString("it-IT"), dataUrl: res.fileUrl || "" };
