@@ -219,7 +219,7 @@ export default function SchedaFinanziariaCommessa({
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {fatture
               .slice()
-              .sort((a, b) => (b.dataISO || b.data).localeCompare(a.dataISO || a.data))
+              .sort((a, b) => (b.dataISO || b.data || "").localeCompare(a.dataISO || a.data || ""))
               .map(f => {
                 const stato = statoOf(f);
                 const c = STATO_COLORS[stato];
