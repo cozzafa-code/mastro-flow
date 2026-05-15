@@ -688,7 +688,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       try{const _v=localStorage.getItem("mastro:lamiere");if(_v)setLamiereDB(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:libreria");if(_v)setLibreriaDB(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:fatture");if(_v){const p=JSON.parse(_v);setFattureDB(p);}}catch(e){}
-      try{const _mv=localStorage.getItem('mastro:montaggi');if(_mv){const pm=JSON.parse(_mv);if(pm.length) setMontaggiDB(pm);}}catch(e){}
       try{const _v=localStorage.getItem("mastro:ordiniForn");if(_v){const p=JSON.parse(_v);setOrdiniFornDB(p);}}catch(e){}
       try{const _v=localStorage.getItem("mastro:squadre");if(_v)setSquadreDB(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:montaggi");if(_v){const p=JSON.parse(_v);setMontaggiDB(p);}}catch(e){}
