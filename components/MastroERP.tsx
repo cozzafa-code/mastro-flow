@@ -748,7 +748,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           supabase.from('commesse').select('*').eq('azienda_id', aziendaId),
           supabase.from('tasks').select('*').eq('azienda_id', aziendaId),
           supabase.from('team').select('*').eq('azienda_id', aziendaId),
-          supabase.from('montaggi').select('*').eq('azienda_id', aziendaId),
+          supabase.rpc('get_montaggi_azienda', { p_azienda_id: aziendaId }),
           supabase.from('ordini_fornitore').select('*').eq('azienda_id', aziendaId),
           supabase.from('events').select('*').eq('azienda_id', aziendaId),
           supabase.from('contatti').select('*').eq('azienda_id', aziendaId),
