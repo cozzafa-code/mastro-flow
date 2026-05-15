@@ -27,7 +27,13 @@ export default function MontaggiSheet({
   onClose,
   onApriCommessa,
 }: Props) {
-  const { state } = useMastroData();
+  const { state, actions } = useMastroData();
+  // [galassia] Forza refetch montaggi se array vuoto al mount
+  React.useEffect(() => {
+    if (!state.montaggi || state.montaggi.length === 0) {
+      actions.refetchTable('montaggi');
+    }
+  }, [state.aziendaId]);
   const rawMontaggi = state.montaggi || [];
   const commesse = state.commesse || [];
   const aziendaId = state.aziendaId || "";
