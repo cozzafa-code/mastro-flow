@@ -116,6 +116,12 @@ export function useTeamMobile() {
     let alive = true;
     (async () => {
       try {
+        // [galassia] Bypass auth - legge aziendaId da localStorage come MastroERP
+        const azFromStorage = (typeof window !== 'undefined')
+          ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id'))
+          : null;
+        if (azFromStorage) { if (alive) setAziendaId(azFromStorage); return; }
+        // Fallback: prova con auth Supabase
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { if (alive) { setLoading(false); setError("not_authenticated"); } return; }
         const { data: prof } = await supabase
