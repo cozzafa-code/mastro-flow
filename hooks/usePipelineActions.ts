@@ -1,7 +1,7 @@
-// ════════════════════════════════════════════════════════════
-// HOOK · usePipelineActions
+﻿// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// HOOK Â· usePipelineActions
 // Esegue azioni configurate nella fase corrente di una commessa
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -61,7 +61,7 @@ export function usePipelineActions(commessa_id: string | null, azienda_id: strin
 
       if (!cm) { setLoading(false); return; }
 
-      const faseCodice = (cm.fase_corrente ?? cm.fase ?? cm.ops_fase_corrente ?? "sopralluogo") as string;
+      const faseCodice = (cm.ops_fase_corrente ?? cm.fase ?? "sopralluogo") as string;
 
       // Carica config fase
       const { data: f } = await supabase
@@ -140,3 +140,4 @@ export function usePipelineActions(commessa_id: string | null, azienda_id: strin
 
   return { fase, azioni, log, loading, executing, esegui, eseguiTutte, reload };
 }
+
