@@ -148,7 +148,26 @@ export default function ProduzioneModulo({
   })()
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#EEF8F8', overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#EEF8F8', overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingTop: 'env(safe-area-inset-top)' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#1B3A5C', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        <button 
+          onClick={vista.tipo === 'flotta' ? onChiudiModulo : () => setVista({ tipo: 'flotta' })}
+          style={{ background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>‹</span> INDIETRO
+        </button>
+        <div style={{ fontSize: 11, color: '#9FE1CB', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+          {vista.tipo === 'flotta' && 'Officina'}
+          {vista.tipo === 'commessa' && 'Commessa'}
+          {vista.tipo === 'vano' && 'Vano'}
+          {vista.tipo === 'gate' && 'Gate Materiali'}
+          {vista.tipo === 'config' && 'Configurazione Fasi'}
+        </div>
+        <button 
+          onClick={onChiudiModulo}
+          style={{ background: 'transparent', color: '#FFF', border: 'none', fontSize: 20, lineHeight: 1, padding: '6px 10px', cursor: 'pointer', fontWeight: 300 }}>
+          ×
+        </button>
+      </div>
       {contenuto}
     </div>
   )
