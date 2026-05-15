@@ -328,7 +328,6 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
         {showStartSheet && (
           <StartLavoroSheet
             operatorName={showStartSheet.op.name}
-            cantieriOverride={_ctx?.cantieri || []}
             onClose={() => setShowStartSheet(null)}
             onSelect={handleStartConfirm}
           />
