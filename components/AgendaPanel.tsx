@@ -60,6 +60,7 @@ export default function AgendaPanel(props: any) {
   const events: any[]   = props?.events   || m?.events   || [];
   const tasks: any[]    = props?.tasks    || m?.tasks    || [];
   const cantieri: any[] = props?.cantieri || m?.cantieri || m?.commesse || [];
+  const montaggiDB: any[] = props?.montaggiDB || m?.montaggiDB || [];
   const onNavigate = props?.onNavigate || m?.onNavigate || (() => {});
   const setTab = m?.setTab || (() => {});
   const setSelectedCM = m?.setSelectedCM || (() => {});
@@ -107,8 +108,26 @@ export default function AgendaPanel(props: any) {
         raw: t,
       });
     });
+    (montaggiDB || []).forEach((mt: any) => {
+      const cm = cantieri.find((c: any) => c.id === mt.commessa_id);
+      out.push({
+        id: "m-" + (mt.id || Math.random()),
+        tipo: "montaggio",
+        titolo: cm?.cliente || cm?.code || "Montaggio",
+        codice: cm?.code || "",
+        cliente: cm?.cliente || "",
+        data: mt.data_montaggio || mt.data || "",
+        ora: mt.ora_inizio ? String(mt.ora_inizio).slice(0,5) : "",
+        durata: mt.ore_preventivate ? mt.ore_preventivate + "h" : "",
+        indirizzo: cm?.indirizzo || "",
+        squadra: Array.isArray(mt.squadra) ? mt.squadra.join(", ") : (mt.squadra || ""),
+        stato: mt.stato || "",
+        source: "montaggio",
+        raw: mt,
+      });
+    });
     return out;
-  }, [events, tasks]);
+  }, [events, tasks, montaggiDB, cantieri]);
 
   const filteredItems = React.useMemo(() => {
     if (filterTipo === "tutti") return allItems;
