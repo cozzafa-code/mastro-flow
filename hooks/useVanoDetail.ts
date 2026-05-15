@@ -62,10 +62,7 @@ export function useVanoDetail(vanoId: string | null, aziendaId: string | null) {
     setError(null)
     try {
       const { data: vanoData, error: vErr } = await supabase
-        .from('preventivo_vani_snapshot')
-        .select('id, nome, tipo, stanza, pezzi, sistema, sottosistema, vetro, colore_int, colore_est, telaio, uw, ore_produzione, note, accessori, misure_complete, prezzo_unitario_calcolato')
-        .eq('id', vanoId)
-        .single()
+        .rpc('vano_detail_full', { p_vano_id: vanoId, p_azienda_id: aziendaId })
       if (vErr) throw vErr
       setVano(vanoData as any)
 
