@@ -9,28 +9,29 @@ export interface VanoFaseStorico {
   stato: 'in_coda' | 'in_corso' | 'completato' | 'bloccato' | 'saltato'
   operatore_id: string | null
   operatore_nome: string
+  operatore_iniziali: string
   iniziato_at: string | null
   completato_at: string | null
   durata_secondi: number | null
+  stima_minuti: number | null
   macchina: string | null
   problema_descrizione: string | null
   problema_aperto_at: string | null
   problema_risolto_at: string | null
   foto_urls: string[]
+  vano_stato_id: string | null
 }
 
 export interface VanoEvento {
   evento_at: string
-  tipo: 'avvio' | 'completamento' | 'problema'
-  fase_nome: string
-  fase_colore: string
-  operatore_nome: string
+  tipo: 'avvio' | 'fine' | 'blocco'
   descrizione: string
-  macchina: string | null
+  colore: string
 }
 
 export interface VanoFull {
   id: string
+  numero: number | null
   nome: string | null
   tipo: string | null
   stanza: string | null
@@ -46,7 +47,14 @@ export interface VanoFull {
   note: string | null
   accessori: any
   misure_complete: any
-  prezzo_unitario_calcolato: number | null
+  misure_json: any
+  misure_larghezza: string | null
+  misure_altezza: string | null
+  commessa_id: string | null
+  commessa_code: string | null
+  cliente_nome: string | null
+  foto_rilievo: string[]
+  note_rilievo: string | null
 }
 
 export function useVanoDetail(vanoId: string | null, aziendaId: string | null) {
@@ -61,23 +69,17 @@ export function useVanoDetail(vanoId: string | null, aziendaId: string | null) {
     setLoading(true)
     setError(null)
     try {
-      const { data: vanoData, error: vErr } = await supabase
-        .rpc('vano_detail_full', { p_vano_id: vanoId, p_azienda_id: aziendaId })
-      if (vErr) throw vErr
-      setVano(vanoData as any)
-
-      const { data: storicoData, error: sErr } = await supabase
-        .rpc('vano_storico_fasi', { p_vano_id: vanoId, p_azienda_id: aziendaId })
-      if (sErr) throw sErr
-      setStorico((storicoData || []).map((r: any) => ({
-        ...r,
-        foto_urls: Array.isArray(r.foto_urls) ? r.foto_urls : []
-      })))
-
-      const { data: eventiData, error: eErr } = await supabase
-        .rpc('vano_eventi_giornata', { p_vano_id: vanoId, p_azienda_id: aziendaId })
-      if (eErr) throw eErr
-      setEventi(eventiData || [])
+      const [vRes, sRes, eRes] = await Promise.all([
+        supabase.rpc('vano_detail_full', { p_vano_id: vanoId, p_azienda_id: aziendaId }),
+        supabase.rpc('vano_storico_fasi', { p_vano_id: vanoId, p_azienda_id: aziendaId }),
+        supabase.rpc('vano_eventi_giornata', { p_vano_id: vanoId, p_azienda_id: aziendaId }),
+      ])
+      if (vRes.error) throw vRes.error
+      if (sRes.error) throw sRes.error
+      if (eRes.error) throw eRes.error
+      setVano(vRes.data as any)
+      setStorico((sRes.data || []).map((r: any) => ({ ...r, foto_urls: Array.isArray(r.foto_urls) ? r.foto_urls : [] })))
+      setEventi(eRes.data || [])
     } catch (e: any) {
       setError(e.message || 'Errore caricamento vano')
     } finally {
@@ -85,20 +87,14 @@ export function useVanoDetail(vanoId: string | null, aziendaId: string | null) {
     }
   }, [vanoId, aziendaId])
 
-  useEffect(() => {
-    fetchAll()
-  }, [fetchAll])
+  useEffect(() => { fetchAll() }, [fetchAll])
 
   useEffect(() => {
     if (!vanoId || !aziendaId) return
-    const ch = supabase
-      .channel(`vano_${vanoId}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'produzione_vano_stato', 
-        filter: `vano_id=eq.${vanoId}` 
-      }, fetchAll)
+    const chName = 'vano_' + vanoId
+    const filt = 'vano_id=eq.' + vanoId
+    const ch = supabase.channel(chName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'produzione_vano_stato', filter: filt }, fetchAll)
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [vanoId, aziendaId, fetchAll])
@@ -106,31 +102,32 @@ export function useVanoDetail(vanoId: string | null, aziendaId: string | null) {
   return { vano, storico, eventi, loading, error, refetch: fetchAll }
 }
 
-export function useVanoActions(aziendaId: string | null) {
-  const risolviProblema = async (vanoStatoId: string, note?: string) => {
-    return await supabase
-      .from('produzione_vano_stato')
-      .update({ 
-        stato: 'in_corso', 
-        problema_risolto_at: new Date().toISOString(),
-        note: note || null
-      })
-      .eq('id', vanoStatoId)
-  }
+export async function risolviProblemaVano(vanoStatoId: string): Promise<boolean> {
+  const res = await supabase.from('produzione_vano_stato')
+    .update({ stato: 'in_corso', problema_risolto_at: new Date().toISOString() })
+    .eq('id', vanoStatoId)
+  return !res.error
+}
 
-  const spostaOperatore = async (vanoStatoId: string, nuovoOperatoreId: string) => {
-    return await supabase
-      .from('produzione_vano_stato')
-      .update({ operatore_id: nuovoOperatoreId })
-      .eq('id', vanoStatoId)
-  }
+export async function mettiInPausaVano(vanoStatoId: string): Promise<boolean> {
+  const res = await supabase.from('produzione_vano_stato')
+    .update({ stato: 'in_coda' })
+    .eq('id', vanoStatoId)
+  return !res.error
+}
 
-  const mettiInPausa = async (vanoStatoId: string) => {
-    return await supabase
-      .from('produzione_vano_stato')
-      .update({ stato: 'in_coda' })
-      .eq('id', vanoStatoId)
-  }
+export async function spostaOperatoreVano(vanoStatoId: string, nuovoOperatoreId: string): Promise<boolean> {
+  const res = await supabase.from('produzione_vano_stato')
+    .update({ operatore_id: nuovoOperatoreId })
+    .eq('id', vanoStatoId)
+  return !res.error
+}
 
-  return { risolviProblema, spostaOperatore, mettiInPausa }
+export async function fetchOperatoriDisponibili(aziendaId: string) {
+  const res = await supabase.from('operatori')
+    .select('id, nome, cognome, colore')
+    .eq('azienda_id', aziendaId)
+    .eq('attivo', true)
+    .order('nome')
+  return res.data || []
 }
