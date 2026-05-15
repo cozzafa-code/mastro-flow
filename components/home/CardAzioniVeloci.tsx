@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useMastroData } from "@/hooks/useMastroData";
 
 const NAVY = "#1E3A5F";
 const TEAL = "#28A0A0";
@@ -29,13 +30,15 @@ interface Props {
 }
 
 export default function CardAzioniVeloci(props: Props) {
+  const { state: _mdState } = useMastroData();
   const [counts, setCounts] = useState({
     produzione: 0, montaggi: 0, materiali: 0, magazzino: 0,
     fatture: 0, clienti: 0, agenda: 0, team: 0,
   });
 
   useEffect(() => {
-    if (!props.aziendaId) return;
+    const aziendaId = props.aziendaId || _mdState.aziendaId || "";
+    if (!aziendaId) return;
     (async () => {
       try {
         const [prod, mont, mat, art, fat, cli, ag, op] = await Promise.all([
@@ -62,7 +65,7 @@ export default function CardAzioniVeloci(props: Props) {
         console.warn('[CardAzioniVeloci counts]', e);
       }
     })();
-  }, [props.aziendaId]);
+  }, [props.aziendaId, _mdState.aziendaId]);
 
   return (
     <div style={{ background: '#fff', borderRadius: 16, padding: 14, marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
