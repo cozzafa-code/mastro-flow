@@ -127,7 +127,7 @@ export default function AgendaWeekMobile({ selectedDate, eventsByDate, onSelectD
                       }}
                     >
                       <div style={{ fontSize: 8, fontFamily: "'JetBrains Mono', monospace", opacity: 0.8 }}>{e.oraInizio}</div>
-                      <div style={{ fontWeight: 900, marginTop: 1 }}>{e.titolo.split(" ")[0]}</div>
+                      <div style={{ fontWeight: 900, marginTop: 1 }}>{(e.titolo || e.title || "").split(" ")[0]}</div>
                       {e.cliente && <div style={{ fontSize: 8, fontWeight: 600, opacity: 0.85 }}>{e.cliente}</div>}
                     </div>
                   );
