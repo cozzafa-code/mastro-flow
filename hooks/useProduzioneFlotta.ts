@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export type StatoCarico = 'pianificato' | 'in_corso' | 'in_pausa' | 'completato' | 'bloccato' | 'annullato'
-export type StatoVanoFase = 'in_coda' | 'in_corso' | 'completato' | 'bloccato' | 'saltato'
 
 export interface FaseProduzione {
   id: string
@@ -70,25 +69,25 @@ export function useProduzioneFlotta(aziendaId: string | null) {
     setLoading(true)
     setError(null)
     try {
-      const { data: fasiData, error: fasiErr } = await supabase
+      const fasiRes = await supabase
         .from('fasi_produzione')
         .select('id, nome, colore, ordine, attiva')
         .eq('azienda_id', aziendaId)
         .eq('attiva', true)
         .order('ordine')
-      if (fasiErr) throw fasiErr
-      setFasi(fasiData || [])
+      if (fasiRes.error) throw fasiRes.error
+      setFasi(fasiRes.data || [])
 
-      const { data: carichiData, error: carichiErr } = await supabase
+      const carichiRes = await supabase
         .from('produzione_carichi')
         .select('*, commesse!inner ( code, cliente_nome, data_consegna_prevista, indirizzo_cantiere )')
         .eq('azienda_id', aziendaId)
         .neq('stato', 'completato')
         .order('priorita', { ascending: false, nullsFirst: false })
         .order('data_fine_prevista', { ascending: true })
-      if (carichiErr) throw carichiErr
+      if (carichiRes.error) throw carichiRes.error
 
-      const flat: CaricoConCommessa[] = (carichiData || []).map((c: any) => ({
+      const flat: CaricoConCommessa[] = (carichiRes.data || []).map((c: any) => ({
         ...c,
         commessa_code: c.commesse?.code || '',
         commessa_cliente: c.commesse?.cliente_nome || '',
@@ -106,9 +105,8 @@ export function useProduzioneFlotta(aziendaId: string | null) {
         pronte_consegna: flat.filter(c => c.stato === 'completato').length,
       })
 
-      const { data: stazioniData, error: stazErr } = await supabase
-        .rpc('stato_stazioni_officina', { p_azienda_id: aziendaId })
-      if (!stazErr && stazioniData) setStazioni(stazioniData)
+      const stazioniRes = await supabase.rpc('stato_stazioni_officina', { p_azienda_id: aziendaId })
+      if (!stazioniRes.error && stazioniRes.data) setStazioni(stazioniRes.data)
     } catch (e: any) {
       setError(e.message || 'Errore caricamento produzione')
     } finally {
@@ -120,10 +118,12 @@ export function useProduzioneFlotta(aziendaId: string | null) {
 
   useEffect(() => {
     if (!aziendaId) return
+    const channelName = 'prodflotta_' + aziendaId
+    const filterCarichi = 'azienda_id=eq.' + aziendaId
     const ch = supabase
-      .channel(prodflotta_)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'produzione_carichi', filter: zienda_id=eq. }, fetchAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'produzione_vano_stato', filter: zienda_id=eq. }, fetchAll)
+      .channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'produzione_carichi', filter: filterCarichi }, fetchAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'produzione_vano_stato', filter: filterCarichi }, fetchAll)
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [aziendaId, fetchAll])
