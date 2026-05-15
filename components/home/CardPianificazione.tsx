@@ -34,8 +34,12 @@ export default function CardPianificazione({ aziendaId, onClick }: Props) {
   const [commesse, setCommesse] = useState<CmRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const initial = aziendaId || (_mdState?.aziendaId) || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '');
-  const [resolvedAziendaId, setResolvedAziendaId] = useState(initial);
+  const [resolvedAziendaId, setResolvedAziendaId] = useState('');
+  // [galassia] Aggiorna aziendaId in modo reattivo
+  useEffect(() => {
+    const az = aziendaId || _mdState?.aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '');
+    if (az && az !== resolvedAziendaId) setResolvedAziendaId(az);
+  }, [aziendaId, _mdState?.aziendaId]);
 
   // Fallback estremo: se non c'e' aziendaId, lo prendo da user_data via session loggata
   useEffect(() => {
