@@ -1,6 +1,6 @@
 'use client'
 import React, { useMemo, useState } from 'react'
-import { useProduzione, type CaricoConCommessa } from '@/hooks/useProduzione'
+import { useProduzioneFlotta, type CaricoConCommessa } from '@/hooks/useProduzioneFlotta'
 import { PROD_COLORS, STATO_COLOR, getFaseColor } from './prod-constants'
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
 type FiltroChip = 'tutti' | 'urgenti' | 'bloccate' | 'ritardo'
 
 export default function ProduzioneFlottaMobile({ aziendaId, onApriCarico, onApriConfigFasi, onNuovoCarico }: Props) {
-  const { carichi, fasi, kpi, stazioni, loading, error } = useProduzione(aziendaId)
+  const { carichi, fasi, kpi, stazioni, loading, error } = useProduzioneFlotta(aziendaId)
   const [filtro, setFiltro] = useState<FiltroChip>('tutti')
   const [search, setSearch] = useState('')
 
