@@ -182,7 +182,7 @@ export default function ProduzioneModulo({
             alignItems: 'center',
             gap: 6
           }}>
-          <span style={{ fontSize: 16, lineHeight: 1 }}>‹</span> INDIETRO
+          <span style={{ fontSize: 16, lineHeight: 1 }}>â€¹</span> INDIETRO
         </button>
         <div style={{
           fontSize: 11,
@@ -202,7 +202,7 @@ export default function ProduzioneModulo({
             padding: '6px 10px',
             cursor: 'pointer',
             fontWeight: 300,
-          }}>×</button>
+          }}>Ã—</button>
       </div>
       {renderVista()}
     </div>
