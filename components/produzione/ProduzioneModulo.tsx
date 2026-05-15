@@ -78,20 +78,21 @@ export default function ProduzioneModulo({
     tornaAllaFlotta()
   }
 
-  if (vista.tipo === 'flotta') {
-    return (
-      <ProduzioneFlottaMobile
+  const contenuto = (() => {
+    if (vista.tipo === 'flotta') {
+      return (
+        <ProduzioneFlottaMobile
         aziendaId={aziendaId}
         onApriCarico={apriCarico}
         onApriConfigFasi={() => setVista({ tipo: 'config' })}
         onNuovoCarico={() => alert('Nuovo carico: scegli commessa\n\n(TODO: aprire selettore commesse in fase confermata/acconto_pagato)')}
-      />
-    )
-  }
+        />
+      )
+    }
 
-  if (vista.tipo === 'commessa') {
-    return (
-      <ProduzioneCommessaMobile
+    if (vista.tipo === 'commessa') {
+      return (
+        <ProduzioneCommessaMobile
         commessaId={vista.commessaId}
         aziendaId={aziendaId}
         onChiudi={tornaAllaFlotta}
@@ -99,13 +100,13 @@ export default function ProduzioneModulo({
         onApriMagazzino={onApriMagazzino}
         onApriCalendario={onApriCalendario}
         onChiudiCarico={chiudiCarico}
-      />
-    )
-  }
+        />
+      )
+    }
 
-  if (vista.tipo === 'vano') {
-    return (
-      <ProduzioneVanoDetailMobile
+    if (vista.tipo === 'vano') {
+      return (
+        <ProduzioneVanoDetailMobile
         vanoId={vista.vanoId}
         aziendaId={aziendaId}
         commessaCode={vista.commessaCode}
@@ -115,13 +116,13 @@ export default function ProduzioneModulo({
           setVista({ tipo: 'flotta' })
         }}
         onChiamaOperatore={(opId) => alert(`Chiama operatore ${opId}`)}
-      />
-    )
-  }
+        />
+      )
+    }
 
-  if (vista.tipo === 'gate') {
-    return (
-      <ProduzioneGateMaterialiMobile
+    if (vista.tipo === 'gate') {
+      return (
+        <ProduzioneGateMaterialiMobile
         commessaId={vista.commessaId}
         aziendaId={aziendaId}
         commessaCode={vista.commessaCode}
@@ -130,21 +131,27 @@ export default function ProduzioneModulo({
         vaniTotali={vista.vaniTotali}
         onChiudi={tornaAllaFlotta}
         onAvviato={(caricoId) => apriCarico(caricoId)}
-      />
-    )
-  }
+        />
+      )
+    }
 
-  if (vista.tipo === 'config') {
-    return (
-      <ProduzioneConfigFasiMobile
+    if (vista.tipo === 'config') {
+      return (
+        <ProduzioneConfigFasiMobile
         aziendaId={aziendaId}
         aziendaNome={aziendaNome}
         onChiudi={tornaAllaFlotta}
-      />
-    )
-  }
+        />
+      )
+    }
+    return null
+  })()
 
-  return null
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#EEF8F8', overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      {contenuto}
+    </div>
+  )
 }
 
 // Helper esportato: apre direttamente il GATE per una commessa specifica
