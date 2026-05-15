@@ -61,7 +61,9 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   const mastro: any = (() => { try { return useMastro(); } catch { return {}; } })();
   const user = mastro?.user || {};
 
-  const { operators, teams, problems, stats, getTimelineFor, refetch, loading, error } = useTeamMobile();
+  const { operators: _opsHook, teams, problems, stats, getTimelineFor, refetch, loading, error } = useTeamMobile();
+  const _ctx: any = useMastro();
+  const operators = (_opsHook && _opsHook.length > 0) ? _opsHook : (_ctx?.team || []);
   const { tab, setTab, filtered } = useTeamFilters(operators);
 
   const [view, setView] = useState<View>("list");
