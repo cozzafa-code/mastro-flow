@@ -755,6 +755,17 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         if (cancelled) return;
         // Le commesse vengono usate come "cantieri" nel codice legacy
         if (rCommesse.data && rCommesse.data.length) setCantieri(rCommesse.data as any[]);
+        // [galassia-fatture] Carica fin_fatture_emesse e mappa a formato fattureDB
+        const rFatture = await supabase.from('fin_fatture_emesse').select('*').eq('azienda_id', aziendaId);
+        if (rFatture.data && rFatture.data.length) {
+          const mappedFatture = rFatture.data.map((f: any) => ({
+            ...f,
+            cmId: f.commessa_id,
+            pagata: f.stato === 'pagata',
+            importo: f.totale,
+          }));
+          setFattureDB(mappedFatture);
+        }
         if (rTasks.data && rTasks.data.length) setTasks(rTasks.data as any[]);
         if (rTeam.data && rTeam.data.length) setTeam(rTeam.data as any[]);
         if (rMontaggi.data && rMontaggi.data.length) setMontaggiDB(rMontaggi.data as any[]);
