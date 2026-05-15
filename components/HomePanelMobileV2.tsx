@@ -1,4 +1,4 @@
-﻿// cache-bust-20260514213840
+// cache-bust-20260514213840
 // HomePanelMobileV2 V20 - bottom sheet evento/task + swipe calendario + no frecce
 'use client'
 import CardPianificazione from "./home/CardPianificazione";
@@ -316,7 +316,7 @@ export default function HomePanelMobileV2(props: any) {
     return ((Date.now() - upd) / 86400000) > 5 && (c?.fase === 'preventivo' || c?.fase === 'sopralluogo')
   })
   const daIncassare = fattureDB.reduce((s: number, f: any) => s + (f?.pagata ? 0 : Number(f?.totale || 0)), 0)
-  const daIncassareLabel = daIncassare >= 1000 ? `${(daIncassare / 1000).toFixed(1)}kâ‚¬` : `${Math.round(daIncassare)}â‚¬`
+  const daIncassareLabel = daIncassare >= 1000 ? `${(daIncassare / 1000).toFixed(1)}kÔé¼` : `${Math.round(daIncassare)}Ôé¼`
   const messaggi = ctx?.talkUnread || 0
   const eventiOggi = eventi.filter((e: any) => {
     const d = parseEventDate(e); return d.toDateString() === new Date().toDateString()
@@ -412,8 +412,8 @@ export default function HomePanelMobileV2(props: any) {
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 9, letterSpacing: 0.5, fontWeight: 700 }}>PRIORITÃ€ OGGI</div>
-          <div style={{ color: '#FFF', fontSize: 12, fontWeight: 600, marginTop: 1 }}>{eventiOggi.length} eventi Â· {ferme.length} ferme Â· {tasks.length} task</div>
+          <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 9, letterSpacing: 0.5, fontWeight: 700 }}>PRIORIT├Ç OGGI</div>
+          <div style={{ color: '#FFF', fontSize: 12, fontWeight: 600, marginTop: 1 }}>{eventiOggi.length} eventi ┬À {ferme.length} ferme ┬À {tasks.length} task</div>
         </div>
         <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg>
       </div>
@@ -547,7 +547,7 @@ function SheetEvento({ evento, cantieri, onClose, onCompleta, onElimina, onAggio
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
             <div style={{ width: 6, height: 6, borderRadius: 50, background: NAVY }}/>
             <span style={{ fontSize: 9, color: NAVY, fontWeight: 700, letterSpacing: 0.5 }}>{tipo}</span>
-            <span style={{ fontSize: 9, color: MUTED }}>Â· {dataObj.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })} Â· {dataObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
+            <span style={{ fontSize: 9, color: MUTED }}>┬À {dataObj.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })} ┬À {dataObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
           <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, lineHeight: 1.3 }}>{titolo || 'Evento'}</div>
         </div>
@@ -561,7 +561,7 @@ function SheetEvento({ evento, cantieri, onClose, onCompleta, onElimina, onAggio
               </div> : null}
               {cm ? <div onClick={() => { onClose(); onApriCM(cm.id) }} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2.2}><rect x={2} y={7} width={20} height={14} rx={2}/></svg>
-                <span style={{ fontSize: 11, color: NAVY, fontWeight: 600 }}>{cm?.codice || cm?.code} Â· {cm?.cliente || cm?.cliente_nome || ''}</span>
+                <span style={{ fontSize: 11, color: NAVY, fontWeight: 600 }}>{cm?.codice || cm?.code} ┬À {cm?.cliente || cm?.cliente_nome || ''}</span>
               </div> : null}
               {evento?.note ? <div style={{ fontSize: 11, color: MUTED, marginTop: 4, lineHeight: 1.4 }}>{evento.note}</div> : null}
             </div>
@@ -650,7 +650,7 @@ function SheetTask({ task, cantieri, team, onClose, onCompleta, onElimina, onAgg
             <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {cm ? <div onClick={() => { onClose(); onApriCM(cm.id) }} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2.2}><rect x={2} y={7} width={20} height={14} rx={2}/></svg>
-                <span style={{ fontSize: 11, color: NAVY, fontWeight: 600 }}>{cm?.codice || cm?.code} Â· {cm?.cliente || cm?.cliente_nome || ''}</span>
+                <span style={{ fontSize: 11, color: NAVY, fontWeight: 600 }}>{cm?.codice || cm?.code} ┬À {cm?.cliente || cm?.cliente_nome || ''}</span>
               </div> : null}
               {op ? <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2.2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/></svg>
@@ -719,7 +719,7 @@ function CardHead({ title, link, badge, onClick, icon }: any) {
         <span style={{ color: TEXT, fontSize: 13, fontWeight: 600 }}>{title}</span>
         {badge != null ? <span style={{ background: '#F1F4F7', color: NAVY, fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{badge}</span> : null}
       </div>
-      {link ? <span onClick={onClick} style={{ color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>{link} â€º</span> : null}
+      {link ? <span onClick={onClick} style={{ color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>{link} ÔÇ║</span> : null}
     </div>
   )
 }
@@ -839,7 +839,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick, apriSheetEvento }: an
                       <div style={{ fontSize: 10, color: MUTED, textTransform: 'lowercase' }}>{MESI[d.getMonth()].slice(0, 3)}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 9, color: isExpanded ? NAVY : MUTED, fontWeight: 700, background: isExpanded ? '#FFF' : 'transparent', padding: isExpanded ? '2px 6px' : 0, borderRadius: 4 }}>{evs.length === 0 ? 'â€”' : `${evs.length} EVENTI`}</span>
+                      <span style={{ fontSize: 9, color: isExpanded ? NAVY : MUTED, fontWeight: 700, background: isExpanded ? '#FFF' : 'transparent', padding: isExpanded ? '2px 6px' : 0, borderRadius: 4 }}>{evs.length === 0 ? 'ÔÇö' : `${evs.length} EVENTI`}</span>
                       {evs.length > 0 ? <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={isExpanded ? NAVY : MUTED} strokeWidth={2.5}>{isExpanded ? <polyline points="18 15 12 9 6 15"/> : <polyline points="6 9 12 15 18 9"/>}</svg> : null}
                     </div>
                   </div>
@@ -891,7 +891,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick, apriSheetEvento }: an
 
       {view === 'mese' && eventiSel.length > 0 ? (
         <SwipeArea onSwipeLeft={goNextDay} onSwipeRight={goPrevDay} style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
-          <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5, marginBottom: 6, fontWeight: 600 }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} Â· {eventiSel.length} EVENTI</div>
+          <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5, marginBottom: 6, fontWeight: 600 }}>{cursor.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' }).toUpperCase()} ┬À {eventiSel.length} EVENTI</div>
           {eventiSel.map((e: any, i: number) => {
             const data = parseEventDate(e)
             return (
@@ -910,7 +910,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick, apriSheetEvento }: an
         </SwipeArea>
       ) : null}
 
-      <button onClick={onClick} style={{ marginTop: 10, background: 'transparent', border: 'none', color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer', width: '100%', padding: 4 }}>APRI AGENDA COMPLETA â†’</button>
+      <button onClick={onClick} style={{ marginTop: 10, background: 'transparent', border: 'none', color: NAVY, fontSize: 10, fontWeight: 600, cursor: 'pointer', width: '100%', padding: 4 }}>APRI AGENDA COMPLETA ÔåÆ</button>
     </>
   )
 }
@@ -945,13 +945,13 @@ function CardUrgente({ ferme, apri }: any) {
       })}
       {rest.length > 0 ? (
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre Â· scorri â†’</div>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre ┬À scorri ÔåÆ</div>
           <SwipeTrack>
             {rest.map((c: any, i: number) => (
               <SwipeItem key={i} width="180px" onClick={() => apri(c?.id)}>
                 <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
                 <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}</div>
-                <div style={{ fontSize: 9, color: RED, marginTop: 4, fontWeight: 700 }}>APRI â†’</div>
+                <div style={{ fontSize: 9, color: RED, marginTop: 4, fontWeight: 700 }}>APRI ÔåÆ</div>
               </SwipeItem>
             ))}
           </SwipeTrack>
@@ -990,7 +990,7 @@ function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick, apriS
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4, alignItems: 'center' }}>
                   {scad ? <span style={{ fontSize: 10, color: isLate ? TEXT : MUTED, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={4} width={18} height={18} rx={2}/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{scad.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}{isLate ? ' SCADUTA' : ''}</span> : null}
                   {prio ? <span style={{ fontSize: 9, color: '#FFF', background: prioColor, padding: '2px 7px', borderRadius: 4, fontWeight: 700, letterSpacing: 0.5 }}>{prio.toUpperCase()}</span> : null}
-                  {cm ? <span style={{ fontSize: 10, color: NAVY, fontWeight: 600 }}>â†— {cm?.codice || cm?.code}</span> : null}
+                  {cm ? <span style={{ fontSize: 10, color: NAVY, fontWeight: 600 }}>Ôåù {cm?.codice || cm?.code}</span> : null}
                 </div>
               </div>
             </div>
@@ -1021,7 +1021,7 @@ function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cm?.cliente || cm?.cliente_nome || cm?.codice || 'Cliente'}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, display: 'flex', alignItems: 'center', gap: 4 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>{m?.ora_inizio || 'â€”'}{m?.ora_fine ? ` - ${m.ora_fine}` : ''}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, display: 'flex', alignItems: 'center', gap: 4 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>{m?.ora_inizio || 'ÔÇö'}{m?.ora_fine ? ` - ${m.ora_fine}` : ''}</div>
               {m?.urgente ? <span style={{ fontSize: 8, color: '#FFF', background: RED, padding: '1px 5px', borderRadius: 3, fontWeight: 700, marginTop: 4, display: 'inline-block' }}>URGENTE</span> : null}
             </div>
           </div>
@@ -1029,7 +1029,7 @@ function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
       })}
       {rest.length > 0 ? (
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri Â· scorri â†’</div>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri ┬À scorri ÔåÆ</div>
           <SwipeTrack>
             {rest.map((m: any, i: number) => {
               const dStr = m?.data_montaggio || m?.data
@@ -1066,18 +1066,18 @@ function CardCommesse({ cantieri, apri }: any) {
             <div style={{ fontSize: 11, color: TEXT, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.cliente || c?.cliente_nome || ''}</div>
             {c?.indirizzo ? <div style={{ fontSize: 9, color: MUTED, marginTop: 1, display: 'flex', alignItems: 'center', gap: 3, overflow: 'hidden' }}><svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.indirizzo}</span></div> : null}
           </div>
-          {c?.totale ? <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, flexShrink: 0 }}>{Math.round(Number(c.totale))}â‚¬</div> : null}
+          {c?.totale ? <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, flexShrink: 0 }}>{Math.round(Number(c.totale))}Ôé¼</div> : null}
         </div>
       ))}
       {rest.length > 0 ? (
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre Â· scorri â†’</div>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altre ┬À scorri ÔåÆ</div>
           <SwipeTrack>
             {rest.map((c: any, i: number) => (
               <SwipeItem key={i} width="180px" onClick={() => apri(c?.id)}>
                 <div style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>{c?.codice || c?.code}</div>
                 <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}</div>
-                <div style={{ fontSize: 9, color: NAVY, marginTop: 4, fontWeight: 700 }}>APRI â†’</div>
+                <div style={{ fontSize: 9, color: NAVY, marginTop: 4, fontWeight: 700 }}>APRI ÔåÆ</div>
               </SwipeItem>
             ))}
           </SwipeTrack>
@@ -1096,8 +1096,8 @@ function CardCassa({ daIncassare, fatture, onClick }: any) {
     <>
       <CardHead title="Cassa" link="apri Centro Finanze" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={2} y={6} width={20} height={12} rx={2}/><circle cx={12} cy={12} r={2}/></svg>} />
       <Row label="Da incassare" value={daIncassare} color={TEXT} onClick={onClick} />
-      {scadute.length > 0 ? <Row label={`Scadute (${scadute.length})`} value={`${Math.round(scaduteAmt)}â‚¬`} color={RED} onClick={onClick} /> : null}
-      {incassate.length > 0 ? <Row label={`Incassate (${incassate.length})`} value={`${Math.round(incassateAmt)}â‚¬`} color={GREEN} last onClick={onClick} /> : null}
+      {scadute.length > 0 ? <Row label={`Scadute (${scadute.length})`} value={`${Math.round(scaduteAmt)}Ôé¼`} color={RED} onClick={onClick} /> : null}
+      {incassate.length > 0 ? <Row label={`Incassate (${incassate.length})`} value={`${Math.round(incassateAmt)}Ôé¼`} color={GREEN} last onClick={onClick} /> : null}
     </>
   )
 }
@@ -1122,7 +1122,7 @@ function CardSquadra({ team, cantieri, onClick }: any) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}{t?.cognome ? ` ${t.cognome[0]}.` : ''}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cm ? ` Â· ${cm?.codice}` : ''}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cm ? ` ┬À ${cm?.codice}` : ''}</div>
             </div>
             {t?.telefono ? <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ background: GREEN, color: '#FFF', padding: '6px 8px', borderRadius: 6, textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center' }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a> : null}
           </div>
@@ -1130,7 +1130,7 @@ function CardSquadra({ team, cantieri, onClick }: any) {
       })}
       {rest.length > 0 ? (
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri Â· scorri â†’</div>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri ┬À scorri ÔåÆ</div>
           <SwipeTrack>
             {rest.map((t: any, i: number) => (
               <SwipeItem key={i} width="160px">
@@ -1211,7 +1211,7 @@ function CardProduzione({ cantieri, apri }: any) {
       
       {/* Barre capacita prossimi 5 giorni */}
       <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, textTransform: 'uppercase' as any, letterSpacing: 0.3, marginBottom: 6 }}>OFFICINA Â· PROSSIMI 5 GIORNI</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, textTransform: 'uppercase' as any, letterSpacing: 0.3, marginBottom: 6 }}>OFFICINA ┬À PROSSIMI 5 GIORNI</div>
         <div style={{ display: 'flex', gap: 4 }}>
           {giorni.map((g, i) => {
             const pct = Math.min(100, (g.carico / CAPACITA) * 100)
@@ -1242,7 +1242,7 @@ function CardProduzione({ cantieri, apri }: any) {
                   <span style={{ fontSize: 11, color: TEXT, fontWeight: 800 }}>{c?.codice || c?.code}</span>
                   <span style={{ fontSize: 8, color: '#FFF', background: c?.fase === 'produzione' ? '#F59E0B' : '#1E3A5F', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(c?.fase || '').toUpperCase()}</span>
                 </div>
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}{c?.n_vani ? ' Â· ' + c.n_vani + ' vani' : ''}</div>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{c?.cliente || c?.cliente_nome || ''}{c?.n_vani ? ' ┬À ' + c.n_vani + ' vani' : ''}</div>
               </div>
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg>
             </div>
@@ -1252,7 +1252,7 @@ function CardProduzione({ cantieri, apri }: any) {
       
       {/* CTA finale */}
       <div onClick={() => window.dispatchEvent(new CustomEvent('mastro:open-produzione'))} style={{ marginTop: 10, padding: 10, background: 'linear-gradient(135deg, #1E3A5F, #0F1B2D)', color: '#fff', borderRadius: 8, textAlign: 'center' as any, fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: 0.5 }}>
-        APRI CALENDARIO PRODUZIONE â†’
+        APRI CALENDARIO PRODUZIONE ÔåÆ
       </div>
     </>
   )
@@ -1263,7 +1263,7 @@ function CardGestioneMateriali({ ordini, magazzino, onClick }: any) {
   const inTransito = (ordini || []).filter((o: any) => o?.stato === 'in_transito' || o?.stato === 'inviato' || o?.stato === 'confermato').length
   const sottoScorta = (magazzino || []).filter((a: any) => Number(a?.qta_disponibile || 0) < Number(a?.qta_minima || 0)).length
   const valoreMag = (magazzino || []).reduce((s: number, a: any) => s + (Number(a?.qta_disponibile || 0) * Number(a?.prezzo_medio || 0)), 0)
-  const valoreLabel = valoreMag >= 1000 ? `${(valoreMag / 1000).toFixed(1)}kâ‚¬` : `${Math.round(valoreMag)}â‚¬`
+  const valoreLabel = valoreMag >= 1000 ? `${(valoreMag / 1000).toFixed(1)}kÔé¼` : `${Math.round(valoreMag)}Ôé¼`
 
   return (
     <>
@@ -1290,7 +1290,7 @@ function CardGestioneMateriali({ ordini, magazzino, onClick }: any) {
         <div onClick={onClick} style={{ marginTop: 8, padding: '8px 10px', background: '#FEF3C7', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
           <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#BA7517" strokeWidth={2.2}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span style={{ fontSize: 10, color: '#92400E', fontWeight: 600, flex: 1 }}>{sottoScorta} articoli da riordinare</span>
-          <span style={{ fontSize: 10, color: '#1E3A5F', fontWeight: 700 }}>RIORDINA â†’</span>
+          <span style={{ fontSize: 10, color: '#1E3A5F', fontWeight: 700 }}>RIORDINA ÔåÆ</span>
         </div>
       ) : null}
     </>
@@ -1318,7 +1318,7 @@ function CardClienti({ contatti, cantieri, onClick }: any) {
             <div style={{ width: 32, height: 32, borderRadius: 50, background: '#E5EAF0', color: '#1E3A5F', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0 }}>{iniziali}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.nome || c?.ragione_sociale || 'Senza nome'}{c?.cognome ? ` ${c.cognome}` : ''}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.telefono || c?.email || c?.indirizzo || 'â€”'}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c?.telefono || c?.email || c?.indirizzo || 'ÔÇö'}</div>
             </div>
             {numCM > 0 ? (
               <div style={{ flexShrink: 0, padding: '2px 8px', background: '#E5EAF0', borderRadius: 5 }}>
@@ -1329,8 +1329,8 @@ function CardClienti({ contatti, cantieri, onClick }: any) {
         )
       })}
       <div onClick={onClick} style={{ marginTop: 8, padding: '8px 10px', background: '#F2FAFA', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-        <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>STORIA Â· DIARIO Â· COMMESSE</span>
-        <span style={{ fontSize: 10, color: '#1E3A5F', fontWeight: 700 }}>APRI â†’</span>
+        <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>STORIA ┬À DIARIO ┬À COMMESSE</span>
+        <span style={{ fontSize: 10, color: '#1E3A5F', fontWeight: 700 }}>APRI ÔåÆ</span>
 </div>
     </>
   )
@@ -1352,4 +1352,3 @@ function CardStatistiche({ cantieri, onClick }: any) {
     </>
   )
 }
-
