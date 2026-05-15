@@ -13,7 +13,7 @@ import CentroControlloMagazzino from "./CentroControlloMagazzino";
 import { ModuloMagazzino } from "./magazzino";
 import CentroPreparazioneFurgoni from "./CentroPreparazioneFurgoni";
 import CentroClienti from "./CentroClienti";
-import CentroControlloProduzione from "./CentroControlloProduzione";
+import ProduzioneModulo from "./produzione/ProduzioneModulo";
 import CentroFinanze from "./finanze/CentroFinanzeV2";
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useHomeMobile } from '../hooks/useHomeMobile'
@@ -462,10 +462,10 @@ export default function HomePanelMobileV2(props: any) {
       )}
       <MontaggiSheet open={showCentroMontaggi} onClose={() => setShowCentroMontaggi(false)} onApriCommessa={(cmId) => { const cm = (cantieri||[]).find((c) => c.id===cmId); if(cm) { setShowCentroMontaggi(false); setOrganizzaCm(cm); } }} />
       {showCentroProduzione && (
-        <CentroControlloProduzione
+        <ProduzioneModulo
           aziendaId={aziendaIdResolved}
-          onClose={() => setShowCentroProduzione(false)}
-          onApriCommessa={(cmId: string) => { const cm = (cantieri||[]).find((c: any)=>c.id===cmId); if(cm) { setShowCentroProduzione(false); setOrganizzaCm(cm); } }}
+          onChiudiModulo={() => setShowCentroProduzione(false)}
+          onApriMagazzino={() => { setShowCentroProduzione(false); setShowMagazzinoTop(true); }}
         />
       )}
       {showCentroOrdini && (
