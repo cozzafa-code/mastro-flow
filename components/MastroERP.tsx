@@ -2428,7 +2428,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
               <span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:6,
                 background:(ass.stato==="completato"?T.grn:ass.stato==="in_corso"?T.blue:ass.stato==="bloccato"?T.red:T.orange)+"18",
                 color:ass.stato==="completato"?T.grn:ass.stato==="in_corso"?T.blue:ass.stato==="bloccato"?T.red:T.orange,
-                marginRight:4,flexShrink:0}}>{ass.persona.replace("sq:","").split(" ")[0]}</span>
+                marginRight:4,flexShrink:0}}>{(ass.persona||"").replace("sq:","").split(" ")[0]}</span>
             )}
             {/* Badge alert se task non completati */}
             {taskNonFatti > 0 && (
