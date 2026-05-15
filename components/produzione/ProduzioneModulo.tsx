@@ -31,6 +31,34 @@ interface Props {
   onApriCalendario?: () => void
 }
 
+const IconUser = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="7" r="4"/>
+    <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
+  </svg>
+)
+const IconCalendar = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="5" width="18" height="16" rx="2"/>
+    <path d="M3 10h18M8 3v4M16 3v4"/>
+  </svg>
+)
+const IconPlus = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 5v14M5 12h14"/>
+  </svg>
+)
+const IconBack = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 6l-6 6 6 6"/>
+  </svg>
+)
+const IconClose = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 6L6 18M6 6l12 12"/>
+  </svg>
+)
+
 export default function ProduzioneModulo({ aziendaId, aziendaNome, onChiudiModulo, onApriMagazzino, onApriCalendario }: Props) {
   const [vista, setVista] = useState<Vista>({ tipo: 'flotta' })
   const [opSess, setOpSess] = useState<OperatoreSession | null>(typeof window !== 'undefined' ? getStoredSession() : null)
@@ -87,7 +115,7 @@ export default function ProduzioneModulo({ aziendaId, aziendaNome, onChiudiModul
     if (vista.tipo === 'flotta') {
       return (
         <>
-          <div style={{ paddingBottom: 80 }}>
+          <div style={{ paddingBottom: 90 }}>
             <ProduzioneFlottaMobile aziendaId={aziendaId} onApriCarico={apriCarico} onApriConfigFasi={() => setVista({ tipo: 'config' })} />
           </div>
           <div style={{
@@ -97,17 +125,17 @@ export default function ProduzioneModulo({ aziendaId, aziendaNome, onChiudiModul
             right: 0,
             background: '#FFFFFF',
             borderTop: '1px solid #C8E4E4',
-            padding: '8px 10px',
-            paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
+            padding: '10px 12px',
+            paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
             display: 'grid',
             gridTemplateColumns: '1fr 1fr 1fr',
-            gap: 6,
+            gap: 8,
             zIndex: 10000,
-            boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
+            boxShadow: '0 -2px 12px rgba(0,0,0,0.06)'
           }}>
-            <BtnFooter icon="POST" label="POSTAZIONE" onClick={() => setVista(opSess ? { tipo: 'postazione' } : { tipo: 'postazione_login' })} />
-            <BtnFooter icon="CAL" label="PIANIFICA" onClick={() => setVista({ tipo: 'pianificazione' })} />
-            <BtnFooter icon="+" label="NUOVO" onClick={() => setShowWizardNuovo(true)} primary />
+            <BtnFooter icon={<IconUser />} label="POSTAZIONE" onClick={() => setVista(opSess ? { tipo: 'postazione' } : { tipo: 'postazione_login' })} />
+            <BtnFooter icon={<IconCalendar />} label="PIANIFICA" onClick={() => setVista({ tipo: 'pianificazione' })} />
+            <BtnFooter icon={<IconPlus />} label="NUOVO" onClick={() => setShowWizardNuovo(true)} primary />
           </div>
         </>
       )
@@ -133,11 +161,13 @@ export default function ProduzioneModulo({ aziendaId, aziendaNome, onChiudiModul
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#EEF8F8', overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingTop: 'env(safe-area-inset-top)' }}>
       {!hideTopBar && (
         <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#1B3A5C', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-          <button onClick={handleIndietro} style={{ background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-            INDIETRO
+          <button onClick={handleIndietro} style={{ background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <IconBack /> INDIETRO
           </button>
           <div style={{ fontSize: 11, color: '#9FE1CB', letterSpacing: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>{titolo}</div>
-          <button onClick={onChiudiModulo} style={{ background: 'transparent', color: '#FFF', border: 'none', fontSize: 22, lineHeight: 1, padding: '6px 10px', cursor: 'pointer' }}>X</button>
+          <button onClick={onChiudiModulo} style={{ background: 'transparent', color: '#FFF', border: 'none', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            <IconClose />
+          </button>
         </div>
       )}
       {renderVista()}
@@ -155,24 +185,26 @@ export default function ProduzioneModulo({ aziendaId, aziendaNome, onChiudiModul
   )
 }
 
-function BtnFooter({ icon, label, onClick, primary }: { icon: string; label: string; onClick: () => void; primary?: boolean }) {
+function BtnFooter({ icon, label, onClick, primary }: { icon: React.ReactNode; label: string; onClick: () => void; primary?: boolean }) {
   return (
     <button onClick={onClick} style={{
       background: primary ? '#14B8A6' : '#FFFFFF',
       color: primary ? '#FFFFFF' : '#1B3A5C',
       border: primary ? 'none' : '1px solid #C8E4E4',
-      padding: '10px 6px',
-      borderRadius: 8,
+      padding: '8px 6px',
+      borderRadius: 10,
       fontSize: 10,
       fontWeight: 700,
       cursor: 'pointer',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: 2,
-      letterSpacing: 0.4
+      gap: 4,
+      letterSpacing: 0.5,
+      lineHeight: 1
     }}>
-      <span style={{ fontSize: 12, fontWeight: 700 }}>{icon}</span>{label}
+      {icon}
+      <span>{label}</span>
     </button>
   )
 }
