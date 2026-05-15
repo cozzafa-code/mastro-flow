@@ -177,8 +177,9 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri = [], 
     // PRIORITÀ: eventi reali da Supabase (sincronizzati con HOME)
     const evs = eventiDB.filter((e: any) => !e?.completato && !e?.annullato && !e?.deleted_at).map((e: any) => ({ ...e, _kind: 'evento' }));
     const tks = tasks.filter((t: any) => !t?.done && !tasksDone[t?.id]).map((t: any) => ({ ...t, _kind: 'task', titolo: t?.testo, data: t?.data || t?.scadenza }));
-    return [...evs, ...tks];
-  }, [eventiDB, tasks, tasksDone]);
+    const mnts = (montaggiDB || []).map((mt: any) => ({ ...mt, _kind: 'montaggio', tipo: 'montaggio', titolo: mt?.titolo || 'Montaggio', data: mt?.data_montaggio || '', ora_inizio: mt?.ora_inizio ? String(mt.ora_inizio).slice(0,5) : '08:00' }));
+    return [...evs, ...tks, ...mnts];
+  }, [eventiDB, tasks, tasksDone, montaggiDB]);
 
   const team = a?.team || [];
 
