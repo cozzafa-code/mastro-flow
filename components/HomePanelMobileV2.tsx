@@ -310,7 +310,7 @@ export default function HomePanelMobileV2(props: any) {
   const team = ctx?.team || []
   const eventi = (ctx?.events || ctx?.eventi || data?.agenda?.eventi || []).filter((e: any) => !hiddenEventi[e?.id] && !e?.completato && !e?.annullato)
   const tasks = (ctx?.tasks || []).filter((t: any) => !t?.done && !hiddenTasks[t?.id])
-  const montaggi = ctx?.montaggi || []
+  const montaggi = ctx?.montaggiDB || ctx?.montaggi || []
   const ferme = cantieri.filter((c: any) => {
     const upd = c?.updated_at ? new Date(c.updated_at).getTime() : 0
     return ((Date.now() - upd) / 86400000) > 5 && (c?.fase === 'preventivo' || c?.fase === 'sopralluogo')
