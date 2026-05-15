@@ -1340,8 +1340,8 @@ function CardClienti({ contatti, cantieri, onClick }: any) {
 function CardStatistiche({ cantieri, onClick }: any) {
   const sopr = cantieri.filter((c: any) => c?.fase === 'sopralluogo').length
   const prev = cantieri.filter((c: any) => c?.fase === 'preventivo').length
-  const conf = cantieri.filter((c: any) => c?.fase === 'conferma' || c?.fase === 'ordine').length
-  const fatt = cantieri.filter((c: any) => c?.fase === 'fattura' || c?.fase === 'pagata').length
+  const conf = cantieri.filter((c: any) => ['conferma_ordine','confermata','acconto_pagato','ordine'].includes(c?.fase)).length
+  const fatt = cantieri.filter((c: any) => ['fatturata','pagata'].includes(c?.fase)).length
   return (
     <>
       <CardHead title="Statistiche" link="report" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>} />

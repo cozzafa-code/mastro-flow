@@ -3977,10 +3977,26 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       } : cm));
       if (selectedCM?.id === cmId) setSelectedCM(prev => ({ ...prev, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0] }));
     } else if (tipo === "ricevuta") {
-      // Segna fattura come pagata
       const fatNonPagata = fattureDB.find(f => f.cmId === cmId && !f.pagata);
       if (fatNonPagata) {
-        setFattureDB(prev => prev.map(f => f.id === fatNonPagata.id ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: "Bonifico" } : f));
+        try {
+          await fetch("/api/fatture/marca-pagata", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fattura_id: fatNonPagata.id,
+              data_pagamento: new Date().toISOString().split("T")[0],
+              metodo_pagamento: "Bonifico",
+            }),
+          });
+        } catch (e) {
+          console.error("[inbox] marca-pagata API error", e);
+        }
+        setFattureDB(prev => prev.map(f => f.id === fatNonPagata.id ? {
+          ...f, pagata: true,
+          dataPagamento: new Date().toISOString().split("T")[0],
+          metodoPagamento: "Bonifico"
+        } : f));
       }
       setCantieri(cs => cs.map(cm => cm.id === cmId ? {
         ...cm, allegati: [...(cm.allegati || []), allegato],

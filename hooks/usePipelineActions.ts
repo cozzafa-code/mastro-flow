@@ -141,3 +141,4 @@ export function usePipelineActions(commessa_id: string | null, azienda_id: strin
   return { fase, azioni, log, loading, executing, esegui, eseguiTutte, reload };
 }
 
+
