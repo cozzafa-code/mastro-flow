@@ -80,7 +80,7 @@ export function useProduzioneFlotta(aziendaId: string | null) {
 
       const carichiRes = await supabase
         .from('produzione_carichi')
-        .select('*, commesse!inner ( code, cliente_nome, data_consegna_prevista, indirizzo_cantiere )')
+        .select('*, commesse!inner ( code, cliente, cognome, data_richiesta, indirizzo )')
         .eq('azienda_id', aziendaId)
         .neq('stato', 'completato')
         .order('priorita', { ascending: false, nullsFirst: false })
@@ -90,9 +90,9 @@ export function useProduzioneFlotta(aziendaId: string | null) {
       const flat: CaricoConCommessa[] = (carichiRes.data || []).map((c: any) => ({
         ...c,
         commessa_code: c.commesse?.code || '',
-        commessa_cliente: c.commesse?.cliente_nome || '',
-        commessa_consegna: c.commesse?.data_consegna_prevista || null,
-        commessa_indirizzo: c.commesse?.indirizzo_cantiere || null,
+        commessa_cliente: ((c.commesse?.cliente || '') + ' ' + (c.commesse?.cognome || '')).trim(),
+        commessa_consegna: c.commesse?.data_richiesta || null,
+        commessa_indirizzo: c.commesse?.indirizzo || null,
       }))
       setCarichi(flat)
 

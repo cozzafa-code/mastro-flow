@@ -47,7 +47,7 @@ export default function ProduzioneModulo({
   const apriGate = async (commessaId: string) => {
     const { data: c } = await supabase
       .from('commesse')
-      .select('code, cliente_nome, data_consegna_prevista')
+      .select('code, cliente, cognome, data_richiesta')
       .eq('id', commessaId)
       .eq('azienda_id', aziendaId)
       .maybeSingle()
@@ -60,8 +60,8 @@ export default function ProduzioneModulo({
         tipo: 'gate',
         commessaId,
         commessaCode: c.code,
-        commessaCliente: c.cliente_nome || '',
-        commessaDataConsegna: c.data_consegna_prevista,
+        commessaCliente: (c.cliente || "") + " " + (c.cognome || "") || '',
+        commessaDataConsegna: c.data_richiesta,
         vaniTotali
       })
     }
@@ -154,7 +154,7 @@ export function useApriGateProduzione(aziendaId: string | null) {
     if (!aziendaId) return null
     const { data: c } = await supabase
       .from('commesse')
-      .select('code, cliente_nome, data_consegna_prevista')
+      .select('code, cliente, cognome, data_richiesta')
       .eq('id', commessaId)
       .eq('azienda_id', aziendaId)
       .maybeSingle()
@@ -164,8 +164,8 @@ export function useApriGateProduzione(aziendaId: string | null) {
     })
     return {
       commessaCode: c.code,
-      commessaCliente: c.cliente_nome || '',
-      commessaDataConsegna: c.data_consegna_prevista,
+      commessaCliente: (c.cliente || "") + " " + (c.cognome || "") || '',
+      commessaDataConsegna: c.data_richiesta,
       vaniTotali: (pv || []).length
     }
   }

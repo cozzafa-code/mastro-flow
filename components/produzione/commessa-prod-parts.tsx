@@ -15,10 +15,10 @@ export function HeaderCommessa({ commessa, perc, sopraStima, vaniBloccati, onChi
   onChiudi: () => void
 }) {
   const oggi = new Date().toISOString().split('T')[0]
-  const giorniRimasti = commessa.data_consegna_prevista
-    ? Math.ceil((new Date(commessa.data_consegna_prevista).getTime() - Date.now()) / 86400000)
+  const giorniRimasti = commessa.data_richiesta
+    ? Math.ceil((new Date(commessa.data_richiesta).getTime() - Date.now()) / 86400000)
     : null
-  const inRitardo = commessa.data_consegna_prevista && commessa.data_consegna_prevista < oggi
+  const inRitardo = commessa.data_richiesta && commessa.data_richiesta < oggi
 
   return (
     <>
@@ -31,11 +31,11 @@ export function HeaderCommessa({ commessa, perc, sopraStima, vaniBloccati, onChi
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.2 }}>{commessa.cliente_nome || commessa.code}</div>
+            <div style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.2 }}>{(commessa.cliente || "") + " " + (commessa.cognome || "") || commessa.code}</div>
             <div style={{ fontSize: 11, opacity: 0.85, marginTop: 3 }}>
               {commessa.carico_vani_totali || 0} vani
-              {commessa.data_consegna_prevista && (
-                <> · consegna {new Date(commessa.data_consegna_prevista).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</>
+              {commessa.data_richiesta && (
+                <> · consegna {new Date(commessa.data_richiesta).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</>
               )}
               {giorniRimasti !== null && ` · ${inRitardo ? '+' : '-'}${Math.abs(giorniRimasti)}gg`}
             </div>

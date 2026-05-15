@@ -37,9 +37,9 @@ export interface CommessaProdFull {
   id: string
   code: string
   fase: string
-  cliente_nome: string | null
-  indirizzo_cantiere: string | null
-  data_consegna_prevista: string | null
+  cliente: string | null
+  indirizzo: string | null
+  data_richiesta: string | null
   carico_id: string | null
   carico_stato: string | null
   carico_avviato_at: string | null
@@ -63,7 +63,7 @@ export function useCommessaProduzione(commessaId: string | null, aziendaId: stri
     try {
       const { data: cData, error: cErr } = await supabase
         .from('commesse')
-        .select('id, code, fase, cliente_nome, indirizzo_cantiere, data_consegna_prevista')
+        .select('id, code, fase, cliente, cognome, indirizzo, data_richiesta')
         .eq('id', commessaId)
         .eq('azienda_id', aziendaId)
         .maybeSingle()
