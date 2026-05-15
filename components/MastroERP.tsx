@@ -742,7 +742,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         const aziendaId = await getAziendaId();
         if (!aziendaId || cancelled) return;
         const [
-          rCommesse, rTasks, rTeam, rMontaggi, rOrdini, rEvents, rContatti
+          rCommesse, rTasks, rTeam, rMontaggi, rOrdini, rEvents, rContatti, rOperatori
         ] = await Promise.all([
           supabase.from('commesse').select('*').eq('azienda_id', aziendaId),
           supabase.from('tasks').select('*').eq('azienda_id', aziendaId),
@@ -751,6 +751,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           supabase.from('ordini_fornitore').select('*').eq('azienda_id', aziendaId),
           supabase.from('events').select('*').eq('azienda_id', aziendaId),
           supabase.from('contatti').select('*').eq('azienda_id', aziendaId),
+          supabase.rpc('get_operatori_azienda', { p_azienda_id: aziendaId }),
         ]);
         if (cancelled) return;
         // Le commesse vengono usate come "cantieri" nel codice legacy
@@ -768,10 +769,11 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         }
         if (rTasks.data && rTasks.data.length) setTasks(rTasks.data as any[]);
         if (rTeam.data && rTeam.data.length) setTeam(rTeam.data as any[]);
-        if (rMontaggi.data && rMontaggi.data.length) { setMontaggiDB(rMontaggi.data as any[]); try { localStorage.setItem('mastro:montaggi', JSON.stringify(rMontaggi.data)); } catch {} }
+        if (rMontaggi.data && rMontaggi.data.length > 0) { setMontaggiDB(rMontaggi.data as any[]); try { localStorage.setItem('mastro:montaggi', JSON.stringify(rMontaggi.data)); } catch {} }
         if (rOrdini.data && rOrdini.data.length) setOrdiniFornDB(rOrdini.data as any[]);
         if (rEvents.data && rEvents.data.length) setEvents(rEvents.data as any[]);
         if (rContatti.data && rContatti.data.length) setContatti(rContatti.data as any[]);
+        if (rOperatori?.data && rOperatori.data.length) setTeam(rOperatori.data as any[]);
         console.log('[v51-home-fix] DB load:', {
           commesse: rCommesse.data?.length || 0,
           tasks: rTasks.data?.length || 0,
