@@ -1658,7 +1658,7 @@ export default function CMDetailPanel() {
               };
             } else if (_faseDb === "montaggio") {
               eyebrow = "Fase corrente · Montaggio";
-              const haGiaMontaggio = !!(cZ3.montaggiDB || []).find?.((m: any) => m.cmId === cZ3.id);
+              const haGiaMontaggio = !!(montaggiDB || []).find?.((m: any) => String(m.cmId) === String(cZ3.id) || String(m.commessa_id) === String(cZ3.id));
               titolo = haGiaMontaggio ? "Marca montaggio completato" : "Organizza montaggio";
               desc = haGiaMontaggio
                 ? "Squadra in opera. Marca completato quando il cantiere è chiuso."
