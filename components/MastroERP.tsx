@@ -2232,7 +2232,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     // FIX v10 cestino-archivia: escludi cestinate e archiviate dalla lista
     if (c.deleted_at || c.archived_at) return false;
     if (filterFase !== "tutte" && c.fase !== filterFase) return false;
-    if (searchQ && !c.cliente.toLowerCase().includes(searchQ.toLowerCase()) && !c.code.toLowerCase().includes(searchQ.toLowerCase()) && !(c.tipo || "").toLowerCase().includes(searchQ.toLowerCase()) && !(c.indirizzo || "").toLowerCase().includes(searchQ.toLowerCase())) return false;
+    if (searchQ && !(c.cliente||"").toLowerCase().includes(searchQ.toLowerCase()) && !(c.code||"").toLowerCase().includes(searchQ.toLowerCase()) && !(c.tipo || "").toLowerCase().includes(searchQ.toLowerCase()) && !(c.indirizzo || "").toLowerCase().includes(searchQ.toLowerCase())) return false;
     return true;
   });
 
