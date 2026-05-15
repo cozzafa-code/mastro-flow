@@ -48,7 +48,7 @@ function buildMonth(selectedIso: string) {
 
 export default function AgendaMonthMobile({ selectedDate, eventsByDate, onSelectDay, onTapEvent }: Props) {
   const { days, monthName } = useMemo(() => buildMonth(selectedDate), [selectedDate]);
-  const eventsSelected = (eventsByDate[selectedDate] || []).slice().sort((a, b) => a.oraInizio.localeCompare(b.oraInizio));
+  const eventsSelected = (eventsByDate[selectedDate] || []).slice().sort((a, b) => (a.oraInizio || a.ora_inizio || "").localeCompare(b.oraInizio || b.ora_inizio || ""));
 
   return (
     <div style={{ background: "#fff", paddingBottom: 100 }}>

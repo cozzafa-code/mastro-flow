@@ -88,7 +88,7 @@ export default function AgendaWeekMobile({ selectedDate, eventsByDate, onSelectD
 
           {/* Colonne giorni */}
           {week.map((d) => {
-            const evs = (eventsByDate[d.iso] || []).slice().sort((a, b) => a.oraInizio.localeCompare(b.oraInizio));
+            const evs = (eventsByDate[d.iso] || []).slice().sort((a, b) => (a.oraInizio || a.ora_inizio || "").localeCompare(b.oraInizio || b.ora_inizio || ""));
             return (
               <div key={d.iso} style={{ position: "relative", borderLeft: "1px solid #F4F4F5" }}>
                 {/* righe ore */}
