@@ -707,6 +707,31 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     setSquadreDB, setMontaggiDB,
   });
 
+  // [galassia-bridge] Sincronizza cantieri con useMastroData realtime
+  // Quando un trigger DB aggiorna fase/ops_fase_corrente, md.commesse lo riceve via websocket.
+  // Questo bridge propaga l'aggiornamento a setCantieri senza sovrascrivere tutto.
+  const { state: _mdBridge } = useMastroData();
+  useEffect(() => {
+    if (!_mdBridge.commesse || _mdBridge.commesse.length === 0) return;
+    setCantieri(prev => {
+      if (!prev || prev.length === 0) return _mdBridge.commesse;
+      return prev.map(c => {
+        const live = _mdBridge.commesse.find((x: any) => x.id === c.id);
+        if (!live) return c;
+        // Aggiorna solo i campi che cambiano con la fase — non sovrascrivere campi locali
+        return {
+          ...c,
+          fase: live.fase ?? c.fase,
+          ops_fase_corrente: live.ops_fase_corrente ?? c.ops_fase_corrente,
+          updated_at: live.updated_at ?? c.updated_at,
+          materiale_ordinato_at: live.materiale_ordinato_at ?? c.materiale_ordinato_at,
+          materiale_arrivato_at: live.materiale_arrivato_at ?? c.materiale_arrivato_at,
+          produzione_iniziata_at: live.produzione_iniziata_at ?? c.produzione_iniziata_at,
+        };
+      });
+    });
+  }, [_mdBridge.commesse]);
+
   // [v51-home-fix] Fallback diretto Supabase per popolare Home anche senza userId UUID
   // Tabelle reali del DB (verificate): commesse, tasks, team, montaggi, ordini_fornitore, events, contatti
   useEffect(() => {
