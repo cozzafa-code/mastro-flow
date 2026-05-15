@@ -688,6 +688,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       try{const _v=localStorage.getItem("mastro:lamiere");if(_v)setLamiereDB(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:libreria");if(_v)setLibreriaDB(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:fatture");if(_v){const p=JSON.parse(_v);setFattureDB(p);}}catch(e){}
+      try{const _mv=localStorage.getItem('mastro:montaggi');if(_mv){const pm=JSON.parse(_mv);if(pm.length) setMontaggiDB(pm);}}catch(e){}
       try{const _v=localStorage.getItem("mastro:ordiniForn");if(_v){const p=JSON.parse(_v);setOrdiniFornDB(p);}}catch(e){}
       try{const _v=localStorage.getItem("mastro:squadre");if(_v)setSquadreDB(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:montaggi");if(_v){const p=JSON.parse(_v);setMontaggiDB(p);}}catch(e){}
@@ -768,7 +769,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         }
         if (rTasks.data && rTasks.data.length) setTasks(rTasks.data as any[]);
         if (rTeam.data && rTeam.data.length) setTeam(rTeam.data as any[]);
-        if (rMontaggi.data && rMontaggi.data.length) setMontaggiDB(rMontaggi.data as any[]);
+        if (rMontaggi.data && rMontaggi.data.length) { setMontaggiDB(rMontaggi.data as any[]); try { localStorage.setItem('mastro:montaggi', JSON.stringify(rMontaggi.data)); } catch {} }
         if (rOrdini.data && rOrdini.data.length) setOrdiniFornDB(rOrdini.data as any[]);
         if (rEvents.data && rEvents.data.length) setEvents(rEvents.data as any[]);
         if (rContatti.data && rContatti.data.length) setContatti(rContatti.data as any[]);
