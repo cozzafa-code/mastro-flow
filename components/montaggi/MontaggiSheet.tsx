@@ -40,7 +40,7 @@ export default function MontaggiSheet({
     if (!rawMontaggi) return [];
     const cMap = new Map((commesse || []).map((c: any) => [c.id, c]));
     return rawMontaggi
-      .filter((m: any) => m.commessa_id && cMap.has(m.commessa_id))
+      .filter((m: any) => m.commessa_id && (cMap.size === 0 || cMap.has(m.commessa_id)))
       .map((m: any) => {
         const c: any = cMap.get(m.commessa_id);
         return {
