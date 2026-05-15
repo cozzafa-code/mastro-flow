@@ -1,4 +1,5 @@
 ﻿"use client";
+import { useMastroData } from "@/hooks/useMastroData";
 // @ts-nocheck
 import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
