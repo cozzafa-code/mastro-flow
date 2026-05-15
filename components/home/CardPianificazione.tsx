@@ -36,6 +36,12 @@ export default function CardPianificazione({ aziendaId, onClick }: Props) {
   const initial = aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '');
   const [resolvedAziendaId, setResolvedAziendaId] = useState(initial);
 
+  // [galassia] Aggiorna resolvedAziendaId quando useMastroData lo risolve
+  useEffect(() => {
+    if (_mdState.aziendaId && !resolvedAziendaId) {
+      setResolvedAziendaId(_mdState.aziendaId);
+    }
+  }, [_mdState.aziendaId]);
   // Fallback estremo: se non c'e' aziendaId, lo prendo da user_data via session loggata
   useEffect(() => {
     if (resolvedAziendaId) return;
