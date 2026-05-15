@@ -4220,6 +4220,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     selectedCliente, setSelectedCliente,
     showNewCliente, setShowNewCliente, newCliente, setNewCliente,
     aziendaInfo, sistemiDB, vetriDB, coloriDB, coprifiliDB, lamiereDB,
+    aziendaId: aziendaIdReal,
   };
 
 
