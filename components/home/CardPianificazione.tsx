@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useMastroData } from "@/hooks/useMastroData";
 
 interface Props {
   aziendaId: string;
