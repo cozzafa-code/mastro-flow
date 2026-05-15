@@ -308,7 +308,9 @@ export default function HomePanelMobileV2(props: any) {
   const cantieri = (ctx?.cantieri || []).filter((c: any) => !c?.deleted_at && !c?.archived_at)
   const fattureDB = ctx?.fattureDB || []
   const team = ctx?.team || []
-  const eventi = (ctx?.events || ctx?.eventi || data?.agenda?.eventi || []).filter((e: any) => !hiddenEventi[e?.id] && !e?.completato && !e?.annullato)
+  const _eventiBase = (ctx?.events || ctx?.eventi || data?.agenda?.eventi || []).filter((e: any) => !hiddenEventi[e?.id] && !e?.completato && !e?.annullato)
+  const _montaggiEventi = (ctx?.montaggiDB || []).map((mt: any) => ({ id: 'mt-'+mt.id, tipo: 'montaggio', data: mt.data_montaggio || '', ora_inizio: mt.ora_inizio ? String(mt.ora_inizio).slice(0,5) : '08:00', titolo: 'Montaggio', commessa_id: mt.commessa_id }))
+  const eventi = [..._eventiBase, ..._montaggiEventi]
   const tasks = (ctx?.tasks || []).filter((t: any) => !t?.done && !hiddenTasks[t?.id])
   const montaggi = ctx?.montaggiDB || ctx?.montaggi || []
   const ferme = cantieri.filter((c: any) => {
