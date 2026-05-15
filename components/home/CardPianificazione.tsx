@@ -30,18 +30,13 @@ const MAT_COLORS: Record<string, { bg: string; border: string; text: string; lbl
 };
 
 export default function CardPianificazione({ aziendaId, onClick }: Props) {
+  const { state: _mdState } = useMastroData();
   const [commesse, setCommesse] = useState<CmRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const initial = aziendaId || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '');
+  const initial = aziendaId || (_mdState?.aziendaId) || (typeof window !== 'undefined' ? (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro_azienda_id') || '') : '');
   const [resolvedAziendaId, setResolvedAziendaId] = useState(initial);
 
-  // [galassia] Aggiorna resolvedAziendaId quando useMastroData lo risolve
-  useEffect(() => {
-    if (_mdState.aziendaId && !resolvedAziendaId) {
-      setResolvedAziendaId(_mdState.aziendaId);
-    }
-  }, [_mdState.aziendaId]);
   // Fallback estremo: se non c'e' aziendaId, lo prendo da user_data via session loggata
   useEffect(() => {
     if (resolvedAziendaId) return;
