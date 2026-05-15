@@ -15,7 +15,12 @@ const MSG_SUGGERITI = [
   "Montaggi programmati questa settimana?",
 ];
 
-export default function AssistentePanel() {
+interface AssistentePanelProps {
+  onClose?: () => void;
+  onBack?: () => void;
+}
+
+export default function AssistentePanel({ onClose, onBack }: AssistentePanelProps = {}) {
   const {
     T, S, cantieri, fattureDB, fatturePassive, tasks, events,
     montaggiDB, ordiniFornDB, contatti, squadreDB, pipelineDB,
@@ -185,10 +190,30 @@ export default function AssistentePanel() {
       <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 16px) 20px 12px", borderBottom: `1px solid ${T.bdr}`, background: "#0D1F1F" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <svg width="28" height="28" viewBox="0 0 200 200" fill="none"><g><rect x="95" y="15" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="130" y="25" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="50" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="165" y="95" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="140" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="130" y="165" width="10" height="10" rx="2" fill="#7ED957"/><rect x="95" y="175" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="60" y="165" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="140" width="10" height="10" rx="2" fill="#7ED957"/><rect x="25" y="95" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="50" width="10" height="10" rx="2" fill="#7ED957"/><rect x="60" y="25" width="10" height="10" rx="2" fill="#F59E0B"/></g><g transform="rotate(8 100 100)"><rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/><path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/><path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/></g></svg>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>MASTRO AI</div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Assistente intelligente · conosce i tuoi dati</div>
           </div>
+          {onBack && (
+            <button
+              type="button"
+              aria-label="Indietro"
+              onClick={onBack}
+              style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.12)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              aria-label="Chiudi"
+              onClick={onClose}
+              style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.12)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          )}
         </div>
       </div>
 

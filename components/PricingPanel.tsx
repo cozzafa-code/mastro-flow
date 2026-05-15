@@ -1,12 +1,15 @@
 'use client';
 import { useState } from 'react';
 import { STRIPE_PLANS, PlanKey } from '@/lib/stripe';
+import MastroPanelHeader from '@/components/mastro/ui/MastroPanelHeader';
 
 interface PricingPanelProps {
   currentPlan?: PlanKey;
   onSelect?: (plan: PlanKey) => void;
   mode?: 'onboarding' | 'settings';
   loading?: boolean;
+  onBack?: () => void;
+  onClose?: () => void;
 }
 
 const CHECK = '✓';
@@ -16,6 +19,8 @@ export default function PricingPanel({
   onSelect,
   mode = 'onboarding',
   loading = false,
+  onBack,
+  onClose,
 }: PricingPanelProps) {
   const [selecting, setSelecting] = useState<PlanKey | null>(null);
 
@@ -42,6 +47,16 @@ export default function PricingPanel({
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
+      {(onBack || onClose) && (
+        <MastroPanelHeader
+          title="Scegli il piano"
+          subtitle={mode === 'onboarding' ? 'Step 5 di 5 · Onboarding' : 'Abbonamento attuale'}
+          iconKey="creditCard"
+          onBack={onBack}
+          onClose={onClose}
+        />
+      )}
+      <div style={{ padding: 16 }}>
       {mode === 'onboarding' && (
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
@@ -189,6 +204,7 @@ export default function PricingPanel({
       <p style={{ textAlign: 'center', fontSize: 12, color: '#9CA3AF', marginTop: 20 }}>
         Fatturazione mensile · Disdici quando vuoi · Carta richiesta solo dopo il trial
       </p>
+      </div>
     </div>
   );
 }
