@@ -282,7 +282,7 @@ export default function CommessePanel() {
 
   const fermeCount = cantieriAttivi.filter(c => isFerma(c)).length;
   const totaleEuro = filtered.reduce((sum, c) => sum + (c.euro ? parseFloat(c.euro) : 0), 0);
-  const filteredSorted = [...filtered].sort((a, b) => {
+  const filteredSorted = [...filtered].filter(Boolean).sort((a, b) => {
     if (!a || !b) return 0;
     if (sortBy === "nome") return (a.cliente || "").localeCompare(b.cliente || "");
     if (sortBy === "euro") return (parseFloat(b.euro) || 0) - (parseFloat(a.euro) || 0);
