@@ -55,12 +55,14 @@ export interface VanoFull {
   cliente_nome: string | null
   foto_rilievo: string[]
   note_rilievo: string | null
+  ordine?: number  // backup numero
 }
 
 export function useVanoDetail(vanoId: string | null, aziendaId: string | null) {
   const [vano, setVano] = useState<VanoFull | null>(null)
   const [storico, setStorico] = useState<VanoFaseStorico[]>([])
   const [eventi, setEventi] = useState<VanoEvento[]>([])
+  const [caricoId, setCaricoId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -77,9 +79,18 @@ export function useVanoDetail(vanoId: string | null, aziendaId: string | null) {
       if (vRes.error) throw vRes.error
       if (sRes.error) throw sRes.error
       if (eRes.error) throw eRes.error
-      setVano(vRes.data as any)
+      const vanoData = vRes.data as any
+      setVano(vanoData)
       setStorico((sRes.data || []).map((r: any) => ({ ...r, foto_urls: Array.isArray(r.foto_urls) ? r.foto_urls : [] })))
       setEventi(eRes.data || [])
+
+      // Risolvo carico_id dalla commessa
+      if (vanoData?.commessa_id) {
+        const cRes = await supabase.from('produzione_carichi')
+          .select('id').eq('commessa_id', vanoData.commessa_id).eq('azienda_id', aziendaId)
+          .neq('stato', 'completato').order('created_at', { ascending: false }).maybeSingle()
+        setCaricoId(cRes.data?.id ?? null)
+      }
     } catch (e: any) {
       setError(e.message || 'Errore caricamento vano')
     } finally {
@@ -99,7 +110,31 @@ export function useVanoDetail(vanoId: string | null, aziendaId: string | null) {
     return () => { supabase.removeChannel(ch) }
   }, [vanoId, aziendaId, fetchAll])
 
-  return { vano, storico, eventi, loading, error, refetch: fetchAll }
+  return { vano, storico, eventi, caricoId, loading, error, refetch: fetchAll }
+}
+
+// AZIONI OPERATIVE
+
+export async function avviaFaseRpc(p: { vanoId: string; faseId: string; caricoId: string; operatoreId: string; macchina: string; aziendaId: string; commessaId: string }) {
+  const res = await supabase.rpc('avvia_fase_vano', {
+    p_vano_id: p.vanoId, p_fase_id: p.faseId, p_carico_id: p.caricoId,
+    p_operatore_id: p.operatoreId, p_macchina: p.macchina, p_azienda_id: p.aziendaId,
+    p_commessa_id: p.commessaId
+  })
+  if (res.error) throw res.error
+  return res.data
+}
+
+export async function completaFaseRpc(vanoStatoId: string, note?: string) {
+  const res = await supabase.rpc('completa_fase_vano', { p_vano_stato_id: vanoStatoId, p_note: note || null })
+  if (res.error) throw res.error
+  return res.data
+}
+
+export async function bloccaFaseRpc(vanoStatoId: string, problema: string) {
+  const res = await supabase.rpc('blocca_fase_vano', { p_vano_stato_id: vanoStatoId, p_problema: problema })
+  if (res.error) throw res.error
+  return res.data
 }
 
 export async function risolviProblemaVano(vanoStatoId: string): Promise<boolean> {
@@ -126,8 +161,13 @@ export async function spostaOperatoreVano(vanoStatoId: string, nuovoOperatoreId:
 export async function fetchOperatoriDisponibili(aziendaId: string) {
   const res = await supabase.from('operatori')
     .select('id, nome, cognome, colore')
-    .eq('azienda_id', aziendaId)
-    .eq('attivo', true)
-    .order('nome')
+    .eq('azienda_id', aziendaId).eq('attivo', true).order('nome')
+  return res.data || []
+}
+
+export async function fetchMacchinePerFase(aziendaId: string, faseId: string) {
+  const res = await supabase.from('produzione_macchine')
+    .select('id, nome, modello, stato')
+    .eq('azienda_id', aziendaId).eq('fase_id', faseId).order('nome')
   return res.data || []
 }

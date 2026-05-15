@@ -7,24 +7,24 @@ export const sezTitolo: React.CSSProperties = {
   letterSpacing: 0.6, marginBottom: 8, paddingLeft: 4
 }
 
-export function HeaderVano({ vano, statoBlocco, tempoMortoSec, statoLabel, statoBg }: { vano: VanoFull; statoBlocco: boolean; tempoMortoSec: number; statoLabel: string; statoBg: string }) {
+export function HeaderVano({ vano, tempoMortoSec, statoLabel, statoBg }: { vano: VanoFull; tempoMortoSec: number; statoLabel: string; statoBg: string }) {
   const titolo = vano.stanza || vano.nome || vano.tipo || 'Vano'
   const misure = vano.misure_larghezza && vano.misure_altezza 
     ? `${vano.misure_larghezza}×${vano.misure_altezza} mm`
     : (vano.misure_json?.l && vano.misure_json?.h ? `${vano.misure_json.l}×${vano.misure_json.h} mm` : '')
   const colori = [vano.colore_int, vano.colore_est].filter(Boolean).join('/')
+  const numero = vano.numero ?? vano.ordine ?? '?'
 
   return (
     <div style={{ background: PROD_COLORS.navy, color: '#FFF', padding: '14px 16px' }}>
       <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: 0.5, marginBottom: 8 }}>
-        {vano.commessa_code} / VANO {vano.numero ?? '?'}
+        {vano.commessa_code} / VANO {numero}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.2 }}>{titolo}</div>
           <div style={{ fontSize: 11, opacity: 0.85, marginTop: 3 }}>
-            {vano.tipo}{misure && ` · ${misure}`}
-            {vano.pezzi > 1 && ` · ${vano.pezzi} pz`}
+            {vano.tipo}{misure && ` · ${misure}`}{vano.pezzi > 1 && ` · ${vano.pezzi} pz`}
           </div>
           {(vano.sistema || colori) && (
             <div style={{ fontSize: 11, opacity: 0.85 }}>
@@ -45,28 +45,28 @@ export function HeaderVano({ vano, statoBlocco, tempoMortoSec, statoLabel, stato
   )
 }
 
-export function PercorsoFasi({ storico, onRisolvi, onChiamaOp, onSposta }: { storico: VanoFaseStorico[]; onRisolvi: (faseId: string, vanoStatoId: string | null) => void; onChiamaOp: (opId: string | null) => void; onSposta: (vanoStatoId: string | null) => void }) {
+export interface PercorsoFasiCallbacks {
+  onAvvia: (faseId: string, faseNome: string) => void
+  onCompleta: (vanoStatoId: string) => void
+  onBlocca: (vanoStatoId: string, faseNome: string) => void
+  onRisolvi: (vanoStatoId: string) => void
+  onChiamaOp: (opId: string | null) => void
+  onSposta: (vanoStatoId: string | null) => void
+}
+
+export function PercorsoFasi({ storico, callbacks, caricoMancante }: { storico: VanoFaseStorico[]; callbacks: PercorsoFasiCallbacks; caricoMancante: boolean }) {
   return (
     <div style={{ background: '#FFF', borderRadius: 10, overflow: 'hidden' }}>
       {storico.map((f, idx) => (
-        <FaseRow key={f.fase_id} fase={f} ultimo={idx === storico.length - 1} 
-          onRisolvi={() => onRisolvi(f.fase_id, f.vano_stato_id)}
-          onChiamaOp={() => onChiamaOp(f.operatore_id)}
-          onSposta={() => onSposta(f.vano_stato_id)}
-        />
+        <FaseRow key={f.fase_id} fase={f} ultimo={idx === storico.length - 1} callbacks={callbacks} caricoMancante={caricoMancante} />
       ))}
     </div>
   )
 }
 
-function FaseRow({ fase, ultimo, onRisolvi, onChiamaOp, onSposta }: { fase: VanoFaseStorico; ultimo: boolean; onRisolvi: () => void; onChiamaOp: () => void; onSposta: () => void }) {
+function FaseRow({ fase, ultimo, callbacks, caricoMancante }: { fase: VanoFaseStorico; ultimo: boolean; callbacks: PercorsoFasiCallbacks; caricoMancante: boolean }) {
   const c = getFaseColor(fase.fase_colore)
-  let borderColor = PROD_COLORS.borderSoft
-  let pallinoBg: string = c.bg
-  let icon: 'check' | 'play' | 'block' | 'wait' = 'wait'
-  let bgRow = '#FFF'
-  let isCoda = false
-
+  let borderColor = PROD_COLORS.borderSoft, pallinoBg: string = c.bg, icon: 'check' | 'play' | 'block' | 'wait' = 'wait', bgRow = '#FFF', isCoda = false
   if (fase.stato === 'completato') { borderColor = PROD_COLORS.green; pallinoBg = PROD_COLORS.green; icon = 'check' }
   else if (fase.stato === 'in_corso') { borderColor = PROD_COLORS.teal; pallinoBg = PROD_COLORS.teal; icon = 'play' }
   else if (fase.stato === 'bloccato') { borderColor = PROD_COLORS.red; pallinoBg = PROD_COLORS.red; icon = 'block'; bgRow = '#FFF5F5' }
@@ -75,6 +75,7 @@ function FaseRow({ fase, ultimo, onRisolvi, onChiamaOp, onSposta }: { fase: Vano
   const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''
   const durMin = fase.durata_secondi ? Math.round(fase.durata_secondi / 60) : null
   const scostMin = durMin !== null && fase.stima_minuti ? durMin - fase.stima_minuti : null
+  const fmtOra = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''
 
   return (
     <div style={{ display: 'flex', padding: '10px 12px', borderLeft: isCoda ? 'none' : `4px solid ${borderColor}`, background: bgRow, borderBottom: ultimo ? 'none' : `1px solid #EEF8F8` }}>
@@ -88,7 +89,15 @@ function FaseRow({ fase, ultimo, onRisolvi, onChiamaOp, onSposta }: { fase: Vano
       <div style={{ flex: 1, minWidth: 0 }}>
         {isCoda ? (
           <>
-            <div style={{ fontSize: 12, fontWeight: 500, color: PROD_COLORS.textDim }}>{fase.fase_ordine} · {fase.fase_nome}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: PROD_COLORS.textDim }}>{fase.fase_ordine} · {fase.fase_nome}</div>
+              <button
+                onClick={() => callbacks.onAvvia(fase.fase_id, fase.fase_nome)}
+                disabled={caricoMancante}
+                style={{ background: caricoMancante ? '#CCC' : PROD_COLORS.teal, color: '#FFF', border: 'none', padding: '4px 10px', borderRadius: 4, fontSize: 10, fontWeight: 700, cursor: caricoMancante ? 'not-allowed' : 'pointer' }}>
+                ▶ AVVIA
+              </button>
+            </div>
             <div style={{ fontSize: 10, color: PROD_COLORS.textDim, marginTop: 2 }}>
               in attesa{fase.stima_minuti && ` · stima ${fase.stima_minuti} min`}
             </div>
@@ -100,15 +109,13 @@ function FaseRow({ fase, ultimo, onRisolvi, onChiamaOp, onSposta }: { fase: Vano
                 {fase.fase_ordine} · {fase.fase_nome}{fase.stato === 'bloccato' && ' · BLOCCATO'}
               </div>
               <div style={{ fontSize: 9, color: fase.stato === 'completato' ? PROD_COLORS.green : (fase.stato === 'bloccato' ? PROD_COLORS.red : PROD_COLORS.textDim), fontWeight: 600 }}>
-                {fase.iniziato_at && fmt(fase.iniziato_at)}
-                {fase.completato_at && ` → ${fmt(fase.completato_at).split(' ').slice(-1)[0]}`}
+                {fase.iniziato_at && fmtOra(fase.iniziato_at)}
+                {fase.completato_at && ` → ${fmtOra(fase.completato_at)}`}
               </div>
             </div>
             {fase.operatore_id && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                <div style={{ width: 18, height: 18, background: PROD_COLORS.navy, borderRadius: '50%', color: '#FFF', fontSize: 9, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {fase.operatore_iniziali}
-                </div>
+                <div style={{ width: 18, height: 18, background: PROD_COLORS.navy, borderRadius: '50%', color: '#FFF', fontSize: 9, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{fase.operatore_iniziali}</div>
                 <span style={{ fontSize: 11, color: PROD_COLORS.navy, fontWeight: fase.stato === 'bloccato' ? 600 : 400 }}>{fase.operatore_nome}</span>
                 {fase.macchina && (
                   <span style={{ background: fase.stato === 'bloccato' ? PROD_COLORS.redBg : '#EEF8F8', color: fase.stato === 'bloccato' ? PROD_COLORS.red : PROD_COLORS.navy, padding: '1px 6px', borderRadius: 4, fontSize: 9 }}>
@@ -128,17 +135,24 @@ function FaseRow({ fase, ultimo, onRisolvi, onChiamaOp, onSposta }: { fase: Vano
                 )}
               </div>
             )}
+            {fase.stato === 'in_corso' && fase.vano_stato_id && (
+              <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
+                <button onClick={() => callbacks.onCompleta(fase.vano_stato_id!)} style={{ background: PROD_COLORS.green, color: '#FFF', border: 'none', padding: '5px 10px', borderRadius: 5, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>✓ COMPLETA</button>
+                <button onClick={() => callbacks.onBlocca(fase.vano_stato_id!, fase.fase_nome)} style={{ background: '#FFF', color: PROD_COLORS.red, border: `1px solid ${PROD_COLORS.red}`, padding: '5px 10px', borderRadius: 5, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>⊘ BLOCCA</button>
+                <button onClick={() => callbacks.onSposta(fase.vano_stato_id)} style={{ background: '#FFF', color: PROD_COLORS.navy, border: `1px solid ${PROD_COLORS.borderSoft}`, padding: '5px 10px', borderRadius: 5, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>SPOSTA</button>
+              </div>
+            )}
             {fase.stato === 'bloccato' && fase.problema_descrizione && (
               <>
                 <div style={{ background: '#FFF', border: `1px solid #F09595`, borderRadius: 6, padding: '6px 8px', marginTop: 7, fontSize: 10, color: PROD_COLORS.navy, lineHeight: 1.4 }}>
                   <b style={{ color: PROD_COLORS.red }}>⚠ Problema:</b> {fase.problema_descrizione}
                 </div>
                 <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
-                  <button onClick={onRisolvi} style={{ background: PROD_COLORS.red, color: '#FFF', border: 'none', padding: '5px 10px', borderRadius: 5, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>RISOLVI</button>
+                  <button onClick={() => callbacks.onRisolvi(fase.vano_stato_id!)} style={{ background: PROD_COLORS.red, color: '#FFF', border: 'none', padding: '5px 10px', borderRadius: 5, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>RISOLVI</button>
                   {fase.operatore_id && (
-                    <button onClick={onChiamaOp} style={{ background: '#FFF', color: PROD_COLORS.navy, border: `1px solid ${PROD_COLORS.borderSoft}`, padding: '5px 10px', borderRadius: 5, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>CHIAMA OP.</button>
+                    <button onClick={() => callbacks.onChiamaOp(fase.operatore_id)} style={{ background: '#FFF', color: PROD_COLORS.navy, border: `1px solid ${PROD_COLORS.borderSoft}`, padding: '5px 10px', borderRadius: 5, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>CHIAMA OP.</button>
                   )}
-                  <button onClick={onSposta} style={{ background: '#FFF', color: PROD_COLORS.navy, border: `1px solid ${PROD_COLORS.borderSoft}`, padding: '5px 10px', borderRadius: 5, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>SPOSTA</button>
+                  <button onClick={() => callbacks.onSposta(fase.vano_stato_id)} style={{ background: '#FFF', color: PROD_COLORS.navy, border: `1px solid ${PROD_COLORS.borderSoft}`, padding: '5px 10px', borderRadius: 5, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>SPOSTA</button>
                 </div>
               </>
             )}

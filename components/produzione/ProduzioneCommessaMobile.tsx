@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import { useCommessaProduzione, chiudiCaricoFn } from '@/hooks/useCommessaProduzione'
+import { supabase } from '@/lib/supabase'
 import { PROD_COLORS } from './prod-constants'
 import { HeaderCommessa, AllertaBlocchi, OperatoriAttivi, sezTitolo } from './commessa-parts-header'
 import { CruscottoVani, CaricoStazioniCommessa, TimelineCommessa } from './commessa-parts-body'
@@ -50,6 +51,19 @@ export default function ProduzioneCommessaMobile({
     }
   }
 
+  const handleAvviaProduzione = async () => {
+    if (!commessa.carico_id) return
+    if (!confirm('Avviare la produzione di questa commessa?\nLo stato passa a IN_CORSO e potrai avviare le fasi dei vani.')) return
+    const res = await supabase.from('produzione_carichi')
+      .update({ stato: 'in_corso', avviato_at: new Date().toISOString() })
+      .eq('id', commessa.carico_id).eq('azienda_id', aziendaId)
+    if (res.error) {
+      alert('Errore: ' + res.error.message)
+    } else {
+      refetch()
+    }
+  }
+
   const puoChiudere = fatti >= totV && vaniBloccati.length === 0 && totV > 0
 
   return (
@@ -85,6 +99,17 @@ export default function ProduzioneCommessaMobile({
         <div style={sezTitolo}>TIMELINE · {new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</div>
         <TimelineCommessa eventi={timeline} />
       </div>
+
+      {commessa.carico_stato === 'pianificato' && (
+        <div style={{ padding: '12px 14px 6px' }}>
+          <button onClick={handleAvviaProduzione} style={{ width: '100%', background: PROD_COLORS.green, color: '#FFF', border: 'none', padding: 14, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 6px rgba(15,110,86,0.3)' }}>
+            ▶ AVVIA PRODUZIONE
+          </button>
+          <div style={{ fontSize: 9, color: PROD_COLORS.textDim, textAlign: 'center', marginTop: 5 }}>
+            Cambia stato carico in IN_CORSO · puoi avviare le fasi dei vani
+          </div>
+        </div>
+      )}
 
       <div style={{ padding: '12px 14px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <BtnAz label="MAGAZZINO" onClick={onApriMagazzino} />
