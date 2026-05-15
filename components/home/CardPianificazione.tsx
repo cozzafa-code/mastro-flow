@@ -1,12 +1,11 @@
 "use client";
 // components/home/CardPianificazione.tsx
-// Tile home che mostra le commesse in fase di pianificazione produzione/montaggio
-// [galassia] Legge da useMastroData invece di query diretta - nessuna dipendenza da auth
+// [galassia] Legge da cantieri passati come prop (MastroContext) - nessuna query Supabase
 import React, { useMemo } from "react";
-import { useMastroData } from "@/hooks/useMastroData";
 
 interface Props {
   aziendaId: string;
+  cantieri?: any[];
   onClick?: (commessaId: string) => void;
 }
 
@@ -19,13 +18,10 @@ const MAT_COLORS: Record<string, { bg: string; border: string; text: string; lbl
 
 const FASI_PIANIF = ['ordine', 'acconto_pagato', 'produzione', 'montaggio'];
 
-export default function CardPianificazione({ aziendaId, onClick }: Props) {
-  const { state } = useMastroData();
-
+export default function CardPianificazione({ aziendaId, cantieri = [], onClick }: Props) {
   const commesse = useMemo(() => {
-    const src = state.commesse && state.commesse.length > 0 ? state.commesse : [];
-    return src.filter((c: any) => FASI_PIANIF.includes(c.fase));
-  }, [state.commesse]);
+    return cantieri.filter((c: any) => FASI_PIANIF.includes(c.fase));
+  }, [cantieri]);
 
   const pronte   = commesse.filter((c: any) => c.materiali_status === 'completo').length;
   const parziali = commesse.filter((c: any) => c.materiali_status === 'parziale').length;
