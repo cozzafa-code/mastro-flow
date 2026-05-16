@@ -362,7 +362,7 @@ export default function HomePanelMobileV2(props: any) {
         {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} />}
         {id === 'commesse' && <CardCommesse cantieri={cantieri} apri={apriCM} />}
         {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => setShowCentroFinanze(true)} />}
-        {id === 'squadra' && <CardSquadra team={team} cantieri={cantieri} onClick={() => goto('team')} />}
+        {id === 'squadra' && <CardSquadra team={team} cantieri={cantieri} montaggiDB={montaggi} onClick={() => goto('team')} />}
         {id === 'produzione' && <CardProduzione cantieri={cantieri} apri={apriCM} />}
         {id === 'gestione-materiali' && <CardGestioneMateriali ordini={ctx?.ordiniFornDB || []} magazzino={ctx?.magazzinoArticoli || []} onClick={() => goto('materiali')} />}
         {id === 'clienti' && <CardClienti contatti={ctx?.contatti || ctx?.clienti || []} cantieri={cantieri} onClick={() => goto('clienti')} />}
@@ -1104,29 +1104,77 @@ function CardCassa({ daIncassare, fatture, onClick }: any) {
   )
 }
 
-function CardSquadra({ team, cantieri, onClick }: any) {
-  const attivi = team.filter((t: any) => t?.attivo !== false).length
-  const top = team.slice(0, SHOW_VERTICAL)
+function CardSquadra({ team, cantieri, montaggiDB, onClick }: any) {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const montaggiOggi = (montaggiDB || []).filter((m: any) => {
+    const d = m?.data || m?.dataMontaggio || m?.data_montaggio || ''
+    return String(d).startsWith(todayStr)
+  })
+  const attivi   = team.filter((t: any) => (t?.stato || t?.status) === 'attivo').length
+  const problemi = team.filter((t: any) => (t?.stato || t?.status) === 'problema').length
+  const top  = team.slice(0, SHOW_VERTICAL)
   const rest = team.slice(SHOW_VERTICAL)
+
+  const STATO: Record<string, { dot: string; label: string }> = {
+    attivo:   { dot: '#1D9E75', label: 'Attivo' },
+    pausa:    { dot: '#EF9F27', label: 'Pausa' },
+    problema: { dot: '#E24B4A', label: 'Problema' },
+    viaggio:  { dot: '#378ADD', label: 'Viaggio' },
+    libero:   { dot: '#8FA8A8', label: 'Libero' },
+  }
+
   return (
     <>
       <CardHead title="Squadra" badge={`${attivi}/${team.length}`} link="apri" onClick={onClick} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/></svg>} />
+
+      {/* KPI bar */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        <div style={{ flex: 1, background: 'rgba(29,158,117,0.1)', borderRadius: 8, padding: '5px 6px', textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#04342C', lineHeight: 1 }}>{attivi}</div>
+          <div style={{ fontSize: 8, fontWeight: 700, color: '#1D9E75', marginTop: 2 }}>ATTIVI</div>
+        </div>
+        <div style={{ flex: 1, background: 'rgba(143,168,168,0.1)', borderRadius: 8, padding: '5px 6px', textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, lineHeight: 1 }}>{team.length}</div>
+          <div style={{ fontSize: 8, fontWeight: 700, color: MUTED, marginTop: 2 }}>TOTALE</div>
+        </div>
+        <div style={{ flex: 1, background: montaggiOggi.length > 0 ? 'rgba(55,138,221,0.1)' : 'rgba(143,168,168,0.08)', borderRadius: 8, padding: '5px 6px', textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: montaggiOggi.length > 0 ? '#042C53' : TEXT, lineHeight: 1 }}>{montaggiOggi.length}</div>
+          <div style={{ fontSize: 8, fontWeight: 700, color: montaggiOggi.length > 0 ? '#378ADD' : MUTED, marginTop: 2 }}>OGGI</div>
+        </div>
+        {problemi > 0 && (
+          <div style={{ flex: 1, background: 'rgba(226,75,74,0.1)', borderRadius: 8, padding: '5px 6px', textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#8B1A1A', lineHeight: 1 }}>{problemi}</div>
+            <div style={{ fontSize: 8, fontWeight: 700, color: '#E24B4A', marginTop: 2 }}>PROB.</div>
+          </div>
+        )}
+      </div>
+
       {team.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun operatore</div> : null}
       {top.map((t: any, i: number) => {
+        const stato = (t?.stato || t?.status || 'libero') as string
+        const cfg = STATO[stato] || STATO.libero
         const cm = cantieri.find((c: any) => c?.id === t?.commessa_attuale_id)
-        const stato = t?.stato_attuale || (t?.attivo === false ? 'inattivo' : 'disponibile')
-        const isWorking = stato === 'lavora' || stato === 'in_cantiere' || stato === 'avviato'
+        const montaggioOp = montaggiOggi.find((m: any) => {
+          const sq: string[] = m?.squadra || m?.operatori || []
+          return m?.operatoreId === t?.id || m?.operatore_id === t?.id || sq.includes(t?.id) || sq.includes(t?.nome)
+        })
+        const cmLabel = montaggioOp
+          ? (montaggioOp?.cmCode || montaggioOp?.codice || montaggioOp?.cliente || 'Montaggio')
+          : cm?.codice || null
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
             <div style={{ width: 32, height: 32, borderRadius: 50, background: t?.colore || '#D8E5F0', color: TEXT, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative', flexShrink: 0 }}>
               {(t?.nome || '?').slice(0, 1).toUpperCase()}
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 50, background: isWorking ? GREEN : (t?.attivo !== false ? AMBER : '#C8D2DA'), border: '2px solid #FFF' }}/>
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 50, background: cfg.dot, border: '2px solid #FFF' }}/>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}{t?.cognome ? ` ${t.cognome[0]}.` : ''}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cm ? ` · ${cm?.codice}` : ''}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cmLabel ? ` · ${cmLabel}` : ''}</div>
             </div>
-            {t?.telefono ? <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ background: GREEN, color: '#FFF', padding: '6px 8px', borderRadius: 6, textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center' }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a> : null}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+              <div style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 4, background: cfg.dot + '20', color: cfg.dot, letterSpacing: '0.3px' }}>● {cfg.label}</div>
+              {t?.telefono ? <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ background: GREEN, color: '#FFF', padding: '4px 6px', borderRadius: 6, textDecoration: 'none', display: 'flex', alignItems: 'center' }}><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a> : null}
+            </div>
           </div>
         )
       })}
@@ -1134,19 +1182,24 @@ function CardSquadra({ team, cantieri, onClick }: any) {
         <div style={{ marginTop: 8 }}>
           <div style={{ fontSize: 9, color: MUTED, fontWeight: 600, marginBottom: 4 }}>+{rest.length} altri · scorri →</div>
           <SwipeTrack>
-            {rest.map((t: any, i: number) => (
-              <SwipeItem key={i} width="160px">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 50, background: t?.colore || '#D8E5F0', color: TEXT, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative' }}>
-                    {(t?.nome || '?').slice(0, 1).toUpperCase()}
-                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 9, height: 9, borderRadius: 50, background: t?.attivo !== false ? GREEN : '#C8D2DA', border: '1.5px solid #F7F9FB' }}/>
+            {rest.map((t: any, i: number) => {
+              const stato = (t?.stato || t?.status || 'libero') as string
+              const cfg = STATO[stato] || STATO.libero
+              return (
+                <SwipeItem key={i} width="160px">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 50, background: t?.colore || '#D8E5F0', color: TEXT, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative' }}>
+                      {(t?.nome || '?').slice(0, 1).toUpperCase()}
+                      <div style={{ position: 'absolute', bottom: 0, right: 0, width: 9, height: 9, borderRadius: 50, background: cfg.dot, border: '1.5px solid #F7F9FB' }}/>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
+                      <div style={{ fontSize: 9, color: cfg.dot, fontWeight: 700 }}>● {cfg.label}</div>
+                    </div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
-                  </div>
-                </div>
-              </SwipeItem>
-            ))}
+                </SwipeItem>
+              )
+            })}
           </SwipeTrack>
         </div>
       ) : null}
