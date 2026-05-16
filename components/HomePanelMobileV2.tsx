@@ -1116,64 +1116,104 @@ function CardCassa({ daIncassare, fatture, onClick }: any) {
   )
 }
 
-function OperatoreDrawer({ op, onClose }: { op: any; onClose: () => void }) {
+function OperatoreDrawer({ op, montaggi, cantieri, onClose }: { op: any; montaggi: any[]; cantieri: any[]; onClose: () => void }) {
   const STATO: Record<string, { dot: string; label: string }> = {
     attivo:   { dot: '#1D9E75', label: 'Attivo' },
-    pausa:    { dot: '#EF9F27', label: 'Pausa' },
+    pausa:    { dot: '#EF9F27', label: 'In pausa' },
     problema: { dot: '#E24B4A', label: 'Problema' },
-    viaggio:  { dot: '#378ADD', label: 'Viaggio' },
+    viaggio:  { dot: '#378ADD', label: 'In viaggio' },
     libero:   { dot: '#8FA8A8', label: 'Libero' },
   }
   const stato = op?.stato || op?.status || 'libero'
   const cfg = STATO[stato] || STATO.libero
   const nome = op?.nome || op?.name || 'Operatore'
   const cognome = op?.cognome ? ` ${op.cognome}` : ''
+  const nomeCompleto = nome + cognome
+
+  // Montaggi futuri assegnati a questo operatore
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const montaggiOp = montaggi.filter((m: any) => {
+    const sq: string[] = m?.squadra || []
+    const dataOk = (m?.data_montaggio || '') >= todayStr
+    const isAssegnato = sq.includes(op?.id) || sq.includes(nome) || m?.operatore_id === op?.id
+    return dataOk && isAssegnato
+  }).sort((a: any, b: any) => (a.data_montaggio || '').localeCompare(b.data_montaggio || ''))
+
+  const prossimo = montaggiOp[0] || null
+  const cm = prossimo ? cantieri.find((c: any) => c.id === prossimo.commessa_id) : null
+
+  const fmtData = (d: string) => {
+    if (!d) return ''
+    const dt = new Date(d + 'T00:00:00')
+    return dt.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
+  }
+  const fmtOra = (o: string) => o ? String(o).slice(0, 5) : ''
+  const fmtDurata = (min: number) => min >= 60 ? `${Math.round(min/60)}h` : `${min}min`
+
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: '#FFF', borderRadius: '18px 18px 0 0', padding: '20px 20px 36px', width: '100%', boxShadow: '0 -4px 24px rgba(0,0,0,0.15)' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#FFF', borderRadius: '20px 20px 0 0', padding: '0 0 36px', width: '100%', boxShadow: '0 -4px 32px rgba(0,0,0,0.18)' }}>
         {/* Handle */}
-        <div style={{ width: 36, height: 4, background: '#E5E7EB', borderRadius: 2, margin: '0 auto 16px' }}/>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-          <div style={{ width: 52, height: 52, borderRadius: '50%', background: op?.colore || '#D8E5F0', color: TEXT, fontSize: 20, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 }}>
-            {(nome).slice(0,1).toUpperCase()}
-            <div style={{ position: 'absolute', bottom: 1, right: 1, width: 13, height: 13, borderRadius: '50%', background: cfg.dot, border: '2px solid #FFF' }}/>
-          </div>
-          <div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: TEXT }}>{nome}{cognome}</div>
-            <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{op?.ruolo || 'Operatore'}</div>
-          </div>
-          <div style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 8, background: cfg.dot + '20', color: cfg.dot }}>● {cfg.label}</div>
-        </div>
-        {/* Info */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-          {op?.cantiere_attuale && (
-            <div style={{ fontSize: 12, color: TEXT, background: '#F7F9FB', borderRadius: 10, padding: '10px 12px' }}>
-              <span style={{ color: MUTED, fontSize: 10, fontWeight: 600 }}>CANTIERE ATTUALE</span>
-              <div style={{ fontWeight: 600, marginTop: 2 }}>{op.cantiere_attuale}</div>
+        <div style={{ width: 36, height: 4, background: '#E5E7EB', borderRadius: 2, margin: '12px auto 0' }}/>
+        {/* Header colorato */}
+        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${BORDER}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: cfg.dot + '20', color: cfg.dot, fontSize: 22, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, border: `2px solid ${cfg.dot}40` }}>
+              {nome.slice(0,1).toUpperCase()}
+              <div style={{ position: 'absolute', bottom: -3, right: -3, width: 14, height: 14, borderRadius: 4, background: cfg.dot, border: '2px solid #FFF' }}/>
             </div>
-          )}
-          {op?.note_diario && op.note_diario.length > 0 && (
-            <div style={{ fontSize: 12, color: MUTED, background: '#F7F9FB', borderRadius: 10, padding: '10px 12px' }}>
-              {op.note_diario[op.note_diario.length - 1]?.testo || ''}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: TEXT }}>{nomeCompleto}</div>
+              <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{op?.ruolo || 'Operatore'}</div>
             </div>
-          )}
+            <div style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 8, background: cfg.dot + '18', color: cfg.dot }}>● {cfg.label}</div>
+          </div>
         </div>
-        {/* Azioni */}
-        <div style={{ display: 'flex', gap: 10 }}>
-          {op?.telefono ? (
-            <a href={`tel:${op.telefono}`} style={{ flex: 1, padding: '12px 0', background: GREEN, color: '#FFF', borderRadius: 12, textAlign: 'center', textDecoration: 'none', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              Chiama
-            </a>
-          ) : null}
-          {op?.telefono ? (
-            <a href={`https://wa.me/39${op.telefono.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{ flex: 1, padding: '12px 0', background: '#25D366', color: '#FFF', borderRadius: 12, textAlign: 'center', textDecoration: 'none', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.025.507 3.934 1.397 5.612L0 24l6.562-1.381A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.001-1.366l-.36-.214-3.719.782.802-3.619-.233-.372A9.818 9.818 0 1 1 12 21.818z"/></svg>
-              WhatsApp
-            </a>
+
+        {/* Info prossimo lavoro */}
+        <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {prossimo ? (
+            <div style={{ background: '#F0FAF9', borderRadius: 12, padding: '12px 14px', borderLeft: `3px solid ${TEAL}` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: TEAL, marginBottom: 6, letterSpacing: '0.4px' }}>PROSSIMO LAVORO</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{cm?.codice || cm?.code || '—'} · {cm?.cliente || cm?.ragione || 'Cliente'}</div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+                <div style={{ fontSize: 11, color: MUTED }}>
+                  <span style={{ fontWeight: 600, color: TEXT }}>{fmtData(prossimo.data_montaggio)}</span>
+                  {prossimo.ora_inizio ? <span> · {fmtOra(prossimo.ora_inizio)}</span> : null}
+                </div>
+                {prossimo.durata_minuti ? <div style={{ fontSize: 11, color: MUTED }}>⏱ {fmtDurata(prossimo.durata_minuti)}</div> : null}
+                {prossimo.ore_preventivate ? <div style={{ fontSize: 11, color: MUTED }}>📋 {prossimo.ore_preventivate}h prev.</div> : null}
+              </div>
+              {prossimo.stato && prossimo.stato !== 'da_pianificare' ? (
+                <div style={{ marginTop: 6, fontSize: 10, fontWeight: 700, color: TEAL, textTransform: 'uppercase' }}>{prossimo.stato.replace(/_/g, ' ')}</div>
+              ) : null}
+            </div>
           ) : (
-            <div style={{ flex: 1, padding: '12px 0', background: '#F1F4F7', color: MUTED, borderRadius: 12, textAlign: 'center', fontSize: 13, fontWeight: 600 }}>Nessun telefono</div>
+            <div style={{ background: '#F7F9FB', borderRadius: 12, padding: '12px 14px' }}>
+              <div style={{ fontSize: 12, color: MUTED, textAlign: 'center' }}>Nessun lavoro programmato</div>
+            </div>
+          )}
+
+          {montaggiOp.length > 1 ? (
+            <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>+{montaggiOp.length - 1} altri lavori in programma</div>
+          ) : null}
+        </div>
+
+        {/* Azioni */}
+        <div style={{ padding: '0 20px', display: 'flex', gap: 10 }}>
+          {op?.telefono ? (
+            <>
+              <a href={`tel:${op.telefono}`} style={{ flex: 1, padding: '13px 0', background: GREEN, color: '#FFF', borderRadius: 12, textAlign: 'center', textDecoration: 'none', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Chiama
+              </a>
+              <a href={`https://wa.me/39${op.telefono.replace(/[^\d]/g,'')}`} target="_blank" rel="noreferrer" style={{ flex: 1, padding: '13px 0', background: '#25D366', color: '#FFF', borderRadius: 12, textAlign: 'center', textDecoration: 'none', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.025.507 3.934 1.397 5.612L0 24l6.562-1.381A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.001-1.366l-.36-.214-3.719.782.802-3.619-.233-.372A9.818 9.818 0 1 1 12 21.818z"/></svg>
+                WhatsApp
+              </a>
+            </>
+          ) : (
+            <div style={{ flex: 1, padding: '13px 0', background: '#F1F4F7', color: MUTED, borderRadius: 12, textAlign: 'center', fontSize: 13, fontWeight: 600 }}>Nessun telefono registrato</div>
           )}
         </div>
       </div>
@@ -1281,7 +1321,7 @@ function CardSquadra({ team, cantieri, montaggiDB, onClick }: any) {
           </SwipeTrack>
         </div>
       ) : null}
-      {drawerOp && <OperatoreDrawer op={drawerOp} onClose={() => setDrawerOp(null)} />}
+      {drawerOp && <OperatoreDrawer op={drawerOp} montaggi={montaggiDB || []} cantieri={cantieri || []} onClose={() => setDrawerOp(null)} />}
     </>
   )
 }
