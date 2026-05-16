@@ -181,16 +181,42 @@ function nuovaZona(i: number): ZonaPianificazione {
   return { id: `z${Date.now()}${i}`, corpo: "", piano: "", lato: "", scala: "", settore: "", note_posizione: "", squadra: "", operatori: "", cosa_montare: "", vani_da: "", vani_a: "", note_lavoro: "", ora_inizio: "", ore_stimate: "" };
 }
 
-function CampoLibero({ label, value, onChange, placeholder, full }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; full?: boolean }) {
+// Opzioni preimpostate per cantieri serramentisti
+const OPTS: Record<string, string[]> = {
+  corpo: ["Corpo A","Corpo B","Corpo C","Corpo D","Padiglione Nord","Padiglione Sud","Padiglione Est","Padiglione Ovest","Ala Ovest","Ala Est","Torre A","Torre B","Blocco 1","Blocco 2","Blocco 3","Fabbricato principale","Dependance","Annesso"],
+  piano: ["Piano Terra","Piano 1","Piano 2","Piano 3","Piano 4","Piano 5","Piano 6","Piano 7","Piano 8","Seminterrato","Interrato","Mansarda","Sottotetto","Copertura","Piano Ammezzato","Piano Rialzato"],
+  lato: ["Nord","Sud","Est","Ovest","Nord-Est","Nord-Ovest","Sud-Est","Sud-Ovest","Fronte strada","Cortile interno","Fronte principale","Retro","Lato destro","Lato sinistro","Prospetto A","Prospetto B"],
+  scala: ["Scala A","Scala B","Scala C","Scala D","Vano scala 1","Vano scala 2","Scala principale","Scala emergenza","Scala interna","Ascensore A","Montacarichi"],
+  settore: ["Uffici","Appartamento","Monolocale","Bilocale","Trilocale","ORL","Pronto Soccorso","Degenza","Reparti","Reception","Laboratori","Magazzino","Bagni","Corridoio","Hall","Aula","Camera","Sala conferenze","Sala operatoria","Cucina","Soggiorno","Camera da letto","Studio","Garage","Box auto"],
+  cosa_montare: ["Finestre","Portefinestre","Porte interne","Porte blindate","Porte tagliafuoco","Persiane","Tapparelle","Zanzariere","Portoni","Vetrate fisse","Lucernari","Velux","Scorrevoli","Alzanti","Vasistas","Ribalte","Porte scorrevoli","Controtelai"],
+};
+
+function CampoLibero({ label, value, onChange, placeholder, full, optsKey }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; full?: boolean; optsKey?: string }) {
+  const opts = optsKey ? OPTS[optsKey] || [] : [];
   return (
     <div style={{ gridColumn: full ? "1 / -1" : undefined }}>
       <div style={{ fontSize: 9, color: C.navyDim, textTransform: "uppercase" as const, letterSpacing: ".4px", marginBottom: 4 }}>{label}</div>
-      <input
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder || "—"}
-        style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 700, fontFamily: "inherit", outline: "none" }}
-      />
+      {opts.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 0 }}>
+          <input
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={placeholder || "Scrivi o scegli dalla lista..."}
+            list={`opts-${optsKey}`}
+            style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 700, fontFamily: "inherit", outline: "none" }}
+          />
+          <datalist id={`opts-${optsKey}`}>
+            {opts.map(o => <option key={o} value={o} />)}
+          </datalist>
+        </div>
+      ) : (
+        <input
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder || "—"}
+          style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 700, fontFamily: "inherit", outline: "none" }}
+        />
+      )}
     </div>
   );
 }
@@ -228,11 +254,11 @@ function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPi
           <div>
             <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>DOVE</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <CampoLibero label="Corpo / Ala / Padiglione" value={zona.corpo} onChange={v => up("corpo", v)} placeholder="Es: Corpo B, Padiglione 3" />
-              <CampoLibero label="Piano" value={zona.piano} onChange={v => up("piano", v)} placeholder="Es: Piano 3, Seminterrato" />
-              <CampoLibero label="Lato / Fronte" value={zona.lato} onChange={v => up("lato", v)} placeholder="Es: Nord, Fronte strada" />
-              <CampoLibero label="Scala / Vano scala" value={zona.scala} onChange={v => up("scala", v)} placeholder="Es: Scala B, Vano 2" />
-              <CampoLibero label="Settore / Zona" value={zona.settore} onChange={v => up("settore", v)} placeholder="Es: Settore A, ORL, Pronto S." full />
+              <CampoLibero label="Corpo / Ala / Padiglione" value={zona.corpo} onChange={v => up("corpo", v)} placeholder="Es: Corpo B, Padiglione 3" optsKey="corpo" />
+              <CampoLibero label="Piano" value={zona.piano} onChange={v => up("piano", v)} placeholder="Es: Piano 3, Seminterrato" optsKey="piano" />
+              <CampoLibero label="Lato / Fronte" value={zona.lato} onChange={v => up("lato", v)} placeholder="Es: Nord, Fronte strada" optsKey="lato" />
+              <CampoLibero label="Scala / Vano scala" value={zona.scala} onChange={v => up("scala", v)} placeholder="Es: Scala B, Vano 2" optsKey="scala" />
+              <CampoLibero label="Settore / Zona" value={zona.settore} onChange={v => up("settore", v)} placeholder="Es: Settore A, ORL, Pronto S." full optsKey="settore" />
               <CampoLibero label="Note posizione" value={zona.note_posizione} onChange={v => up("note_posizione", v)} placeholder="Es: Accesso da cortile, usare montacarichi" full />
             </div>
           </div>
@@ -250,7 +276,7 @@ function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPi
           <div>
             <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>COSA MONTANO</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <CampoLibero label="Tipo lavorazione" value={zona.cosa_montare} onChange={v => up("cosa_montare", v)} placeholder="Es: Finestre CT70, Porte blindate" full />
+              <CampoLibero label="Tipo lavorazione" value={zona.cosa_montare} onChange={v => up("cosa_montare", v)} placeholder="Es: Finestre CT70, Porte blindate" full optsKey="cosa_montare" />
               <CampoLibero label="Vani da" value={zona.vani_da} onChange={v => up("vani_da", v)} placeholder="Es: Vano 01" />
               <CampoLibero label="Vani a" value={zona.vani_a} onChange={v => up("vani_a", v)} placeholder="Es: Vano 12" />
               <CampoLibero label="Note lavoro" value={zona.note_lavoro} onChange={v => up("note_lavoro", v)} placeholder="Es: Attenzione soglia ribassata vano 4" full />
