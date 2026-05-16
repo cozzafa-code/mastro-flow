@@ -255,13 +255,10 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
         if (firedId && quickHandlers[firedId]) {
           // QUICK mode: pressione prolungata -> crea veloce, no navigazione
           try { quickHandlers[firedId]?.(); } catch(e) {}
-        } else {
-          const picked = getNearestVoice(ms, stateRef.current.tx, stateRef.current.ty, stateRef.current.voices);
-          if (picked) {
-            if (picked.id !== "commesse") setSelectedCM(null);
-            setTab(picked.id);
-          }
+          // chiudi solo dopo azione rapida
+          setMenuSide(null);
         }
+        // Pannello rimane aperto â€” si chiude solo con tap su voce o overlay
       }
       // Cleanup hold
       if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
@@ -270,7 +267,6 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
       nearestIdRef.current = null;
       setHoldVoice(null);
       setHoldFired(null);
-      setMenuSide(null);
       startRef.current = { x: 0, y: 0, side: null };
     };
 
@@ -364,59 +360,92 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
         </>
       )}
 
-      {menuSide && (
-        <div
-          style={{ position: "fixed", inset: 0, zIndex: 200 }}
-          onClick={() => setMenuSide(null)}
-        >
-          <div style={{ position: "absolute", inset: 0, background: "rgba(13,31,31,0.45)", backdropFilter: "blur(3px)" }} />
+      {menuSide && (() => {
+        const VOICE_COLORS: Record<string, string> = {
+          home:         "#14B8A6",
+          commesse:     "#3B7FE0",
+          agenda:       "#8B5CF6",
+          montaggi_cal: "#0F766E",
+          clienti:      "#1E4F8A",
+          messaggi:     "#F59E0B",
+          altro:        "#6B7280",
+        };
+        return (
           <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              position: "absolute",
-              top: 0, bottom: 0,
-              right: menuSide === "right" ? 0 : undefined,
-              left: menuSide === "left" ? 0 : undefined,
-              width: 220,
-              background: DARK,
-              display: "flex", flexDirection: "column",
-              overflowY: "auto",
-              paddingTop: 60, paddingBottom: 40,
-            }}
+            style={{ position: "fixed", inset: 0, zIndex: 200 }}
+            onClick={() => setMenuSide(null)}
           >
-            <div style={{ position: "absolute", top: 20, left: "50%", transform: "translateX(-50%)", width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)" }} />
-            <div style={{ paddingLeft: 20, paddingRight: 20, marginBottom: 16, fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>NAVIGAZIONE</div>
-            {voices.map((v) => (
-              <div
-                key={v.id}
-                onClick={() => { setMenuSide(null); if (v.id !== "commesse") setSelectedCM(null); setTab(v.id); }}
-                style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  padding: "14px 20px",
-                  background: nearest?.id === v.id ? "rgba(40,160,160,0.18)" : "transparent",
-                  borderLeft: nearest?.id === v.id ? `3px solid ${TEAL}` : "3px solid transparent",
-                  cursor: "pointer", minHeight: 56,
-                }}
-              >
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: nearest?.id === v.id ? TEAL : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
-                  {v.icon}
-                  {!!v.badge && v.badge > 0 && (
-                    <div style={{ position: "absolute", top: -2, right: -2, minWidth: 16, height: 16, borderRadius: 8, background: "#F5A030", color: WHITE, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{v.badge}</div>
-                  )}
+            <div style={{ position: "absolute", inset: 0, background: "rgba(4,12,12,0.6)", backdropFilter: "blur(6px)" }} />
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                position: "absolute",
+                top: 0, bottom: 0,
+                right: menuSide === "right" ? 0 : undefined,
+                left: menuSide === "left" ? 0 : undefined,
+                width: 260,
+                background: "#0B1A1A",
+                borderLeft: menuSide === "right" ? "1px solid rgba(40,160,160,0.2)" : undefined,
+                borderRight: menuSide === "left" ? "1px solid rgba(40,160,160,0.2)" : undefined,
+                display: "flex", flexDirection: "column",
+                overflowY: "auto",
+              }}
+            >
+              <div style={{ padding: "56px 24px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 10, background: TEAL, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: WHITE, letterSpacing: 0.3, fontFamily: "''Inter'', sans-serif" }}>MASTRO</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "''Inter'', sans-serif" }}>Navigazione rapida</div>
+                  </div>
                 </div>
-                <span style={{ fontSize: 15, fontWeight: 600, color: nearest?.id === v.id ? WHITE : "rgba(255,255,255,0.75)", fontFamily: "''Inter'', sans-serif" }}>{v.label}</span>
               </div>
-            ))}
-            <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "8px 20px" }} />
-            <div onClick={() => setMenuSide(null)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", cursor: "pointer", minHeight: 56 }}>
-              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <div style={{ flex: 1, padding: "8px 0" }}>
+                {voices.map((v) => {
+                  const isActive = tab === v.id;
+                  const color = VOICE_COLORS[v.id] || TEAL;
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => { setMenuSide(null); if (v.id !== "commesse") setSelectedCM(null); setTab(v.id); }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 16,
+                        padding: "13px 24px",
+                        background: isActive ? `${color}22` : "transparent",
+                        borderLeft: isActive ? `3px solid ${color}` : "3px solid transparent",
+                        cursor: "pointer", minHeight: 60,
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      <div style={{ width: 42, height: 42, borderRadius: 13, background: isActive ? color : "rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
+                        {v.icon}
+                        {!!v.badge && v.badge > 0 && (
+                          <div style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, background: "#F5A030", color: WHITE, fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", border: "2px solid #0B1A1A" }}>{v.badge}</div>
+                        )}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 15, fontWeight: isActive ? 700 : 500, color: isActive ? WHITE : "rgba(255,255,255,0.65)", fontFamily: "''Inter'', sans-serif" }}>{v.label}</div>
+                        {isActive && <div style={{ fontSize: 11, color: color, fontWeight: 600, fontFamily: "''Inter'', sans-serif", marginTop: 1 }}>Sei qui</div>}
+                      </div>
+                      {isActive && <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />}
+                    </div>
+                  );
+                })}
               </div>
-              <span style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "''Inter'', sans-serif" }}>Chiudi</span>
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "12px 0", flexShrink: 0 }}>
+                <div onClick={() => setMenuSide(null)} style={{ display: "flex", alignItems: "center", gap: 16, padding: "13px 24px", cursor: "pointer" }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 13, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </div>
+                  <span style={{ fontSize: 15, fontWeight: 500, color: "rgba(255,255,255,0.35)", fontFamily: "''Inter'', sans-serif" }}>Chiudi</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {actionSheet && (
         <div onClick={() => setActionSheet(false)} style={{
