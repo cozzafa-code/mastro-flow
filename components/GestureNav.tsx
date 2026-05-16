@@ -43,6 +43,8 @@ const IC = {
   calendar: <><rect x="4" y="5" width="20" height="18" rx="2"/><line x1="4" y1="10" x2="24" y2="10"/></>,
   euro: <><path d="M20 7.5A8 8 0 108 22"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="16" x2="12" y2="16"/></>,
   note: <><path d="M6 3h12a2 2 0 012 2v18l-8-4-8 4V5a2 2 0 012-2z"/></>,
+  montaggi: <><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></>,
+  clienti: <><circle cx="9" cy="7" r="3"/><path d="M3 21c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="3"/><path d="M21 21c0-3.3-1.8-5.4-4-6"/></>,
 };
 
 const iconSvg = (path: React.ReactNode, size = 22, color = WHITE) => (
@@ -159,6 +161,8 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
     { id: "home", label: "Home", icon: iconSvg(IC.home) },
     { id: "commesse", label: "Commesse", icon: iconSvg(IC.commesse) },
     { id: "agenda", label: "Agenda", icon: iconSvg(IC.agenda) },
+    { id: "montaggi_cal", label: "Montaggi", icon: iconSvg(IC.montaggi) },
+    { id: "clienti", label: "Clienti", icon: iconSvg(IC.clienti) },
     { id: "messaggi", label: unreadMsg > 0 ? `Chat · ${unreadMsg}` : "Chat", badge: unreadMsg, icon: iconSvg(IC.talk) },
     { id: "montaggi_cal", label: "Montaggi", icon: iconSvg(IC.montaggi) },
     { id: "clienti", label: "Clienti", icon: iconSvg(IC.clienti) },
@@ -311,7 +315,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < SELECT_DIST) return null;
     const angle = Math.atan2(dy, dx);
-    const span = Math.PI * 0.75;
+    const span = Math.PI * 1.1;
     const start = side === "right" ? Math.PI - span / 2 : -span / 2;
     const voiceAngles = vv.map((_, i) => start + (span * i) / (vv.length - 1));
     let bestIdx = 0, bestDiff = Infinity;
@@ -397,7 +401,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
             const h = window.innerHeight;
             const cx = menuSide === "right" ? w : 0;
             const cy = h / 2;
-            const span = Math.PI * 0.75;
+            const span = Math.PI * 1.1;
             const start = menuSide === "right" ? Math.PI - span / 2 : -span / 2;
             const a = start + (span * i) / (voices.length - 1);
             const r = 150;
