@@ -165,8 +165,8 @@ interface ZonaPianificazione {
   settore: string;
   note_posizione: string;
   // Chi
-  squadra: string;
-  operatori: string;
+  squadre: string[];
+  operatori: string[];
   // Cosa
   cosa_montare: string;
   vani_da: string;
@@ -178,11 +178,13 @@ interface ZonaPianificazione {
 }
 
 function nuovaZona(i: number): ZonaPianificazione {
-  return { id: `z${Date.now()}${i}`, corpo: "", piano: "", lato: "", scala: "", settore: "", note_posizione: "", squadra: "", operatori: "", cosa_montare: "", vani_da: "", vani_a: "", note_lavoro: "", ora_inizio: "", ore_stimate: "" };
+  return { id: `z${Date.now()}${i}`, corpo: "", piano: "", lato: "", scala: "", settore: "", note_posizione: "", squadre: [], operatori: [], cosa_montare: "", vani_da: "", vani_a: "", note_lavoro: "", ora_inizio: "", ore_stimate: "" };
 }
 
 // Opzioni preimpostate per cantieri serramentisti
 const OPTS: Record<string, string[]> = {
+  squadra: ["Squadra 1","Squadra 2","Squadra 3","Squadra A","Squadra B","Squadra Mario","Squadra Luigi","Sq.1","Sq.2"],
+  operatori: [],
   corpo: ["Corpo A","Corpo B","Corpo C","Corpo D","Padiglione Nord","Padiglione Sud","Padiglione Est","Padiglione Ovest","Ala Ovest","Ala Est","Torre A","Torre B","Blocco 1","Blocco 2","Blocco 3","Fabbricato principale","Dependance","Annesso"],
   piano: ["Piano Terra","Piano 1","Piano 2","Piano 3","Piano 4","Piano 5","Piano 6","Piano 7","Piano 8","Seminterrato","Interrato","Mansarda","Sottotetto","Copertura","Piano Ammezzato","Piano Rialzato"],
   lato: ["Nord","Sud","Est","Ovest","Nord-Est","Nord-Ovest","Sud-Est","Sud-Ovest","Fronte strada","Cortile interno","Fronte principale","Retro","Lato destro","Lato sinistro","Prospetto A","Prospetto B"],
@@ -221,6 +223,47 @@ function CampoLibero({ label, value, onChange, placeholder, full, optsKey }: { l
   );
 }
 
+function ChipInput({ label, values, onChange, placeholder, optsKey }: { label: string; values: string[]; onChange: (v: string[]) => void; placeholder?: string; optsKey?: string }) {
+  const [input, setInput] = React.useState("");
+  const opts = optsKey ? OPTS[optsKey] || [] : [];
+
+  function add() {
+    const v = input.trim();
+    if (v && !values.includes(v)) { onChange([...values, v]); }
+    setInput("");
+  }
+
+  function remove(i: number) { onChange(values.filter((_, idx) => idx !== i)); }
+
+  function handleKey(e: React.KeyboardEvent) { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(); } }
+
+  return (
+    <div>
+      <div style={{ fontSize: 9, color: C.navyDim, textTransform: "uppercase" as const, letterSpacing: ".4px", marginBottom: 5 }}>{label}</div>
+      <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 5, marginBottom: values.length > 0 ? 6 : 0 }}>
+        {values.map((v, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, background: C.navy, color: C.white, fontSize: 11, fontWeight: 700, padding: "4px 8px", borderRadius: 7 }}>
+            <span>{v}</span>
+            <button onClick={() => remove(i)} style={{ background: "none", border: "none", color: "rgba(255,255,255,.6)", cursor: "pointer", padding: 0, fontSize: 13, lineHeight: 1, fontFamily: "inherit" }}>×</button>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 6 }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKey}
+          placeholder={placeholder || "Aggiungi..."}
+          list={optsKey ? `chip-opts-${optsKey}` : undefined}
+          style={{ flex: 1, padding: "7px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 700, fontFamily: "inherit", outline: "none" }}
+        />
+        {optsKey && <datalist id={`chip-opts-${optsKey}`}>{(OPTS[optsKey] || []).map(o => <option key={o} value={o}/>)}</datalist>}
+        <button onClick={add} style={{ width: 34, height: 34, borderRadius: 9, background: C.navy, color: C.white, border: "none", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}>+</button>
+      </div>
+    </div>
+  );
+}
+
 function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPianificazione; index: number; onChange: (z: ZonaPianificazione) => void; onDelete: () => void; montaggio: MontaggioRow }) {
   const [open, setOpen] = useState(true);
   const up = (field: keyof ZonaPianificazione, val: string) => onChange({ ...zona, [field]: val });
@@ -238,9 +281,9 @@ function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPi
           <div style={{ fontSize: 12, fontWeight: 800, color: C.navyText }}>
             {[zona.corpo, zona.piano, zona.lato, zona.scala].filter(Boolean).join(" · ") || `Zona ${index + 1}`}
           </div>
-          {(zona.squadra || zona.cosa_montare) && (
+          {(zona.squadre.length > 0 || zona.operatori.length > 0 || zona.cosa_montare) && (
             <div style={{ fontSize: 10, color: C.navyDim, marginTop: 1 }}>
-              {[zona.squadra, zona.cosa_montare].filter(Boolean).join(" · ")}
+              {[...zona.squadre, ...zona.operatori, zona.cosa_montare].filter(Boolean).join(" · ")}
             </div>
           )}
         </div>
@@ -266,9 +309,9 @@ function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPi
           {/* CHI */}
           <div>
             <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>CHI MONTA</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", minWidth: 0 }}>
-              <CampoLibero label="Squadra" value={zona.squadra} onChange={v => up("squadra", v)} placeholder="Es: Squadra Mario, Sq.1" />
-              <CampoLibero label="Operatori" value={zona.operatori} onChange={v => up("operatori", v)} placeholder="Es: Mario R., Luigi B." />
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 10 }}>
+              <ChipInput label="Squadre" values={zona.squadre} onChange={v => up("squadre", v as any)} placeholder="Es: Squadra Mario, Sq.1" optsKey="squadra" />
+              <ChipInput label="Operatori" values={zona.operatori} onChange={v => up("operatori", v as any)} placeholder="Es: Mario R., Luigi B." optsKey="operatori" />
             </div>
           </div>
 
