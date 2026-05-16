@@ -1,6 +1,6 @@
 ﻿"use client";
 import { useMastro } from "./MastroContext";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCliente, onCommessa, onMessaggio, onLastCM, recentActions, hidden }: any) {
   const mastroCtx = useMastro();
 
