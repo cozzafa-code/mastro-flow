@@ -66,13 +66,13 @@ export default function MontaggiCompactCard({
 
   // meta string
   const metaParts: string[] = [];
-  if (montaggio.commessa_indirizzo) {
-    const short = montaggio.commessa_indirizzo.split(",")[0];
-    metaParts.push(short);
-  }
-  if (montaggio.squadra && montaggio.squadra.length > 0) {
-    metaParts.push(montaggio.squadra[0]);
-  }
+  if (montaggio.stato === "programmato") {
+    if (montaggio.ore_preventivate && montaggio.ore_preventivate < 24) {
+      badgeText = `${montaggio.ore_preventivate}h`;
+    } else if (montaggio.ore_preventivate && montaggio.ore_preventivate >= 24) {
+      badgeText = `${Math.round(montaggio.ore_preventivate / 8)}gg`;
+    }
+  } else if (isCompletato) {
   const metaStr = metaParts.join(" · ");
 
   const cliente =

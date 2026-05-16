@@ -50,19 +50,19 @@ export default function MontaggiSheet({
     if (!rawMontaggi) return [];
     const cMap = new Map((commesse || []).map((c: any) => [c.id, c]));
     return rawMontaggi
-      .filter((m: any) => m.commessa_id && (cMap.size === 0 || cMap.has(m.commessa_id)))
+      .filter((m: any) => m.commessa_id)
       .map((m: any) => {
         const c: any = cMap.get(m.commessa_id);
         return {
           ...m,
-          commessa_code: c?.code,
-          commessa_cliente: c?.cliente,
-          commessa_cognome: c?.cognome,
-          commessa_indirizzo: c?.indirizzo,
-          commessa_citta: c?.citta,
-          commessa_telefono: c?.telefono,
-          commessa_vani_count: c?.vani_count || 0,
-          commessa_totale: c?.totale_finale || c?.totale_preventivo || 0,
+          commessa_code: m.commessa_code || c?.code || c?.codice,
+          commessa_cliente: m.commessa_cliente || c?.cliente || c?.cliente_nome || c?.ragione,
+          commessa_cognome: m.commessa_cognome || c?.cognome || "",
+          commessa_indirizzo: m.commessa_indirizzo || c?.indirizzo || "",
+          commessa_citta: m.commessa_citta || c?.citta || "",
+          commessa_telefono: m.commessa_telefono || c?.telefono || "",
+          commessa_vani_count: m.commessa_vani_count || c?.vani_count || 0,
+          commessa_totale: m.commessa_totale || c?.totale_finale || c?.totale_preventivo || c?.totale || 0,
         };
       });
   }, [rawMontaggi, commesse]);
