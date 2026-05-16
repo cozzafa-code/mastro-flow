@@ -807,29 +807,40 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick, apriSheetEvento }: an
               const isT = isSameDay(d.date, today), isS = isSameDay(d.date, cursor)
               const has = (eventByDay[d.date.toDateString()] || []).length > 0
               return (
-                <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d.date) }} style={{
-                  aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, color: d.muted ? '#C8D2DA' : (isT ? '#FFF' : TEXT),
-                  cursor: 'pointer', borderRadius: '50%', position: 'relative',
-                  background: isT ? NAVY : (isS && !d.muted ? '#E5EAF0' : 'transparent'),
-                  fontWeight: isT ? 600 : 400,
-                }}>
-                  {d.date.getDate()}
-                  {has && !d.muted ? (() => {
-                    const evs = eventByDay[d.date.toDateString()] || []
-                    const n = evs.length
-                    if (n === 1) {
-                      return <div style={{ position: 'absolute', bottom: 2, width: 5, height: 5, background: isT ? '#FFF' : dotColor(evs[0]), borderRadius: '50%' }}/>
-                    }
-                    return (
-                      <div style={{ position: 'absolute', bottom: 1, display: 'flex', gap: 2 }}>
-                        {evs.slice(0,3).map((ev: any, ei: number) => (
-                          <div key={ei} style={{ width: 4, height: 4, background: isT ? '#FFF' : dotColor(ev), borderRadius: '50%' }}/>
-                        ))}
-                      </div>
-                    )
-                  })() : null}
-                </div>
+                {(() => {
+                  const evs = !d.muted ? (eventByDay[d.date.toDateString()] || []) : []
+                  const hasEvs = evs.length > 0
+                  const mainColor = hasEvs ? dotColor(evs[0]) : null
+                  // sfondo leggero se ha eventi (ma non oggi)
+                  const cellBg = isT ? NAVY : (isS && !d.muted ? '#E5EAF0' : (hasEvs && !d.muted ? mainColor + '18' : 'transparent'))
+                  // colore numero: colorato se ha eventi
+                  const numColor = d.muted ? '#C8D2DA' : isT ? '#FFF' : hasEvs ? mainColor : TEXT
+                  return (
+                    <div onClick={(e) => { e.stopPropagation(); setCursor(d.date) }} style={{
+                      aspectRatio: '1/1', display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', borderRadius: 8, position: 'relative',
+                      background: cellBg,
+                      border: hasEvs && !isT && !d.muted ? `1.5px solid ${mainColor}30` : isT ? 'none' : '1.5px solid transparent',
+                    }}>
+                      <span style={{
+                        fontSize: 12, fontWeight: hasEvs || isT ? 700 : 400,
+                        color: numColor, lineHeight: 1,
+                      }}>{d.date.getDate()}</span>
+                      {hasEvs && !d.muted ? (
+                        <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
+                          {evs.slice(0, 3).map((ev: any, ei: number) => (
+                            <div key={ei} style={{
+                              width: 3, height: 3,
+                              borderRadius: 1,
+                              background: isT ? 'rgba(255,255,255,0.8)' : dotColor(ev),
+                            }}/>
+                          ))}
+                        </div>
+                      ) : <div style={{ height: 5 }}/>}
+                    </div>
+                  )
+                })()}
               )
             })}
           </div>
