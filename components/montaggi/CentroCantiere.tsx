@@ -203,7 +203,7 @@ function CampoLibero({ label, value, onChange, placeholder, full, optsKey }: { l
             onChange={e => onChange(e.target.value)}
             placeholder={placeholder || "Scrivi o scegli dalla lista..."}
             list={`opts-${optsKey}`}
-            style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 700, fontFamily: "inherit", outline: "none" }}
+            style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 700, fontFamily: "inherit", outline: "none", boxSizing: "border-box" as const }}
           />
           <datalist id={`opts-${optsKey}`}>
             {opts.map(o => <option key={o} value={o} />)}
@@ -248,12 +248,12 @@ function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPi
       </div>
 
       {open && (
-        <div style={{ padding: "0 13px 13px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ padding: "0 13px 13px", display: "flex", flexDirection: "column", gap: 12, overflow: "hidden" }}>
 
           {/* DOVE */}
           <div>
             <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>DOVE</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", minWidth: 0 }}>
               <CampoLibero label="Corpo / Ala / Padiglione" value={zona.corpo} onChange={v => up("corpo", v)} placeholder="Es: Corpo B, Padiglione 3" optsKey="corpo" />
               <CampoLibero label="Piano" value={zona.piano} onChange={v => up("piano", v)} placeholder="Es: Piano 3, Seminterrato" optsKey="piano" />
               <CampoLibero label="Lato / Fronte" value={zona.lato} onChange={v => up("lato", v)} placeholder="Es: Nord, Fronte strada" optsKey="lato" />
@@ -266,7 +266,7 @@ function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPi
           {/* CHI */}
           <div>
             <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>CHI MONTA</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", minWidth: 0 }}>
               <CampoLibero label="Squadra" value={zona.squadra} onChange={v => up("squadra", v)} placeholder="Es: Squadra Mario, Sq.1" />
               <CampoLibero label="Operatori" value={zona.operatori} onChange={v => up("operatori", v)} placeholder="Es: Mario R., Luigi B." />
             </div>
@@ -275,7 +275,7 @@ function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPi
           {/* COSA */}
           <div>
             <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>COSA MONTANO</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", minWidth: 0 }}>
               <CampoLibero label="Tipo lavorazione" value={zona.cosa_montare} onChange={v => up("cosa_montare", v)} placeholder="Es: Finestre CT70, Porte blindate" full optsKey="cosa_montare" />
               <CampoLibero label="Vani da" value={zona.vani_da} onChange={v => up("vani_da", v)} placeholder="Es: Vano 01" />
               <CampoLibero label="Vani a" value={zona.vani_a} onChange={v => up("vani_a", v)} placeholder="Es: Vano 12" />
@@ -286,7 +286,7 @@ function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPi
           {/* QUANDO */}
           <div>
             <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>QUANDO</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", minWidth: 0 }}>
               <CampoLibero label="Ora inizio" value={zona.ora_inizio} onChange={v => up("ora_inizio", v)} placeholder="Es: 08:00, 13:30" />
               <CampoLibero label="Ore stimate" value={zona.ore_stimate} onChange={v => up("ore_stimate", v)} placeholder="Es: 4h, 2 giorni" />
             </div>
