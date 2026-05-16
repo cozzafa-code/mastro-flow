@@ -154,6 +154,7 @@ function ProduzioneBridge() {
 export default function HomePanelMobileV2(props: any) {
   const [organizzaCm, setOrganizzaCm] = React.useState<any>(null);
   const [showCentroMontaggi, setShowCentroMontaggi] = React.useState(false);
+  const [centroMontaggiDate, setCentroMontaggiDate] = React.useState<string|null>(null);
   const [showCentroProduzione, setShowCentroProduzione] = React.useState(false);
   const [showCentroOrdini, setShowCentroOrdini] = React.useState(false);
   const [showCentroMagazzino, setShowCentroMagazzino] = React.useState(false);
@@ -363,7 +364,7 @@ export default function HomePanelMobileV2(props: any) {
         {id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} apriCM={apriCM} onClick={() => goto('agenda')} apriSheetEvento={(e:any) => setSheetEvento(e)} />}
         {id === 'urgente' && <CardUrgente ferme={ferme} apri={apriCM} />}
         {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} toggleTask={toggleTask} doneOptim={doneOptim} onClick={() => goto('team')} apriSheetTask={(t:any) => setSheetTask(t)} />}
-        {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} onAgenda={() => setShowCentroMontaggi(true)} />}
+        {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} onAgenda={() => setShowCentroMontaggi(true)} onMontaggio={(data: string) => { setCentroMontaggiDate(data); setShowCentroMontaggi(true); }} />}
         {id === 'commesse' && <CardCommesse cantieri={cantieri} apri={apriCM} />}
         {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => setShowCentroFinanze(true)} />}
         {id === 'squadra' && <CardSquadra team={team} cantieri={cantieri} montaggiDB={montaggi} onClick={() => goto('team')} />}
@@ -1019,7 +1020,7 @@ function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick, apriS
   )
 }
 
-function CardMontaggi({ montaggi, cantieri, team, apri, onAgenda }: any) {
+function CardMontaggi({ montaggi, cantieri, team, apri, onAgenda, onMontaggio }: any) {
   const top = montaggi.slice(0, SHOW_VERTICAL)
   const rest = montaggi.slice(SHOW_VERTICAL)
   return (
@@ -1032,15 +1033,25 @@ function CardMontaggi({ montaggi, cantieri, team, apri, onAgenda }: any) {
         const cm = cantieri.find((c: any) => c?.id === m?.commessa_id)
         const dgg = Math.floor((d.getTime() - Date.now()) / 86400000)
         return (
-          <div key={i} onClick={() => onAgenda?.()} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+          <div key={i} onClick={() => onMontaggio?.(dStr || '')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
             <div style={{ flex: '0 0 50px', textAlign: 'center', background: dgg <= 1 ? RED : (dgg <= 3 ? AMBER : NAVY), color: '#FFF', borderRadius: 6, padding: '4px 0' }}>
               <div style={{ fontSize: 9, fontWeight: 700 }}>{d.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase()}</div>
               <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</div>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cm?.cliente || cm?.cliente_nome || cm?.codice || 'Cliente'}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 1, display: 'flex', alignItems: 'center', gap: 4 }}><svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>{m?.ora_inizio || '—'}{m?.ora_fine ? ` - ${m.ora_fine}` : ''}</div>
-              {m?.urgente ? <span style={{ fontSize: 8, color: '#FFF', background: RED, padding: '1px 5px', borderRadius: 3, fontWeight: 700, marginTop: 4, display: 'inline-block' }}>URGENTE</span> : null}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 12, color: TEXT, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cm?.cliente || cm?.cliente_nome || cm?.codice || 'Cliente'}</span>
+                {cm?.codice ? <span style={{ fontSize: 8, color: NAVY, background: '#E5EAF0', padding: '1px 5px', borderRadius: 3, fontWeight: 700, flexShrink: 0 }}>{cm.codice}</span> : null}
+                {m?.urgente ? <span style={{ fontSize: 8, color: '#FFF', background: RED, padding: '1px 5px', borderRadius: 3, fontWeight: 700, flexShrink: 0 }}>URGENTE</span> : null}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' as const }}>
+                {m?.ora_inizio ? <span style={{ fontSize: 10, color: MUTED, display: 'flex', alignItems: 'center', gap: 3 }}><svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>{String(m.ora_inizio).slice(0,5)}{m?.ora_fine ? ` → ${String(m.ora_fine).slice(0,5)}` : ''}</span> : null}
+                {m?.durata_minuti ? <span style={{ fontSize: 10, color: MUTED }}>⏱ {m.durata_minuti >= 60 ? `${Math.round(m.durata_minuti/60)}h` : `${m.durata_minuti}min`}</span> : null}
+                {m?.ore_preventivate ? <span style={{ fontSize: 10, color: MUTED }}>📋 {m.ore_preventivate}h</span> : null}
+              </div>
+              {cm?.indirizzo ? <div style={{ fontSize: 10, color: MUTED, marginTop: 2, display: 'flex', alignItems: 'center', gap: 3, overflow: 'hidden' }}><svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/></svg><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cm.indirizzo}</span></div> : null}
+              {(m?.squadra || []).length > 0 ? <div style={{ fontSize: 10, color: TEAL, marginTop: 2, fontWeight: 600 }}>👷 {(m.squadra || []).slice(0,3).join(', ')}{(m.squadra||[]).length > 3 ? ` +${(m.squadra||[]).length-3}` : ''}</div> : null}
+              {m?.stato && m.stato !== 'da_pianificare' ? <div style={{ fontSize: 9, fontWeight: 700, color: m.stato === 'completato' ? GREEN : AMBER, marginTop: 2, textTransform: 'uppercase' as const }}>{m.stato.replace(/_/g,' ')}</div> : null}
             </div>
           </div>
         )
