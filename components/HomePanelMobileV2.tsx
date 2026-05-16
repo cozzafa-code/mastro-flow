@@ -306,7 +306,11 @@ export default function HomePanelMobileV2(props: any) {
   }
 
   const cantieri = (ctx?.cantieri || []).filter((c: any) => !c?.deleted_at && !c?.archived_at)
-  const fattureDB = ctx?.fattureDB || []
+  const fattureDB = (() => {
+    const fromCtx = ctx?.fattureDB || []
+    if (fromCtx.length > 0) return fromCtx
+    try { return JSON.parse(localStorage.getItem('mastro:fatture') || '[]') } catch { return [] }
+  })()
   const team = ctx?.team || []
   const _eventiBase = (ctx?.events || ctx?.eventi || data?.agenda?.eventi || []).filter((e: any) => !hiddenEventi[e?.id] && !e?.completato && !e?.annullato)
   const _montaggiEventi = (ctx?.montaggiDB || []).map((mt: any) => { const _cm = (cantieri||[]).find((c:any)=>c.id===mt.commessa_id); return { id: 'mt-'+mt.id, tipo: 'montaggio', data: mt.data_montaggio || '', ora_inizio: mt.ora_inizio ? String(mt.ora_inizio).slice(0,5) : '08:00', titolo: (_cm?.code||'') + ' ' + (_cm?.cliente||'Montaggio'), indirizzo: _cm?.indirizzo || '', commessa_id: mt.commessa_id }; })

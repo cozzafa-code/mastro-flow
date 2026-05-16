@@ -94,7 +94,10 @@ export function useFattureFinanze(aziendaId: string | null) {
         supabase.from('fin_pagamenti').select('*').eq('azienda_id', aziendaId).order('data_pagamento', { ascending: false }).limit(50),
         supabase.from('v_fin_cliente_affidabilita').select('*').eq('azienda_id', aziendaId).order('totale_pagato', { ascending: false }),
       ]);
-      setFatture((fattRes.data || []) as FatturaFin[]);
+      const fattData = (fattRes.data || []) as FatturaFin[];
+      setFatture(fattData);
+      // Salva in localStorage così la card home può leggere senza Supabase
+      try { localStorage.setItem('mastro:fatture', JSON.stringify(fattData)); } catch {}
       setKpi(kpiRes.data ? {
         n_totali:        Number(kpiRes.data.n_totali || 0),
         n_pagate:        Number(kpiRes.data.n_pagate || 0),
