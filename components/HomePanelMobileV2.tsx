@@ -95,13 +95,10 @@ function SwipeArea({ children, onSwipeLeft, onSwipeRight, style }: any) {
 
 const dotColor = (e: any) => {
   const t = (e?.tipo || e?.type || '').toLowerCase()
-  if (t.includes('firma')) return RED
-  if (t.includes('sopral') || t.includes('rilievo') || t.includes('misura')) return AMBER
-  if (t.includes('mont') || t.includes('posa')) return '#D4537E'
-  if (t.includes('consegna')) return '#639922'
-  if (t.includes('fattura') || t.includes('pagamento')) return '#1D9E75'
-  if (t.includes('task') || t.includes('compito')) return '#378ADD'
-  return TEAL
+  if (t.includes('mont') || t.includes('posa') || t.includes('consegna')) return '#28A0A0'
+  if (t.includes('sopral') || t.includes('rilievo') || t.includes('misura') || t.includes('firma')) return '#8FA8A8'
+  if (t.includes('task') || t.includes('compito') || t.includes('fattura') || t.includes('pagamento')) return '#3B7FE0'
+  return '#5FD0D0'
 }
 
 const parseEventDate = (e: any): Date => {
@@ -807,24 +804,24 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick, apriSheetEvento }: an
               const isT = isSameDay(d.date, today), isS = isSameDay(d.date, cursor)
               const evs = !d.muted ? (eventByDay[d.date.toDateString()] || []) : []
               const hasEvs = evs.length > 0
-              const mainColor = hasEvs ? dotColor(evs[0]) : NAVY
-              const cellBg = isT ? NAVY : (isS && !d.muted ? '#E5EAF0' : (hasEvs ? mainColor + '18' : 'transparent'))
-              const numColor = d.muted ? '#C8D2DA' : isT ? '#FFF' : hasEvs ? mainColor : TEXT
+              const numColor = d.muted ? '#C8D2DA' : isT ? '#FFF' : TEXT
               return (
                 <div key={i} onClick={(e) => { e.stopPropagation(); setCursor(d.date) }} style={{
                   aspectRatio: '1/1', display: 'flex', flexDirection: 'column',
                   alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', borderRadius: 8, position: 'relative',
-                  background: cellBg,
-                  border: hasEvs && !isT && !d.muted ? `1.5px solid ${mainColor}30` : '1.5px solid transparent',
+                  background: isT ? NAVY : (isS && !d.muted ? '#E5EAF0' : 'transparent'),
                 }}>
-                  <span style={{ fontSize: 12, fontWeight: hasEvs || isT ? 700 : 400, color: numColor, lineHeight: 1 }}>
+                  <span style={{ fontSize: 12, fontWeight: isT ? 700 : 400, color: numColor, lineHeight: 1 }}>
                     {d.date.getDate()}
                   </span>
-                  {hasEvs ? (
-                    <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
+                  {hasEvs && !d.muted ? (
+                    <div style={{ display: 'flex', gap: 2, marginTop: 3 }}>
                       {evs.slice(0, 3).map((ev: any, ei: number) => (
-                        <div key={ei} style={{ width: 3, height: 3, borderRadius: 1, background: isT ? 'rgba(255,255,255,0.8)' : dotColor(ev) }}/>
+                        <div key={ei} style={{
+                          width: 10, height: 2.5, borderRadius: 2,
+                          background: isT ? 'rgba(255,255,255,0.85)' : dotColor(ev),
+                        }}/>
                       ))}
                     </div>
                   ) : <div style={{ height: 5 }}/>}
