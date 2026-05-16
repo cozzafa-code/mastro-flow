@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import DraggableFAB from "@/components/DraggableFAB";
 import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
@@ -4538,7 +4538,18 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             </div>
           );
         })()}
-        {/* DraggableFAB disabled for GestureNav swipe system */}
+        <DraggableFAB
+          fabOpen={fabOpen}
+          setFabOpen={setFabOpen}
+          acc="#14B8A6"
+          recentActions={recentActions}
+          onEvento={() => { setTab("agenda"); setShowNewEvent(true); }}
+          onCliente={() => { setTab("clienti"); }}
+          onCommessa={() => { setTab("commesse"); setShowModal("commessa"); }}
+          onMessaggio={() => setTab("messaggi")}
+          onLastCM={(cm: any) => { if (cm?.id) { const found = cantieri.find((c: any) => c.id === cm.id); if (found) { setSelectedCM(found); setTab("commesse"); } } }}
+          hidden={false}
+        />
 {/* MESSAGE DETAIL OVERLAY */}
         {selectedMsg && (<div style={{ position: "fixed", inset: 0, background: T.bg, zIndex: 100 }}><div onClick={() => { setSelectedMsg(null); setReplyText(""); }} style={{ padding: 16, cursor: "pointer", fontWeight: 700, color: T.acc }}>← Chiudi</div></div>)}
 
