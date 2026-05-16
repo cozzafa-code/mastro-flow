@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, useRef } from "react";
 
-/* ═══════════════════════════════════════════════════════════════
-   GestureNav v2 — sistema navigazione swipe MASTRO (fix back-swipe)
-   ═══════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   GestureNav v2 â€” sistema navigazione swipe MASTRO (fix back-swipe)
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 const TEAL = "#28A0A0";
 const TEAL_DARK = "#1A7A7A";
@@ -50,7 +50,7 @@ const iconSvg = (path: React.ReactNode, size = 22, color = WHITE) => (
 );
 
 
-// ─── ActionTile: bottone action sheet con long-press ────────────────
+// â”€â”€â”€ ActionTile: bottone action sheet con long-press â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ActionTile({ action, TEAL, TEAL_DARK, DARK, WHITE, iconSvg }: any) {
   const [pressing, setPressing] = React.useState(false);
   const [fired, setFired] = React.useState(false);
@@ -99,7 +99,7 @@ function ActionTile({ action, TEAL, TEAL_DARK, DARK, WHITE, iconSvg }: any) {
             : "linear-gradient(145deg, #EEF8F8, #DDEFEF)",
         border: `1px solid ${pressing ? TEAL : "#C8E4E4"}`,
         cursor: "pointer",
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "''Inter'', sans-serif",
         transform: fired ? "scale(0.94)" : pressing ? "scale(1.04)" : "scale(1)",
         boxShadow: pressing ? `0 8px 22px ${TEAL}55` : "none",
         transition: "transform 0.12s, box-shadow 0.12s, background 0.12s",
@@ -157,12 +157,12 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
     { id: "home", label: "Home", icon: iconSvg(IC.home) },
     { id: "commesse", label: "Commesse", icon: iconSvg(IC.commesse) },
     { id: "agenda", label: "Agenda", icon: iconSvg(IC.agenda) },
-    { id: "messaggi", label: unreadMsg > 0 ? `Chat · ${unreadMsg}` : "Chat", badge: unreadMsg, icon: iconSvg(IC.talk) },
+    { id: "messaggi", label: unreadMsg > 0 ? `Chat Â· ${unreadMsg}` : "Chat", badge: unreadMsg, icon: iconSvg(IC.talk) },
     { id: "altro", label: "Altro", icon: iconSvg(IC.altro) },
   ];
   stateRef.current.voices = voices;
 
-  // Mappa voice.id → quick handler (crea veloce)
+  // Mappa voice.id â†’ quick handler (crea veloce)
   const quickHandlers: Record<string, (() => void) | undefined> = {
     home: undefined,
     commesse: onQuickCommessa,
@@ -404,7 +404,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
                     <div style={{ position: "absolute", top: -2, right: -2, minWidth: 16, height: 16, borderRadius: 8, background: "#F5A030", color: WHITE, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{v.badge}</div>
                   )}
                 </div>
-                <span style={{ fontSize: 15, fontWeight: 600, color: nearest?.id === v.id ? WHITE : "rgba(255,255,255,0.75)", fontFamily: "'Inter', sans-serif" }}>{v.label}</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: nearest?.id === v.id ? WHITE : "rgba(255,255,255,0.75)", fontFamily: "''Inter'', sans-serif" }}>{v.label}</span>
               </div>
             ))}
             <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "8px 20px" }} />
@@ -412,7 +412,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </div>
-              <span style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Chiudi</span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "''Inter'', sans-serif" }}>Chiudi</span>
             </div>
           </div>
         </div>
@@ -430,7 +430,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
             boxShadow: "0 -4px 30px rgba(0,0,0,0.2)",
           }}>
             <div style={{ width: 44, height: 5, borderRadius: 3, background: "#C8E4E4", margin: "0 auto 14px" }} />
-            <div style={{ fontSize: 12, fontWeight: 900, color: DARK, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 14, fontFamily: "'Inter', sans-serif" }}>Nuovo</div>
+            <div style={{ fontSize: 12, fontWeight: 900, color: DARK, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 14, fontFamily: "''Inter'', sans-serif" }}>Nuovo</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
               {getActions().map((a, i) => (
                 <ActionTile key={i} action={a} TEAL={TEAL} TEAL_DARK={TEAL_DARK} DARK={DARK} WHITE={WHITE} iconSvg={iconSvg} />
