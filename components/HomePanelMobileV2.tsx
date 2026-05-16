@@ -363,7 +363,7 @@ export default function HomePanelMobileV2(props: any) {
         {id === 'agenda' && <CardCalendar eventi={eventi} cantieri={cantieri} apriCM={apriCM} onClick={() => goto('agenda')} apriSheetEvento={(e:any) => setSheetEvento(e)} />}
         {id === 'urgente' && <CardUrgente ferme={ferme} apri={apriCM} />}
         {id === 'task' && <CardTask tasks={tasks} cantieri={cantieri} apri={apriCM} toggleTask={toggleTask} doneOptim={doneOptim} onClick={() => goto('team')} apriSheetTask={(t:any) => setSheetTask(t)} />}
-        {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} />}
+        {id === 'prossimo-montaggio' && <CardMontaggi montaggi={prossimiMontaggi} cantieri={cantieri} team={team} apri={apriCM} onAgenda={() => setShowCentroMontaggi(true)} />}
         {id === 'commesse' && <CardCommesse cantieri={cantieri} apri={apriCM} />}
         {id === 'cassa' && <CardCassa daIncassare={daIncassareLabel} fatture={fattureDB} onClick={() => setShowCentroFinanze(true)} />}
         {id === 'squadra' && <CardSquadra team={team} cantieri={cantieri} montaggiDB={montaggi} onClick={() => goto('team')} />}
@@ -1019,12 +1019,12 @@ function CardTask({ tasks, cantieri, apri, toggleTask, doneOptim, onClick, apriS
   )
 }
 
-function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
+function CardMontaggi({ montaggi, cantieri, team, apri, onAgenda }: any) {
   const top = montaggi.slice(0, SHOW_VERTICAL)
   const rest = montaggi.slice(SHOW_VERTICAL)
   return (
     <>
-      <CardHead title="Prossimi montaggi" badge={montaggi.length} link="agenda" onClick={() => {}} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>} />
+      <CardHead title="Prossimi montaggi" badge={montaggi.length} link="montaggi" onClick={() => onAgenda?.()} icon={<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>} />
       {montaggi.length === 0 ? <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', padding: '8px 0' }}>Nessun montaggio programmato</div> : null}
       {top.map((m: any, i: number) => {
         const dStr = m?.data_montaggio || m?.data
@@ -1032,7 +1032,7 @@ function CardMontaggi({ montaggi, cantieri, team, apri }: any) {
         const cm = cantieri.find((c: any) => c?.id === m?.commessa_id)
         const dgg = Math.floor((d.getTime() - Date.now()) / 86400000)
         return (
-          <div key={i} onClick={() => cm && apri(cm.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: cm ? 'pointer' : 'default' }}>
+          <div key={i} onClick={() => onAgenda?.()} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
             <div style={{ flex: '0 0 50px', textAlign: 'center', background: dgg <= 1 ? RED : (dgg <= 3 ? AMBER : NAVY), color: '#FFF', borderRadius: 6, padding: '4px 0' }}>
               <div style={{ fontSize: 9, fontWeight: 700 }}>{d.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase()}</div>
               <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</div>
