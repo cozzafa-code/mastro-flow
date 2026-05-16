@@ -810,7 +810,7 @@ function CardCalendar({ eventi, cantieri, apriCM, onClick, apriSheetEvento }: an
                   aspectRatio: '1/1', display: 'flex', flexDirection: 'column',
                   alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', borderRadius: 8, position: 'relative',
-                  background: isT ? NAVY : (isS && !d.muted ? '#E5EAF0' : 'transparent'),
+                  background: isT ? NAVY : (isS && !d.muted ? '#E5EAF0' : (hasEvs && !d.muted ? dotColor(evs[0]) + '15' : 'transparent')),
                 }}>
                   <span style={{ fontSize: 12, fontWeight: isT ? 700 : 400, color: numColor, lineHeight: 1 }}>
                     {d.date.getDate()}
