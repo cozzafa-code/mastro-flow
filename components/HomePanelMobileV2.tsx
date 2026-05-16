@@ -1240,18 +1240,18 @@ function CardSquadra({ team, cantieri, montaggiDB, onClick }: any) {
           ? (montaggioOp?.cmCode || montaggioOp?.codice || montaggioOp?.cliente || 'Montaggio')
           : cm?.codice || null
         return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none' }}>
-            <div style={{ width: 32, height: 32, borderRadius: 50, background: t?.colore || '#D8E5F0', color: TEXT, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative', flexShrink: 0 }}>
+          <div key={i} onClick={() => setDrawerOp(t)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < top.length - 1 || rest.length > 0 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: t?.colore || cfg.dot + '22', color: cfg.dot, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, position: 'relative', flexShrink: 0, border: `1.5px solid ${cfg.dot}40` }}>
               {(t?.nome || '?').slice(0, 1).toUpperCase()}
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 50, background: cfg.dot, border: '2px solid #FFF' }}/>
+              <div style={{ position: 'absolute', bottom: -2, right: -2, width: 10, height: 10, borderRadius: 3, background: cfg.dot, border: '2px solid #FFF' }}/>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}{t?.cognome ? ` ${t.cognome[0]}.` : ''}</div>
               <div style={{ fontSize: 10, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.ruolo || 'Operatore'}{cmLabel ? ` · ${cmLabel}` : ''}</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-              <div style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 4, background: cfg.dot + '20', color: cfg.dot, letterSpacing: '0.3px' }}>● {cfg.label}</div>
-              {t?.telefono ? <a href={`tel:${t.telefono}`} onClick={(e) => e.stopPropagation()} style={{ background: GREEN, color: '#FFF', padding: '4px 6px', borderRadius: 6, textDecoration: 'none', display: 'flex', alignItems: 'center' }}><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a> : null}
+              <div style={{ fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: cfg.dot + '18', color: cfg.dot, letterSpacing: '0.3px' }}>● {cfg.label}</div>
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth={2}><polyline points="9 18 15 12 9 6"/></svg>
             </div>
           </div>
         )
@@ -1266,9 +1266,9 @@ function CardSquadra({ team, cantieri, montaggiDB, onClick }: any) {
               return (
                 <SwipeItem key={i} width="160px">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 50, background: t?.colore || '#D8E5F0', color: TEXT, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, position: 'relative' }}>
+                    <div onClick={() => setDrawerOp(t)} style={{ width: 30, height: 30, borderRadius: 8, background: cfg.dot + '22', color: cfg.dot, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, position: 'relative', border: `1.5px solid ${cfg.dot}40`, cursor: 'pointer' }}>
                       {(t?.nome || '?').slice(0, 1).toUpperCase()}
-                      <div style={{ position: 'absolute', bottom: 0, right: 0, width: 9, height: 9, borderRadius: 50, background: cfg.dot, border: '1.5px solid #F7F9FB' }}/>
+                      <div style={{ position: 'absolute', bottom: -2, right: -2, width: 9, height: 9, borderRadius: 3, background: cfg.dot, border: '1.5px solid #F7F9FB' }}/>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t?.nome || 'Op'}</div>
