@@ -272,6 +272,6 @@ function KPI({ n, col, inkCol, lbl }: { n: number; col: string; inkCol: string; 
 
 function Avatar({ name, url, size = 32 }: { name: string; url?: string; size?: number }) {
   if (url) return <img src={url} alt={name} style={{ width: size, height: size, borderRadius: 999, objectFit: "cover" as any, flexShrink: 0, background: "#F1F5F9" }} />;
-  const init = name.split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase();
+  const init = (name || "?").split(" ").map(p => p?.[0] || "").slice(0, 2).join("").toUpperCase() || "?";
   return <div style={{ width: size, height: size, borderRadius: 999, flexShrink: 0, background: "linear-gradient(135deg,#94A3B8,#64748B)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{init}</div>;
 }

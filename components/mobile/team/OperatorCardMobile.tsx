@@ -29,7 +29,7 @@ function Avatar({ name, url, size = 44 }: { name: string; url?: string; size?: n
       }} />
     );
   }
-  const init = name.split(" ").map(p => p[0]).slice(0,2).join("").toUpperCase();
+  const init = (name || "?").split(" ").map(p => p?.[0] || "").slice(0,2).join("").toUpperCase() || "?";
   return (
     <div style={{
       width: size, height: size, borderRadius: 999, flexShrink: 0,

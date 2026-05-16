@@ -43,7 +43,7 @@ const PAGE_BG = "#F4F1EA";
 
 function Avatar({ name, url, size = 36 }: { name: string; url?: string; size?: number }) {
   if (url) return <img src={url} alt={name} style={{ width: size, height: size, borderRadius: 999, objectFit: "cover" as any, flexShrink: 0, background: "#F1F5F9" }} />;
-  const init = name.split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase();
+  const init = (name || "?").split(" ").map(p => p?.[0] || "").slice(0, 2).join("").toUpperCase() || "?";
   return <div style={{ width: size, height: size, borderRadius: 999, flexShrink: 0, background: "linear-gradient(135deg,#94A3B8,#64748B)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>{init}</div>;
 }
 
@@ -61,9 +61,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   const mastro: any = (() => { try { return useMastro(); } catch { return {}; } })();
   const user = mastro?.user || {};
 
-  const { operators: _opsHook, teams, problems, stats, getTimelineFor, refetch, loading, error } = useTeamMobile();
-  const _ctx: any = useMastro();
-  const operators = (_opsHook && _opsHook.length > 0) ? _opsHook : (_ctx?.team || []);
+  const { operators, teams, problems, stats, getTimelineFor, refetch, loading, error } = useTeamMobile();
   const { tab, setTab, filtered } = useTeamFilters(operators);
 
   const [view, setView] = useState<View>("list");
@@ -301,7 +299,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
     return "BUONASERA";
   }, [now]);
   const dataLunga = now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "short" });
-  const nome = (user?.nome || user?.email?.split("@")[0] || "FABIO").toString().toUpperCase();
+  const nome = (user?.nome || (user?.email ? user.email.split("@")[0] : "") || "FABIO").toString().toUpperCase();
   const iniziali = nome.slice(0, 2);
 
   if (view === "detail" && selectedOp) {
