@@ -153,93 +153,140 @@ function Prog({ value, max, label }: { value: number; max: number; label: string
 
 // ─── Tab Pianifica ───────────────────────────────────────────────────────────
 
-function TabPianifica({ montaggio, cm, vani, onCambioZona }: { montaggio: MontaggioRow; cm: any; vani: VanoCantiere[]; onCambioZona: (field: string, val: string) => void }) {
-  const [piano, setPiano] = useState(cm?.piano_attuale || "Piano 3");
-  const [corpo, setCorpo] = useState(cm?.corpo_attuale || "Corpo B");
-  const [lato, setLato] = useState(cm?.lato_attuale || "Nord");
-  const [ordine, setOrdine] = useState("Sinistra → Destra");
-  const [cambioAlert, setCambioAlert] = useState(false);
+// ─── Tipi zona pianificazione ────────────────────────────────────────────────
 
-  const vaniZona = vani.filter(v =>
-    (!v.piano || v.piano === piano) && (!v.corpo || v.corpo === corpo)
+interface ZonaPianificazione {
+  id: string;
+  // Dove
+  corpo: string;
+  piano: string;
+  lato: string;
+  scala: string;
+  settore: string;
+  note_posizione: string;
+  // Chi
+  squadra: string;
+  operatori: string;
+  // Cosa
+  cosa_montare: string;
+  vani_da: string;
+  vani_a: string;
+  note_lavoro: string;
+  // Quando
+  ora_inizio: string;
+  ore_stimate: string;
+}
+
+function nuovaZona(i: number): ZonaPianificazione {
+  return { id: `z${Date.now()}${i}`, corpo: "", piano: "", lato: "", scala: "", settore: "", note_posizione: "", squadra: "", operatori: "", cosa_montare: "", vani_da: "", vani_a: "", note_lavoro: "", ora_inizio: "", ore_stimate: "" };
+}
+
+function CampoLibero({ label, value, onChange, placeholder, full }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; full?: boolean }) {
+  return (
+    <div style={{ gridColumn: full ? "1 / -1" : undefined }}>
+      <div style={{ fontSize: 9, color: C.navyDim, textTransform: "uppercase" as const, letterSpacing: ".4px", marginBottom: 4 }}>{label}</div>
+      <input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder || "—"}
+        style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 700, fontFamily: "inherit", outline: "none" }}
+      />
+    </div>
   );
-  const fatti = vaniZona.filter(v => v.stato_montaggio === "fatto").length;
-  const dFare = vaniZona.filter(v => v.stato_montaggio === "da_fare").length;
-  const inCorso = vaniZona.filter(v => v.stato_montaggio === "in_corso").length;
+}
 
-  const pianiDisponibili = Array.from(new Set(vani.map(v => v.piano).filter(Boolean)));
-  const corpiDisponibili = Array.from(new Set(vani.map(v => v.corpo).filter(Boolean)));
-  const latiOptions = ["Nord", "Sud", "Est", "Ovest", "Fronte strada", "Cortile interno"];
-  const ordiniOptions = ["Sinistra → Destra", "Destra → Sinistra", "Alto → Basso", "Basso → Alto"];
+function ZonaCard({ zona, index, onChange, onDelete, montaggio }: { zona: ZonaPianificazione; index: number; onChange: (z: ZonaPianificazione) => void; onDelete: () => void; montaggio: MontaggioRow }) {
+  const [open, setOpen] = useState(true);
+  const up = (field: keyof ZonaPianificazione, val: string) => onChange({ ...zona, [field]: val });
+  const colori = ["#28A0A0", "#E8B05C", "#2B7A52", "#7F77DD", "#C44545", "#185FA5"];
+  const col = colori[index % colori.length];
 
-  function handleLato(val: string) {
-    if (val !== lato) {
-      setLato(val);
-      setCambioAlert(true);
-    }
-  }
+  return (
+    <div style={{ background: C.white, borderRadius: 14, overflow: "hidden", boxShadow: C.shadowSm, borderLeft: `4px solid ${col}` }}>
+      {/* Header zona */}
+      <div onClick={() => setOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", cursor: "pointer" }}>
+        <div style={{ width: 26, height: 26, borderRadius: 7, background: col + "22", color: col, fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          {index + 1}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: C.navyText }}>
+            {[zona.corpo, zona.piano, zona.lato, zona.scala].filter(Boolean).join(" · ") || `Zona ${index + 1}`}
+          </div>
+          {(zona.squadra || zona.cosa_montare) && (
+            <div style={{ fontSize: 10, color: C.navyDim, marginTop: 1 }}>
+              {[zona.squadra, zona.cosa_montare].filter(Boolean).join(" · ")}
+            </div>
+          )}
+        </div>
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.navyDim} strokeWidth={2.5} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }}><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+
+      {open && (
+        <div style={{ padding: "0 13px 13px", display: "flex", flexDirection: "column", gap: 12 }}>
+
+          {/* DOVE */}
+          <div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>DOVE</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <CampoLibero label="Corpo / Ala / Padiglione" value={zona.corpo} onChange={v => up("corpo", v)} placeholder="Es: Corpo B, Padiglione 3" />
+              <CampoLibero label="Piano" value={zona.piano} onChange={v => up("piano", v)} placeholder="Es: Piano 3, Seminterrato" />
+              <CampoLibero label="Lato / Fronte" value={zona.lato} onChange={v => up("lato", v)} placeholder="Es: Nord, Fronte strada" />
+              <CampoLibero label="Scala / Vano scala" value={zona.scala} onChange={v => up("scala", v)} placeholder="Es: Scala B, Vano 2" />
+              <CampoLibero label="Settore / Zona" value={zona.settore} onChange={v => up("settore", v)} placeholder="Es: Settore A, ORL, Pronto S." full />
+              <CampoLibero label="Note posizione" value={zona.note_posizione} onChange={v => up("note_posizione", v)} placeholder="Es: Accesso da cortile, usare montacarichi" full />
+            </div>
+          </div>
+
+          {/* CHI */}
+          <div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>CHI MONTA</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <CampoLibero label="Squadra" value={zona.squadra} onChange={v => up("squadra", v)} placeholder="Es: Squadra Mario, Sq.1" />
+              <CampoLibero label="Operatori" value={zona.operatori} onChange={v => up("operatori", v)} placeholder="Es: Mario R., Luigi B." />
+            </div>
+          </div>
+
+          {/* COSA */}
+          <div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>COSA MONTANO</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <CampoLibero label="Tipo lavorazione" value={zona.cosa_montare} onChange={v => up("cosa_montare", v)} placeholder="Es: Finestre CT70, Porte blindate" full />
+              <CampoLibero label="Vani da" value={zona.vani_da} onChange={v => up("vani_da", v)} placeholder="Es: Vano 01" />
+              <CampoLibero label="Vani a" value={zona.vani_a} onChange={v => up("vani_a", v)} placeholder="Es: Vano 12" />
+              <CampoLibero label="Note lavoro" value={zona.note_lavoro} onChange={v => up("note_lavoro", v)} placeholder="Es: Attenzione soglia ribassata vano 4" full />
+            </div>
+          </div>
+
+          {/* QUANDO */}
+          <div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: col, letterSpacing: ".6px", textTransform: "uppercase" as const, marginBottom: 7 }}>QUANDO</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <CampoLibero label="Ora inizio" value={zona.ora_inizio} onChange={v => up("ora_inizio", v)} placeholder="Es: 08:00, 13:30" />
+              <CampoLibero label="Ore stimate" value={zona.ore_stimate} onChange={v => up("ore_stimate", v)} placeholder="Es: 4h, 2 giorni" />
+            </div>
+          </div>
+
+          <button onClick={onDelete} style={{ marginTop: 2, padding: "8px 0", borderRadius: 9, background: C.redSoft, color: C.red, fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+            Elimina zona
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabPianifica({ montaggio, cm, vani, onCambioZona }: { montaggio: MontaggioRow; cm: any; vani: VanoCantiere[]; onCambioZona: (field: string, val: string) => void }) {
+  const [zone, setZone] = useState<ZonaPianificazione[]>([nuovaZona(0)]);
+
+  function addZona() { setZone(z => [...z, nuovaZona(z.length)]); }
+  function updateZona(i: number, z: ZonaPianificazione) { setZone(prev => prev.map((p, idx) => idx === i ? z : p)); }
+  function deleteZona(i: number) { setZone(prev => prev.filter((_, idx) => idx !== i)); }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
 
-      {cambioAlert && (
-        <Alert title="Cambio pianificazione" desc={`Lato cambiato a ${lato}. Le squadre vengono riassegnate automaticamente ai vani della nuova zona.`}>
-          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-            <button onClick={() => setCambioAlert(false)} style={{ flex: 1, padding: "6px 0", borderRadius: 8, background: "#28A0A0", color: C.white, fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer", fontFamily: "inherit" }}>Conferma</button>
-            <button onClick={() => { setLato(lato === "Sud" ? "Nord" : "Sud"); setCambioAlert(false); }} style={{ flex: 1, padding: "6px 0", borderRadius: 8, background: C.white, color: C.navyText, fontSize: 11, fontWeight: 800, border: `0.5px solid ${C.borderStrong}`, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-          </div>
-        </Alert>
-      )}
-
       <Card>
-        <SezHeader icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect x={3} y={3} width={18} height={18} rx={2}/><path d="M3 9h18M9 21V9"/></svg>} title="Zona di lavoro attiva" sub="Seleziona e modifica in tempo reale" color="#185FA5" />
-        <div style={{ padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div>
-              <div style={{ fontSize: 9, color: C.navyDim, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 5 }}>Corpo / Ala</div>
-              <select value={corpo} onChange={e => setCorpo(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 800, fontFamily: "inherit" }}>
-                {corpiDisponibili.length > 0 ? corpiDisponibili.map(c => <option key={c}>{c}</option>) : ["Corpo A", "Corpo B", "Corpo C"].map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <div style={{ fontSize: 9, color: C.navyDim, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 5 }}>Piano</div>
-              <select value={piano} onChange={e => setPiano(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 800, fontFamily: "inherit" }}>
-                {pianiDisponibili.length > 0 ? pianiDisponibili.map(p => <option key={p}>{p}</option>) : ["Piano Terra", "Piano 1", "Piano 2", "Piano 3", "Piano 4", "Piano 5"].map(p => <option key={p}>{p}</option>)}
-              </select>
-            </div>
-            <div>
-              <div style={{ fontSize: 9, color: C.navyDim, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 5 }}>Lato / Fronte</div>
-              <select value={lato} onChange={e => handleLato(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.amber}`, background: C.amberSoft, color: C.amberDeep, fontSize: 12, fontWeight: 800, fontFamily: "inherit" }}>
-                {latiOptions.map(l => <option key={l}>{l}</option>)}
-              </select>
-            </div>
-            <div>
-              <div style={{ fontSize: 9, color: C.navyDim, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 5 }}>Ordine vani</div>
-              <select value={ordine} onChange={e => setOrdine(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `0.5px solid ${C.borderStrong}`, background: C.whiteOff, color: C.navyText, fontSize: 12, fontWeight: 800, fontFamily: "inherit" }}>
-                {ordiniOptions.map(o => <option key={o}>{o}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ background: C.greenSoft, borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.greenBright} strokeWidth={2.5}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <div style={{ fontSize: 11, color: C.green, fontWeight: 600 }}>
-              {corpo} · {piano} · {lato} — {fatti} fatti, {inCorso} in corso, {dFare} da fare su {vaniZona.length} vani
-            </div>
-          </div>
-
-          {vaniZona.length === 0 && (
-            <div style={{ fontSize: 11, color: C.navyDim, textAlign: "center", padding: "8px 0" }}>
-              Nessun vano trovato per questa zona. I vani vengono caricati dalla commessa.
-            </div>
-          )}
-          <Prog value={fatti} max={vaniZona.length || 1} label={`${fatti}/${vaniZona.length} vani completati · ${piano} ${corpo} ${lato}`} />
-        </div>
-      </Card>
-
-      <Card>
-        <SezHeader icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>} title="Orario e durata" sub="Pre-compilato dal montaggio" color="#28A0A0" />
+        <SezHeader icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx={12} cy={12} r={10}/><polyline points="12 6 12 12 16 14"/></svg>} title="Orario montaggio" sub="Pre-compilato — modifica se necessario" color="#28A0A0" />
         <div style={{ padding: "0 14px 14px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           {[
             { label: "Data", value: fmtData(montaggio.data_montaggio) },
@@ -247,12 +294,24 @@ function TabPianifica({ montaggio, cm, vani, onCambioZona }: { montaggio: Montag
             { label: "Ore stimate", value: montaggio.ore_preventivate ? `${montaggio.ore_preventivate}h` : "—" },
           ].map(item => (
             <div key={item.label} style={{ background: C.whiteOff, borderRadius: 9, padding: "9px 10px" }}>
-              <div style={{ fontSize: 9, color: C.navyDim, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 3 }}>{item.label}</div>
+              <div style={{ fontSize: 9, color: C.navyDim, textTransform: "uppercase" as const, letterSpacing: ".4px", marginBottom: 3 }}>{item.label}</div>
               <div style={{ fontSize: 13, fontWeight: 800, color: C.navyText }}>{item.value}</div>
             </div>
           ))}
         </div>
       </Card>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2px" }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: C.navyText }}>{zone.length} {zone.length === 1 ? "zona pianificata" : "zone pianificate"}</div>
+        <button onClick={addZona} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", borderRadius: 9, background: C.navy, color: C.white, fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1={12} y1={5} x2={12} y2={19}/><line x1={5} y1={12} x2={19} y2={12}/></svg>
+          Aggiungi zona
+        </button>
+      </div>
+
+      {zone.map((z, i) => (
+        <ZonaCard key={z.id} zona={z} index={i} onChange={zz => updateZona(i, zz)} onDelete={() => deleteZona(i)} montaggio={montaggio} />
+      ))}
 
     </div>
   );
