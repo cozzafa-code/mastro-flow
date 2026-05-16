@@ -2,7 +2,23 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { C } from "./montaggi-editor-types";
 import type { MontaggioRow, EditorState, CommessaLite, ContattoLite } from "./montaggi-editor-types";
+import { buildEditorState, saveMontaggio, deleteMontaggio, buildCaricoMap, fetchContatti, commesseValide } from "./montaggi-editor-helpers";
+import MontaggiTipoToggle from "./MontaggiTipoToggle";
+import MontaggiEditorBody from "./MontaggiEditorBody";
+import MontaggiEditorFooter from "./MontaggiEditorFooter";
+import MontaggiSlotPicker from "./MontaggiSlotPicker";
+import MontaggiCommessaPicker from "./MontaggiCommessaPicker";
+import MontaggiContattoPicker from "./MontaggiContattoPicker";
+import MontaggiExitConfirm from "./MontaggiExitConfirm";
 import CentroCantiere from "./CentroCantiere";
+
+interface Props {
+  montaggio: MontaggioRow | null;
+  commesse: any[];
+  montaggiTutti: any[];
+  aziendaId: string;
+  onClose: () => void;
+}
 
 export default function MontaggiEditModalV2({ montaggio, commesse, montaggiTutti, aziendaId, onClose }: Props) {
   const initialRef = useRef<EditorState | null>(null);
