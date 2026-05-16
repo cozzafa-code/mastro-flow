@@ -672,7 +672,7 @@ export default function CentroCantiere({ montaggio, commesse, aziendaId, onClose
 
       {/* Header */}
       <div style={{ background: C.navy, flexShrink: 0 }}>
-        <div style={{ padding: "env(safe-area-inset-top, 12px) 14px 10px", paddingTop: "max(env(safe-area-inset-top), 12px)", display: "flex", alignItems: "flex-start", gap: 10 }}>
+        <div style={{ paddingTop: "max(env(safe-area-inset-top, 0px) + 12px, 52px)", paddingLeft: 14, paddingRight: 14, paddingBottom: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,.12)", border: "none", color: C.white, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="15 18 9 12 15 6"/></svg>
           </button>
