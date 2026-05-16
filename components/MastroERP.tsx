@@ -1,9 +1,7 @@
-﻿"use client";
-import { useMastroData } from "@/hooks/useMastroData";
-// @ts-nocheck
+"use client";
+import DraggableFAB from "@/components/DraggableFAB";
 import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
-import { logEvento, TIPI_EVENTO as TL_TIPI } from "@/lib/timeline-logger";
 // =======================================================
 // MASTRO ERP v2 - PARTE 1/5
 // Righe 1-1280: Costanti, Dati Demo (incluse visite/vaniList/euro/scadenza),
@@ -16,7 +14,7 @@ import MastroDesktop from "./MastroDesktop";
 import MastroTabletWrapper from "./tablet/MastroTabletWrapper";
 // import { getAziendaId, loadAllData, saveCantiere, saveEvent, deleteEvent as deleteEventDB, saveContatto, saveTeamMember, saveTask, saveAzienda, saveVano, deleteVano, saveMateriali, savePipeline } from "@/lib/supabase-sync";
 import { supabase } from "@/lib/supabase";
-import "@/lib/mastro-boot"; // Sync Engine v1 â€” auto-boot
+import "@/lib/mastro-boot"; // Sync Engine v1 — auto-boot
 import { useSyncEngine, SyncStatusBar } from "./mastro-sync";
 import { useCloudLoader, persistAndSync } from "../hooks/useCloudLoader";
 import { useVaniSync } from "../hooks/useVaniSync";
@@ -39,12 +37,11 @@ import { getAziendaId, loadAllData, saveCantiere, saveEvent, deleteEventDB, save
 import { MastroContext } from "./MastroContext";
 import { usePreventivoNotifier } from "../lib/preventivo-notifier";
 import PreventivoRispostaToast from "./PreventivoRispostaToast";
-import { ModuloMagazzino } from "./magazzino";
 import { MastroUpdateBanner } from "./MastroUpdateBanner";
 import SettingsPanel from "./SettingsPanel";
 import SettingsMobile from "./SettingsMobile";
 import PreventivoModal from "./PreventivoModal";
-import RilieviVaniPanel from "./RilieviVaniPanel";
+import RilieviListPanel from "./RilieviListPanel";
 import VanoDetailPanel from "./VanoDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
 import HomePanel from "./HomePanelMobileV2";
@@ -52,7 +49,6 @@ import BottomToolbar from "./BottomToolbar";
 import TeamMobile from "./mobile/team/TeamMobile";
 import VoiceAssistant from "./VoiceAssistant";
 import CMDetailPanel from "./CMDetailPanel";
-import MaterialiPanel from "./MaterialiPanel";
 import ModalPanel from "./ModalPanel";
 import RiepilogoPanel from "./RiepilogoPanel";
 import AgendaPanel from "./AgendaPanel";
@@ -93,7 +89,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   
   const [tab, setTab] = useState("home");
 
-  // Listener Day Â· navigazione bidirezionale (con whitelist tab validi)
+  // Listener Day · navigazione bidirezionale (con whitelist tab validi)
   React.useEffect(() => {
     const TAB_VALIDI = ["home","commesse","clienti","messaggi","agenda","contabilita","montaggi_cal","settings","altro","team"];
     const MAPPA_DAY: Record<string,string> = {
@@ -115,7 +111,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         return;
       }
       setTab(target);
-      // Se c'Ã¨ cm_id, prova a selezionare la commessa
+      // Se c'è cm_id, prova a selezionare la commessa
       if (cmId) {
         setTimeout(() => {
           const cm = cantieri.find((c: any) => c.id === cmId);
@@ -123,7 +119,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             setSelectedCM(cm);
             setSelectedVano(null);
             setVanoStep(0);
-            // se modulo Ã¨ preventivo, apri il modal dopo il render della commessa
+            // se modulo è preventivo, apri il modal dopo il render della commessa
             if (raw === "preventivo") {
               setTimeout(() => setShowPreventivoModal(true), 250);
             }
@@ -154,8 +150,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const [showPaywall, setShowPaywall] = useState<string | null>(null);
   const canDo = (action: string) => {
     if (action === "commessa" && cantieri.length >= plan.maxCommesse) { setShowPaywall("Hai raggiunto il limite di " + plan.maxCommesse + " commesse. Passa a un piano superiore per continuare."); return false; }
-    if (action === "pdf" && !plan.pdf) { setShowPaywall("La generazione PDF Ã¨ disponibile dal piano Pro."); return false; }
-    if (action === "sync" && !plan.sync) { setShowPaywall("La sync real-time Ã¨ disponibile dal piano Pro."); return false; }
+    if (action === "pdf" && !plan.pdf) { setShowPaywall("La generazione PDF è disponibile dal piano Pro."); return false; }
+    if (action === "sync" && !plan.sync) { setShowPaywall("La sync real-time è disponibile dal piano Pro."); return false; }
     return true;
   };
   const WIDGET_IDS = ["contatori", "io", "attenzione", "programma", "settimana", "commesse", "azioni", "dashboard"];
@@ -175,11 +171,11 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const [nvVani, setNvVani] = useState([]);
   const [nvBlocchi, setNvBlocchi] = useState({});
   const [nvNote, setNvNote] = useState("");
-  // NO DEMO DATA â€” production mode, all empty by default
+  // NO DEMO DATA — production mode, all empty by default
   // Calendario griglia espandibile
   const [expandedDay, setExpandedDay] = useState(null); // ISO string del giorno espanso
   const [cantieri, setCantieri] = useState<any[]>([]);
-  // Offline cache IndexedDB â€” carica al mount, salva ad ogni cambio
+  // Offline cache IndexedDB — carica al mount, salva ad ogni cambio
   const { loadFromCache, getCacheInfo } = useOfflineCache(cantieri, setCantieri, cantieri.length > 0 || typeof window !== "undefined");
   const [tasks, setTasks] = useState<any[]>([]);
   const [msgs, setMsgs] = useState<any[]>([]);
@@ -237,7 +233,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     { id: "cp1", code: "40" }, { id: "cp2", code: "45" }, { id: "cp3", code: "50" }, { id: "cp4", code: "55" }, { id: "cp5", code: "60" }, { id: "cp6", code: "65" }, { id: "cp7", code: "70" }
   ]);
   const [ctSezioniDB, setCtSezioniDB] = useState([
-    { id: "cs1", code: "56Ãƒâ€”40" }, { id: "cs2", code: "56Ãƒâ€”50" }, { id: "cs3", code: "56Ãƒâ€”60" }, { id: "cs4", code: "56Ãƒâ€”70" }, { id: "cs5", code: "76Ãƒâ€”50" }, { id: "cs6", code: "76Ãƒâ€”60" }
+    { id: "cs1", code: "56Ã—40" }, { id: "cs2", code: "56Ã—50" }, { id: "cs3", code: "56Ã—60" }, { id: "cs4", code: "56Ã—70" }, { id: "cs5", code: "76Ã—50" }, { id: "cs6", code: "76Ã—60" }
   ]);
   const [ctCieliniDB, setCtCieliniDB] = useState([
     { id: "cc1", code: "A tampone" }, { id: "cc2", code: "A tappo" }, { id: "cc3", code: "Frontale" }
@@ -262,7 +258,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const [showFatturaPassiva, setShowFatturaPassiva] = useState(false);
   const [newFattPassiva, setNewFattPassiva] = useState({ fornitore: "", numero: "", data: "", importo: 0, iva: 22, descrizione: "", cmId: "", pagata: false, scadenza: "" });
 
-  //  CONTABILITÃƒâ‚¬ 
+  //  CONTABILITÃ€ 
   const [showContabilita, setShowContabilita] = useState(false);
   const [contabTab, setContabTab] = useState("panoramica");
   const [contabMese, setContabMese] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; });
@@ -284,7 +280,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     try { const v = localStorage.getItem("mastro:fornitori"); if (v) { const p = JSON.parse(v); if (Array.isArray(p) && p.length > 0) return p; } } catch(e) {}
     return [
     { id: "f1", nome: "Aluplast Italia", ragioneSociale: "Aluplast Italia SRL", piva: "01234567890", cf: "", tipo: "Profili PVC", categoria: "profili", indirizzo: "Via Roma 10", cap: "37100", citta: "Verona", provincia: "VR", telefono: "+39 045 123456", cellulare: "", email: "ordini@aluplast.it", pec: "aluplast@pec.it", sito: "www.aluplast.it", referente: "Marco Rossi", telReferente: "+39 333 1234567", emailReferente: "m.rossi@aluplast.it", banca: "Unicredit", iban: "IT60X0542811101000000123456", pagamento: "60gg_fm", scontoBase: 35, tempoConsegna: 18, sistemiTrattati: "Ideal 4000, Ideal 7000, Ideal 8000", note: "Fornitore principale PVC", rating: 4.6, preferito: true, attivo: true },
-    { id: "f2", nome: "SchÃƒÂ¼co International", ragioneSociale: "SchÃƒÂ¼co International Italia SRL", piva: "09876543210", cf: "", tipo: "Profili Alluminio", categoria: "profili", indirizzo: "Via Milano 50", cap: "20100", citta: "Milano", provincia: "MI", telefono: "+39 02 654321", cellulare: "", email: "italia@schueco.com", pec: "schuco@pec.it", sito: "www.schueco.com", referente: "Luca Bianchi", telReferente: "+39 335 7654321", emailReferente: "l.bianchi@schueco.com", banca: "Intesa", iban: "", pagamento: "60gg_fm", scontoBase: 30, tempoConsegna: 22, sistemiTrattati: "AWS 75, ASS 70, ASS 77", note: "", rating: 4.8, preferito: true, attivo: true },
+    { id: "f2", nome: "SchÃ¼co International", ragioneSociale: "SchÃ¼co International Italia SRL", piva: "09876543210", cf: "", tipo: "Profili Alluminio", categoria: "profili", indirizzo: "Via Milano 50", cap: "20100", citta: "Milano", provincia: "MI", telefono: "+39 02 654321", cellulare: "", email: "italia@schueco.com", pec: "schuco@pec.it", sito: "www.schueco.com", referente: "Luca Bianchi", telReferente: "+39 335 7654321", emailReferente: "l.bianchi@schueco.com", banca: "Intesa", iban: "", pagamento: "60gg_fm", scontoBase: 30, tempoConsegna: 22, sistemiTrattati: "AWS 75, ASS 70, ASS 77", note: "", rating: 4.8, preferito: true, attivo: true },
     { id: "f3", nome: "Pilkington Italia", ragioneSociale: "Pilkington Italia SPA", piva: "", cf: "", tipo: "Vetri", categoria: "vetri", indirizzo: "", cap: "", citta: "Napoli", provincia: "NA", telefono: "+39 081 789012", cellulare: "", email: "ordini@pilkington.it", pec: "", sito: "", referente: "", telReferente: "", emailReferente: "", banca: "", iban: "", pagamento: "30gg_fm", scontoBase: 20, tempoConsegna: 12, sistemiTrattati: "", note: "", rating: 4.3, preferito: false, attivo: true },
     { id: "f4", nome: "Roto Frank", ragioneSociale: "Roto Frank AG", piva: "", cf: "", tipo: "Ferramenta", categoria: "ferramenta", indirizzo: "", cap: "", citta: "Bolzano", provincia: "BZ", telefono: "+39 0471 345678", cellulare: "", email: "italia@roto-frank.com", pec: "", sito: "", referente: "", telReferente: "", emailReferente: "", banca: "", iban: "", pagamento: "30gg_fm", scontoBase: 25, tempoConsegna: 8, sistemiTrattati: "", note: "", rating: 4.5, preferito: false, attivo: true },
   ]; });
@@ -402,26 +398,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   });
   const logoInputRef = useRef(null);
   const [aiChat, setAiChat] = useState(false);
-  const [aiLiveMode, setAiLiveMode] = useState(false);
-
-  // â•â•â• MASTRO AI Â· listener globali â•â•â•
-  // TAP su MASTRO AI in GestureNav -> apre chat scritta
-  // LONG-PRESS su MASTRO AI -> apre chat con vocale attivo
-  React.useEffect(() => {
-    const openAI = () => { setAiLiveMode(false); setAiChat(true); };
-    const openAILive = () => { setAiLiveMode(true); setAiChat(true); };
-    (window as any).__mastroOpenAI = openAI;
-    (window as any).__mastroOpenAILive = openAILive;
-    window.addEventListener("mastro:open-ai", openAI);
-    window.addEventListener("mastro:open-ai-live", openAILive);
-    return () => {
-      window.removeEventListener("mastro:open-ai", openAI);
-      window.removeEventListener("mastro:open-ai-live", openAILive);
-      try { delete (window as any).__mastroOpenAI; } catch {}
-      try { delete (window as any).__mastroOpenAILive; } catch {}
-    };
-  }, []);
-
   const [aiInput, setAiInput] = useState("");
   const [aiMsgs, setAiMsgs] = useState([{ role: "ai", text: "Ciao Fabio! Sono MASTRO AI. Chiedimi qualsiasi cosa sulle tue commesse, task o misure." }]);
   
@@ -596,7 +572,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   // Responsive width
   const [winW, setWinW] = useState(typeof window !== "undefined" ? window.innerWidth : 430);
-  // Device touch detection: iPad/tablet/phone â†’ sempre mobile, anche se innerWidth >= 1024
+  // Device touch detection: iPad/tablet/phone → sempre mobile, anche se innerWidth >= 1024
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   useEffect(() => {
     const h = () => setWinW(window.innerWidth);
@@ -612,7 +588,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   // == Persistence ==
   // DEMO VERSION - FORCE RESET on every new deploy
-  const DEMO_VER = "v50-gmail-email";
+  const DEMO_VER = "v51-home-fix";
   useEffect(()=>{
       // Check if user chose "clean slate" - skip demo data
       const cleanSlate = localStorage.getItem("mastro:cleanSlate");
@@ -707,89 +683,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     setCoprifiliDB, setLamiereDB, setLibreriaDB, setFattureDB, setOrdiniFornDB,
     setSquadreDB, setMontaggiDB,
   });
-
-  // [galassia-bridge] Sincronizza cantieri con useMastroData realtime
-  // Quando un trigger DB aggiorna fase/ops_fase_corrente, md.commesse lo riceve via websocket.
-  // Questo bridge propaga l'aggiornamento a setCantieri senza sovrascrivere tutto.
-  const { state: _mdBridge } = useMastroData();
-  useEffect(() => {
-    if (!_mdBridge.commesse || _mdBridge.commesse.length === 0) return;
-    setCantieri(prev => {
-      if (!prev || prev.length === 0) return _mdBridge.commesse;
-      return prev.map(c => {
-        const live = _mdBridge.commesse.find((x: any) => x.id === c.id);
-        if (!live) return c;
-        // Aggiorna solo i campi che cambiano con la fase â€” non sovrascrivere campi locali
-        return {
-          ...c,
-          fase: live.fase ?? c.fase,
-          ops_fase_corrente: live.ops_fase_corrente ?? c.ops_fase_corrente,
-          updated_at: live.updated_at ?? c.updated_at,
-          materiale_ordinato_at: live.materiale_ordinato_at ?? c.materiale_ordinato_at,
-          materiale_arrivato_at: live.materiale_arrivato_at ?? c.materiale_arrivato_at,
-          produzione_iniziata_at: live.produzione_iniziata_at ?? c.produzione_iniziata_at,
-        };
-      });
-    });
-  }, [_mdBridge.commesse]);
-
-  // [v51-home-fix] Fallback diretto Supabase per popolare Home anche senza userId UUID
-  // Tabelle reali del DB (verificate): commesse, tasks, team, montaggi, ordini_fornitore, events, contatti
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const aziendaId = await getAziendaId();
-        if (!aziendaId || cancelled) return;
-        const [
-          rCommesse, rTasks, rTeam, rMontaggi, rOrdini, rEvents, rContatti, rOperatori
-        ] = await Promise.all([
-          supabase.from('commesse').select('*').eq('azienda_id', aziendaId),
-          supabase.from('tasks').select('*').eq('azienda_id', aziendaId),
-          supabase.from('team').select('*').eq('azienda_id', aziendaId),
-          supabase.rpc('get_montaggi_azienda', { p_azienda_id: aziendaId }),
-          supabase.from('ordini_fornitore').select('*').eq('azienda_id', aziendaId),
-          supabase.from('events').select('*').eq('azienda_id', aziendaId),
-          supabase.from('contatti').select('*').eq('azienda_id', aziendaId),
-          supabase.rpc('get_operatori_azienda', { p_azienda_id: aziendaId }),
-        ]);
-        if (cancelled) return;
-        // Le commesse vengono usate come "cantieri" nel codice legacy
-        if (rCommesse.data && rCommesse.data.length) setCantieri(rCommesse.data as any[]);
-        // [galassia-fatture] Carica fin_fatture_emesse e mappa a formato fattureDB
-        const rFatture = await supabase.from('fin_fatture_emesse').select('*').eq('azienda_id', aziendaId);
-        if (rFatture.data && rFatture.data.length) {
-          const mappedFatture = rFatture.data.map((f: any) => ({
-            ...f,
-            cmId: f.commessa_id,
-            pagata: f.stato === 'pagata',
-            importo: f.totale,
-          }));
-          setFattureDB(mappedFatture);
-        }
-        if (rTasks.data && rTasks.data.length) setTasks(rTasks.data as any[]);
-        if (rTeam.data && rTeam.data.length) setTeam(rTeam.data as any[]);
-        if (rMontaggi.data && rMontaggi.data.length > 0) { setMontaggiDB(rMontaggi.data as any[]); try { localStorage.setItem('mastro:montaggi', JSON.stringify(rMontaggi.data)); } catch {} }
-        if (rOrdini.data && rOrdini.data.length) setOrdiniFornDB(rOrdini.data as any[]);
-        if (rEvents.data && rEvents.data.length) setEvents(rEvents.data as any[]);
-        if (rContatti.data && rContatti.data.length) setContatti(rContatti.data as any[]);
-        if (rOperatori?.data && rOperatori.data.length) setTeam(rOperatori.data as any[]);
-        console.log('[v51-home-fix] DB load:', {
-          commesse: rCommesse.data?.length || 0,
-          tasks: rTasks.data?.length || 0,
-          team: rTeam.data?.length || 0,
-          montaggi: rMontaggi.data?.length || 0,
-          ordini: rOrdini.data?.length || 0,
-          events: rEvents.data?.length || 0,
-          contatti: rContatti.data?.length || 0,
-          aziendaId,
-        });
-      } catch (err) {
-        console.warn('[v51-home-fix] fetch fallito:', err);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   // Persist + cloud sync effects
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "cantieri", cantieri), [cantieri]);
@@ -915,7 +808,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   // Check Gmail on mount
   useEffect(() => { gmailCheckStatus(); }, []);
   const isTablet = winW >= 768;
-  // FIX: desktop solo se NON e' un device touch. Tablet/iPad/phone â†’ sempre mobile anche se widescreen
+  // FIX: desktop solo se NON e' un device touch. Tablet/iPad/phone → sempre mobile anche se widescreen
   const isDesktop = forceDesktop ? true : forceMobile ? false : (winW >= 1024 && !isTouchDevice);
 
   // --- Notifica risposta cliente preventivo ---
@@ -1100,7 +993,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     const minCat = tipoToMinCat ? tipoToMinCat(v.tipo || "F1A") : "";
     const minimoMq = sysRec?.minimiMq?.[minCat] || 0;
     const mqCalc = (minimoMq > 0 && mq > 0 && mq < minimoMq) ? minimoMq : mq;
-    // Grid or â‚¬/mq
+    // Grid or €/mq
     let tot = 0;
     const gridPrice = sysRec?.griglia ? (() => {
       const g = sysRec.griglia;
@@ -1118,11 +1011,11 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     const lamRec = lamiereDB.find(l => l.cod === v.lamiera);
     if (lamRec?.prezzoMl) tot += lc * parseFloat(lamRec.prezzoMl);
     // Accessori - calcolo prezzo da listino settore o fallback globale
-    // Helper: cerca prezzo in listino settore (griglia LÃƒâ€”H o â‚¬/mq con minimo)
+    // Helper: cerca prezzo in listino settore (griglia LÃ—H o €/mq con minimo)
     const getListinoPrice = (listino: any[], lmm: number, hmm: number) => {
       if (!listino?.length) return null;
       const mq = (lmm / 1000) * (hmm / 1000);
-      // Prova griglia LÃƒâ€”H per ogni prodotto del listino (usa il primo match)
+      // Prova griglia LÃ—H per ogni prodotto del listino (usa il primo match)
       for (const prod of listino) {
         if (prod.griglia?.length) {
           const match = prod.griglia.find((g: any) => g.l >= lmm && g.h >= hmm);
@@ -1227,220 +1120,23 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   // #23: retroattivo clienteId una tantum
   useEffect(() => { if (contatti?.length) fixClienteIdRetroattivo(); }, [contatti.length]);
 
-// [v-trafila-fix-3] lock anti doppio-click
-    const addCommessaLockRef = React.useRef(false);
-
-    const addCommessa = async () => {
-      const v = validateCommessa(newCM);
-      if (!v.valid) { setFormErrors(v.errors); toast(v.errors[0], "error"); return; }
-      setFormErrors([]);
-      if (!canDo("commessa")) return;
-
-      // [v-trafila-fix-3] LOCK
-      if (addCommessaLockRef.current) {
-        console.warn('[addCommessa] gia in corso, skip');
-        return;
-      }
-      addCommessaLockRef.current = true;
-
-      try {
-        const azId = aziendaInfo?.id || aziendaInfo?.azienda_id || "ccca51c1-656b-4e7c-a501-55753e20da29";
-        const oggi = new Date().toISOString().split("T")[0];
-
-        // [v-trafila-fix-3] maxNum dal DB
-        let maxNum = 0;
-        try {
-          const { data: lastRows } = await supabase
-            .from("commesse")
-            .select("code")
-            .eq("azienda_id", azId)
-            .ilike("code", "S-%")
-            .order("created_at", { ascending: false })
-            .limit(50);
-          const dbNums = (lastRows || []).map((r: any) => parseInt(String(r.code || "S-0").replace(/[^0-9]/g, "")) || 0);
-          const stateNums = cantieri.map((cm: any) => parseInt(String(cm.code || "S-0").replace(/[^0-9]/g, "")) || 0);
-          maxNum = Math.max(0, ...dbNums, ...stateNums);
-        } catch (e) {
-          console.warn('[addCommessa] read maxNum DB fail:', e);
-          maxNum = Math.max(0, ...cantieri.map((cm: any) => parseInt(String(cm.code || "S-0").replace(/[^0-9]/g, "")) || 0));
-        }
-
-        let code = "S-" + String(maxNum + 1).padStart(4, "0");
-        const _ctMatch = contatti?.find((ct:any) => ct.id === newCM.clienteId || ((ct.nome||"").toLowerCase()+(ct.cognome?" "+ct.cognome:"").toLowerCase()).trim() === ([newCM.cliente,newCM.cognome].filter(Boolean).join(" ").toLowerCase()));
-
-        let cmDB: any = null;
-        let rilDB: any = null;
-
-        try {
-          const insertData: any = {
-            cliente: newCM.cliente,
-            cognome: newCM.cognome || null,
-            indirizzo: newCM.indirizzo || null,
-            telefono: newCM.telefono || null,
-            email: newCM.email || null,
-            contatto_id: _ctMatch?.id || newCM.clienteId || null,
-            tipo: newCM.tipo || "nuova",
-            fase: "sopralluogo",
-            sistema: newCM.sistema || null,
-            difficolta_salita: newCM.difficoltaSalita || null,
-            mezzo_salita: newCM.mezzoSalita || null,
-            piano_edificio: newCM.pianoEdificio || null,
-            foro_scale: newCM.foroScale || null,
-            tipo_edificio: newCM.tipoEdificio || null,
-            note: newCM.note || null,
-          };
-          if (azId) insertData.azienda_id = azId;
-
-          // [v-trafila-fix-3] retry loop su 23505
-          const MAX_RETRY = 5;
-          let lastError: any = null;
-          for (let attempt = 0; attempt < MAX_RETRY; attempt++) {
-            insertData.code = code;
-            const res = await supabase
-              .from("commesse")
-              .insert(insertData)
-              .select()
-              .single();
-
-            if (!res.error) {
-              cmDB = res.data;
-              lastError = null;
-              break;
-            }
-            lastError = res.error;
-            if (String(res.error.code) === '23505' && attempt < MAX_RETRY - 1) {
-              const cur = parseInt(code.replace(/[^0-9]/g, '')) || 0;
-              code = "S-" + String(cur + 1).padStart(4, "0");
-              console.warn('[addCommessa] retry', attempt + 1, 'con code', code);
-              continue;
-            }
-            break;
-          }
-
-          if (!cmDB) {
-            console.error("[addCommessa] errore insert commessa:", lastError);
-            toast("Errore creazione commessa: " + (lastError?.message || 'fallita'), "error");
-            return;
-          }
-
-          const { data: rData, error: errR } = await supabase
-            .from("rilievi")
-            .insert({
-              commessa_id: cmDB.id,
-              azienda_id: azId,
-              numero: 1,
-              tipo: "rilievo",
-              nome: "Rilievo iniziale",
-              data: oggi,
-              completato: false,
-            })
-            .select()
-            .single();
-
-          if (errR) {
-            console.warn("[addCommessa] errore insert rilievo R1:", errR);
-          } else {
-            rilDB = rData;
-          }
-
-          if (azId) {
-            try {
-              await logEvento({
-                modulo: "commessa",
-                entitaId: cmDB.id,
-                aziendaId: azId,
-                tipo: TL_TIPI.COMMESSA_CREATA,
-                titolo: "Commessa " + code + " creata",
-                descrizione: newCM.cliente + (newCM.indirizzo ? " - " + newCM.indirizzo : ""),
-                autore_nome: aziendaInfo?.nome || "Fabio",
-                autore_ruolo: "titolare",
-                stato: "info",
-                commessa_id: cmDB.id,
-                metadata: { tipo: newCM.tipo, telefono: newCM.telefono, email: newCM.email },
-              });
-            } catch (e) { console.warn("[timeline log commessa] err:", e); }
-
-            if (rilDB?.id) {
-              try {
-                await logEvento({
-                  modulo: "commessa",
-                  entitaId: cmDB.id,
-                  aziendaId: azId,
-                  tipo: TL_TIPI.NOTA_AGGIUNTA,
-                  titolo: "Rilievo R1 creato (Rilievo iniziale)",
-                  descrizione: "Rilievo bozza pronto per inserire vani e misure",
-                  autore_nome: aziendaInfo?.nome || "Fabio",
-                  autore_ruolo: "titolare",
-                  stato: "in_corso",
-                  commessa_id: cmDB.id,
-                  metadata: { rilievo_id: rilDB.id, numero: 1, nome: "Rilievo iniziale" },
-                });
-              } catch (e) { console.warn("[timeline log rilievo] err:", e); }
-            }
-          }
-        } catch (e: any) {
-          console.error("[addCommessa] eccezione:", e);
-          toast("Errore: " + (e?.message || "sconosciuto"), "error");
-          return;
-        }
-
-        const rilievoLocal = rilDB ? {
-          id: rilDB.id,
-          n: 1,
-          numero: 1,
-          nome: "Rilievo iniziale",
-          tipo: "rilievo",
-          data: oggi,
-          completato: false,
-          vani: [],
-          rilevatore: aziendaInfo?.nome || "Fabio",
-        } : null;
-
-        const nc: any = {
-          id: cmDB?.id || Date.now(),
-          code,
-          clienteId: _ctMatch?.id || newCM.clienteId || null,
-          cliente: newCM.cliente,
-          cognome: newCM.cognome || "",
-          indirizzo: newCM.indirizzo,
-          telefono: newCM.telefono,
-          email: newCM.email || "",
-          fase: "sopralluogo",
-          rilievi: rilievoLocal ? [rilievoLocal] : [],
-          sistema: newCM.sistema,
-          tipo: newCM.tipo,
-          difficoltaSalita: newCM.difficoltaSalita,
-          mezzoSalita: newCM.mezzoSalita,
-          foroScale: newCM.foroScale,
-          pianoEdificio: newCM.pianoEdificio,
-          tipoEdificio: newCM.tipoEdificio || "",
-          livello1Label: newCM.livello1Label || "",
-          livello2Label: newCM.livello2Label || "",
-          livello3Label: newCM.livello3Label || "",
-          note: newCM.note,
-          allegati: [],
-          creato: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
-          aggiornato: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
-          log: [{ chi: aziendaInfo?.nome || "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }],
-        };
-
-        setCantieri(cs => [nc, ...cs]);
-        setNewCM({ cliente: "", cognome: "", indirizzo: "", telefono: "", email: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", tipoEdificio: "", livello1Label: "", livello2Label: "", livello3Label: "", note: "" });
-        setShowModal(null);
-        setSelectedCM(nc);
-        if (rilievoLocal) {
-          setSelectedRilievo(rilievoLocal);
-        }
-        setTab("commesse");
-        toast("Commessa " + code + " creata \u00b7 Rilievo R1 pronto", "success");
-      } finally {
-        // [v-trafila-fix-3] release lock SEMPRE
-        addCommessaLockRef.current = false;
-      }
-    };
+  const addCommessa = () => {
+    const v = validateCommessa(newCM);
+    if (!v.valid) { setFormErrors(v.errors); toast(v.errors[0], "error"); return; }
+    setFormErrors([]);
+    if (!canDo("commessa")) return;
+    const code = "S-" + String(cantieri.length + 1).padStart(4, "0");
+    const _ctMatch = contatti?.find((ct:any) => ct.id === newCM.clienteId || ((ct.nome||"").toLowerCase()+(ct.cognome?" "+ct.cognome:"").toLowerCase()).trim() === ([newCM.cliente,newCM.cognome].filter(Boolean).join(" ").toLowerCase()));
+    const nc = { id: Date.now(), code, clienteId: _ctMatch?.id || newCM.clienteId || null, cliente: newCM.cliente, cognome: newCM.cognome||"", indirizzo: newCM.indirizzo, telefono: newCM.telefono, email: newCM.email||"", fase: "sopralluogo", rilievi: [], sistema: newCM.sistema, tipo: newCM.tipo, difficoltaSalita: newCM.difficoltaSalita, mezzoSalita: newCM.mezzoSalita, foroScale: newCM.foroScale, pianoEdificio: newCM.pianoEdificio, tipoEdificio: newCM.tipoEdificio||"", livello1Label: newCM.livello1Label||"", livello2Label: newCM.livello2Label||"", livello3Label: newCM.livello3Label||"", note: newCM.note, allegati: [], creato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), aggiornato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), log: [{ chi: "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }] };
+    setCantieri(cs => [nc, ...cs]);
+    setNewCM({ cliente: "", cognome: "", indirizzo: "", telefono: "", email: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", tipoEdificio: "", livello1Label: "", livello2Label: "", livello3Label: "", note: "" });
+    setShowModal(null);
+    setSelectedCM(nc);
+    setTab("commesse");
+  };
 
 
-      // #23 FIX: popola clienteId retroattivo sulle commesse che non ce l'hanno
+  // #23 FIX: popola clienteId retroattivo sulle commesse che non ce l'hanno
   const fixClienteIdRetroattivo = () => {
     if (!contatti?.length) return;
     setCantieri(cs => cs.map(c => {
@@ -1473,7 +1169,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const updateMisura = (vanoId, key, value) => {
     if (isStorico) return; // rilievo storico = sola lettura
     const numVal = sanitize.misura(value);
-    // === DIAG bug 1111->1109 â€” RIMUOVERE DOPO FIX ===
+    // === DIAG bug 1111->1109 — RIMUOVERE DOPO FIX ===
     if (typeof value === "number" && value !== numVal) {
       console.error("[DIAG MISURA] sanitize ha cambiato il valore!", { vanoId, key, valueIn: value, valueOut: numVal });
       console.trace("stack");
@@ -1550,7 +1246,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   };
 
   // DELETE functions
-  const deleteTask = (taskId) => { confirm({ title: "Eliminare task?", message: "Questa azione Ã¨ irreversibile.", confirmText: "Elimina", danger: true, onConfirm: () => { setTasks(ts => ts.filter(t => t.id !== taskId)); toast("Task eliminato", "success"); } }); };
+  const deleteTask = (taskId) => { confirm({ title: "Eliminare task?", message: "Questa azione è irreversibile.", confirmText: "Elimina", danger: true, onConfirm: () => { setTasks(ts => ts.filter(t => t.id !== taskId)); toast("Task eliminato", "success"); } }); };
   const deleteVano = (vanoId) => {
     if (isStorico) return; // rilievo storico = sola lettura
     confirm({ title: "Eliminare vano?", message: "Il vano e tutte le sue misure verranno eliminati.", confirmText: "Elimina", danger: true, onConfirm: () => {
@@ -1568,7 +1264,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     const cm = cantieri.find(c => c.id === cmId);
     confirm({
       title: "Eliminare commessa?",
-      message: `Stai per eliminare "${cm?.cliente || "commessa"}" e tutti i suoi vani, rilievi e documenti. Questa azione Ã¨ irreversibile.`,
+      message: `Stai per eliminare "${cm?.cliente || "commessa"}" e tutti i suoi vani, rilievi e documenti. Questa azione è irreversibile.`,
       confirmText: "Elimina",
       danger: true,
       onConfirm: () => {
@@ -1584,8 +1280,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       },
     });
   };
-  const deleteEvent = (evId) => { confirm({ title: "Eliminare evento?", message: "L'evento verrÃ  rimosso dal calendario.", confirmText: "Elimina", danger: true, onConfirm: () => { setEvents(ev => ev.filter(e => e.id !== evId)); toast("Evento eliminato", "success"); } }); };
-  const deleteMsg = (msgId) => { confirm({ title: "Eliminare messaggio?", message: "Il messaggio verrÃ  rimosso.", confirmText: "Elimina", danger: true, onConfirm: () => { setMsgs(ms => ms.filter(m => m.id !== msgId)); toast("Messaggio eliminato", "success"); } }); };
+  const deleteEvent = (evId) => { confirm({ title: "Eliminare evento?", message: "L'evento verrà rimosso dal calendario.", confirmText: "Elimina", danger: true, onConfirm: () => { setEvents(ev => ev.filter(e => e.id !== evId)); toast("Evento eliminato", "success"); } }); };
+  const deleteMsg = (msgId) => { confirm({ title: "Eliminare messaggio?", message: "Il messaggio verrà rimosso.", confirmText: "Elimina", danger: true, onConfirm: () => { setMsgs(ms => ms.filter(m => m.id !== msgId)); toast("Messaggio eliminato", "success"); } }); };
 
   const addAllegato = (tipo, content, dataUrl?: string, durata?: string) => {
     if (!selectedCM) return;
@@ -1654,7 +1350,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       setIsRecording(true); setRecSeconds(0);
       recInterval.current = setInterval(() => setRecSeconds(s => s + 1), 1000);
     } catch (err) {
-      alert("Ã¯Â¸Â Impossibile accedere al " + (tipo === "video" ? "camera/microfono" : "microfono") + ". Controlla i permessi del browser.\n\n" + (err as Error).message);
+      alert("ï¸ Impossibile accedere al " + (tipo === "video" ? "camera/microfono" : "microfono") + ". Controlla i permessi del browser.\n\n" + (err as Error).message);
     }
   };
 
@@ -1711,7 +1407,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         if (cameraPreviewRef.current) { cameraPreviewRef.current.srcObject = stream; cameraPreviewRef.current.play().catch(() => {}); }
       }, 100);
     } catch (err) {
-      alert("Ã¯Â¸Â Impossibile accedere alla fotocamera. Controlla i permessi.\n\n" + (err as Error).message);
+      alert("ï¸ Impossibile accedere alla fotocamera. Controlla i permessi.\n\n" + (err as Error).message);
       setShowCameraModal(false);
     }
   };
@@ -1796,7 +1492,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     } else if (settingsModal === "lamiera" && f.nome && f.cod) {
       setLamiereDB(l => [...l, { id: Date.now(), nome: f.nome, cod: f.cod, prezzoMl: parseFloat(f.prezzoMl)||0 }]);
     } else if (settingsModal === "tipologia" && f.code && f.label) {
-      TIPOLOGIE_RAPIDE.push({ code: f.code, label: f.label, icon: f.icon || "Ã¢Å Å¾", cat: f.cat || "Altro", forma: f.forma || "rettangolare" });
+      TIPOLOGIE_RAPIDE.push({ code: f.code, label: f.label, icon: f.icon || "âŠž", cat: f.cat || "Altro", forma: f.forma || "rettangolare" });
     } else if (settingsModal === "membro" && f.nome) {
       const colori = ["#0D7C6B","#1A9E73","#af52de","#E8A020","#DC4444","#5ac8fa"];
       setTeam(t => [...t, { id: Date.now(), nome: f.nome, ruolo: f.ruolo || "Posatore", compiti: f.compiti || "", telefono: f.telefono || "", email: f.email || "", colore: colori[t.length % colori.length], documenti: [], note_diario: [] }]);
@@ -1804,7 +1500,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     setSettingsModal(null); setSettingsForm({});
   };
   const deleteSettingsItem = (type, id) => {
-    confirm({ title: "Eliminare elemento?", message: "L'elemento verrÃ  rimosso dal catalogo.", confirmText: "Elimina", danger: true, onConfirm: () => {
+    confirm({ title: "Eliminare elemento?", message: "L'elemento verrà rimosso dal catalogo.", confirmText: "Elimina", danger: true, onConfirm: () => {
     if (type === "sistema") setSistemiDB(s => s.filter(x => x.id !== id));
     if (type === "colore") setColoriDB(c => c.filter(x => x.id !== id));
     if (type === "vetro") setVetriDB(v => v.filter(x => x.id !== id));
@@ -1839,19 +1535,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   // === AUTO-ADVANCE: sincronizza fase pipeline con azioni reali ===
   const setFaseTo = (cmId: string, targetFase: string, operatore?: string) => {
-    // Mappa nomi UI legacy -> enum DB canonico
-    const mapFase = (f: string): string => {
-      switch (f) {
-        case 'conferma': return 'conferma_ordine';
-        case 'ordini': return 'ordine';
-        case 'modifiche': return 'preventivo'; // 'modifiche' non e' una fase DB, resta a preventivo
-        case 'da_contattare': return 'preventivo';
-        case 'chiusura': return 'chiusa';
-        default: return f;
-      }
-    };
-    const targetFaseDb = mapFase(targetFase);
-
     const targetIdx = faseIndex(targetFase);
     const faseDef = pipelineDB.find((p: any) => p.id === targetFase);
 
@@ -1899,12 +1582,12 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       const c = cantieri.find((x: any) => x.id === cmId);
       if (c) {
         const { mancanti } = checkGateForCommessa(c);
-        toast(`Ã¢â€ºâ€ Gate bloccante - ${mancanti.join(" Â· ")}`, "error");
+        toast(`â›” Gate bloccante - ${mancanti.join(" · ")}`, "error");
       }
       return;
     }
 
-    // Aggiorna selectedCM se Ã¨ la commessa aperta
+    // Aggiorna selectedCM se è la commessa aperta
     if (selectedCM?.id === cmId) {
       const curIdx = faseIndex(selectedCM.fase);
       if (targetIdx > curIdx) {
@@ -1915,78 +1598,20 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         setTimeout(() => setFaseNotif(null), 3000);
       }
     }
-
-    // PERSISTENZA DB: scrivi fase canonica + timestamp gates corrispondenti
-    // Best-effort: se trigger DB rifiuta (gate mancanti) log e proseguo
-    if (typeof window !== 'undefined' && cmId && targetFaseDb) {
-      import('@/lib/supabase-sync').then(m => {
-        const ts = new Date().toISOString();
-        // Avanzamento via API (rispetta i gate trigger DB)
-        const aziendaId = sessionStorage.getItem('mastro:aziendaId') 
-          || localStorage.getItem('mastro:aziendaId')
-          || (selectedCM as any)?.azienda_id
-          || 'ccca51c1-656b-4e7c-a501-55753e20da29';
-        // Setta i gate timestamp che servono per la fase di destinazione
-        const payload: any = {};
-        if (targetFaseDb === 'preventivo') payload.preventivo_inviato_at = ts;
-        if (targetFaseDb === 'conferma_ordine') payload.conferma_ordine_inviata_at = ts;
-        if (targetFaseDb === 'confermata') payload.conferma_ordine_firmata_at = ts;
-        if (targetFaseDb === 'acconto_pagato') payload.fattura_acconto_pagata_at = ts;
-        if (targetFaseDb === 'produzione') payload.produzione_completata_at = null; // entrata
-        if (targetFaseDb === 'montaggio') payload.montaggio_completato_at = null;
-        // Chiama API avanza-fase (rispetta i gate del trigger DB con messaggi chiari)
-        fetch('/api/commessa/avanza-fase', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            aziendaId,
-            commessaId: cmId,
-            faseA: targetFaseDb,
-            payload,
-          }),
-        }).then(async r => {
-          if (!r.ok) {
-            const j = await r.json().catch(() => ({}));
-            console.warn('[setFaseTo->DB] avanzamento bloccato:', j.error || r.status);
-            // Fallback: scrivi solo i timestamp senza cambiare fase
-            if (Object.keys(payload).length > 0) {
-              await supabase.from('commesse').update(payload).eq('id', cmId).then(() => {}).catch(() => {});
-            }
-          }
-        }).catch(err => console.warn('[setFaseTo->DB] error:', err));
-      });
-    }
   };
 
 
-  const addEvent = async () => {
+  const addEvent = () => {
     const _evTitle = newEvent.text.trim() || (newEvent.persona ? "Appuntamento " + newEvent.persona : "");
     const v = validateEvento(newEvent);
     if (!v.valid) { toast(v.errors[0], "error"); return; }
     newEvent.text = _evTitle;
-    const eventDate = newEvent.date || selDate.toISOString().split("T")[0];
     // If tipo is "task", create a task instead of an event
     if (newEvent.tipo === "task") {
-      const tempId = "tmp_" + Date.now();
-      setTasks(ts => [...ts, { id: tempId, text: newEvent.text, meta: (newEvent as any)._taskMeta || "", time: newEvent.time, priority: (newEvent as any)._taskPriority || "media", cm: newEvent.cm, date: eventDate, persona: newEvent.persona, done: false, allegati: [] }]);
+      const taskDate = newEvent.date || selDate.toISOString().split("T")[0];
+      setTasks(ts => [...ts, { id: Date.now(), text: newEvent.text, meta: (newEvent as any)._taskMeta || "", time: newEvent.time, priority: (newEvent as any)._taskPriority || "media", cm: newEvent.cm, date: taskDate, persona: newEvent.persona, done: false, allegati: [] }]);
       setNewEvent({ text: "", time: "", tipo: "sopralluogo", cm: "", persona: "", date: "", reminder: "", addr: "" });
       setShowNewEvent(false);
-      try {
-        if (aziendaId) {
-          const { data: tk, error: tkErr } = await supabase.from("tasks").insert({
-            azienda_id: aziendaId,
-            testo: _evTitle,
-            data: eventDate,
-            ora: newEvent.time || null,
-            priorita: (newEvent as any)._taskPriority || "media",
-            persona: newEvent.persona || null,
-            meta: (newEvent as any)._taskMeta || null,
-            commessa_id: newEvent.cm || null,
-            done: false,
-          }).select().single();
-          if (!tkErr && tk?.id) setTasks(ts => ts.map(t => t.id === tempId ? { ...t, id: tk.id } : t));
-        }
-      } catch (err) { console.error("save task", err); }
       return;
     }
     if ((newEvent as any)._newCliente && (newEvent as any)._nomeCliente) {
@@ -1995,34 +1620,10 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       newEvent.persona = nc.nome + (nc.cognome ? " " + nc.cognome : "");
     }
     if (!newEvent.time) newEvent.time = "09:00";
-    const tempEvId = "tmp_" + Date.now();
-    setEvents(ev => [...ev, { id: tempEvId, ...newEvent, date: eventDate, addr: newEvent.addr || "", color: tipoEvColor(newEvent.tipo) }]);
+    setEvents(ev => [...ev, { id: Date.now(), ...newEvent, date: newEvent.date || selDate.toISOString().split("T")[0], addr: newEvent.addr || "", color: tipoEvColor(newEvent.tipo) }]);
     setNewEvent({ text: "", time: "", tipo: "sopralluogo", cm: "", persona: "", date: "", reminder: "", addr: "" });
     trackAction("evento", newEvent.text || "Evento", JSON.stringify({ type: "evento" }));
     setShowNewEvent(false);
-    try {
-      if (aziendaId) {
-        const { data: ev, error: evErr } = await supabase.from("eventi").insert({
-          azienda_id: aziendaId,
-          titolo: _evTitle,
-          tipo: newEvent.tipo || "sopralluogo",
-          data: eventDate,
-          ora: newEvent.time || "09:00",
-          ora_fine: (newEvent as any).oraFine || null,
-          durata_min: (newEvent as any).durata_min || null,
-          persona: newEvent.persona || null,
-          indirizzo: newEvent.addr || null,
-          note: (newEvent as any).note || null,
-          commessa_id: newEvent.cm || null,
-          colore: tipoEvColor(newEvent.tipo),
-          reminder: newEvent.reminder || null,
-          completato: false,
-          annullato: false,
-        }).select().single();
-        if (!evErr && ev?.id) setEvents(es => es.map(e => e.id === tempEvId ? { ...e, id: ev.id } : e));
-        if (evErr) { console.error("save event", evErr); toast("Errore salvataggio: " + evErr.message, "error"); }
-      }
-    } catch (err) { console.error("save event", err); }
   };
 
 
@@ -2076,12 +1677,12 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       const t = tasks.filter(x => !x.done);
       resp = `Oggi hai ${t.length} task aperti:\n${t.map((x, i) => `${i + 1}. ${x.text}${x.time ? ` (${x.time})` : ""}`).join("\n")}`;
     } else if (q.includes("commess") || q.includes("stato") || q.includes("pipeline")) {
-      resp = `Hai ${cantieri.length} commesse:\n${cantieri.map(c => `Ã¢â‚¬Â¢ ${c.code} ${c.cliente} - ${PIPELINE.find(p => p.id === c.fase)?.nome}`).join("\n")}`;
+      resp = `Hai ${cantieri.length} commesse:\n${cantieri.map(c => `â€¢ ${c.code} ${c.cliente} - ${PIPELINE.find(p => p.id === c.fase)?.nome}`).join("\n")}`;
     } else if (q.includes("vani") || q.includes("misur")) {
-      resp = `Totale vani: ${countVani()}\nCommesse con vani da misurare:\n${cantieri.filter(c => getVaniAttivi(c).some(v => Object.keys(v.misure || {}).length < 6)).map(c => `Ã¢â‚¬Â¢ ${c.code}: ${getVaniAttivi(c).filter(v => Object.keys(v.misure || {}).length < 6).length} vani incompleti`).join("\n")}`;
+      resp = `Totale vani: ${countVani()}\nCommesse con vani da misurare:\n${cantieri.filter(c => getVaniAttivi(c).some(v => Object.keys(v.misure || {}).length < 6)).map(c => `â€¢ ${c.code}: ${getVaniAttivi(c).filter(v => Object.keys(v.misure || {}).length < 6).length} vani incompleti`).join("\n")}`;
     } else if (q.includes("urgent") || q.includes("priorit")) {
       const u = tasks.filter(x => x.priority === "alta" && !x.done);
-      resp = u.length ? `Task urgenti:\n${u.map(x => `Ã¢â‚¬Â¢ ${x.text}`).join("\n")}` : "Nessun task urgente!";
+      resp = u.length ? `Task urgenti:\n${u.map(x => `â€¢ ${x.text}`).join("\n")}` : "Nessun task urgente!";
     }
     setTimeout(() => setAiMsgs(m => [...m, { role: "ai", text: resp }]), 300);
   };
@@ -2099,7 +1700,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         html += `<div class="m-item"><div class="m-label">${l}</div><div class="m-val">${val || " - "} mm</div></div>`;
       });
       html += `</div>`;
-      if (v.cassonetto) html += `<p style="margin-top:8px;font-size:13px">Cassonetto${v.casTipo ? " " + v.casTipo : ""}: ${(v.misure||{}).casL || " - "}Ãƒâ€”${(v.misure||{}).casH || " - "}Ãƒâ€”${(v.misure||{}).casP || " - "} mm</p>`;
+      if (v.cassonetto) html += `<p style="margin-top:8px;font-size:13px">Cassonetto${v.casTipo ? " " + v.casTipo : ""}: ${(v.misure||{}).casL || " - "}Ã—${(v.misure||{}).casH || " - "}Ã—${(v.misure||{}).casP || " - "} mm</p>`;
       if (v.note) html += `<p style="margin-top:4px;font-size:12px;color:#666">Note: ${v.note}</p>`;
       html += `</div>`;
     });
@@ -2130,7 +1731,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     badge: (bg, color) => ({ fontSize: 11*fs, fontWeight: 600, padding: `${3*fs}px ${8*fs}px`, borderRadius: 6, background: bg, color, display: "inline-block" }),
     input: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 10, border: "0.5px solid #F0EFEC", background: "#F7F7F5", fontSize: 14*fs, color: "#1A1A18", outline: "none", fontFamily: FF, boxSizing: "border-box" },
     select: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 10, border: "0.5px solid #F0EFEC", background: "#F7F7F5", fontSize: 14*fs, color: "#1A1A18", outline: "none", fontFamily: FF, boxSizing: "border-box" },
-    btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 14, border: "none", background: "#1E3A5F", color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: FF, boxShadow: "0 2px 8px rgba(30,58,95,0.3)" },
+    btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 14, border: "none", background: "#28A0A0", color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: FF, boxShadow: "0 2px 8px rgba(40,160,160,0.3)" },
     btnCancel: { width: "100%", padding: `${12*fs}px`, borderRadius: 10, border: "none", background: "none", color: T.sub, fontSize: 14*fs, fontWeight: 600, cursor: "pointer", fontFamily: FF },
     tabBar: { position: "fixed", bottom: 0, left: 0, right: 0, width: "100%", background: T.card + "ee", backdropFilter: "blur(20px)", borderTop: `1px solid ${T.bdr}`, display: "flex", padding: `${6*fs}px 0 ${8*fs}px`, zIndex: 100 },
     tabItem: (active) => ({ flex: 1, textAlign: "center", padding: "4px 0", cursor: "pointer", opacity: active ? 1 : 0.5, transition: "opacity 0.15s" }),
@@ -2231,10 +1832,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   /* ======= FILTERED CANTIERI ======= */
   const filtered = cantieri.filter(c => {
-    // FIX v10 cestino-archivia: escludi cestinate e archiviate dalla lista
-    if (c.deleted_at || c.archived_at) return false;
     if (filterFase !== "tutte" && c.fase !== filterFase) return false;
-    if (searchQ && !(c.cliente||"").toLowerCase().includes(searchQ.toLowerCase()) && !(c.code||"").toLowerCase().includes(searchQ.toLowerCase()) && !(c.tipo || "").toLowerCase().includes(searchQ.toLowerCase()) && !(c.indirizzo || "").toLowerCase().includes(searchQ.toLowerCase())) return false;
+    if (searchQ && !c.cliente.toLowerCase().includes(searchQ.toLowerCase()) && !c.code.toLowerCase().includes(searchQ.toLowerCase()) && !(c.tipo || "").toLowerCase().includes(searchQ.toLowerCase()) && !(c.indirizzo || "").toLowerCase().includes(searchQ.toLowerCase())) return false;
     return true;
   });
 
@@ -2252,7 +1851,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         {count !== undefined && count > 0 && (
           <span style={{ ...S.badge(countColor ? countColor + "18" : T.acc + "18", countColor || T.acc), fontSize: 10, fontWeight: 800 }}>{count}</span>
         )}
-        <span style={{ fontSize: 8, color: T.sub, marginLeft: 2, transform: collapsed[id] ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.15s", display: "inline-block" }}>â–¼</span>
+        <span style={{ fontSize: 8, color: T.sub, marginLeft: 2, transform: collapsed[id] ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.15s", display: "inline-block" }}>▼</span>
       </div>
       {extra}
     </div>
@@ -2275,7 +1874,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   // ============================================================
   // RENDER LISTA RILIEVI (livello intermedio: commessa > rilievi)
   // ============================================================
-  const renderRilieviList = () => <RilieviVaniPanel onOpenVano={(vanoId, rilievoId) => { const ril = (selectedCM?.rilievi || []).find((r) => r.id === rilievoId); const vano = (ril?.vani || []).find((v) => v.id === vanoId); if (vano && ril) { setSelectedRilievo(ril); setSelectedVano(vano); } }} />;
+  const renderRilieviList = () => <RilieviListPanel />;
 
   // Card compatta per vista lista
 
@@ -2353,7 +1952,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
               <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, marginBottom: 3 }}>Responsabile</div>
               <select value={ass.persona || ""} onChange={e => updateAss("persona", e.target.value)}
                 style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 12, fontFamily: FF, color: T.text }}>
-                <option value="">â€” Nessuno â€”</option>
+                <option value="">— Nessuno —</option>
                 <optgroup label="Team">
                   {team.map(m => <option key={m.id} value={m.nome}>{m.nome} ({m.ruolo})</option>)}
                 </optgroup>
@@ -2428,13 +2027,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
               <span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:6,
                 background:(ass.stato==="completato"?T.grn:ass.stato==="in_corso"?T.blue:ass.stato==="bloccato"?T.red:T.orange)+"18",
                 color:ass.stato==="completato"?T.grn:ass.stato==="in_corso"?T.blue:ass.stato==="bloccato"?T.red:T.orange,
-                marginRight:4,flexShrink:0}}>{(ass.persona||"").replace("sq:","").split(" ")[0]}</span>
+                marginRight:4,flexShrink:0}}>{ass.persona.replace("sq:","").split(" ")[0]}</span>
             )}
             {/* Badge alert se task non completati */}
             {taskNonFatti > 0 && (
               <span style={{width:8,height:8,borderRadius:"50%",background:T.red,display:"inline-block",marginRight:6,flexShrink:0}}/>
             )}
-            <span style={{fontSize:13,color:T.sub,transform:isOpen(id)?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s",flexShrink:0}}>â–¾</span>
+            <span style={{fontSize:13,color:T.sub,transform:isOpen(id)?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s",flexShrink:0}}>▾</span>
           </div>
           {isOpen(id) && (
             <div style={{padding:"12px 14px"}}>
@@ -2459,11 +2058,11 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             <span style={{fontSize:13,fontWeight:700,color:T.text,flex:1}}>Sopralluogo</span>
             <span style={{fontSize:11,fontWeight:700,color:tuttiCompletati?T.grn:T.orange,marginRight:4}}>{vaniCompletati}/{vaniAttivi2.length} vani </span>
             {ndone>0 && <span style={{width:8,height:8,borderRadius:"50%",background:T.red,display:"inline-block",marginRight:6}}/>}
-            <span style={{fontSize:13,color:T.sub,transform:open_sopr?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>â–¾</span>
+            <span style={{fontSize:13,color:T.sub,transform:open_sopr?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>▾</span>
           </div>
           {open_sopr && <div style={{padding:"12px 14px"}}>
             <Chip label="Fotografie scattate" done={c.ck_foto} onClick={()=>updateCM("ck_foto",!c.ck_foto)}/>
-            <Chip label="DifficoltÃ  accesso rilevata" done={c.ck_accesso} onClick={()=>updateCM("ck_accesso",!c.ck_accesso)}/>
+            <Chip label="Difficoltà accesso rilevata" done={c.ck_accesso} onClick={()=>updateCM("ck_accesso",!c.ck_accesso)}/>
             <Chip label="Riepilogo inviato al cliente" done={c.ck_riepilogo_inviato} onClick={()=>updateCM("ck_riepilogo_inviato",!c.ck_riepilogo_inviato)}/>
             <Chip label={`Tutte le misure inserite (${vaniCompletati}/${vaniAttivi2.length})`} done={tuttiCompletati} onClick={()=>{}}/>
             <Field label="Data sopralluogo" field="dataSopralluogo" type="date"/>
@@ -2490,24 +2089,24 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             <span style={{fontSize:13,fontWeight:700,color:T.text}}>Preventivo</span>
           </div>
           <div style={{padding:"12px 14px"}}>
-            <Field label="Prezzo base â‚¬/mq" field="prezzoMq" placeholder="350" type="number"/>
+            <Field label="Prezzo base €/mq" field="prezzoMq" placeholder="350" type="number"/>
             <Field label="Sconto %" field="sconto" placeholder="0" type="number"/>
             <Field label="Note preventivo" field="notePreventivo" placeholder="Condizioni, garanzie..."/>
             <div style={{padding:"10px 12px",borderRadius:8,background:T.bg,border:`1px solid ${T.bdr}`,marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:T.sub,marginBottom:4}}>
-                <span>Totale imponibile</span><span style={{fontWeight:700,color:T.text}}>â‚¬ {totale.toFixed(2)}</span>
+                <span>Totale imponibile</span><span style={{fontWeight:700,color:T.text}}>€ {totale.toFixed(2)}</span>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:T.sub,marginBottom:4}}>
-                <span>IVA 10%</span><span>â‚¬ {iva.toFixed(2)}</span>
+                <span>IVA 10%</span><span>€ {iva.toFixed(2)}</span>
               </div>
               {c.sconto > 0 && (
                 <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:T.orange,marginBottom:4}}>
-                  <span>Sconto {c.sconto}%</span><span>- â‚¬ {(totale * c.sconto/100).toFixed(2)}</span>
+                  <span>Sconto {c.sconto}%</span><span>- € {(totale * c.sconto/100).toFixed(2)}</span>
                 </div>
               )}
               <div style={{borderTop:`1px solid ${T.bdr}`,marginTop:6,paddingTop:6,display:"flex",justifyContent:"space-between",fontSize:14,fontWeight:800}}>
                 <span>TOTALE IVA inclusa</span>
-                <span style={{color:T.acc}}>â‚¬ {(totale + iva - (totale*(c.sconto||0)/100)).toFixed(2)}</span>
+                <span style={{color:T.acc}}>€ {(totale + iva - (totale*(c.sconto||0)/100)).toFixed(2)}</span>
               </div>
             </div>
             <Chip label="Preventivo inviato al cliente" done={c.ck_prev_inviato} onClick={()=>updateCM("ck_prev_inviato",!c.ck_prev_inviato)}/>
@@ -2522,12 +2121,12 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       return (
         <div style={panelStyle}>
           <div style={headerStyle}>
-            <span style={{fontSize:16}}><I d={ICO.edit} />Ã¯Â¸Â</span>
+            <span style={{fontSize:16}}><I d={ICO.edit} />ï¸</span>
             <span style={{fontSize:13,fontWeight:700,color:T.text}}>Conferma Ordine</span>
           </div>
           <div style={{padding:"12px 14px"}}>
             <Field label="Data conferma" field="dataConferma" type="date"/>
-            <Field label="Acconto ricevuto â‚¬" field="accontoRicevuto" placeholder="0" type="number"/>
+            <Field label="Acconto ricevuto €" field="accontoRicevuto" placeholder="0" type="number"/>
             <Field label="Metodo pagamento" field="metodoPagamento" placeholder="Bonifico / Contanti / Carta..."/>
             <Field label="Data prevista posa" field="dataPosaPrevista" type="date"/>
             <Chip label="Contratto firmato" done={c.ck_contratto} onClick={()=>updateCM("ck_contratto",!c.ck_contratto)}/>
@@ -2553,7 +2152,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 <span style={{fontSize:13,fontWeight:700,color:T.text,flex:1}}>Rilievo Misure Definitivo</span>
                 <span style={{fontSize:11,fontWeight:700,color:vaniOk===vaniCalc.length?T.grn:T.orange,marginRight:4}}>{vaniOk}/{vaniCalc.length}</span>
                 {ndone>0 && <span style={{width:8,height:8,borderRadius:"50%",background:T.red,display:"inline-block",marginRight:6}}/>}
-                <span style={{fontSize:13,color:T.sub,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>â–¾</span>
+                <span style={{fontSize:13,color:T.sub,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>▾</span>
               </div>
               {open && <div style={{padding:"12px 14px"}}>
                 <Chip label="Tutte le misure verificate" done={c.ck_misure_ok} onClick={()=>updateCM("ck_misure_ok",!c.ck_misure_ok)}/>
@@ -2570,7 +2169,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     }
 
     // === ORDINI ===
-    if (c.fase === "ordine") {
+    if (c.fase === "ordini") {
       return (
         (() => {
           const ndone = [!c.ck_ordine_inviato,!c.ck_ordine_confermato,!c.ck_cliente_avvisato].filter(Boolean).length;
@@ -2581,11 +2180,11 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 <I d={ICO.package} s={16} c={fase?.color || T.acc} />
                 <span style={{fontSize:13,fontWeight:700,color:T.text,flex:1}}>Ordini Fornitore</span>
                 {ndone>0 && <span style={{width:8,height:8,borderRadius:"50%",background:T.red,display:"inline-block",marginRight:6}}/>}
-                <span style={{fontSize:13,color:T.sub,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>â–¾</span>
+                <span style={{fontSize:13,color:T.sub,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>▾</span>
               </div>
               {open && <div style={{padding:"12px 14px"}}>
-                <Field label="Fornitore" field="fornitore" placeholder="Es. SchÃƒÂ¼co, Rehau..."/>
-                <Field label="NÂ° Ordine fornitore" field="numOrdine" placeholder="ORD-2026-XXXX"/>
+                <Field label="Fornitore" field="fornitore" placeholder="Es. SchÃ¼co, Rehau..."/>
+                <Field label="N° Ordine fornitore" field="numOrdine" placeholder="ORD-2026-XXXX"/>
                 <Field label="Data ordine" field="dataOrdine" type="date"/>
                 <Field label="Data consegna prevista" field="dataConsegna" type="date"/>
                 <Chip label="Ordine inviato" done={c.ck_ordine_inviato} onClick={()=>updateCM("ck_ordine_inviato",!c.ck_ordine_inviato)}/>
@@ -2610,7 +2209,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 <I d={ICO.factory} s={16} c="#F59E0B" />
                 <span style={{fontSize:13,fontWeight:700,color:T.text,flex:1}}>Produzione</span>
                 {ndone>0 && <span style={{width:8,height:8,borderRadius:"50%",background:T.red,display:"inline-block",marginRight:6}}/>}
-                <span style={{fontSize:13,color:T.sub,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>â–¾</span>
+                <span style={{fontSize:13,color:T.sub,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>▾</span>
               </div>
               {open && <div style={{padding:"12px 14px"}}>
                 <Field label="Data consegna in magazzino" field="dataInMagazzino" type="date"/>
@@ -2638,7 +2237,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 <I d={ICO.hammer} s={16} c="#F97316" />
                 <span style={{fontSize:13,fontWeight:700,color:T.text,flex:1}}>Posa in Opera</span>
                 {ndone>0 && <span style={{width:8,height:8,borderRadius:"50%",background:T.red,display:"inline-block",marginRight:6}}/>}
-                <span style={{fontSize:13,color:T.sub,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>â–¾</span>
+                <span style={{fontSize:13,color:T.sub,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>▾</span>
               </div>
               {open && <div style={{padding:"12px 14px"}}>
                 <Field label="Data posa effettiva" field="dataPosa" type="date"/>
@@ -2676,17 +2275,17 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           <div style={{padding:"12px 14px"}}>
             <div style={{padding:"10px 12px",borderRadius:8,background:T.bg,border:`1px solid ${T.bdr}`,marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}>
-                <span style={{color:T.sub}}>Totale commessa</span><span style={{fontWeight:700}}>â‚¬ {totIva.toFixed(2)}</span>
+                <span style={{color:T.sub}}>Totale commessa</span><span style={{fontWeight:700}}>€ {totIva.toFixed(2)}</span>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}>
-                <span style={{color:T.sub}}>Acconto ricevuto</span><span style={{color:T.grn,fontWeight:700}}>- â‚¬ {parseFloat(c.accontoRicevuto||0).toFixed(2)}</span>
+                <span style={{color:T.sub}}>Acconto ricevuto</span><span style={{color:T.grn,fontWeight:700}}>- € {parseFloat(c.accontoRicevuto||0).toFixed(2)}</span>
               </div>
               <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:6,marginTop:2,display:"flex",justifyContent:"space-between",fontSize:15,fontWeight:800}}>
-                <span>Saldo da incassare</span><span style={{color:saldo>0?T.red:T.grn}}>â‚¬ {saldo.toFixed(2)}</span>
+                <span>Saldo da incassare</span><span style={{color:saldo>0?T.red:T.grn}}>€ {saldo.toFixed(2)}</span>
               </div>
             </div>
             <Field label="Data chiusura" field="dataChiusura" type="date"/>
-            <Field label="Saldo incassato â‚¬" field="saldoIncassato" placeholder="0" type="number"/>
+            <Field label="Saldo incassato €" field="saldoIncassato" placeholder="0" type="number"/>
             <Field label="Metodo saldo" field="metodoSaldo" placeholder="Bonifico / Contanti..."/>
             <Chip label="Saldo incassato" done={c.ck_saldo} onClick={()=>updateCM("ck_saldo",!c.ck_saldo)}/>
             <Chip label="Fattura emessa" done={c.ck_fattura} onClick={()=>updateCM("ck_fattura",!c.ck_fattura)}/>
@@ -2696,7 +2295,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
               <div style={{marginTop:8,padding:"12px",borderRadius:8,background:T.grn+"15",border:`1px solid ${T.grn}30`,textAlign:"center"}}>
                 <div style={{ display:"flex",alignItems:"center",justifyContent:"center" }}><I d={ICO.sparkles} s={22} c={T.acc} /></div>
                 <div style={{fontSize:13,fontWeight:800,color:T.grn,marginTop:4}}>Commessa completata!</div>
-                <div style={{fontSize:11,color:T.sub,marginTop:2}}>{c.code} Â· {c.cliente} {c.cognome||""}</div>
+                <div style={{fontSize:11,color:T.sub,marginTop:2}}>{c.code} · {c.cliente} {c.cognome||""}</div>
               </div>
             )}
           </div>
@@ -2758,7 +2357,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       return (
         <div style={{ minHeight: "100vh", background: "#F5F4F0" }}>
           {/* Header */}
-          <div style={{ background: "#0F1B2D", padding: "20px 16px 24px", paddingTop: "calc(20px + env(safe-area-inset-top, 0px))" }}>
+          <div style={{ background: "#0D1F1F", padding: "20px 16px 24px", paddingTop: "calc(20px + env(safe-area-inset-top, 0px))" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
               <div onClick={() => { setSelectedCliente(null); setClienteDetailTab("info"); }}
                 style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
@@ -2768,7 +2367,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 <div style={{ fontSize: 18, fontWeight: 900, color: "#fff" }}>{cl.nome}{cl.cognome ? " " + cl.cognome : ""}</div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)" }}>{cl.tipo || "cliente"}</div>
               </div>
-              <span style={{ fontSize: 10, fontWeight: 800, color: "#0F1B2D", background: T.acc, padding: "4px 10px", borderRadius: 8, textTransform: "uppercase" as any }}>{cl.tipo || "cliente"}</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "#0D1F1F", background: T.acc, padding: "4px 10px", borderRadius: 8, textTransform: "uppercase" as any }}>{cl.tipo || "cliente"}</span>
             </div>
             {/* Quick actions */}
             <div style={{ display: "flex", gap: 8 }}>
@@ -2827,7 +2426,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                         style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.acc, background: T.card, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }} />
                     ) : (
                       <div style={{ padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 14, color: (cl as any)[f] ? T.text : T.sub, minHeight: 44 }}>
-                        {(cl as any)[f] || "â€”"}
+                        {(cl as any)[f] || "—"}
                       </div>
                     )}
                   </div>
@@ -2899,7 +2498,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                       marginBottom: 8, cursor: "pointer", boxShadow: "0 3px 0 0 " + T.bdr }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>{c.titolo || c.nome || "Commessa"}</div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: T.acc, background: T.accLt, padding: "3px 8px", borderRadius: 6 }}>{c.fase || "â€”"}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: T.acc, background: T.accLt, padding: "3px 8px", borderRadius: 6 }}>{c.fase || "—"}</span>
                     </div>
                     {c.indirizzo && <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}><I d={ICO.mapPin} s={11} c={T.sub} /> {c.indirizzo}</div>}
                     <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>{countVani(c)} vani</div>
@@ -3066,7 +2665,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const renderAgenda = () => (
     <AgendaMobileNew
       cantieri={cantieri}
-      montaggiDB={montaggiDB}
       hideBottomNav
       onOpenCommessa={(cmId, code) => {
         const target = (cantieri || []).find((c: any) => c.id === cmId || c.code === code);
@@ -3093,7 +2691,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   /* == SETTINGS TAB == */
 
-  //  CONTABILITÃƒâ‚¬ PRO 
+  //  CONTABILITÃ€ PRO 
   const renderContabilita = () => <ContabilitaPanel />;
 
 
@@ -3145,43 +2743,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     return annoPrev.length + 1;
   };
 
-  const creaFattura = async (c, tipo: "acconto" | "sal" | "saldo" | "unica", importoOverride?: number, scadenzaIso?: string, noteCustom?: string) => {
-    // [v-trafila-fix-FINAL] guard UUID + prompt importo + force totale_finale
-    const _UUID_RE_FF = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!c?.id || !_UUID_RE_FF.test(String(c.id))) {
-      alert('Errore: la commessa non e ancora salvata sul DB. Ricreala.');
-      return null;
-    }
-    let totaleStimato = 0;
-    try {
-      if (typeof calcolaTotaleCommessa === 'function') {
-        totaleStimato = Number(calcolaTotaleCommessa(c)) || 0;
-      }
-      if (!totaleStimato) {
-        totaleStimato = Number(c.totale_finale) || Number((c as any).totaleFinale) || 0;
-      }
-    } catch (e) { console.warn('[fix-FINAL] calcolo err:', e); }
-    if (!totaleStimato || totaleStimato <= 0) {
-      const ris = prompt('Totale commessa non calcolato. Inserisci totale lordo in euro (es. 1000):');
-      if (!ris) return null;
-      totaleStimato = Math.round(Number(String(ris).replace(',', '.')) * 100) / 100;
-      if (!totaleStimato || totaleStimato <= 0) { alert('Importo non valido'); return null; }
-    }
-    try {
-      const updPayload: any = { totale_finale: totaleStimato };
-      if (c.fase === 'conferma_ordine' || c.fase === 'confermata') {
-        updPayload.fase = 'confermata';
-      }
-      const upd = await supabase.from('commesse').update(updPayload).eq('id', c.id);
-      if (upd.error) console.warn('[fix-FINAL] update fail:', upd.error);
-      else console.log('[fix-FINAL] forzato totale_finale =', totaleStimato);
-    } catch (e) { console.warn('[fix-FINAL] update exc:', e); }
-    if (!importoOverride || importoOverride <= 0) {
-      if (tipo === 'acconto') importoOverride = Math.round(totaleStimato * 0.5);
-      else if (tipo === 'saldo') importoOverride = totaleStimato;
-      else importoOverride = totaleStimato;
-      console.log('[fix-FINAL] importoOverride forzato a', importoOverride);
-    }
+  const creaFattura = (c, tipo: "acconto" | "sal" | "saldo" | "unica", importoOverride?: number, scadenzaIso?: string, noteCustom?: string) => {
     const num = nextNumFattura();
     const anno = new Date().getFullYear();
     // Calcola totale REALE dai vani + voci libere
@@ -3197,83 +2759,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     const iva = 10; // serramenti = 10% se ristrutturazione, 22% se nuova costruzione
     const imponibile = Math.round(importo / (1 + iva / 100) * 100) / 100;
     const ivaAmt = importo - imponibile;
-    
-    // PERSISTENZA DB (priorita): chiamata async, se OK usa numero+id dal DB
-    let dbId: string | null = null;
-    let dbNumero: string | null = null;
-    let dbStato = 'bozza';
-    try {
-      const aziendaId = (typeof window !== 'undefined' && (sessionStorage.getItem('mastro:aziendaId') || localStorage.getItem('mastro:aziendaId')))
-        || (c as any).azienda_id
-        || 'ccca51c1-656b-4e7c-a501-55753e20da29';
-      const tipoApi = tipo === 'acconto' ? 'acconto' : (tipo === 'saldo' ? 'saldo' : 'altro');
-      // [v-trafila-DIRECT] bypass route 404 - insert diretto Supabase
-      const _annoF = new Date().getFullYear();
-      // Calcolo numero progressivo dalla DB
-      const _maxQ = await supabase
-        .from('fin_fatture_emesse')
-        .select('numero')
-        .eq('azienda_id', aziendaId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      let _nextN = 1;
-      if (_maxQ.data && _maxQ.data.length > 0) {
-        for (const _f of _maxQ.data) {
-          const _m = String(_f.numero || '').match(/^(\d+)\/(\d+)$/);
-          if (_m && Number(_m[2]) === _annoF) {
-            const _n = Number(_m[1]);
-            if (_n >= _nextN) _nextN = _n + 1;
-          }
-        }
-      }
-      const _numDoc = _nextN + '/' + _annoF;
-      const _scadIso = scadenzaIso || (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; })();
-      const _ins = await supabase.from('fin_fatture_emesse').insert({
-        azienda_id: aziendaId,
-        numero: _numDoc,
-        data_emissione: new Date().toISOString().split('T')[0],
-        data_scadenza: _scadIso,
-        cliente: c.cliente || 'Cliente',
-        imponibile: imponibile,
-        iva_percent: iva,
-        iva: ivaAmt,
-        totale: importo,
-        stato: 'bozza',
-        pagato: 0,
-        residuo: importo,
-        commessa_id: c.id,
-        commessa_code: c.code,
-        tipo: tipoApi === 'altro' ? (tipo === 'sal' ? 'sal' : 'unica') : tipoApi,
-        note: noteCustom || (tipo === 'acconto' ? 'Acconto 50% su ordine' : tipo === 'sal' ? 'SAL stato avanzamento lavori' : tipo === 'saldo' ? 'Saldo a completamento lavori' : ''),
-      }).select().single();
-      if (_ins.error) {
-        console.warn('[creaFattura DIRECT] insert fail:', _ins.error.message);
-      } else if (_ins.data) {
-        dbId = _ins.data.id;
-        dbNumero = _ins.data.numero;
-        dbStato = _ins.data.stato || 'bozza';
-        console.log('[creaFattura DIRECT] insert OK', _numDoc, 'id:', dbId);
-      }
-    } catch (e) {
-      console.warn('[creaFattura DB] exception:', e);
-    }
-    
-    // [UUID-GUARD] se INSERT DB fallito -> blocca, niente fat_xxx fantasma
-    if (!dbId) {
-      alert("Errore: impossibile salvare la fattura sul DB. Riprova o contatta assistenza.");
-      return null;
-    }
-
     const fattura = {
-      id: dbId, // UUID DB reale, sempre
-      dbId, // tracker se persistita
-      numero: dbNumero ? Number(String(dbNumero).split('-').pop()) : num, // numero ui per legacy compat
-      numeroFull: dbNumero || `${tipo === 'acconto' ? 'ACC' : tipo === 'saldo' ? 'SAL' : 'FAT'}-${anno}-${String(num).padStart(4,'0')}`,
+      id: "fat_" + Date.now(),
+      numero: num,
       anno,
       data: new Date().toLocaleDateString("it-IT"),
       dataISO: new Date().toISOString().split("T")[0],
       tipo,
-      stato: dbStato,
       cmId: c.id,
       cmCode: c.code,
       cliente: c.cliente,
@@ -3297,8 +2789,9 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                           : ""),
     };
     setFattureDB(prev => [...prev, fattura]);
-    // NOTE: rimosso auto-advance fase qui. Il DB lo fa via trigger (al pagamento).
-    // Per l'avanzamento "creata fattura" possiamo avanzare confermata->acconto_pagato solo dopo pagamento (gate DB).
+    // AUTO-ADVANCE pipeline
+    if (tipo === "acconto" || tipo === "unica") setFaseTo(c.id, "ordini");
+    if (tipo === "saldo") setFaseTo(c.id, "chiusura");
     return fattura;
   };
 
@@ -3309,7 +2802,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     const msgs = {
       preventivo: `Gentile ${c.cliente}, le invio in allegato il preventivo per la fornitura serramenti. Rif: ${c.code}. Resto a disposizione per qualsiasi chiarimento.`,
       conferma: `Gentile ${c.cliente}, confermiamo la ricezione del suo ordine ${c.code}. Provvederemo a ordinare il materiale. La terremo aggiornata sullo stato di avanzamento.`,
-      stato: `Gentile ${c.cliente}, aggiornamento sul suo ordine ${c.code}: ${c.trackingStato === "ordinato" ? "il materiale Ã¨ stato ordinato" : c.trackingStato === "produzione" ? "il materiale Ã¨ in produzione" : c.trackingStato === "pronto" ? "il materiale Ã¨ pronto per la consegna" : c.trackingStato === "consegnato" ? "il materiale Ã¨ stato consegnato" : c.trackingStato === "montato" ? "il montaggio Ã¨ completato" : "in lavorazione"}.${c.dataPrevConsegna ? " Consegna prevista: " + c.dataPrevConsegna : ""}`,
+      stato: `Gentile ${c.cliente}, aggiornamento sul suo ordine ${c.code}: ${c.trackingStato === "ordinato" ? "il materiale è stato ordinato" : c.trackingStato === "produzione" ? "il materiale è in produzione" : c.trackingStato === "pronto" ? "il materiale è pronto per la consegna" : c.trackingStato === "consegnato" ? "il materiale è stato consegnato" : c.trackingStato === "montato" ? "il montaggio è completato" : "in lavorazione"}.${c.dataPrevConsegna ? " Consegna prevista: " + c.dataPrevConsegna : ""}`,
     };
     const msg = encodeURIComponent(msgs[tipo] || "");
     window.open(`https://wa.me/${tel.startsWith("39") ? tel : "39" + tel}?text=${msg}`, "_blank");
@@ -3330,19 +2823,19 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     const templates = {
       preventivo: {
         oggetto: `Preventivo ${c.code} - ${azNome}`,
-        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\nle trasmetto il preventivo per la fornitura e posa in opera dei serramenti per l'immobile in ${c.indirizzo || " - "}.\n\nRif. commessa: ${c.code}\nVani: ${vani.length}\n${c.sistema ? "Sistema: " + c.sistema + "\n" : ""}Importo: â‚¬${fmt(totale)} + IVA ${ivaP}% = â‚¬${fmt(totIva)}\n${c.praticaFiscale ? "Agevolazione: " + c.praticaFiscale + "\n" : ""}\nIl preventivo include fornitura, posa in opera, smaltimento vecchi infissi e rilascio documentazione (DoP, CE, manuale).\n\nResto a disposizione per qualsiasi chiarimento.${firma}`
+        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\nle trasmetto il preventivo per la fornitura e posa in opera dei serramenti per l'immobile in ${c.indirizzo || " - "}.\n\nRif. commessa: ${c.code}\nVani: ${vani.length}\n${c.sistema ? "Sistema: " + c.sistema + "\n" : ""}Importo: €${fmt(totale)} + IVA ${ivaP}% = €${fmt(totIva)}\n${c.praticaFiscale ? "Agevolazione: " + c.praticaFiscale + "\n" : ""}\nIl preventivo include fornitura, posa in opera, smaltimento vecchi infissi e rilascio documentazione (DoP, CE, manuale).\n\nResto a disposizione per qualsiasi chiarimento.${firma}`
       },
       conferma: {
         oggetto: `Conferma ordine ${c.code} - ${azNome}`,
-        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\ncon la presente le confermiamo la ricezione dell'ordine per la commessa ${c.code}.\n\nMateriale ordinato al fornitore\nTempi di consegna stimati: 4-6 settimane\nCantiere: ${c.indirizzo || " - "}\n\nLa terremo aggiornata sullo stato di avanzamento della produzione.\n\nPer qualsiasi necessitÃ  non esiti a contattarci.${firma}`
+        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\ncon la presente le confermiamo la ricezione dell'ordine per la commessa ${c.code}.\n\nMateriale ordinato al fornitore\nTempi di consegna stimati: 4-6 settimane\nCantiere: ${c.indirizzo || " - "}\n\nLa terremo aggiornata sullo stato di avanzamento della produzione.\n\nPer qualsiasi necessità non esiti a contattarci.${firma}`
       },
       montaggio: {
         oggetto: `Programmazione montaggio ${c.code} - ${azNome}`,
-        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\nsiamo lieti di comunicarle che il materiale per la commessa ${c.code} Ã¨ arrivato.\n\nMontaggio previsto: [INSERIRE DATA]\nIndirizzo: ${c.indirizzo || " - "}\nDurata stimata: ${vani.length <= 3 ? "1 giorno" : vani.length <= 6 ? "2 giorni" : "3+ giorni"}\nSquadra: [NOME SQUADRA]\n\nNote per il giorno del montaggio:\n- Assicurarsi che i locali siano accessibili\n- Spostare eventuali mobili vicino alle finestre\n- ÃƒË† possibile che si verifichi polvere durante lo smontaggio\n\nLa preghiamo di confermare la data rispondendo a questa mail.${firma}`
+        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\nsiamo lieti di comunicarle che il materiale per la commessa ${c.code} è arrivato.\n\nMontaggio previsto: [INSERIRE DATA]\nIndirizzo: ${c.indirizzo || " - "}\nDurata stimata: ${vani.length <= 3 ? "1 giorno" : vani.length <= 6 ? "2 giorni" : "3+ giorni"}\nSquadra: [NOME SQUADRA]\n\nNote per il giorno del montaggio:\n- Assicurarsi che i locali siano accessibili\n- Spostare eventuali mobili vicino alle finestre\n- Ãˆ possibile che si verifichi polvere durante lo smontaggio\n\nLa preghiamo di confermare la data rispondendo a questa mail.${firma}`
       },
       saldo: {
         oggetto: `Completamento lavori e saldo ${c.code} - ${azNome}`,
-        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\ncon la presente le comunichiamo che i lavori relativi alla commessa ${c.code} sono stati completati con successo.\n\nFornitura e posa completata\nVani installati: ${vani.length}\nCantiere: ${c.indirizzo || " - "}\n\nImporto totale: â‚¬${fmt(totIva)} (IVA ${ivaP}% inclusa)\n${(() => { const inc = fattureDB.filter(f => f.cmId === c.id && f.pagata).reduce((s,f)=>s+(f.importo||0),0); return inc > 0 ? `GiÃ  versato: â‚¬${fmt(inc)}\nSaldo dovuto: â‚¬${fmt(totIva - inc)}\n` : ""; })()}\nIn allegato:\n- Fattura di saldo\n- Dichiarazione di prestazione (DoP)\n- Certificazione CE\n- Manuale d'uso e manutenzione\n\nModalitÃ  di pagamento: Bonifico bancario\nIBAN: ${az.iban || "[IBAN]"}\n\nLa ringraziamo per la fiducia.${firma}`
+        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\ncon la presente le comunichiamo che i lavori relativi alla commessa ${c.code} sono stati completati con successo.\n\nFornitura e posa completata\nVani installati: ${vani.length}\nCantiere: ${c.indirizzo || " - "}\n\nImporto totale: €${fmt(totIva)} (IVA ${ivaP}% inclusa)\n${(() => { const inc = fattureDB.filter(f => f.cmId === c.id && f.pagata).reduce((s,f)=>s+(f.importo||0),0); return inc > 0 ? `Già versato: €${fmt(inc)}\nSaldo dovuto: €${fmt(totIva - inc)}\n` : ""; })()}\nIn allegato:\n- Fattura di saldo\n- Dichiarazione di prestazione (DoP)\n- Certificazione CE\n- Manuale d'uso e manutenzione\n\nModalità di pagamento: Bonifico bancario\nIBAN: ${az.iban || "[IBAN]"}\n\nLa ringraziamo per la fiducia.${firma}`
       },
       generico: {
         oggetto: `Commessa ${c.code} - ${azNome}`,
@@ -3387,7 +2880,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       const m = v.misure || {};
       const lmm = m.lCentro || 0, hmm = m.hCentro || 0;
       const prezzo = calcolaVanoPrezzo(v, c);
-      // Se Ã¨ un vano-tenda e ho il catalogo, arricchisco descrizione + note
+      // Se è un vano-tenda e ho il catalogo, arricchisco descrizione + note
       let desc = `${tipLabel} - ${v.stanza || ""} ${v.piano || ""}`.trim();
       let noteRiga = v.coloreEst ? `Colore: ${v.coloreEst}` : "";
       let misureStr = lmm > 0 && hmm > 0 ? `${lmm}x${hmm}` : "da definire";
@@ -3527,13 +3020,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         ? `Conferma ordine N.${ord.numero}/${ord.anno} - ${az.nome}`
         : `Ordine N.${ord.numero}/${ord.anno} - ${az.nome}`;
       const body = ord.conferma.firmata
-        ? `Gentile ${ord.fornitore.referente || ord.fornitore.nome},\n\nconfermiamo l'ordine N.${ord.numero}/${ord.anno} per la commessa ${ord.cmCode} (${ord.cliente}).\n\nTotale: â‚¬${ord.totaleIva?.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\nConsegna prevista: ${ord.consegna.prevista ? new Date(ord.consegna.prevista).toLocaleDateString("it-IT") : "da concordare"}\nPagamento: ${ord.pagamento.termini}\n\nIn allegato la conferma firmata.\n\nCordiali saluti,\n${az.nome}`
+        ? `Gentile ${ord.fornitore.referente || ord.fornitore.nome},\n\nconfermiamo l'ordine N.${ord.numero}/${ord.anno} per la commessa ${ord.cmCode} (${ord.cliente}).\n\nTotale: €${ord.totaleIva?.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\nConsegna prevista: ${ord.consegna.prevista ? new Date(ord.consegna.prevista).toLocaleDateString("it-IT") : "da concordare"}\nPagamento: ${ord.pagamento.termini}\n\nIn allegato la conferma firmata.\n\nCordiali saluti,\n${az.nome}`
         : `Gentile ${ord.fornitore.referente || ord.fornitore.nome},\n\ncon la presente vi trasmettiamo l'ordine N.${ord.numero}/${ord.anno} per la commessa ${ord.cmCode} (${ord.cliente}).\n\nRichiediamo conferma d'ordine con tempi di consegna e condizioni di pagamento.\n\nCordiali saluti,\n${az.nome}`;
       window.open(`mailto:${ord.fornitore.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
     } else {
       const tel = (ord.fornitore.tel || "").replace(/\D/g, "");
       const msg = ord.conferma.firmata
-        ? `Buongiorno, vi confermiamo ordine N.${ord.numero}/${ord.anno} - Commessa ${ord.cmCode} (${ord.cliente}). Totale â‚¬${ord.totaleIva?.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Consegna prevista: ${ord.consegna.prevista ? new Date(ord.consegna.prevista).toLocaleDateString("it-IT") : "da concordare"}. Vi inviamo conferma firmata via email. ${az.nome}`
+        ? `Buongiorno, vi confermiamo ordine N.${ord.numero}/${ord.anno} - Commessa ${ord.cmCode} (${ord.cliente}). Totale €${ord.totaleIva?.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Consegna prevista: ${ord.consegna.prevista ? new Date(ord.consegna.prevista).toLocaleDateString("it-IT") : "da concordare"}. Vi inviamo conferma firmata via email. ${az.nome}`
         : `Buongiorno, vi invio ordine N.${ord.numero}/${ord.anno} - Commessa ${ord.cmCode} (${ord.cliente}). Attendo conferma d'ordine con tempi e condizioni. Grazie. ${az.nome}`;
       window.open(`https://wa.me/${tel.startsWith("39") ? tel : "39" + tel}?text=${encodeURIComponent(msg)}`, "_blank");
     }
@@ -3576,7 +3069,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         const mod = tendeCat.find((cm: any) => cm.id === v.tendaModelloId);
         if (mod?.fornitore) fornitore = mod.fornitore;
       } else {
-        // Serramento: prima parola del sistema (es. "Aluplast Ideal 7000" â†’ "Aluplast")
+        // Serramento: prima parola del sistema (es. "Aluplast Ideal 7000" → "Aluplast")
         fornitore = (v.sistema || c.sistema || "").split(" ")[0] || "Generico";
       }
       if (!fornitore) fornitore = "Generico";
@@ -3648,13 +3141,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
         {/* Header navigazione settimana */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: T.bg, borderBottom: `1px solid ${T.bdr}` }}>
-          <div onClick={() => setCalMontaggiWeek(w => w - 1)} style={{ padding: "4px 10px", cursor: "pointer", fontSize: 16, fontWeight: 700, color: T.acc }}>Ã¢â€”â‚¬</div>
+          <div onClick={() => setCalMontaggiWeek(w => w - 1)} style={{ padding: "4px 10px", cursor: "pointer", fontSize: 16, fontWeight: 700, color: T.acc }}>â—€</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>
             {days[0].toLocaleDateString("it-IT", { day: "numeric", month: "short" })} - {days[6].toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div onClick={() => setCalMontaggiWeek(0)} style={{ padding: "3px 8px", borderRadius: 6, background: calMontaggiWeek === 0 ? T.acc : "transparent", color: calMontaggiWeek === 0 ? "#fff" : T.sub, fontSize: 9, fontWeight: 700, cursor: "pointer" }}>Oggi</div>
-            <div onClick={() => setCalMontaggiWeek(w => w + 1)} style={{ padding: "4px 10px", cursor: "pointer", fontSize: 16, fontWeight: 700, color: T.acc }}>â–¶</div>
+            <div onClick={() => setCalMontaggiWeek(w => w + 1)} style={{ padding: "4px 10px", cursor: "pointer", fontSize: 16, fontWeight: 700, color: T.acc }}>▶</div>
           </div>
         </div>
 
@@ -3706,7 +3199,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                     {occ && (
                       <div style={{ fontSize: 7, fontWeight: 700, color: sq.colore, lineHeight: 1.2 }}>
                         <div>{(occ as any).cliente?.slice(0, 8)}</div>
-                        <div style={{ color: T.sub }}>{(occ as any).vaniCount}v Â· {(occ as any).durata === "mezza" ? "Ã‚Â½" : (occ as any).durata === "2giorni" ? "2g" : (occ as any).durata === "3giorni" ? "3g" : "1g"}</div>
+                        <div style={{ color: T.sub }}>{(occ as any).vaniCount}v · {(occ as any).durata === "mezza" ? "Â½" : (occ as any).durata === "2giorni" ? "2g" : (occ as any).durata === "3giorni" ? "3g" : "1g"}</div>
                       </div>
                     )}
                     {canClick && !occ && (
@@ -3752,8 +3245,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                     <span style={{ fontWeight: 700, width: 30, color: "#E8A020" }}>{new Date(o.dataConsegnaPrev).toLocaleDateString("it-IT", { weekday: "short" })}</span>
                     <span style={{ fontWeight: 600 }}>{typeof o.fornitore === "object" ? (o.fornitore?.nome || "") : o.fornitore}</span>
                     <span style={{ color: T.sub }}>{"> "}{cm?.cliente || o.cmId}</span>
-                    {o.costo > 0 && <span style={{ color: T.sub }}>â‚¬{o.costo.toLocaleString("it-IT")}</span>}
-                    {isLate && <span style={{ color: T.red, fontWeight: 700 }}><I d={ICO.alertTriangle} />Ã¯Â¸Â RITARDO</span>}
+                    {o.costo > 0 && <span style={{ color: T.sub }}>€{o.costo.toLocaleString("it-IT")}</span>}
+                    {isLate && <span style={{ color: T.red, fontWeight: 700 }}><I d={ICO.alertTriangle} />ï¸ RITARDO</span>}
                   </div>
                 );
               })}
@@ -4004,7 +3497,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   };
 
   // Assegna documento universale a commessa/step
-  const assegnaDocUniversale = async (cmId: number, tipo: string) => {
+  const assegnaDocUniversale = (cmId: number, tipo: string) => {
     const res = inboxResult;
     if (!res) return;
     const allegato = { id: Date.now(), tipo, nome: res.file, data: new Date().toLocaleDateString("it-IT"), dataUrl: res.fileUrl || "" };
@@ -4017,26 +3510,10 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       } : cm));
       if (selectedCM?.id === cmId) setSelectedCM(prev => ({ ...prev, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0] }));
     } else if (tipo === "ricevuta") {
+      // Segna fattura come pagata
       const fatNonPagata = fattureDB.find(f => f.cmId === cmId && !f.pagata);
       if (fatNonPagata) {
-        try {
-          await fetch("/api/fatture/marca-pagata", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              fattura_id: fatNonPagata.id,
-              data_pagamento: new Date().toISOString().split("T")[0],
-              metodo_pagamento: "Bonifico",
-            }),
-          });
-        } catch (e) {
-          console.error("[inbox] marca-pagata API error", e);
-        }
-        setFattureDB(prev => prev.map(f => f.id === fatNonPagata.id ? {
-          ...f, pagata: true,
-          dataPagamento: new Date().toISOString().split("T")[0],
-          metodoPagamento: "Bonifico"
-        } : f));
+        setFattureDB(prev => prev.map(f => f.id === fatNonPagata.id ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: "Bonifico" } : f));
       }
       setCantieri(cs => cs.map(cm => cm.id === cmId ? {
         ...cm, allegati: [...(cm.allegati || []), allegato],
@@ -4223,7 +3700,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     selectedCliente, setSelectedCliente,
     showNewCliente, setShowNewCliente, newCliente, setNewCliente,
     aziendaInfo, sistemiDB, vetriDB, coloriDB, coprifiliDB, lamiereDB,
-    aziendaId: aziendaIdReal,
   };
 
 
@@ -4271,11 +3747,9 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       <div style={S.app}>
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && <PanelErrorBoundary name="Home">{renderHome()}</PanelErrorBoundary>}
-        {tab === "magazzino" && <PanelErrorBoundary name="Magazzino"><ModuloMagazzino aziendaId={String((typeof window !== "undefined" && (window as any).__AZIENDA_ID__) || "ccca51c1-656b-4e7c-a501-55753e20da29")} onClose={() => setTab("home")} /></PanelErrorBoundary>}
         {tab === "commesse" && <PanelErrorBoundary name="Commesse">{renderCommesse()}</PanelErrorBoundary>}
         {selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
         {tab === "clienti" && <PanelErrorBoundary name="Clienti">{renderClienti()}</PanelErrorBoundary>}
-        {tab === "materiali" && <PanelErrorBoundary name="Materiali"><MaterialiPanel onBack={() => setTab("home")} /></PanelErrorBoundary>}
         {tab === "messaggi" && !selectedMsg && <PanelErrorBoundary name="Messaggi">{renderMessaggi()}</PanelErrorBoundary>}
 
         {tab === "agenda" && <PanelErrorBoundary name="Agenda">{renderAgenda()}</PanelErrorBoundary>}
@@ -4453,7 +3927,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           return (
             <div style={{ minHeight: "100vh", paddingBottom: 100, background: T.bg }}>
               {/* HEADER */}
-              <div style={{ background: "#0F1B2D", padding: "16px 16px 12px", paddingTop: "calc(16px + env(safe-area-inset-top, 0px))" }}>
+              <div style={{ background: "#0D1F1F", padding: "16px 16px 12px", paddingTop: "calc(16px + env(safe-area-inset-top, 0px))" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                   <div>
                     <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>Centro Operativo</div>
@@ -4728,7 +4202,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
               {/* QUICK ACTIONS BAR */}
               <div style={{ position: "fixed", bottom: 70, left: 0, right: 0, zIndex: 50, padding: "0 12px" }}>
-                <div style={{ display: "flex", gap: 6, background: "#0F1B2D", borderRadius: 16, padding: "8px 10px", boxShadow: "0 -4px 20px rgba(0,0,0,.25)" }}>
+                <div style={{ display: "flex", gap: 6, background: "#0D1F1F", borderRadius: 16, padding: "8px 10px", boxShadow: "0 -4px 20px rgba(0,0,0,.15)" }}>
                   <div onClick={() => { setNewCompito(p => ({...p, data: selectedDayStr})); setShowNewCompito(true); }}
                     style={{ flex: 1, padding: "10px 4px", borderRadius: 12, background: T.acc || "#28A0A0", textAlign: "center", cursor: "pointer",
                       boxShadow: "0 3px 0 0 " + (T.accDk || "#156060") }}>
@@ -4859,7 +4333,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         {tab === "altro" && (() => {
           return (
             <div style={{ padding:"20px 16px 100px", minHeight:"100vh" }}>
-              <div style={{ fontSize:20, fontWeight:900, color:"#0F1B2D", marginBottom:20 }}>Altro</div>
+              <div style={{ fontSize:20, fontWeight:900, color:"#0D1F1F", marginBottom:20 }}>Altro</div>
               <div onClick={() => setTab("settings")}
                 style={{ background:"#fff", borderRadius:16, border:"1px solid #C8E4E4",
                   boxShadow:"0 4px 0 0 #A8CCCC", padding:"18px 16px",
@@ -4870,7 +4344,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <I d={ICO.settings} s={22} c="#4A7070" />
                 </div>
                 <div>
-                  <div style={{ fontSize:15, fontWeight:800, color:"#0F1B2D" }}>Impostazioni</div>
+                  <div style={{ fontSize:15, fontWeight:800, color:"#0D1F1F" }}>Impostazioni</div>
                   <div style={{ fontSize:12, color:"#4A7070", marginTop:2 }}>Azienda, team, piani</div>
                 </div>
                 <svg style={{ marginLeft:"auto" }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8BBCBC" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
@@ -4919,7 +4393,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 8 }}>
                   {ev.addr && <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(ev.addr))} style={{ padding: "12px 4px", borderRadius: 10, background: T.blueLt, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: T.blue }}><I d={ICO.mapPin} s={12} c={T.blue} /> Mappa</div>}
                   <div onClick={() => { const tel = cmObj?.telefono || contatti.find(c => c.nome === ev.persona)?.telefono; if (tel) window.location.href="tel:" + tel; }} style={{ padding: "12px 4px", borderRadius: 10, background: T.grnLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.grn }}><Ico d={ICO.phone} s={14} c={T.grn} /> Chiama</div>
-                  <div onClick={() => { const cliente = cmObj ? `${cmObj.cliente} ${cmObj.cognome||""}`.trim() : (ev.persona || "Cliente"); const dataFmt = new Date(ev.date).toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" }); setMailBody(`Gentile ${cliente},\n\nLe confermo l'appuntamento:\n\n${dataFmt}${ev.time ? " alle " + ev.time : ""}\n${ev.addr || ""}\n\n${ev.text}\n\nCordiali saluti,\nFabio Cozza`); setShowMailModal({ ev, cm: cmObj }); setSelectedEvent(null); }} style={{ padding: "12px 4px", borderRadius: 10, background: T.accLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.acc }}>{"Ã¯Â¸Â"} Mail</div>
+                  <div onClick={() => { const cliente = cmObj ? `${cmObj.cliente} ${cmObj.cognome||""}`.trim() : (ev.persona || "Cliente"); const dataFmt = new Date(ev.date).toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" }); setMailBody(`Gentile ${cliente},\n\nLe confermo l'appuntamento:\n\n${dataFmt}${ev.time ? " alle " + ev.time : ""}\n${ev.addr || ""}\n\n${ev.text}\n\nCordiali saluti,\nFabio Cozza`); setShowMailModal({ ev, cm: cmObj }); setSelectedEvent(null); }} style={{ padding: "12px 4px", borderRadius: 10, background: T.accLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.acc }}>{"ï¸"} Mail</div>
                   <div onClick={() => setShowShareEvent({ ev, cm: cmObj })} style={{ padding: "12px 4px", borderRadius: 10, background: "rgba(95,208,208,0.15)", border: "1px solid rgba(40,160,160,0.3)", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#1A7A7A" }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A7A7A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi
                   </div>
@@ -4984,7 +4458,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
               <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
               <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", zIndex: 10001, background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius: "22px 22px 0 0", padding: "20px 16px 28px", width: "100%", maxWidth: 500, boxShadow: "0 -10px 40px rgba(0,0,0,0.25)" }}>
                 <div style={{ width: 40, height: 4, background: "#C8E4E4", borderRadius: 2, margin: "0 auto 14px" }} />
-                <div style={{ fontSize: 16, fontWeight: 900, color: "#0F1B2D", marginBottom: 4 }}>Condividi evento</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: "#0D1F1F", marginBottom: 4 }}>Condividi evento</div>
                 <div style={{ fontSize: 11, color: "#5A7878", marginBottom: 16, fontWeight: 500 }}>{ev.text} {dataFmt}{oraFmt}</div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 10 }}>
@@ -5016,7 +4490,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div onClick={shareNative} style={{ padding: "12px 4px", borderRadius: 12, background: "linear-gradient(145deg, #0F1B2D, #1E3A5F)", color: "#93C5FD", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, boxShadow: "0 4px 10px rgba(15,27,45,0.25)" }}>
+                  <div onClick={shareNative} style={{ padding: "12px 4px", borderRadius: 12, background: "linear-gradient(145deg, #0D1F1F, #1A3535)", color: "#5FD0D0", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, boxShadow: "0 4px 10px rgba(13,31,31,0.25)" }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5FD0D0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:4}}><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                     Altro
                   </div>
@@ -5036,14 +4510,14 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         {selectedTask && (() => {
           const t = tasks.find(x => x.id === selectedTask.id) || selectedTask;
           const prioColor = t.priority === "alta" ? "#FF3B30" : t.priority === "media" ? "#FF9500" : "#8E8E93";
-          const prioLabel = t.priority === "alta" ? "Urgente" : t.priority === "media" ? "Normale" : "Ã¢â€”Â Bassa";
+          const prioLabel = t.priority === "alta" ? "Urgente" : t.priority === "media" ? "Normale" : "â— Bassa";
           return (
             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setSelectedTask(null)}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.3)" }} />
               <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", zIndex: 9999, background: T.bg, borderRadius: 16, padding: 20, width: "90%", maxWidth: 420, boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 9, fontWeight: 800, color: prioColor, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontFamily: FM }}>TASK Â· {prioLabel}</div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: prioColor, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontFamily: FM }}>TASK · {prioLabel}</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: T.text, textDecoration: t.done ? "line-through" : "none", opacity: t.done ? 0.6 : 1 }}>{t.text}</div>
                     {t.date && <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}><I d={ICO.calendar} /> {new Date(t.date + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}{t.time ? " alle " + t.time : ""}</div>}
                   </div>
@@ -5057,84 +4531,16 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   {t.done && <span style={S.badge(T.grnLt, T.grn)}> Completato</span>}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div onClick={() => { toggleTask(t.id); setSelectedTask({ ...t, done: !t.done }); }} style={{ padding: "14px", borderRadius: 12, background: t.done ? T.bg : T.grn, color: t.done ? T.sub : "#fff", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: `1px solid ${t.done ? T.bdr : T.grn}` }}>{t.done ? "Ã¢â€ Â© Riapri" : "Completa"}</div>
+                  <div onClick={() => { toggleTask(t.id); setSelectedTask({ ...t, done: !t.done }); }} style={{ padding: "14px", borderRadius: 12, background: t.done ? T.bg : T.grn, color: t.done ? T.sub : "#fff", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: `1px solid ${t.done ? T.bdr : T.grn}` }}>{t.done ? "â†© Riapri" : "Completa"}</div>
                   <div onClick={() => { setTasks(ts => ts.filter(x => x.id !== t.id)); setSelectedTask(null); }} style={{ padding: "14px", borderRadius: 12, background: "#FF3B3010", color: "#FF3B30", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: "1px solid #FF3B3020" }}><><Ico d={ICO.trash} s={14} c="#FF3B30" /></> Elimina</div>
                 </div>
               </div>
             </div>
           );
         })()}
-        {/* â•â•â• MASTRO AI Â· MODAL FULLSCREEN â•â•â• */}
-        {aiChat && (
-          <div
-            onClick={(e) => { if (e.target === e.currentTarget) setAiChat(false); }}
-            style={{
-              position: "fixed", inset: 0,
-              background: "rgba(0,0,0,0.55)",
-              zIndex: 9000,
-              display: "flex", alignItems: "flex-end", justifyContent: "center",
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: "#FFF",
-                width: "100%", maxWidth: 480,
-                height: "92vh",
-                borderRadius: "20px 20px 0 0",
-                overflow: "hidden",
-                display: "flex", flexDirection: "column" as any,
-                boxShadow: "0 -10px 40px rgba(0,0,0,0.3)",
-              }}
-            >
-              {/* Header navy */}
-              <div style={{
-                padding: "14px 18px",
-                background: "linear-gradient(160deg, #1E3A5F, #0F1B2D)",
-                color: "#FFF",
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                flexShrink: 0,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    background: "rgba(255,255,255,0.18)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFF" stroke="none">
-                      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, opacity: 0.85 }}>
-                      MASTRO AI {aiLiveMode ? "Â· LIVE" : ""}
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 800, marginTop: 1 }}>
-                      Come posso aiutarti?
-                    </div>
-                  </div>
-                </div>
-                <div
-                  onClick={() => setAiChat(false)}
-                  style={{
-                    width: 34, height: 34, borderRadius: 10,
-                    background: "rgba(255,255,255,0.15)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", fontSize: 18, color: "#FFF",
-                    fontWeight: 600,
-                  }}
-                >âœ•</div>
-              </div>
-
-              {/* Body: AssistentePanel */}
-              <div style={{ flex: 1, overflowY: "auto" as any, background: "#F8FAFC" }}>
-                <AssistentePanel />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* DraggableFAB disabled for GestureNav swipe system */}
 {/* MESSAGE DETAIL OVERLAY */}
-        {selectedMsg && (<div style={{ position: "fixed", inset: 0, background: T.bg, zIndex: 100 }}><div onClick={() => { setSelectedMsg(null); setReplyText(""); }} style={{ padding: 16, cursor: "pointer", fontWeight: 700, color: T.acc }}>â† Chiudi</div></div>)}
+        {selectedMsg && (<div style={{ position: "fixed", inset: 0, background: T.bg, zIndex: 100 }}><div onClick={() => { setSelectedMsg(null); setReplyText(""); }} style={{ padding: 16, cursor: "pointer", fontWeight: 700, color: T.acc }}>← Chiudi</div></div>)}
 
         {/* SETTINGS ADD MODAL */}
         {settingsModal && (
@@ -5169,7 +4575,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Marca</label><input style={S.input} placeholder="es. Aluplast" value={settingsForm.marca || ""} onChange={e => setSettingsForm(f => ({ ...f, marca: e.target.value }))} /></div>
                 <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Sistema</label><input style={S.input} placeholder="es. Ideal 4000" value={settingsForm.sistema || ""} onChange={e => setSettingsForm(f => ({ ...f, sistema: e.target.value }))} /></div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                  <div style={{ flex: 1 }}><label style={S.fieldLabel}>â‚¬/mq (fallback)</label><input style={S.input} type="number" placeholder="180" value={settingsForm.euroMq || ""} onChange={e => setSettingsForm(f => ({ ...f, euroMq: e.target.value }))} /></div>
+                  <div style={{ flex: 1 }}><label style={S.fieldLabel}>€/mq (fallback)</label><input style={S.input} type="number" placeholder="180" value={settingsForm.euroMq || ""} onChange={e => setSettingsForm(f => ({ ...f, euroMq: e.target.value }))} /></div>
                   <div style={{ flex: 1 }}><label style={S.fieldLabel}>Sovr. RAL %</label><input style={S.input} type="number" placeholder="12" value={settingsForm.sovRAL || ""} onChange={e => setSettingsForm(f => ({ ...f, sovRAL: e.target.value }))} /></div>
                   <div style={{ flex: 1 }}><label style={S.fieldLabel}>Sovr. Legno %</label><input style={S.input} type="number" placeholder="22" value={settingsForm.sovLegno || ""} onChange={e => setSettingsForm(f => ({ ...f, sovLegno: e.target.value }))} /></div>
                 </div>
@@ -5191,19 +4597,19 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <div style={{ flex: 2 }}><label style={S.fieldLabel}>Codice composizione</label><input style={S.input} placeholder="es. 4/16/4 BE" value={settingsForm.code || ""} onChange={e => setSettingsForm(f => ({ ...f, code: e.target.value }))} /></div>
                   <div style={{ flex: 1 }}><label style={S.fieldLabel}>Ug</label><input style={S.input} type="number" step="0.1" placeholder="1.1" value={settingsForm.ug || ""} onChange={e => setSettingsForm(f => ({ ...f, ug: e.target.value }))} /></div>
                 </div>
-                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Prezzo â‚¬/mq</label><input style={S.input} type="number" step="0.5" placeholder="es. 45" value={settingsForm.prezzoMq || ""} onChange={e => setSettingsForm(f => ({ ...f, prezzoMq: parseFloat(e.target.value)||0 }))} /></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Prezzo €/mq</label><input style={S.input} type="number" step="0.5" placeholder="es. 45" value={settingsForm.prezzoMq || ""} onChange={e => setSettingsForm(f => ({ ...f, prezzoMq: parseFloat(e.target.value)||0 }))} /></div>
               </>)}
 
               {(settingsModal === "coprifilo" || settingsModal === "lamiera") && (<>
                 <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Codice</label><input style={S.input} placeholder={settingsModal === "coprifilo" ? "es. CP50" : "es. LD250"} value={settingsForm.cod || ""} onChange={e => setSettingsForm(f => ({ ...f, cod: e.target.value }))} /></div>
                 <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Descrizione</label><input style={S.input} placeholder={settingsModal === "coprifilo" ? "es. Coprifilo piatto 50mm" : "es. Lamiera davanzale 250mm"} value={settingsForm.nome || ""} onChange={e => setSettingsForm(f => ({ ...f, nome: e.target.value }))} /></div>
-                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Prezzo â‚¬/ml</label><input style={S.input} type="number" step="0.5" placeholder="es. 5.50" value={settingsForm.prezzoMl || ""} onChange={e => setSettingsForm(f => ({ ...f, prezzoMl: parseFloat(e.target.value)||0 }))} /></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Prezzo €/ml</label><input style={S.input} type="number" step="0.5" placeholder="es. 5.50" value={settingsForm.prezzoMl || ""} onChange={e => setSettingsForm(f => ({ ...f, prezzoMl: parseFloat(e.target.value)||0 }))} /></div>
               </>)}
 
               {settingsModal === "tipologia" && (<>
                 <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                   <div style={{ flex: 1 }}><label style={S.fieldLabel}>Codice</label><input style={S.input} placeholder="es. F4A" value={settingsForm.code || ""} onChange={e => setSettingsForm(f => ({ ...f, code: e.target.value }))} /></div>
-                  <div style={{ width: 60 }}><label style={S.fieldLabel}>Icona</label><input style={S.input} placeholder="Ã¢Å Å¾" value={settingsForm.icon || ""} onChange={e => setSettingsForm(f => ({ ...f, icon: e.target.value }))} /></div>
+                  <div style={{ width: 60 }}><label style={S.fieldLabel}>Icona</label><input style={S.input} placeholder="âŠž" value={settingsForm.icon || ""} onChange={e => setSettingsForm(f => ({ ...f, icon: e.target.value }))} /></div>
                 </div>
                 <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Descrizione</label><input style={S.input} placeholder="es. Finestra 4 ante" value={settingsForm.label || ""} onChange={e => setSettingsForm(f => ({ ...f, label: e.target.value }))} /></div>
                 <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Categoria</label>
@@ -5219,7 +4625,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                       { id: "arco", label: "Ad arco", svg: null },
                       { id: "trapezio", label: "Trapezoidale", svg: null },
                       { id: "triangolo", label: "Triangolare", svg: null },
-                      { id: "oblo", label: "OblÃ²", svg: null },
+                      { id: "oblo", label: "Oblò", svg: null },
                       { id: "sagomato", label: "Sagomato", svg: null },
                     ].map(f => (
                       <div key={f.id} onClick={() => setSettingsForm(fm => ({ ...fm, forma: f.id }))} style={{ padding: "6px 8px", borderRadius: 10, border: `2px solid ${settingsForm.forma === f.id ? T.acc : T.bdr}`, background: settingsForm.forma === f.id ? T.accLt : T.card, cursor: "pointer", textAlign: "center", minWidth: 56 }}>
@@ -5247,13 +4653,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             { id: "installazione", l: "Installazione", ico: "hammer", c: "#1A9E73" },
             { id: "cliente", l: "Cliente", ico: "user", c: "#0D7C6B" },
             { id: "fornitore", l: "Fornitore", ico: "factory", c: "#FF6B00" },
-            { id: "qualita", l: "QualitÃ ", ico: "alert", c: "#FF3B30" },
+            { id: "qualita", l: "Qualità", ico: "alert", c: "#FF3B30" },
             { id: "altro", l: "Altro", ico: "clipboard", c: "#8E8E93" },
           ];
           const PRIO = [
             { id: "alta", l: "Alta", c: "#FF3B30" },
             { id: "media", l: "Media", c: "#FF9500" },
-            { id: "bassa", l: "Ã¢â€”Â Bassa", c: "#8E8E93" },
+            { id: "bassa", l: "â— Bassa", c: "#8E8E93" },
           ];
           return (
             <div style={S.modal} onClick={e => e.target === e.currentTarget && setShowProblemaModal(false)}>
@@ -5262,7 +4668,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <div style={{ fontSize: 16, fontWeight: 800, color: "#FF3B30" }}><I d={ICO.alertTriangle} /> Segnala problema</div>
                   <div onClick={() => setShowProblemaModal(false)} style={{ cursor: "pointer", fontSize: 20, color: T.sub }}></div>
                 </div>
-                <div style={{ fontSize: 11, color: T.sub, marginBottom: 14, padding: "8px 12px", background: T.accLt, borderRadius: 8 }}><Ico d={ICO.folder} s={12} c={T.acc} /> {c.code} Â· {c.cliente} Â· Fase: <b>{c.fase}</b></div>
+                <div style={{ fontSize: 11, color: T.sub, marginBottom: 14, padding: "8px 12px", background: T.accLt, borderRadius: 8 }}><Ico d={ICO.folder} s={12} c={T.acc} /> {c.code} · {c.cliente} · Fase: <b>{c.fase}</b></div>
 
                 <label style={S.fieldLabel}>Titolo *</label>
                 <input style={S.input} placeholder="Es: Profilo arrivato danneggiato" value={problemaForm.titolo} onChange={e => setProblemaForm(f => ({ ...f, titolo: e.target.value }))} />
@@ -5276,7 +4682,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   ))}
                 </div>
 
-                <label style={S.fieldLabel}>PrioritÃ </label>
+                <label style={S.fieldLabel}>Priorità</label>
                 <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
                   {PRIO.map(p => (
                     <div key={p.id} onClick={() => setProblemaForm(f => ({ ...f, priorita: p.id }))} style={{ flex: 1, padding: "8px", borderRadius: 8, border: `1px solid ${problemaForm.priorita === p.id ? p.c : T.bdr}`, background: problemaForm.priorita === p.id ? p.c + "18" : "transparent", textAlign: "center", fontSize: 11, fontWeight: 700, color: problemaForm.priorita === p.id ? p.c : T.sub, cursor: "pointer" }}>
@@ -5329,7 +4735,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         {showProblemiView && (() => {
           const cmFilter = selectedCM?.id;
           const list = cmFilter ? problemi.filter(p => p.commessaId === cmFilter) : problemi;
-          const TIPI_PROB_MAP = { materiale: { l: "Materiale", ico: "package", c: "#FF9500" }, misure: { l: "Misure", ico: "ruler", c: "#8B5CF6" }, installazione: { l: "Install.", ico: "hammer", c: "#1A9E73" }, cliente: { l: "Cliente", ico: "user", c: "#0D7C6B" }, fornitore: { l: "Fornitore", ico: "factory", c: "#FF6B00" }, qualita: { l: "QualitÃ ", ico: "alert", c: "#FF3B30" }, altro: { l: "Altro", ico: "clipboard", c: "#8E8E93" } };
+          const TIPI_PROB_MAP = { materiale: { l: "Materiale", ico: "package", c: "#FF9500" }, misure: { l: "Misure", ico: "ruler", c: "#8B5CF6" }, installazione: { l: "Install.", ico: "hammer", c: "#1A9E73" }, cliente: { l: "Cliente", ico: "user", c: "#0D7C6B" }, fornitore: { l: "Fornitore", ico: "factory", c: "#FF6B00" }, qualita: { l: "Qualità", ico: "alert", c: "#FF3B30" }, altro: { l: "Altro", ico: "clipboard", c: "#8E8E93" } };
           const STATO_MAP = { aperto: { l: "Aperto", c: "#FF3B30" }, in_corso: { l: "In corso", c: "#FF9500" }, risolto: { l: "Risolto", c: "#1A9E73" } };
           const aperti = list.filter(p => p.stato === "aperto").length;
           const inCorso = list.filter(p => p.stato === "in_corso").length;
@@ -5338,7 +4744,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             <div style={S.modal} onClick={e => e.target === e.currentTarget && setShowProblemiView(false)}>
               <div style={{ ...S.modalInner, maxWidth: 500, maxHeight: "90vh", overflow: "auto" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}><I d={ICO.alertTriangle} /> Problemi {cmFilter ? `Â· ${selectedCM.code}` : " -  Tutti"}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}><I d={ICO.alertTriangle} /> Problemi {cmFilter ? `· ${selectedCM.code}` : " -  Tutti"}</div>
                   <div onClick={() => setShowProblemiView(false)} style={{ cursor: "pointer", fontSize: 20, color: T.sub }}></div>
                 </div>
 
@@ -5367,13 +4773,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 ) : list.map(p => {
                   const tp = TIPI_PROB_MAP[p.tipo] || TIPI_PROB_MAP.altro;
                   const st = STATO_MAP[p.stato] || STATO_MAP.aperto;
-                  const prio = p.priorita === "alta" ? { l: "", c: "#FF3B30" } : p.priorita === "media" ? { l: "", c: "#FF9500" } : { l: "Ã¢â€”Â", c: "#8E8E93" };
+                  const prio = p.priorita === "alta" ? { l: "", c: "#FF3B30" } : p.priorita === "media" ? { l: "", c: "#FF9500" } : { l: "â—", c: "#8E8E93" };
                   return (
                     <div key={p.id} style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 8, borderLeft: `3px solid ${st.c}` }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{prio.l} {p.titolo}</div>
-                          <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{p.commessaCode} Â· {p.cliente} Â· {p.fase}</div>
+                          <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{p.commessaCode} · {p.cliente} · {p.fase}</div>
                         </div>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: st.c + "18", color: st.c }}>{st.l}</span>
                       </div>
@@ -5397,7 +4803,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                         )}
                         {p.stato === "risolto" && (
                           <button onClick={() => setProblemi(prev => prev.map(x => x.id === p.id ? { ...x, stato: "aperto", dataRisoluzione: null } : x))} style={{ flex: 1, padding: "8px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.bg, color: T.sub, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>
-                            Ã¢â€ Â© Riapri
+                            â†© Riapri
                           </button>
                         )}
                         <button onClick={() => { if (confirm("Eliminare questo problema?")) setProblemi(prev => prev.filter(x => x.id !== p.id)); }} style={{ padding: "8px 12px", borderRadius: 8, border: `1px solid #FF3B3030`, background: "#FF3B3008", color: "#FF3B30", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>
@@ -5429,7 +4835,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         )}
 
         {/* === TUTORIAL INTERATTIVO === */}
-            {/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â ONBOARDING 5 STEP Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */}
+            {/* â•â•â• ONBOARDING 5 STEP â•â•â• */}
       {tutoStep >= 1 && tutoStep <= 4 && (() => {
         const ACC = "#28A0A0";
         const DARK = "#1A1A1C";
@@ -5535,7 +4941,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
               {tutoStep === 3 && (
                 <div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: DARK, marginBottom: 6 }}>In che settore lavori?</div>
-                  <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>Seleziona uno o piÃ¹ settori. Puoi cambiare in qualsiasi momento.</div>
+                  <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>Seleziona uno o più settori. Puoi cambiare in qualsiasi momento.</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
                     {SETTORI_OPT.map(s => {
                       const sel = obSettori.includes(s.id);
@@ -5557,14 +4963,14 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 </div>
               )}
 
-              {/* STEP 4 PREZZI â€” RIMOSSO */}
-{/* STEP 4 â€” TUTTO PRONTO (renamed) - TUTTO PRONTO */}
+              {/* STEP 4 PREZZI — RIMOSSO */}
+{/* STEP 4 — TUTTO PRONTO (renamed) - TUTTO PRONTO */}
               {tutoStep === 4 && (
                 <div style={{ textAlign: "center" }}>
                   <div style={{ width: 64, height: 64, borderRadius: 16, background: "#28A0A0", margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
                   <div style={{ fontSize: 26, fontWeight: 900, color: DARK, marginBottom: 10 }}>Tutto pronto!</div>
                   <div style={{ fontSize: 14, color: "#555", lineHeight: 1.7, marginBottom: 32 }}>
-                    Il tuo fliwoX Ã¨ configurato.<br />
+                    Il tuo fliwoX è configurato.<br />
                     Ecco come iniziare subito:
                   </div>
                   <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 28, textAlign: "left" }}>
@@ -5572,7 +4978,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                       { n: "1", t: "Crea la prima commessa", d: "Vai in Commesse, tocca + e inserisci cliente" },
                       { n: "2", t: "Aggiungi i vani", d: "Dentro la commessa, aggiungi finestre e porte" },
                       { n: "3", t: "Misura dal cantiere", d: "Apri la commessa sul telefono e misura vano per vano" },
-                      { n: "4", t: "Invia il preventivo", d: "DÃ¬ Mastro, manda il preventivo a [cliente] e il gioco Ã¨ fatto" },
+                      { n: "4", t: "Invia il preventivo", d: "Dì Mastro, manda il preventivo a [cliente] e il gioco è fatto" },
                     ].map((s, i) => (
                       <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
                         <div style={{ width: 26, height: 26, borderRadius: 8, background: ACC, color: "#fff", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{s.n}</div>
@@ -5684,7 +5090,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                     { id: "whatsapp", l: "WhatsApp", c: "#25d366" },
                     { id: "email", l: "Email", c: T.blue },
                     { id: "sms", l: "SMS", c: T.orange },
-                    { id: "telegram", l: "Ã¯Â¸Â Telegram", c: "#0088cc" },
+                    { id: "telegram", l: "ï¸ Telegram", c: "#0088cc" },
                   ].map(ch => (
                     <div key={ch.id} onClick={() => setComposeMsg(c => ({ ...c, canale: ch.id }))} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: `1.5px solid ${composeMsg.canale === ch.id ? ch.c : T.bdr}`, background: composeMsg.canale === ch.id ? ch.c + "15" : T.card, textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: composeMsg.canale === ch.id ? ch.c : T.sub }}>
                       {ch.l}
@@ -5700,7 +5106,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                 <label style={S.fieldLabel}>Collega a commessa (opzionale)</label>
                 <select style={S.select} value={composeMsg.cm} onChange={e => setComposeMsg(c => ({ ...c, cm: e.target.value }))}>
                   <option value=""> -  Nessuna  - </option>
-                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} Â· {c.cliente}</option>)}
+                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} · {c.cliente}</option>)}
                 </select>
               </div>
               <div style={{ marginBottom: 14 }}>
@@ -5918,7 +5324,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <div style={{ textAlign: "center", marginBottom: 16 }}>
                     <div style={{ width: 60, height: 60, borderRadius: 16, background: "linear-gradient(135deg, #af52de, #0D7C6B)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 28 }}><I d={ICO.cpu} /></div>
                     <div style={{ fontSize: 17, fontWeight: 800, color: "#af52de" }}>AI Misure da Foto</div>
-                    <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>Inquadra il vano "{selectedVano?.nome}" e l'AI analizzerÃ  l'immagine</div>
+                    <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>Inquadra il vano "{selectedVano?.nome}" e l'AI analizzerà l'immagine</div>
                   </div>
                   <div style={{ position: "relative", height: 200, borderRadius: 12, overflow: "hidden", marginBottom: 12, background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <div style={{ position: "absolute", inset: 20, border: "2px solid #af52de80", borderRadius: 8 }} />
@@ -5937,7 +5343,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <div style={{ width: 60, height: 60, borderRadius: "50%", border: "4px solid #af52de20", borderTopColor: "#af52de", margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
                   <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
                   <div style={{ fontSize: 15, fontWeight: 700, color: "#af52de" }}>Analisi AI in corso...</div>
-                  <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Rilevamento bordi Â· Edge detection Â· Stima dimensioni</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Rilevamento bordi · Edge detection · Stima dimensioni</div>
                   <div style={{ fontSize: 10, color: T.sub, marginTop: 8 }}>Analizzando "{selectedVano?.nome}"...</div>
                 </div>
               )}
@@ -5957,7 +5363,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                     ))}
                   </div>
                   <div style={{ padding: "8px 12px", borderRadius: 8, background: "#fff3e0", border: "1px solid #ffe0b2", marginBottom: 12, fontSize: 10, color: "#e65100" }}>
-                    <I d={ICO.alertTriangle} />Ã¯Â¸Â Le misure AI sono approssimative. Usa sempre il metro laser per le misure definitive.
+                    <I d={ICO.alertTriangle} />ï¸ Le misure AI sono approssimative. Usa sempre il metro laser per le misure definitive.
                   </div>
                   <button onClick={() => {
                     if (selectedVano) {
@@ -6001,7 +5407,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         </div>
       )}
       {/* === <I d={ICO.download} /> INBOX DOCUMENTI - Modal globale === */}
-      {showContabilita && <PanelErrorBoundary name="ContabilitÃ ">{renderContabilita()}</PanelErrorBoundary>}
+      {showContabilita && <PanelErrorBoundary name="Contabilità">{renderContabilita()}</PanelErrorBoundary>}
         {showInboxDoc && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 10001, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
           <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
@@ -6068,7 +5474,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <div style={{ ...S.card, padding: 12, marginBottom: 12, background: "#af52de08", border: `1px solid #af52de20` }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#af52de", textTransform: "uppercase", marginBottom: 8 }}><I d={ICO.cpu} /> Dati Estratti</div>
                     {inboxResult.dati.fornitoreNome && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0" }}><span style={{ color: T.sub }}>Fornitore</span><b>{String(inboxResult.dati.fornitoreNome || "")}</b></div>}
-                    {inboxResult.dati.totale > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0" }}><span style={{ color: T.sub }}>Totale</span><b style={{ color: "#af52de" }}>â‚¬{inboxResult.dati.totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>}
+                    {inboxResult.dati.totale > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0" }}><span style={{ color: T.sub }}>Totale</span><b style={{ color: "#af52de" }}>€{inboxResult.dati.totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>}
                     {inboxResult.dati.settimane > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0" }}><span style={{ color: T.sub }}>Produzione</span><b>{inboxResult.dati.settimane} settimane</b></div>}
                     {inboxResult.dati.dataConsegna && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0" }}><span style={{ color: T.sub }}>Consegna</span><b>{new Date(inboxResult.dati.dataConsegna).toLocaleDateString("it-IT")}</b></div>}
                   </div>
@@ -6079,7 +5485,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <div style={{ ...S.card, padding: 12, marginBottom: 12, background: "#1A9E7308", border: `2px solid #1A9E73` }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#1A9E73", marginBottom: 6 }}>ORDINE TROVATO</div>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>{inboxResult.matchedCommessa?.code} - {inboxResult.matchedCommessa?.cliente}</div>
-                    <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{inboxResult.matchedOrdine.fornitore?.nome || " - "} Â· â‚¬{(inboxResult.matchedOrdine.totaleIva || 0).toLocaleString("it-IT")}</div>
+                    <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{inboxResult.matchedOrdine.fornitore?.nome || " - "} · €{(inboxResult.matchedOrdine.totaleIva || 0).toLocaleString("it-IT")}</div>
                     <button onClick={() => confermaInboxDoc(inboxResult.matchedOrdine.id)} style={{ width: "100%", marginTop: 10, padding: 14, borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                        ASSEGNA A QUESTO ORDINE
                     </button>
@@ -6093,7 +5499,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                       return (
                         <div key={o.id} onClick={() => confermaInboxDoc(o.id)} style={{ ...S.card, padding: "10px 12px", marginBottom: 6, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${T.bdr}` }}>
                           <div><div style={{ fontSize: 12, fontWeight: 700 }}>{cm?.code} - {cm?.cliente}</div><div style={{ fontSize: 10, color: T.sub }}>{o.fornitore?.nome || " - "}</div></div>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: T.acc }}>â‚¬{(o.totaleIva || 0).toLocaleString("it-IT")}</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: T.acc }}>€{(o.totaleIva || 0).toLocaleString("it-IT")}</div>
                         </div>
                       );
                     })}
@@ -6121,7 +5527,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                       <div key={cm.id} onClick={() => assegnaDocUniversale(cm.id, inboxResult.docTipo)} style={{ ...S.card, padding: "10px 12px", marginBottom: 6, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${T.bdr}` }}>
                         <div>
                           <div style={{ fontSize: 12, fontWeight: 700 }}>{cm.code} - {cm.cliente} {cm.cognome || ""}</div>
-                          <div style={{ fontSize: 10, color: T.sub }}>{cm.fase} Â· {cm.indirizzo || " - "}</div>
+                          <div style={{ fontSize: 10, color: T.sub }}>{cm.fase} · {cm.indirizzo || " - "}</div>
                         </div>
                         <span style={{ fontSize: 16 }}>{"> "}</span>
                       </div>
@@ -6134,7 +5540,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6 }}>Classificazione sbagliata? Scegli il tipo:</div>
                   <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" as any }}>
                     {[
-                      { id: "firma", label: "Ã¯Â¸Â Firma", col: "#1A9E73" },
+                      { id: "firma", label: "ï¸ Firma", col: "#1A9E73" },
                       { id: "conferma", label: "Conferma", col: "#af52de" },
                       { id: "ricevuta", label: "Ricevuta", col: "#E8A020" },
                       { id: "foto", label: "Foto", col: "#8B5CF6" },
@@ -6190,10 +5596,10 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                     <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
                       {doc.dataUrl ? (
                         <a href={doc.dataUrl} download={doc.nome} style={{ flex: 1, padding: 8, borderRadius: 8, border: `1px solid ${col}`, background: col + "08", color: col, fontSize: 11, fontWeight: 700, cursor: "pointer", textAlign: "center", textDecoration: "none" }}>
-                          Ã¢Â¬â€¡Ã¯Â¸Â Scarica
+                          â¬‡ï¸ Scarica
                         </a>
                       ) : (
-                        <button onClick={() => { alert(`In produzione questo aprirÃ  il file "${doc.nome}" da Supabase Storage.\n\nNella demo i documenti sono simulati.`); }} style={{ flex: 1, padding: 8, borderRadius: 8, border: `1px solid ${col}`, background: col + "08", color: col, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                        <button onClick={() => { alert(`In produzione questo aprirà il file "${doc.nome}" da Supabase Storage.\n\nNella demo i documenti sono simulati.`); }} style={{ flex: 1, padding: 8, borderRadius: 8, border: `1px solid ${col}`, background: col + "08", color: col, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                           <I d={ICO.eye} /> Visualizza
                         </button>
                       )}
@@ -6215,7 +5621,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <div onClick={() => setShowCronologia(!showCronologia)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "8px 0" }}>
                     <span style={{ fontSize: 11 }}><I d={ICO.scroll} /></span>
                     <span style={{ fontSize: 11, fontWeight: 700, color: T.text }}>Cronologia ({(c.log || []).length})</span>
-                    <span style={{ marginLeft: "auto", fontSize: 10, color: T.sub }}>{showCronologia ? "Ã¢â€“Â²" : "â–¼"}</span>
+                    <span style={{ marginLeft: "auto", fontSize: 10, color: T.sub }}>{showCronologia ? "â–²" : "▼"}</span>
                   </div>
                   {showCronologia && (c.log || []).slice().reverse().map((l, i) => (
                     <div key={i} style={{ display: "flex", gap: 8, padding: "5px 0", borderBottom: `1px solid ${T.bg}`, fontSize: 11 }}>
@@ -6243,7 +5649,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
-      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : tab === "team" ? "team" : tab === "magazzino" ? "magazzino" : "home"} onNavigate={(t) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }} />
+      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : tab === "team" ? "team" : "home"} onNavigate={(t) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }} />
     </>
     </MastroContext.Provider>
   );
@@ -6260,4 +5666,3 @@ export default function MastroMisure(props: any) {
     </MastroErrorBoundary>
   );
 }
-
