@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useMastro } from "./MastroContext";
 import { useState, useEffect, useRef } from "react";
 export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCliente, onCommessa, onMessaggio, onLastCM, recentActions, hidden }: any) {
@@ -137,14 +137,20 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     };
   }, [setFabOpen]);
   const isRight = side === "right";
+  const navTo = (tab: string) => {
+    try { window.dispatchEvent(new CustomEvent("mastro:nav", { detail: { tab } })); } catch {}
+    setFabOpen(false);
+  };
   const baseItems = [
-    { l: "MASTRO AI", c: "#1a2b47", t: "AI",  a: () => { setAiOpen(true); setFabOpen(false); } },
-    { l: "Appuntamento", c: "#1E3A5F", t: "CAL", a: onEvento },
-    { l: "Nuovo cliente", c: "#2D5A87", t: "USR", a: onCliente },
+    { l: "MASTRO AI",      c: "#1a2b47", t: "AI",  a: () => { setAiOpen(true); setFabOpen(false); } },
+    { l: "Appuntamento",   c: "#1E3A5F", t: "CAL", a: onEvento },
+    { l: "Montaggi",       c: "#0F766E", t: "MTG", a: () => navTo("montaggi_cal") },
+    { l: "Clienti",        c: "#1E4F8A", t: "CLI", a: () => navTo("clienti") },
+    { l: "Nuovo cliente",  c: "#2D5A87", t: "USR", a: onCliente },
     { l: "Nuova commessa", c: "#92400E", t: "FLD", a: onCommessa },
-    { l: "Messaggio", c: "#475A75", t: "MSG", a: onMessaggio },
-    { l: "Task", c: "#28A0A0", t: "CHK", a: () => { try { window.dispatchEvent(new CustomEvent("mastro:open-task")); } catch {} setFabOpen(false); } },
-    { l: "Indietro", c: "#5C6B7A", t: "ARR", a: () => { try { window.history.back(); } catch {} setFabOpen(false); } },
+    { l: "Messaggio",      c: "#475A75", t: "MSG", a: onMessaggio },
+    { l: "Task",           c: "#28A0A0", t: "CHK", a: () => { try { window.dispatchEvent(new CustomEvent("mastro:open-task")); } catch {} setFabOpen(false); } },
+    { l: "Indietro",       c: "#5C6B7A", t: "ARR", a: () => { try { window.history.back(); } catch {} setFabOpen(false); } },
   ];
   const recent = (recentActions || []).slice(0, 3).map(ra => ({
     l: ra.label, c: "#1a2b47", t: "BCK",
@@ -169,7 +175,9 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   const SND_Icon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
   const CHK = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
   const ARR = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
-  const icons = { AI: AI_Icon, CAL, USR, FLD, MSG, BCK, CHK, ARR };
+  const MTG = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>;
+  const CLI = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><circle cx="9" cy="7" r="3"/><path d="M3 21c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="3"/><path d="M21 21c0-3.3-1.8-5.4-4-6"/></svg>;
+  const icons = { AI: AI_Icon, CAL, USR, FLD, MSG, BCK, CHK, ARR, MTG, CLI };
 
   // ÔöÇÔöÇ AI functions ÔöÇÔöÇ
   const speak = (text) => {
