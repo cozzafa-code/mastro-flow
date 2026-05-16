@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect, useRef } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
    GestureNav v2 — sistema navigazione swipe MASTRO (fix back-swipe)
    ═══════════════════════════════════════════════════════════════ */
 
-const TEAL = "#1E3A5F";
-const TEAL_DARK = "#0F1B2D";
+const TEAL = "#28A0A0";
+const TEAL_DARK = "#1A7A7A";
 const DARK = "#0D1F1F";
 const WHITE = "#FFFFFF";
 
@@ -35,7 +35,6 @@ interface Props {
 const IC = {
   home: <><path d="M3 9l11-6 11 6v13l-11 6L3 22V9z"/><path d="M14 3v19M3 9l11 6 11-6"/></>,
   agenda: <><rect x="3" y="4" width="22" height="20" rx="2"/><line x1="3" y1="10" x2="25" y2="10"/><line x1="9" y1="4" x2="9" y2="10"/><line x1="19" y1="4" x2="19" y2="10"/></>,
-  ai: <><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></>,
   commesse: <><rect x="5" y="3" width="18" height="22" rx="2"/><line x1="9" y1="13" x2="19" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></>,
   talk: <><path d="M4 6h16a2 2 0 012 2v9a2 2 0 01-2 2H4L2 22V8a2 2 0 012-2z"/><line x1="8" y1="12" x2="16" y2="12"/></>,
   altro: <><circle cx="7" cy="14" r="2"/><circle cx="14" cy="14" r="2"/><circle cx="21" cy="14" r="2"/></>,
@@ -43,8 +42,6 @@ const IC = {
   calendar: <><rect x="4" y="5" width="20" height="18" rx="2"/><line x1="4" y1="10" x2="24" y2="10"/></>,
   euro: <><path d="M20 7.5A8 8 0 108 22"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="16" x2="12" y2="16"/></>,
   note: <><path d="M6 3h12a2 2 0 012 2v18l-8-4-8 4V5a2 2 0 012-2z"/></>,
-  montaggi: <><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></>,
-  clienti: <><circle cx="9" cy="7" r="3"/><path d="M3 21c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="3"/><path d="M21 21c0-3.3-1.8-5.4-4-6"/></>,
 };
 
 const iconSvg = (path: React.ReactNode, size = 22, color = WHITE) => (
@@ -157,22 +154,16 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
 
   const unreadMsg = (msgs || []).filter((m: any) => !m.letto).length;
   const voices: Voice[] = [
-    { id: "ai", label: "MASTRO AI", icon: iconSvg(IC.ai) },
     { id: "home", label: "Home", icon: iconSvg(IC.home) },
     { id: "commesse", label: "Commesse", icon: iconSvg(IC.commesse) },
     { id: "agenda", label: "Agenda", icon: iconSvg(IC.agenda) },
-    { id: "montaggi_cal", label: "Montaggi", icon: iconSvg(IC.montaggi) },
-    { id: "clienti", label: "Clienti", icon: iconSvg(IC.clienti) },
     { id: "messaggi", label: unreadMsg > 0 ? `Chat · ${unreadMsg}` : "Chat", badge: unreadMsg, icon: iconSvg(IC.talk) },
-    { id: "montaggi_cal", label: "Montaggi", icon: iconSvg(IC.montaggi) },
-    { id: "clienti", label: "Clienti", icon: iconSvg(IC.clienti) },
     { id: "altro", label: "Altro", icon: iconSvg(IC.altro) },
   ];
   stateRef.current.voices = voices;
 
   // Mappa voice.id → quick handler (crea veloce)
   const quickHandlers: Record<string, (() => void) | undefined> = {
-    ai: undefined,
     home: undefined,
     commesse: onQuickCommessa,
     agenda: onQuickEvento,
@@ -267,11 +258,6 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
         } else {
           const picked = getNearestVoice(ms, stateRef.current.tx, stateRef.current.ty, stateRef.current.voices);
           if (picked) {
-            if (picked.id === "ai") {
-              try { window.dispatchEvent(new CustomEvent("mastro:open-ai")); (window as any).__mastroOpenAI?.(); } catch {}
-              setMenuSide(null); setActionSheet(false);
-              return;
-            }
             if (picked.id !== "commesse") setSelectedCM(null);
             setTab(picked.id);
           }
@@ -315,7 +301,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < SELECT_DIST) return null;
     const angle = Math.atan2(dy, dx);
-    const span = Math.PI * 1.1;
+    const span = Math.PI * 0.75;
     const start = side === "right" ? Math.PI - span / 2 : -span / 2;
     const voiceAngles = vv.map((_, i) => start + (span * i) / (vv.length - 1));
     let bestIdx = 0, bestDiff = Infinity;
@@ -331,21 +317,6 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
   const nearest = menuSide ? getNearestVoice(menuSide, touchX, touchY, voices) : null;
 
   const getActions = () => [
-    { label: "MASTRO AI", hint: "Assistente intelligente", icon: IC.ai,
-      onClick: () => {
-        try {
-          window.dispatchEvent(new CustomEvent("mastro:open-ai"));
-          (window as any).__mastroOpenAI?.();
-        } catch {}
-        setActionSheet(false);
-      },
-      onLongPress: () => {
-        try {
-          window.dispatchEvent(new CustomEvent("mastro:open-ai-live"));
-          (window as any).__mastroOpenAILive?.();
-        } catch {}
-        setActionSheet(false);
-      } },
     { label: "Nuova commessa", hint: "Tieni premuto: veloce", icon: IC.folder,
       onClick: () => { onNuovaCommessa?.(); setActionSheet(false); },
       onLongPress: () => { onQuickCommessa?.(); setActionSheet(false); } },
@@ -394,69 +365,56 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
       )}
 
       {menuSide && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200, pointerEvents: "none" }}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(13,31,31,0.35)", backdropFilter: "blur(4px)" }} />
-          {voices.map((v, i) => {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            const cx = menuSide === "right" ? w : 0;
-            const cy = h / 2;
-            const span = Math.PI * 1.1;
-            const start = menuSide === "right" ? Math.PI - span / 2 : -span / 2;
-            const a = start + (span * i) / (voices.length - 1);
-            const r = 150;
-            const x = cx + Math.cos(a) * r;
-            const y = cy + Math.sin(a) * r;
-            const isNear = nearest?.id === v.id;
-            const isHolding = holdVoice === v.id && !holdFired;
-            const isFired = holdFired === v.id;
-            const hasQuick = !!quickHandlers[v.id];
-            return (
-              <div key={v.id} style={{
-                position: "absolute", left: x - 28, top: y - 28,
-                width: 56, height: 56, borderRadius: "50%",
-                background: isFired
-                  ? "linear-gradient(145deg, #8BC443, #6A9A26)"
-                  : isHolding
-                    ? `linear-gradient(145deg, ${TEAL}, ${TEAL_DARK})`
-                    : isNear ? TEAL : "rgba(13,31,31,0.85)",
-                border: `${isFired ? 3 : 2}px solid ${isFired ? "#FFF" : isHolding ? "#FFF" : isNear ? WHITE : "rgba(40,160,160,0.5)"}`,
-                boxShadow: isFired
-                  ? "0 0 30px rgba(139,196,67,0.9), 0 0 60px rgba(139,196,67,0.5)"
-                  : isHolding
-                    ? `0 0 24px ${TEAL}, 0 6px 22px ${TEAL}90`
-                    : isNear ? `0 6px 20px ${TEAL}80` : "0 3px 10px rgba(0,0,0,0.4)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "background 0.12s, transform 0.12s, border 0.12s, box-shadow 0.12s",
-                transform: isFired ? "scale(1.5)" : isHolding ? "scale(1.3)" : isNear ? "scale(1.15)" : "scale(1)",
-                animation: isHolding ? "mastroHoldPulse 0.6s ease-in-out infinite" : undefined,
-              }}>
-                {v.icon}
-                {!!v.badge && v.badge > 0 && (
-                  <div style={{
-                    position: "absolute", top: -4, right: -4,
-                    minWidth: 18, height: 18, borderRadius: 9,
-                    background: "#F5A030", color: WHITE,
-                    fontSize: 10, fontWeight: 800,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    padding: "0 5px", border: `2px solid ${DARK}`,
-                  }}>{v.badge}</div>
-                )}
-              </div>
-            );
-          })}
-          {nearest && (
-            <div style={{
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 200 }}
+          onClick={() => setMenuSide(null)}
+        >
+          <div style={{ position: "absolute", inset: 0, background: "rgba(13,31,31,0.45)", backdropFilter: "blur(3px)" }} />
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
               position: "absolute",
-              left: menuSide === "right" ? undefined : touchX + 40,
-              right: menuSide === "right" ? window.innerWidth - touchX + 40 : undefined,
-              top: touchY - 16,
-              background: DARK, color: WHITE,
-              padding: "8px 14px", borderRadius: 20,
-              fontSize: 13, fontWeight: 700, fontFamily: "'Inter', sans-serif",
-              whiteSpace: "nowrap", boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
-            }}>{nearest.label}</div>
-          )}
+              top: 0, bottom: 0,
+              right: menuSide === "right" ? 0 : undefined,
+              left: menuSide === "left" ? 0 : undefined,
+              width: 220,
+              background: DARK,
+              display: "flex", flexDirection: "column",
+              overflowY: "auto",
+              paddingTop: 60, paddingBottom: 40,
+            }}
+          >
+            <div style={{ position: "absolute", top: 20, left: "50%", transform: "translateX(-50%)", width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)" }} />
+            <div style={{ paddingLeft: 20, paddingRight: 20, marginBottom: 16, fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>NAVIGAZIONE</div>
+            {voices.map((v) => (
+              <div
+                key={v.id}
+                onClick={() => { setMenuSide(null); if (v.id !== "commesse") setSelectedCM(null); setTab(v.id); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "14px 20px",
+                  background: nearest?.id === v.id ? "rgba(40,160,160,0.18)" : "transparent",
+                  borderLeft: nearest?.id === v.id ? `3px solid ${TEAL}` : "3px solid transparent",
+                  cursor: "pointer", minHeight: 56,
+                }}
+              >
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: nearest?.id === v.id ? TEAL : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
+                  {v.icon}
+                  {!!v.badge && v.badge > 0 && (
+                    <div style={{ position: "absolute", top: -2, right: -2, minWidth: 16, height: 16, borderRadius: 8, background: "#F5A030", color: WHITE, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{v.badge}</div>
+                  )}
+                </div>
+                <span style={{ fontSize: 15, fontWeight: 600, color: nearest?.id === v.id ? WHITE : "rgba(255,255,255,0.75)", fontFamily: "'Inter', sans-serif" }}>{v.label}</span>
+              </div>
+            ))}
+            <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "8px 20px" }} />
+            <div onClick={() => setMenuSide(null)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", cursor: "pointer", minHeight: 56 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Chiudi</span>
+            </div>
+          </div>
         </div>
       )}
 
