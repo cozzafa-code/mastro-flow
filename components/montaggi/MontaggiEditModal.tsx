@@ -2,22 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { C } from "./montaggi-editor-types";
 import type { MontaggioRow, EditorState, CommessaLite, ContattoLite } from "./montaggi-editor-types";
-import { buildEditorState, saveMontaggio, deleteMontaggio, buildCaricoMap, fetchContatti, commesseValide } from "./montaggi-editor-helpers";
-import MontaggiTipoToggle from "./MontaggiTipoToggle";
-import MontaggiEditorBody from "./MontaggiEditorBody";
-import MontaggiEditorFooter from "./MontaggiEditorFooter";
-import MontaggiSlotPicker from "./MontaggiSlotPicker";
-import MontaggiCommessaPicker from "./MontaggiCommessaPicker";
-import MontaggiContattoPicker from "./MontaggiContattoPicker";
-import MontaggiExitConfirm from "./MontaggiExitConfirm";
-
-interface Props {
-  montaggio: MontaggioRow | null;
-  commesse: any[];
-  montaggiTutti: any[];
-  aziendaId: string;
-  onClose: () => void;
-}
+import CentroCantiere from "./CentroCantiere";
 
 export default function MontaggiEditModalV2({ montaggio, commesse, montaggiTutti, aziendaId, onClose }: Props) {
   const initialRef = useRef<EditorState | null>(null);
@@ -26,6 +11,7 @@ export default function MontaggiEditModalV2({ montaggio, commesse, montaggiTutti
     initialRef.current = s;
     return s;
   });
+  const [vista, setVista] = useState<"scheda"|"editor">(montaggio?.id ? "scheda" : "editor");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [contatti, setContatti] = useState<ContattoLite[]>([]);
@@ -39,6 +25,7 @@ export default function MontaggiEditModalV2({ montaggio, commesse, montaggiTutti
     initialRef.current = s;
     _setState(s);
     setErr(null);
+    setVista(montaggio?.id ? "scheda" : "editor");
   }, [montaggio]);
 
   useEffect(() => {
@@ -137,6 +124,18 @@ export default function MontaggiEditModalV2({ montaggio, commesse, montaggiTutti
     }
     setState(patch);
     setShowContatto(false);
+  }
+
+  if (vista === "scheda" && montaggio?.id) {
+    return (
+      <CentroCantiere
+        montaggio={montaggio}
+        commesse={commesse}
+        aziendaId={aziendaId}
+        onClose={onClose}
+        onModifica={() => setVista("editor")}
+      />
+    );
   }
 
   const isNew = !montaggio?.id;
