@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, useRef } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -160,6 +160,8 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
     { id: "commesse", label: "Commesse", icon: iconSvg(IC.commesse) },
     { id: "agenda", label: "Agenda", icon: iconSvg(IC.agenda) },
     { id: "messaggi", label: unreadMsg > 0 ? `Chat · ${unreadMsg}` : "Chat", badge: unreadMsg, icon: iconSvg(IC.talk) },
+    { id: "montaggi_cal", label: "Montaggi", icon: iconSvg(IC.montaggi) },
+    { id: "clienti", label: "Clienti", icon: iconSvg(IC.clienti) },
     { id: "altro", label: "Altro", icon: iconSvg(IC.altro) },
   ];
   stateRef.current.voices = voices;
