@@ -752,74 +752,117 @@ const CommesseRitardoWidget = ({ data, nav }: any) => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 6) SQUADRA — con stato live + espansione
+// 6) SQUADRA — stato live + montaggio oggi + click → Team
 // ═══════════════════════════════════════════════════════════
+const STATO_CFG: Record<string, { dot: string; label: string; tint: string; dark: string }> = {
+  attivo:   { dot: "#1D9E75", label: "Attivo",   tint: "rgba(29,158,117,0.12)",  dark: "#04342C" },
+  pausa:    { dot: "#EF9F27", label: "Pausa",    tint: "rgba(239,159,39,0.15)",  dark: "#854F0B" },
+  problema: { dot: "#E24B4A", label: "Problema", tint: "rgba(226,75,74,0.14)",   dark: "#8B1A1A" },
+  viaggio:  { dot: "#378ADD", label: "Viaggio",  tint: "rgba(55,138,221,0.12)",  dark: "#042C53" },
+  libero:   { dot: "#8FA8A8", label: "Libero",   tint: "rgba(143,168,168,0.12)", dark: "#3A5555" },
+};
+
 const SquadraWidget = ({ data, nav }: any) => {
   const team = data?.team || [];
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const montaggi = data?.montaggiDB || data?.montaggi || [];
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   if (team.length === 0) return <Empty msg="Nessun membro in squadra" icon="👷" />;
 
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-      {team.slice(0, 6).map((t: any, i: number) => {
-        const key = t.id || `t${i}`;
-        const nome = pick(t, "nome", "name") || "—";
-        const ruolo = pick(t, "ruolo", "role") || "";
-        const cantiere = pick(t, "cantiere_attuale", "cantiere");
-        const attivo = !!cantiere;
-        const col = attivo ? FASE.produzione : FASE.preventivo;
-        const isOpen = expanded === key;
+  const montaggiOggi = montaggi.filter((m: any) => {
+    const d = m.data || m.dataMontaggio || m.data_montaggio || "";
+    return String(d).startsWith(todayStr);
+  });
 
-        return (
-          <div key={key} onClick={() => setExpanded(isOpen ? null : key)} style={{
-            background: "#fff", borderRadius: 12, padding: "10px 11px",
-            border: "1px solid " + BORDER_SOFT,
-            borderLeft: `3px solid ${col.solid}`,
-            cursor: "pointer",
-            boxShadow: isOpen ? `0 6px 16px ${col.tint}` : "0 2px 6px rgba(13,31,31,0.04)",
-            gridColumn: isOpen ? "1 / -1" : undefined,
-            transition: "all 0.2s",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+  const attivi   = team.filter((t: any) => (t.stato || t.status) === "attivo").length;
+  const problemi = team.filter((t: any) => (t.stato || t.status) === "problema").length;
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+        <div style={{ flex: 1, background: "rgba(29,158,117,0.1)", borderRadius: 10, padding: "6px 8px", textAlign: "center" as const }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#04342C", lineHeight: 1 }}>{attivi}</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "#1D9E75", marginTop: 2, letterSpacing: "0.3px" }}>ATTIVI</div>
+        </div>
+        <div style={{ flex: 1, background: "rgba(143,168,168,0.1)", borderRadius: 10, padding: "6px 8px", textAlign: "center" as const }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: DARK, lineHeight: 1 }}>{team.length}</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: SUB, marginTop: 2, letterSpacing: "0.3px" }}>TOTALE</div>
+        </div>
+        <div style={{ flex: 1, background: montaggiOggi.length > 0 ? "rgba(55,138,221,0.1)" : "rgba(143,168,168,0.08)", borderRadius: 10, padding: "6px 8px", textAlign: "center" as const }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: montaggiOggi.length > 0 ? "#042C53" : DARK, lineHeight: 1 }}>{montaggiOggi.length}</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: montaggiOggi.length > 0 ? "#378ADD" : SUB, marginTop: 2, letterSpacing: "0.3px" }}>OGGI</div>
+        </div>
+        {problemi > 0 && (
+          <div style={{ flex: 1, background: "rgba(226,75,74,0.1)", borderRadius: 10, padding: "6px 8px", textAlign: "center" as const }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#8B1A1A", lineHeight: 1 }}>{problemi}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "#E24B4A", marginTop: 2, letterSpacing: "0.3px" }}>PROB.</div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {team.slice(0, 5).map((t: any, i: number) => {
+          const key = t.id || `t${i}`;
+          const nome = pick(t, "nome", "name") || "—";
+          const ruolo = pick(t, "ruolo", "role") || "";
+          const stato = (t.stato || t.status || "libero") as string;
+          const cfg = STATO_CFG[stato] || STATO_CFG.libero;
+
+          const montaggioOp = montaggiOggi.find((m: any) => {
+            const squadra: string[] = m.squadra || m.operatori || [];
+            return (
+              m.operatoreId === key || m.operatore_id === key ||
+              squadra.includes(key) || squadra.includes(nome)
+            );
+          });
+          const cmLabel = montaggioOp
+            ? (montaggioOp.cmCode || montaggioOp.codice || montaggioOp.cliente || "Montaggio")
+            : (pick(t, "cantiere_attuale", "cantiere") || null);
+
+          return (
+            <div key={key} onClick={() => nav?.goto?.("team")} style={{
+              background: "#fff", borderRadius: 11, padding: "9px 11px",
+              border: "1px solid " + BORDER_SOFT,
+              borderLeft: `3px solid ${cfg.dot}`,
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 9,
+            }}>
               <div style={{ position: "relative" as const, flexShrink: 0 }}>
-                <Avatar text={initials(nome)} fase={attivo ? "produzione" : "preventivo"} size={30} />
-                {attivo && (
-                  <div style={{
-                    position: "absolute" as const, bottom: -2, right: -2,
-                    width: 10, height: 10, borderRadius: "50%",
-                    background: "#1D9E75", border: "2px solid #fff",
-                    boxShadow: "0 0 0 2px rgba(29,158,117,0.3)",
-                  }} />
-                )}
+                <Avatar text={initials(nome)} fase={stato === "attivo" ? "produzione" : stato === "problema" ? "ferma" : "preventivo"} size={30} />
+                <div style={{
+                  position: "absolute" as const, bottom: -1, right: -1,
+                  width: 9, height: 9, borderRadius: "50%",
+                  background: cfg.dot, border: "2px solid #fff",
+                }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{nome}</div>
-                <div style={{ fontSize: 9, color: SUB, fontWeight: 700, letterSpacing: "0.3px", textTransform: "uppercase" as const }}>{ruolo}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{nome}</div>
+                <div style={{ fontSize: 9, color: SUB, fontWeight: 600, letterSpacing: "0.2px", textTransform: "uppercase" as const }}>{ruolo}</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+                <div style={{
+                  fontSize: 8, fontWeight: 800, padding: "2px 6px", borderRadius: 5,
+                  background: cfg.tint, color: cfg.dark,
+                  letterSpacing: "0.3px", textTransform: "uppercase" as const,
+                }}>● {cfg.label}</div>
+                {cmLabel && (
+                  <div style={{ fontSize: 8, color: MUTED, fontWeight: 600, maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                    {cmLabel}
+                  </div>
+                )}
               </div>
             </div>
-            <div style={{
-              marginTop: 7, fontSize: 9, fontWeight: 800,
-              padding: "2px 7px", borderRadius: 6,
-              background: col.tint, color: col.dark,
-              display: "inline-block",
-              letterSpacing: "0.3px", textTransform: "uppercase" as const,
-            }}>● {attivo ? cantiere : "libero"}</div>
+          );
+        })}
+      </div>
 
-            {isOpen && (
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed " + BORDER_SOFT }}>
-                <QuickActions
-                  tel={pick(t, "telefono", "phone")}
-                  addr={cantiere}
-                  onOpen={() => nav?.openTeam?.(t)}
-                  msg={attivo ? `Ciao ${nome}, come va con ${cantiere}?` : `Ciao ${nome}, hai un momento?`}
-                  color={col}
-                />
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {team.length > 5 && (
+        <div onClick={() => nav?.goto?.("team")} style={{
+          marginTop: 8, textAlign: "center" as const,
+          fontSize: 11, fontWeight: 700, color: TEAL, cursor: "pointer", padding: "4px 0",
+        }}>
+          +{team.length - 5} altri → Apri Team
+        </div>
+      )}
     </div>
   );
 };
