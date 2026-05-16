@@ -54,7 +54,9 @@ export default function MontaggiGanttView({
         liberi.push(m);
         continue;
       }
-      const key = m.squadra[0];
+      // Usa primo nome non-UUID come chiave leggibile
+      const nomi = m.squadra.filter(function(s) { return s && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(s); });
+      const key = nomi.length > 0 ? nomi[0] : m.squadra[0];
       const arr = map.get(key) || [];
       arr.push(m);
       map.set(key, arr);
@@ -66,14 +68,18 @@ export default function MontaggiGanttView({
   }, [montaggi]);
 
   const stats = useMemo(() => {
-    let sq1H = 0, sq2H = 0, sovracc = 0;
+    let sovracc = 0;
+    const squads: {label: string; h: number}[] = [];
     bySquad.forEach(([k, arr]) => {
       const h = arr.reduce((s, m) => s + (m.ore_preventivate || 0), 0);
-      if (k === "sq1") sq1H = h;
-      else if (k === "sq2") sq2H = h;
+      squads.push({ label: k, h });
       if (h > 16) sovracc++;
     });
-    return { sq1H, sq2H, sovracc, nonAss: liberi.length };
+    const sq1H = squads[0]?.h || 0;
+    const sq2H = squads[1]?.h || 0;
+    const sq1L = squads[0]?.label || "Sq1";
+    const sq2L = squads[1]?.label || "Sq2";
+    return { sq1H, sq2H, sq1L, sq2L, sovracc, nonAss: liberi.length };
   }, [bySquad, liberi]);
 
   return (
@@ -104,8 +110,8 @@ export default function MontaggiGanttView({
           marginBottom: 12,
         }}
       >
-        <SumItem num={`${stats.sq1H}h`} lbl="sq1 carico" />
-        <SumItem num={`${stats.sq2H}h`} lbl="sq2 carico" color={C.green} />
+        <SumItem num={stats.sq1H + "h"} lbl={stats.sq1L + " carico"} />
+        <SumItem num={stats.sq2H + "h"} lbl={stats.sq2L + " carico"} color={C.green} />
         <SumItem
           num={String(stats.sovracc)}
           lbl="Sovracc."
