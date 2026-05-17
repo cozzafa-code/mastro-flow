@@ -43,28 +43,29 @@ export default function HomePage() {
 
   return (
     <div className="phone-screen">
-      {/* NO status bar — la gestisce il SO */}
-
-      <Topbar
-        notificheCount={notificheNonLette}
-        onSearchOpen={() => setSearchOpen(true)}
-        onNotificheOpen={() => setNotifichePanelOpen(true)}
-      />
-
-      {/* Hero eyebrow */}
-      <div style={{ padding: '4px 26px 0', position: 'relative', zIndex: 2 }}>
-        <span style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 11, fontWeight: 600, letterSpacing: 2.5,
-          color: 'var(--ink-dim)', textTransform: 'uppercase',
-          textShadow: '0 1px 0 rgba(255,255,255,0.5)',
-        }}>
-          {'\u2014'} BUONGIORNO, TITOLARE
-        </span>
-      </div>
-
-      {/* Contenuto scrollabile */}
+      {/* TUTTO scrolla dentro .page — topbar inclusa */}
       <div className="page">
+
+        {/* Topbar */}
+        <Topbar
+          notificheCount={notificheNonLette}
+          onSearchOpen={() => setSearchOpen(true)}
+          onNotificheOpen={() => setNotifichePanelOpen(true)}
+        />
+
+        {/* Eyebrow */}
+        <div style={{ padding: '4px 26px 0', position: 'relative', zIndex: 2 }}>
+          <span style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11, fontWeight: 600, letterSpacing: 2.5,
+            color: 'var(--ink-dim)', textTransform: 'uppercase',
+            textShadow: '0 1px 0 rgba(255,255,255,0.5)',
+          }}>
+            {'\u2014'} BUONGIORNO, TITOLARE
+          </span>
+        </div>
+
+        {/* Calendario */}
         <CalendarHero
           selectedDate={selectedDate}
           viewMode={viewMode}
@@ -73,9 +74,7 @@ export default function HomePage() {
           onViewModeChange={setViewMode}
         />
 
-        {priorita && (
-          <PriorityBlock priorita={priorita} count={1} />
-        )}
+        {priorita && <PriorityBlock priorita={priorita} count={1} />}
 
         <EventsCard
           eventi={eventiOggi}
@@ -91,7 +90,7 @@ export default function HomePage() {
       {/* Bottom Nav FISSA */}
       <BottomNav mailCount={notificheNonLette} />
 
-      {/* Panels e modali */}
+      {/* Panels */}
       <NotifichePanel
         isOpen={notifichePanelOpen}
         notifiche={notifiche}
