@@ -102,7 +102,7 @@ export const CalendarHero: FC<CalendarHeroProps> = ({
             {(['day','week','month'] as const).map((m, i) => (
               <button key={m} onClick={() => onViewModeChange(m)} style={{
                 border: 'none', cursor: 'pointer',
-                padding: '8px 14px', borderRadius: 999,
+                padding: '6px 10px', borderRadius: 999,
                 fontFamily: "'Fredoka', sans-serif",
                 fontSize: 10, fontWeight: 700, letterSpacing: 1.2,
                 textTransform: 'uppercase',
@@ -111,7 +111,7 @@ export const CalendarHero: FC<CalendarHeroProps> = ({
                 boxShadow: viewMode === m ? 'inset 0 3px 5px rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.2), 0 3px 8px rgba(200,138,23,0.55)' : 'none',
                 textShadow: viewMode === m ? '0 1px 2px rgba(0,0,0,0.25)' : '0 1px 1px rgba(0,0,0,0.2)',
               }}>
-                {['Giorno','Sett.','Mese'][i]}
+                {['GG','SETT','MESE'][i]}
               </button>
             ))}
           </div>
