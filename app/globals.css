@@ -1,51 +1,143 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #ECE6D6;
+  --bg-soft: #F2EDDF;
+  --surface: #F5F0E2;
+  --surface-2: #EAE3D1;
+  --surface-3: #DDD4BA;
+  --line: rgba(60,50,30,0.06);
+
+  --ink: #1F2937;
+  --ink-2: #4A4A45;
+  --ink-dim: #6B7280;
+  --ink-soft: #9CA3AF;
+
+  --teal: #1F6F78;
+  --teal-deep: #155159;
+  --teal-darker: #0E3E44;
+  --teal-bg: #DCECED;
+  --teal-soft: #C5DDDE;
+
+  --ocra: #E8A726;
+  --ocra-deep: #C88A17;
+  --ocra-bg: #F5E9CC;
+  --ocra-mid: #EDD9A8;
+
+  --red: #C84941;
+  --red-deep: #A53A33;
+  --red-bg: #F4DEDC;
+  --red-mid: #EDC8C5;
+
+  --blue: #2E3F8F;
+  --blue-deep: #1F2D70;
+  --blue-bg: #DCE0EF;
+  --blue-mid: #C5CCE5;
+}
 
 * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
   -webkit-tap-highlight-color: transparent;
 }
 
-html {
-  background-color: #0D1F1F;
-  overscroll-behavior-y: none;
-  overscroll-behavior-x: none;
+html, body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  height: 100%;
 }
 
-body {
-  overscroll-behavior-y: none;
-  overscroll-behavior-x: none;
-  background: #E4F2F2;
-  color: #1A1A1C;
-  margin: 0;
-  padding: 0;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  box-sizing: border-box;
-  min-height: 100vh;
+/* ── PHONE SHELL ── */
+.phone-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 430px;
+  margin: 0 auto;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
 }
 
-/* STRISCIA BLU FISSA - copre status bar trasparente + Dynamic Island */
-body::before {
+.phone-screen::before {
   content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: calc(env(safe-area-inset-top, 0px) + 16px);
-  background-color: #0D1F1F;
-  z-index: 99999;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 280px 200px at 10% 10%, var(--surface) 0%, transparent 55%),
+    radial-gradient(ellipse 250px 200px at 95% 25%, var(--surface-2) 0%, transparent 60%),
+    radial-gradient(ellipse 220px 180px at 5% 75%, var(--surface) 0%, transparent 55%);
+  filter: blur(30px);
+  opacity: 0.7;
   pointer-events: none;
+  z-index: 0;
 }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #E4F2F2; }
-::-webkit-scrollbar-thumb { background: #DCDCD7; border-radius: 2px; }
+.page {
+  flex: 1;
+  min-height: 0; /* CRITICO — senza questo overflow non scrolla */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
 
-/* MASTRO_IOS_TAP_FIX v2 */
-* { -webkit-tap-highlight-color: transparent; }
-button, a, [role="button"], [onclick], [onClick],
-input[type="button"], input[type="submit"], input[type="reset"],
-[data-tap], .touch-fix {
-  touch-action: manipulation;
+.page::-webkit-scrollbar { display: none; }
+
+.bottom-spacer { height: 100px; flex-shrink: 0; }
+
+/* ── FLUFFY 3D PRIMITIVES ── */
+.fluffy-3d {
+  position: relative;
+}
+.fluffy-3d::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: inherit;
+  filter: blur(6px);
+  opacity: 0.45;
+  z-index: -1;
+}
+.fluffy-3d::after {
+  content: '';
+  position: absolute;
+  top: 14%; left: 22%;
+  width: 30%; height: 16%;
+  background: rgba(255,255,255,0.5);
+  border-radius: 50%;
+  filter: blur(2.5px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── PULSE ANIMATION ── */
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.5; }
+}
+
+.pulse {
+  animation: pulse-dot 1.6s ease infinite;
+}
+
+/* ── DESKTOP CENTERING ── */
+@media (min-width: 430px) {
+  body {
+    background: #131618;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .phone-screen {
+    height: 870px;
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
 }
