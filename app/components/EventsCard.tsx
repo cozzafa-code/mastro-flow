@@ -14,7 +14,7 @@ interface EventsCardProps {
 export const EventsCard: FC<EventsCardProps> = ({
   eventi, expandedEventId, prossimoEventoId, onToggle, onSposta
 }) => {
-  if (eventi.length === 0) return null
+  // mostra sempre la card, anche vuota
 
   return (
     <div style={{ padding: '10px 16px 0' }}>
@@ -56,19 +56,42 @@ export const EventsCard: FC<EventsCardProps> = ({
           </span>
         </div>
 
-        {/* Lista */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {eventi.map(e => (
-            <EventRow
-              key={e.id}
-              evento={e}
-              isExpanded={expandedEventId === e.id}
-              isNext={e.id === prossimoEventoId}
-              onToggle={onToggle}
-              onSposta={onSposta}
-            />
-          ))}
-        </div>
+        {/* Lista o empty state */}
+        {eventi.length === 0 ? (
+          <div style={{
+            textAlign: 'center', padding: '24px 0',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 14,
+              background: 'linear-gradient(145deg, var(--surface-2), var(--surface-3))',
+              boxShadow: '0 2px 8px rgba(60,50,30,0.1), inset 0 2px 3px rgba(255,255,255,0.6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20,
+            }}>🎉</div>
+            <div style={{
+              fontFamily: "'Nunito', sans-serif",
+              fontSize: 14, fontWeight: 700, color: 'var(--ink)',
+            }}>Nessun evento oggi</div>
+            <div style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10, color: 'var(--ink-soft)', letterSpacing: 0.5,
+            }}>Giornata libera</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {eventi.map(e => (
+              <EventRow
+                key={e.id}
+                evento={e}
+                isExpanded={expandedEventId === e.id}
+                isNext={e.id === prossimoEventoId}
+                onToggle={onToggle}
+                onSposta={onSposta}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

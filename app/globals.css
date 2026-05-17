@@ -126,6 +126,12 @@ html, body {
   animation: pulse-dot 1.6s ease infinite;
 }
 
+/* ── SPIN ── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ── DESKTOP CENTERING ── */
 @media (min-width: 430px) {
   body {
