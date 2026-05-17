@@ -1,4 +1,7 @@
-'use client'
+﻿'use client'
+
+export const dynamic = 'force-dynamic'
+
 import { Topbar } from './components/Topbar'
 import { CalendarHero } from './components/CalendarHero'
 import { PriorityBlock } from './components/PriorityBlock'
@@ -93,7 +96,7 @@ export default function HomePage() {
           color: 'var(--ink-dim)',
           textShadow: '0 1px 0 rgba(255,255,255,0.4)',
         }}>
-          — BUONGIORNO, TITOLARE
+          â€” BUONGIORNO, TITOLARE
         </span>
       </div>
 
@@ -154,3 +157,4 @@ export default function HomePage() {
     </div>
   )
 }
+
