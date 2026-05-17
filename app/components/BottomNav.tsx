@@ -39,7 +39,9 @@ export const BottomNav: FC<BottomNavProps> = ({ mailCount }) => {
 
   return (
     <div style={{
-      position: 'absolute', bottom: 16, left: 16, right: 16,
+      position: 'fixed', bottom: 16,
+      left: '50%', transform: 'translateX(-50%)',
+      width: 'calc(min(100vw, 430px) - 32px)',
       borderRadius: 32,
       background: 'linear-gradient(160deg, var(--surface), var(--surface-2))',
       padding: '12px 8px 14px',
@@ -52,7 +54,6 @@ export const BottomNav: FC<BottomNavProps> = ({ mailCount }) => {
         inset 0 6px 14px rgba(255,255,255,0.65),
         inset 0 -3px 7px rgba(0,0,0,0.06)
       `,
-      position: 'absolute',
     }}>
       {/* Fuzz */}
       <div style={{
