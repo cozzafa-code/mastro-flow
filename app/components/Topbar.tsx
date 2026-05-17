@@ -1,17 +1,20 @@
 'use client'
 import { FC } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface TopbarProps {
   notificheCount: number
   onSearchOpen: () => void
-  onNotificheOpen: () => void
+  onNotificheOpen?: () => void
 }
 
 export const Topbar: FC<TopbarProps> = ({ notificheCount, onSearchOpen, onNotificheOpen }) => {
+  const router = useRouter()
+
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '16px 26px 4px', position: 'relative', zIndex: 5,
+      padding: '16px 22px 4px', position: 'relative', zIndex: 5,
     }}>
       {/* Brand */}
       <span style={{
@@ -26,10 +29,46 @@ export const Topbar: FC<TopbarProps> = ({ notificheCount, onSearchOpen, onNotifi
         }}>X</span>
       </span>
 
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        {/* Search btn */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+
+        {/* Bottone + nuova commessa */}
+        <button
+          onClick={() => router.push('/commesse/nuova')}
+          style={{
+            width: 44, height: 44, borderRadius: '50%',
+            background: 'linear-gradient(160deg, var(--teal), var(--teal-deep))',
+            border: 'none', cursor: 'pointer',
+            display: 'grid', placeItems: 'center',
+            position: 'relative',
+            boxShadow: `
+              0 0 0 1px rgba(0,0,0,0.08),
+              0 6px 14px rgba(20,80,90,0.4),
+              inset 0 4px 7px rgba(255,255,255,0.2),
+              inset 0 -3px 7px rgba(0,0,0,0.18)
+            `,
+          }}
+        >
+          {/* Fuzz */}
+          <div style={{
+            position: 'absolute', inset: -4, borderRadius: '50%',
+            background: 'var(--teal)', filter: 'blur(7px)', opacity: 0.45, zIndex: -1,
+          }} />
+          {/* Highlight */}
+          <div style={{
+            position: 'absolute', top: '14%', left: '22%',
+            width: '34%', height: '20%',
+            background: 'rgba(255,255,255,0.4)', borderRadius: '50%', filter: 'blur(2.5px)',
+          }} />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="#fff" strokeWidth="2.8" strokeLinecap="round"
+            style={{ position: 'relative', zIndex: 2 }}>
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+
+        {/* Search */}
         <button onClick={onSearchOpen} style={iconBtnStyle}>
-          <div style={fuzzStyle('#EAE3D1')} />
+          <div style={fuzzStyle} />
           <div style={highlightStyle} />
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
             stroke="var(--ink)" strokeWidth="2" strokeLinecap="round"
@@ -38,26 +77,28 @@ export const Topbar: FC<TopbarProps> = ({ notificheCount, onSearchOpen, onNotifi
           </svg>
         </button>
 
-        {/* Bell btn */}
-        <button onClick={onNotificheOpen} style={{ ...iconBtnStyle, position: 'relative' }}>
-          <div style={fuzzStyle('#EAE3D1')} />
-          <div style={highlightStyle} />
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-            stroke="var(--ink)" strokeWidth="2" strokeLinecap="round"
-            style={{ position: 'relative', zIndex: 2 }}>
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 01-3.46 0"/>
-          </svg>
-          {notificheCount > 0 && (
-            <span style={{
-              position: 'absolute', top: 6, right: 6,
-              width: 11, height: 11, borderRadius: '50%', zIndex: 3,
-              background: 'linear-gradient(160deg, var(--red), var(--red-deep))',
-              border: '2px solid #FCF7E8',
-              boxShadow: '0 1px 3px rgba(165,58,51,0.5), inset 0 1px 2px rgba(255,255,255,0.4)',
-            }} />
-          )}
-        </button>
+        {/* Bell */}
+        {onNotificheOpen && (
+          <button onClick={onNotificheOpen} style={{ ...iconBtnStyle, position: 'relative' }}>
+            <div style={fuzzStyle} />
+            <div style={highlightStyle} />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="var(--ink)" strokeWidth="2" strokeLinecap="round"
+              style={{ position: 'relative', zIndex: 2 }}>
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            {notificheCount > 0 && (
+              <span style={{
+                position: 'absolute', top: 6, right: 6,
+                width: 11, height: 11, borderRadius: '50%', zIndex: 3,
+                background: 'linear-gradient(160deg, var(--red), var(--red-deep))',
+                border: '2px solid #FCF7E8',
+                boxShadow: '0 1px 3px rgba(165,58,51,0.5)',
+              }} />
+            )}
+          </button>
+        )}
 
         {/* Avatar */}
         <button style={{
@@ -69,7 +110,6 @@ export const Topbar: FC<TopbarProps> = ({ notificheCount, onSearchOpen, onNotifi
           boxShadow: `
             0 0 0 1px rgba(0,0,0,0.08),
             0 6px 14px rgba(20,80,90,0.45),
-            0 2px 4px rgba(20,80,90,0.18),
             inset 0 4px 7px rgba(255,255,255,0.2),
             inset 0 -3px 7px rgba(0,0,0,0.22)
           `,
@@ -100,16 +140,15 @@ const iconBtnStyle: React.CSSProperties = {
   boxShadow: `
     0 0 0 1px rgba(60,50,30,0.05),
     0 6px 14px rgba(60,50,30,0.2),
-    0 1px 3px rgba(60,50,30,0.08),
     inset 0 4px 7px rgba(255,255,255,0.7),
     inset 0 -3px 7px rgba(0,0,0,0.06)
   `,
 }
 
-const fuzzStyle = (color: string): React.CSSProperties => ({
+const fuzzStyle: React.CSSProperties = {
   position: 'absolute', inset: -4, borderRadius: '50%',
-  background: color, filter: 'blur(7px)', opacity: 0.5, zIndex: -1,
-})
+  background: 'var(--surface-2)', filter: 'blur(7px)', opacity: 0.5, zIndex: -1,
+}
 
 const highlightStyle: React.CSSProperties = {
   position: 'absolute', top: '14%', left: '24%',
