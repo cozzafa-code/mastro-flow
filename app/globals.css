@@ -9,15 +9,105 @@
   --ocra: #E8A726; --ocra-deep: #C88A17; --ocra-bg: #F5E9CC; --ocra-mid: #EDD9A8;
   --red: #C84941; --red-deep: #A53A33; --red-bg: #F4DEDC; --red-mid: #EDC8C5;
   --blue: #2E3F8F; --blue-deep: #1F2D70; --blue-bg: #DCE0EF; --blue-mid: #C5CCE5;
+  --success: #2F7D57; --success-bg: #D7E8DD; --success-mid: #B5D3BE;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; height: 100%; }
-.phone-screen { display: flex; flex-direction: column; height: 100dvh; max-width: 430px; margin: 0 auto; background: var(--bg); position: relative; overflow: hidden; }
-.phone-screen::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 280px 200px at 10% 10%, var(--surface) 0%, transparent 55%), radial-gradient(ellipse 250px 200px at 95% 25%, var(--surface-2) 0%, transparent 60%), radial-gradient(ellipse 220px 180px at 5% 75%, var(--surface) 0%, transparent 55%); filter: blur(30px); opacity: 0.7; pointer-events: none; z-index: 0; }
-.page { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
+
+/* ── RESET ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html, body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+/* Bottoni reattivi */
+button, a, [role="button"] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button:active { opacity: 0.82; transform: scale(0.96); }
+
+/* ── PHONE SHELL ── */
+.phone-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 430px;
+  margin: 0 auto;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.phone-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 280px 200px at 10% 10%, var(--surface) 0%, transparent 55%),
+    radial-gradient(ellipse 250px 200px at 95% 25%, var(--surface-2) 0%, transparent 60%),
+    radial-gradient(ellipse 220px 180px at 5% 75%, var(--surface) 0%, transparent 55%);
+  filter: blur(30px);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
 .page::-webkit-scrollbar { display: none; }
 .bottom-spacer { height: 110px; flex-shrink: 0; }
-@keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.5; } }
+
+/* ── ANIMAZIONI ── */
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.5; }
+}
 .pulse { animation: pulse-dot 1.6s ease infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@media (min-width: 430px) { body { background: #131618; display: flex; align-items: center; justify-content: center; min-height: 100vh; } .phone-screen { height: 870px; border-radius: 44px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 2px #1a1816; } }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── DESKTOP ── */
+@media (min-width: 430px) {
+  body {
+    background: #131618;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .phone-screen {
+    height: 870px;
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 2px #1a1816;
+  }
+  /* Su desktop non scalare i bottoni (effetto strano con mouse) */
+  button:active { opacity: 0.9; transform: scale(0.98); }
+}
