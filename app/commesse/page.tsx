@@ -44,6 +44,23 @@ function CommesseContent() {
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
           </button>
+          {/* + Nuova commessa */}
+          <button
+            onClick={() => {/* TODO: modal nuova commessa */}}
+            style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'linear-gradient(160deg, var(--teal), var(--teal-deep))',
+              border: 'none', cursor: 'pointer',
+              display: 'grid', placeItems: 'center', position: 'relative',
+              boxShadow: `0 0 0 1px rgba(0,0,0,0.08), 0 6px 14px rgba(20,80,90,0.4),
+                inset 0 4px 7px rgba(255,255,255,0.2), inset 0 -3px 7px rgba(0,0,0,0.18)`,
+            }}>
+            <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', background: 'var(--teal)', filter: 'blur(7px)', opacity: 0.45, zIndex: -1 }} />
+            <div style={{ position: 'absolute', top: '14%', left: '22%', width: '34%', height: '20%', background: 'rgba(255,255,255,0.4)', borderRadius: '50%', filter: 'blur(2.5px)' }} />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round" style={{ position: 'relative', zIndex: 2 }}>
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </button>
           <div style={{
             width: 46, height: 46, borderRadius: '50%',
             background: 'linear-gradient(160deg, var(--teal), var(--teal-deep))',
