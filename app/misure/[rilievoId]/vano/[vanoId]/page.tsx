@@ -7,9 +7,7 @@ import VanoDetailPanel from '@/components/VanoDetailPanel'
 
 export default function VanoPage() {
   const params = useParams()
-  const router = useRouter()
   const vanoId = params.vanoId as string
-  const rilievoId = params.rilievoId as string
   const [vano, setVano] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -21,22 +19,20 @@ export default function VanoPage() {
   }, [vanoId])
 
   if (loading) return (
-    <div className="phone-screen" style={{ display:`grid`, placeItems:`center` }}>
-      <span style={{ fontFamily:`'Fredoka',sans-serif`, fontSize:18, color:`var(--ink-dim)` }}>Caricamento...</span>
+    <div style={{ display:'grid', placeItems:'center', height:'100vh' }}>
+      <span style={{ fontFamily:"'Fredoka',sans-serif", fontSize:18 }}>Caricamento...</span>
     </div>
   )
   if (!vano) return (
-    <div className="phone-screen" style={{ display:`grid`, placeItems:`center` }}>
-      <span style={{ fontFamily:`'Fredoka',sans-serif`, fontSize:18, color:`var(--red)` }}>Vano non trovato</span>
+    <div style={{ display:'grid', placeItems:'center', height:'100vh' }}>
+      <span style={{ fontFamily:"'Fredoka',sans-serif", fontSize:18, color:'red' }}>Vano non trovato</span>
     </div>
   )
 
   return (
     <MastroProvider initialVano={vano}>
-      <div className="phone-screen">
-        <div className="page">
-          <VanoDetailPanel />
-        </div>
+      <div style={{ position:'fixed', inset:0, overflow:'hidden', background:'var(--bg, #ECE6D6)' }}>
+        <VanoDetailPanel />
       </div>
     </MastroProvider>
   )
