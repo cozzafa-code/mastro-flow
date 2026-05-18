@@ -203,7 +203,8 @@ export default function CentroOperativoPage() {
               {/* CTA */}
               <button
                 onClick={() => {
-                  if (azione.tipo === 'rilievo') router.push(`/commesse/${id}/rilievo/nuovo`)
+                  if (azione.tipo === 'rilievo' && rilievi.length === 0) router.push(`/commesse/${id}/rilievo/nuovo`)
+                  else if (azione.tipo === 'rilievo' && rilievi.length > 0) router.push(`/misure/${rilievi[0].id}`)
                   else if (azione.tipo === 'misure' && rilievi[0]) router.push(`/misure/${rilievi[0].id}`)
                 }}
                 style={{ width:'100%', border:'none', cursor:'pointer', borderRadius:14, padding:'13px 16px', display:'flex', alignItems:'center', justifyContent:'center', gap:8, fontFamily:"'Fredoka',sans-serif", fontSize:15, fontWeight:700, color:'#fff', textShadow:'0 1px 2px rgba(0,0,0,0.25)', position:'relative', zIndex:2,
