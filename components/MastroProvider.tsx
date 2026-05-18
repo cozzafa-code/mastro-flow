@@ -182,10 +182,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
       if (!prev) return prev
       const misure = { ...(prev.misure || {}), [campo]: valore }
       const updated = { ...prev, misure }
-      const sb = createClient()
-      sb.from('vani').update({ misure }).eq('id', prev.id).then(({ error }) => {
-        if (error) console.error('updateMisura error:', error)
-      })
+      fetch('/api/vani', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: prev.id, misure }) }).catch(e => console.error('updateMisura error:', e))
       setSelectedRilievo((r: any) => {
         if (!r) return r
         return { ...r, vani: (r.vani || []).map((v: any) => v.id === prev.id ? updated : v) }
@@ -298,4 +295,5 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     </MastroContext.Provider>
   )
 }
+
 
