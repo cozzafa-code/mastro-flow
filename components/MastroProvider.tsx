@@ -6,7 +6,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { MastroContext } from './MastroContext'
 import { createClient } from '@/lib/supabase/client'
-import { SISTEMI_INIT, TIPOLOGIE_RAPIDE } from './mastro-constants'
+import { SISTEMI_INIT, TIPOLOGIE_RAPIDE, COLORI_INIT, VETRI_INIT, COPRIFILI_INIT, LAMIERE_INIT } from './mastro-constants'
 
 const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29'
 
@@ -78,10 +78,10 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
 
   // â”€â”€ CATALOGHI (da Supabase) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [sistemiDB, setSistemiDB] = useState<any[]>(SISTEMI_INIT)
-  const [coloriDB, setColoriDB] = useState<any[]>([])
-  const [vetriDB, setVetriDB] = useState<any[]>([])
-  const [coprifiliDB, setCoprifiliDB] = useState<any[]>([])
-  const [lamiereDB, setLamiereDB] = useState<any[]>([])
+  const [coloriDB, setColoriDB] = useState<any[]>(COLORI_INIT)
+  const [vetriDB, setVetriDB] = useState<any[]>(VETRI_INIT)
+  const [coprifiliDB, setCoprifiliDB] = useState<any[]>(COPRIFILI_INIT)
+  const [lamiereDB, setLamiereDB] = useState<any[]>(LAMIERE_INIT)
   const [libreriaDB, setLibreriaDB] = useState<any[]>([])
   const [tipoMisuraDB, setTipoMisuraDB] = useState<any[]>([])
   const [tipoMisuraTappDB, setTipoMisuraTappDB] = useState<any[]>([])
@@ -93,7 +93,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [ctSezioniDB, setCtSezioniDB] = useState<any[]>([])
   const [ctCieliniDB, setCtCieliniDB] = useState<any[]>([])
   const [ctOffset, setCtOffset] = useState(0)
-  const [mezziSalita, setMezziSalita] = useState<any[]>([])
+  const [mezziSalita, setMezziSalita] = useState<any[]>(["Scala interna", "Scala esterna", "Scala aerea", "Scala a mano", "Gru", "Elevatore", "Ponteggio", "Nessuno"])
   const [aziendaInfo, setAziendaInfo] = useState<any>(null)
   const [settoriAttivi, setSettoriAttivi] = useState<string[]>(['serramenti'])
   const [tipologieFiltrate, setTipologieFiltrate] = useState<any[]>(TIPOLOGIE_RAPIDE)
@@ -294,6 +294,8 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     </MastroContext.Provider>
   )
 }
+
+
 
 
 
