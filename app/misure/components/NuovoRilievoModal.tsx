@@ -56,14 +56,14 @@ export const NuovoRilievoModal: FC<Props> = ({
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)' }}
+            style={{ position: 'absolute', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)' }}
           />
           <motion.div
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             style={{
-              position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-              width: 'min(100vw, 430px)', zIndex: 301,
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+               zIndex: 301,
               background: 'var(--bg)', borderRadius: '32px 32px 0 0',
               boxShadow: '0 -16px 50px rgba(0,0,0,0.25)',
               maxHeight: '90dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden',

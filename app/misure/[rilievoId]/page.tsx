@@ -133,8 +133,8 @@ export default function RilievoPage() {
       <AnimatePresence>
         {settoreSheet && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSettoreSheet(false)} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }} />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 28, stiffness: 280 }} style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 'min(100vw, 430px)', zIndex: 201, background: 'linear-gradient(160deg, var(--surface), var(--bg-soft))', borderRadius: '28px 28px 0 0', boxShadow: '0 -12px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSettoreSheet(false)} style={{ position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }} />
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 28, stiffness: 280 }} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 201, background: 'linear-gradient(160deg, var(--surface), var(--bg-soft))', borderRadius: '28px 28px 0 0', boxShadow: '0 -12px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
               <div style={{ padding: '12px 0 0', display: 'flex', justifyContent: 'center' }}>
                 <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--surface-3)' }} />
               </div>

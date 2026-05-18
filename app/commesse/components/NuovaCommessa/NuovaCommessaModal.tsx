@@ -46,7 +46,8 @@ const IcoNote = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none
 
 // ── SHARED STYLES ────────────────────────────────────────────────
 const inputStyle: React.CSSProperties = {
-  width: '100%', background: 'linear-gradient(160deg, var(--bg-soft), var(--surface-2))',
+  flex: 1, minWidth: 0,
+  background: 'linear-gradient(160deg, var(--bg-soft), var(--surface-2))',
   border: 'none', borderRadius: 12, padding: '11px 13px',
   fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 600,
   color: 'var(--ink)', outline: 'none',
@@ -189,7 +190,7 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
             style={{
-              position: 'fixed', inset: 0, zIndex: 300,
+              position: 'absolute', inset: 0, zIndex: 300,
               background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)',
             }}
           />
@@ -199,8 +200,8 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             style={{
-              position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-              width: 'min(100vw, 430px)', zIndex: 301,
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              zIndex: 301,
               background: 'var(--bg)',
               borderRadius: '32px 32px 0 0',
               boxShadow: '0 -16px 50px rgba(0,0,0,0.25)',
