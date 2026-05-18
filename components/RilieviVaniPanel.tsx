@@ -67,10 +67,9 @@ export default function RilieviVaniPanel({ onOpenVano }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rilievo_id: ril.id,
+          commessa_id: c.id,
           nome: `Vano ${(ril.vani || []).length + 1}`,
-          settore: "finestre",
           numero: (ril.vani || []).length + 1,
-          tipo_misure: ril.tipo_misure || "provvisorie",
         }),
       });
       if (!res.ok) {
