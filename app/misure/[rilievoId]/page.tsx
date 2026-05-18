@@ -43,7 +43,7 @@ export default function RilievoPage() {
       nome: `${settoreInfo?.label} ${num}`,
       settore,
       numero: vani.length + 1,
-      tipo_misure: rilievo?.tipo_misure || 'provvisorie',
+      tipo_misure: rilievo?.tipo || 'provvisorie',
     })
     setAddingVano(false)
     if (vano) {
@@ -162,4 +162,5 @@ export default function RilievoPage() {
     </div>
   )
 }
+
 
