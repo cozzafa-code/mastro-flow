@@ -33,7 +33,6 @@ function CommesseContent() {
       <Topbar
         notificheCount={0}
         onSearchOpen={() => {}}
-        onNuovaCommessa={() => setNuovaModalOpen(true)}
       />
 
       {/* Scrollable content */}
