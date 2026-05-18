@@ -200,6 +200,10 @@ function CommesseContent() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cliente, codice, indirizzo…"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            name="fliwox-commesse-search"
             style={{
               flex: 1, border: 'none', background: 'transparent', outline: 'none',
               fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 500, color: 'var(--ink)',

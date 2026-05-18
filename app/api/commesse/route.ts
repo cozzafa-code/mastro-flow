@@ -81,15 +81,19 @@ export async function GET() {
     const sb = createAdminClient()
     const { data, error } = await sb
       .from('commesse')
-      .select('*')
+      .select('id,code,cliente,cognome,indirizzo,fase,created_at,updated_at,totale_finale,totale_preventivo,note')
       .eq('azienda_id', AZIENDA_ID)
       .is('deleted_at', null)
-      .order('updated_at', { ascending: false })
-      .limit(100)
+      .order('created_at', { ascending: false })
+      .limit(200)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ commesse: data })
+    if (error) {
+      console.error('[GET /api/commesse]', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+    return NextResponse.json({ commesse: data || [] })
   } catch (err) {
+    console.error('[GET /api/commesse] unexpected', err)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })
   }
 }
