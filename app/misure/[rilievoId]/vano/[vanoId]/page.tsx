@@ -8,13 +8,23 @@ import VanoDetailPanel from '@/components/VanoDetailPanel'
 export default function VanoPage() {
   const params = useParams()
   const vanoId = params.vanoId as string
+  const rilievoId = params.rilievoId as string
   const [vano, setVano] = useState<any>(null)
+  const [cm, setCm] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch(`/api/vani?id=${vanoId}`)
       .then(r => r.json())
-      .then(j => { if (j.vano) setVano(j.vano) })
+      .then(async j => {
+        if (j.vano) {
+          setVano(j.vano)
+          // Carica anche la commessa
+          const cmRes = await fetch(`/api/commesse/${j.vano.commessa_id}`)
+          const cmJson = await cmRes.json()
+          if (cmJson.commessa) setCm(cmJson.commessa)
+        }
+      })
       .finally(() => setLoading(false))
   }, [vanoId])
 
@@ -30,7 +40,7 @@ export default function VanoPage() {
   )
 
   return (
-    <MastroProvider initialVano={vano}>
+    <MastroProvider initialVano={vano} initialCM={cm} initialRilievo={{ id: rilievoId, vani: [vano] }}>
       <div style={{ position:'fixed', inset:0, overflow:'hidden', background:'var(--bg, #ECE6D6)' }}>
         <VanoDetailPanel />
       </div>
