@@ -208,14 +208,14 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   }, [])
 
   const toggleAccessorio = useCallback((acc: string, value: boolean) => {
-    updateVanoField(`accessori.${acc}.attivo`, value)
-  }, [updateVanoField])
-
-  const updateAccessorio = useCallback((acc: string, field: string, value: any) => {
     setSelectedVano((prev: any) => {
       if (!prev) return prev
-      const accessori = { ...(prev.accessori || {}), [acc]: { ...(prev.accessori?.[acc] || {}), [field]: value } }
-      return { ...prev, accessori }
+      const accessori = { ...(prev.accessori || {}), [acc]: { ...(prev.accessori?.[acc] || {}), attivo: value } }
+      const updated = { ...prev, accessori }
+      fetch('/api/vani', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: prev.id, accessori }) }).catch(e => console.error('toggleAccessorio error:', e))
+      return updated
+    })
+  }, [])
     })
   }, [])
 
