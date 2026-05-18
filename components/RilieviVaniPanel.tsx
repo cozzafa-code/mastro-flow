@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // MASTRO ERP - RilieviVaniPanel
 // Pannello rilievi multipli (R1/R2/R3) con tab Lista vani + Report
@@ -85,8 +85,8 @@ export default function RilieviVaniPanel({ onOpenVano }: Props) {
       {/* TAB VISTA */}
       <div style={{ display: "flex", background: T.card, borderBottom: `1px solid ${T.bdr}`, padding: "0 8px" }}>
         {[
-          { id: "lista", l: "Lista vani", i: "📋" },
-          { id: "report", l: "Report", i: "📊" },
+          { id: "lista", l: "Lista vani", i: "ðŸ“‹" },
+          { id: "report", l: "Report", i: "ðŸ“Š" },
         ].map(t => {
           const a = view === t.id;
           return (
@@ -129,7 +129,7 @@ function ListaVaniView({ rilievo, index, T, onOpenVano, addVano }: any) {
             <div style={{ width: 38, height: 38, borderRadius: 10, background: index === 0 ? VIO_LT : BLU_LT, color: index === 0 ? VIO : BLU, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800 }}>R{index + 1}</div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, color: T.text }}>{rilievo.nome || `Rilievo ${index + 1}`}</div>
-              <div style={{ fontSize: 11, color: SUB, marginTop: 1 }}>{rilievo.data} · {rilievo.ora || ""} · {rilievo.rilevatore || ""}</div>
+              <div style={{ fontSize: 11, color: SUB, marginTop: 1 }}>{rilievo.data} Â· {rilievo.ora || ""} Â· {rilievo.rilevatore || ""}</div>
             </div>
           </div>
           <div style={{ fontSize: 10, fontWeight: 700, padding: "4px 9px", borderRadius: 8, background: rilievo.stato === "completato" ? GRN_LT : AMB_LT, color: rilievo.stato === "completato" ? GRN : AMB, textTransform: "uppercase", letterSpacing: 0.5 }}>
@@ -162,7 +162,7 @@ function ListaVaniView({ rilievo, index, T, onOpenVano, addVano }: any) {
                 {v.tipo && <div style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 5, background: T.bg, color: SUB }}>{v.tipo}</div>}
               </div>
               <div style={{ fontSize: 12, color: hasMisure ? SUB : AMB }}>
-                {hasMisure ? `${m.lCentro} × ${m.hCentro} mm${v.coloreInt ? ` · ${v.coloreInt}` : ""}` : "Tocca per inserire misure"}
+                {hasMisure ? `${m.lCentro} Ã— ${m.hCentro} mm${v.coloreInt ? ` Â· ${v.coloreInt}` : ""}` : "Tocca per inserire misure"}
               </div>
               {(acc.tapparella?.attivo || acc.zanzariera?.attivo || acc.persiana?.attivo) && (
                 <div style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
@@ -174,9 +174,9 @@ function ListaVaniView({ rilievo, index, T, onOpenVano, addVano }: any) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
               {completo
-                ? <div style={{ width: 24, height: 24, borderRadius: "50%", background: GRN, color: "#fff", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>✓</div>
+                ? <div style={{ width: 24, height: 24, borderRadius: "50%", background: GRN, color: "#fff", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>âœ“</div>
                 : <div style={{ width: 24, height: 24, borderRadius: "50%", background: AMB_LT, color: AMB, border: `1.5px dashed ${AMB}`, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>!</div>}
-              <div style={{ color: SUB2, fontSize: 18 }}>›</div>
+              <div style={{ color: SUB2, fontSize: 18 }}>â€º</div>
             </div>
           </div>
         );
@@ -207,7 +207,7 @@ function ReportView({ rilievo, index, prevRilievo, T }: any) {
 
   // Tipologie raggruppate
   const tipi: Record<string, number> = {};
-  vani.forEach((v: any) => { const t = v.tipo || "—"; tipi[t] = (tipi[t] || 0) + 1; });
+  vani.forEach((v: any) => { const t = v.tipo || "â€”"; tipi[t] = (tipi[t] || 0) + 1; });
 
   // Diff vs precedente
   const diff = prevRilievo ? calcDiff(prevRilievo.vani || [], vani) : null;
@@ -232,20 +232,20 @@ function ReportView({ rilievo, index, prevRilievo, T }: any) {
         </div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>{rilievo.nome || `Rilievo ${index + 1}`}</div>
-          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{rilievo.data} · {rilievo.ora || ""} · {rilievo.rilevatore || ""}</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{rilievo.data} Â· {rilievo.ora || ""} Â· {rilievo.rilevatore || ""}</div>
         </div>
       </div>
 
       {diff && (
         <div style={{ background: VIO_LT, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: VIO, fontWeight: 700 }}>
-          ℹ Diff vs R{index}: +{diff.added} · {diff.modified} mod · {diff.unchanged} invariati
+          â„¹ Diff vs R{index}: +{diff.added} Â· {diff.modified} mod Â· {diff.unchanged} invariati
         </div>
       )}
 
       <SecLabel txt="Numeri" />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <Kpi l="Vani" v={String(vani.length)} s={completi === vani.length && vani.length > 0 ? "tutti completi" : `${completi} completi`} />
-        <Kpi l="Foto" v={String(fotoCount)} s={vani.length > 0 ? `${(fotoCount / vani.length).toFixed(1)} per vano` : "—"} />
+        <Kpi l="Foto" v={String(fotoCount)} s={vani.length > 0 ? `${(fotoCount / vani.length).toFixed(1)} per vano` : "â€”"} />
         <Kpi l="Misure" v={String(misCount)} s={`su ${vani.length * 8} attese`} c={misCount >= vani.length * 6 ? T.text : AMB} />
         <Kpi l="Mq totali" v={mqTot.toFixed(1)} s="superficie" />
       </div>
@@ -279,9 +279,9 @@ function ReportView({ rilievo, index, prevRilievo, T }: any) {
       <SecLabel txt="Esporta" />
       <div style={{ display: "flex", gap: 8 }}>
         {[
-          { i: "📄", l: "PDF" },
-          { i: "🔗", l: "Condividi" },
-          { i: "✉", l: "Email" },
+          { i: "ðŸ“„", l: "PDF" },
+          { i: "ðŸ”—", l: "Condividi" },
+          { i: "âœ‰", l: "Email" },
         ].map(b => (
           <div key={b.l} style={{ flex: 1, background: T.card, border: `1px solid ${T.bdr}`, borderRadius: 8, padding: "10px 8px", fontSize: 12, fontWeight: 700, color: NAVY, cursor: "pointer", textAlign: "center" }}>
             {b.l}
