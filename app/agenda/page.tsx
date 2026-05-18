@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BottomNav } from '@/app/components/BottomNav'
 import { Topbar } from '@/app/components/Topbar'
-import { NuovoImpegnoModal } from './components/NuovoImpegnoModal'
+import { NuovoImpegnoModal } from './components/NuovoImpegnoModal/index'
 import type { Impegno, VistaAgenda } from '@/lib/agenda-types'
 import {
   TIPI_IMPEGNO, MESI_IT, GIORNI_SHORT,
