@@ -35,7 +35,7 @@ const INFISSI_RIP = ['Finestra PVC','Finestra alluminio','Porta ingresso','Porta
 
 // ── CODICE AUTO ──────────────────────────────────────────────────
 function genCodice(): string {
-  const n = Math.floor(Math.random() * 9000) + 1000
+  const n = Math.floor(Math.random() * 90000) + 10000
   return `S-${n}`
 }
 
