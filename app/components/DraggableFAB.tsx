@@ -126,8 +126,11 @@ export const DraggableFAB: FC<Props> = ({ onNuovaCommessa, onNuovoImpegno, onNuo
     setIsDragging(false)
 
     if (!hasDragged.current) {
-      // Tap semplice — azione contestuale
-      if (!menuOpen) {
+      if (menuOpen) {
+        // Se menu aperto → chiudi
+        setMenuOpen(false)
+      } else {
+        // Tap semplice → azione contestuale
         handleContextAction()
       }
     } else if (pos) {
