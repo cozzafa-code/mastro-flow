@@ -15,7 +15,7 @@ const TABS = [
     bg:'linear-gradient(160deg,var(--blue),var(--blue-deep))', shadow:'rgba(46,63,143,0.45)' },
   { href:'/clienti', key:'clienti', label:'Clienti',
     icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{position:'relative',zIndex:1}}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
-    bg:'linear-gradient(160deg,var(--success),#1F5A3D)', shadow:'rgba(47,125,87,0.45)', center:true },
+    bg:'linear-gradient(160deg,var(--success),#1F5A3D)', shadow:'rgba(47,125,87,0.45)' },
   { href:'/agenda', key:'agenda', label:'Agenda',
     icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{position:'relative',zIndex:1}}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
     bg:'linear-gradient(160deg,var(--red),var(--red-deep))', shadow:'rgba(200,73,65,0.45)' },
@@ -46,13 +46,13 @@ export const BottomNav: FC<Props> = ({ active, mailCount }) => {
         return (
           <button key={tab.key} onClick={() => router.push(tab.href)}
             style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, background:'transparent', border:'none', cursor:'pointer', padding:'0 6px', minWidth:56 }}>
-            <div style={{ width: tab.center ? 52 : 46, height: tab.center ? 52 : 46, borderRadius: tab.center ? 16 : '50%', position:'relative', display:'grid', placeItems:'center', marginTop: tab.center ? -6 : 0,
+            <div style={{ width: 46, height: 46, borderRadius: '50%', position:'relative', display:'grid', placeItems:'center', marginTop: 0,
               background: isActive ? tab.bg : 'linear-gradient(160deg,#FCF7E8,var(--surface-2))',
               color: isActive ? '#fff' : 'var(--ink-dim)',
               boxShadow: isActive ? `0 0 0 1px rgba(0,0,0,0.06),0 6px 14px ${tab.shadow},inset 0 3px 6px rgba(255,255,255,0.22),inset 0 -3px 6px rgba(0,0,0,0.18)` : '0 0 0 1px rgba(60,50,30,0.05),0 4px 10px rgba(60,50,30,0.15),inset 0 3px 6px rgba(255,255,255,0.6)',
               transition:'all 0.2s',
             }}>
-              {isActive && <div style={{ position:'absolute', inset:-5, borderRadius: tab.center ? 20 : '50%', background:tab.bg.includes('teal') ? 'var(--teal)' : tab.bg.includes('blue') ? 'var(--blue)' : tab.bg.includes('success') ? 'var(--success)' : tab.bg.includes('red') ? 'var(--red)' : 'var(--ocra)', filter:'blur(8px)', opacity:0.45, zIndex:-1 }} />}
+              {isActive && <div style={{ position:'absolute', inset:-5, borderRadius: '50%', background:tab.bg.includes('teal') ? 'var(--teal)' : tab.bg.includes('blue') ? 'var(--blue)' : tab.bg.includes('success') ? 'var(--success)' : tab.bg.includes('red') ? 'var(--red)' : 'var(--ocra)', filter:'blur(8px)', opacity:0.45, zIndex:-1 }} />}
               <div style={{ position:'absolute', top:'14%', left:'22%', width:'32%', height:'18%', background:'rgba(255,255,255,0.45)', borderRadius:'50%', filter:'blur(2px)', pointerEvents:'none' }} />
               {tab.icon}
               {tab.key==='mail' && (mailCount ?? 0) > 0 && (
