@@ -47,11 +47,11 @@ button:active { opacity: 0.82; transform: scale(0.96); }
   flex-direction: column;
   width: 100%;
   max-width: 430px;
-  height: 100dvh;
+  height: 100svh; /* svh = small viewport, non cambia con tastiera iOS */
   margin: 0 auto;
   background: var(--bg);
   position: relative;
-  overflow: hidden; /* CRITICO - blocca tutto fuori bordo */
+  overflow: hidden;
 }
 
 .phone-screen::before {
