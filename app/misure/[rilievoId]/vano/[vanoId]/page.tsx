@@ -1,6 +1,6 @@
 ﻿'use client'
 export const dynamic = 'force-dynamic'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import MastroProvider from '@/components/MastroProvider'
 import VanoDetailPanel from '@/components/VanoDetailPanel'
@@ -19,10 +19,11 @@ export default function VanoPage() {
       .then(async j => {
         if (j.vano) {
           setVano(j.vano)
-          // Carica anche la commessa
           const cmRes = await fetch(`/api/commesse/${j.vano.commessa_id}`)
           const cmJson = await cmRes.json()
-          if (cmJson.commessa) setCm(cmJson.commessa)
+          if (cmJson.commessa) {
+            setCm({ ...cmJson.commessa, rilievi: cmJson.commessa.rilievi || [] })
+          }
         }
       })
       .finally(() => setLoading(false))
@@ -39,9 +40,11 @@ export default function VanoPage() {
     </div>
   )
 
+  const rilievo = { id: rilievoId, vani: [vano] }
+
   return (
-    <MastroProvider initialVano={vano} initialCM={cm} initialRilievo={{ id: rilievoId, vani: [vano] }}>
-      <div style={{ position:'fixed', inset:0, overflow:'hidden', background:'var(--bg, #ECE6D6)' }}>
+    <MastroProvider initialVano={vano} initialCM={cm} initialRilievo={rilievo}>
+      <div style={{ position:'fixed', inset:0, overflow:'auto', background:'var(--bg, #ECE6D6)' }}>
         <VanoDetailPanel />
       </div>
     </MastroProvider>
