@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useCommesse } from '@/hooks/useCommesse'
@@ -10,6 +10,7 @@ import { CommessaCard } from './components/CommessaCard'
 import { CommessaRow } from './components/CommessaRow'
 import { CommessaTile } from './components/CommessaTile'
 import { FilterSheet, SortSheet } from './components/Sheets'
+import { NuovaCommessaModal } from './components/NuovaCommessa/NuovaCommessaModal'
 import { BottomNav } from '@/app/components/BottomNav'
 import { FILTER_LABEL } from '@/lib/commesse-types'
 import type { Layout } from '@/lib/commesse-types'
@@ -22,6 +23,7 @@ function CommesseContent() {
     sortSheetOpen, setSortSheetOpen,
   } = useCommesse()
 
+  const [nuovaModalOpen, setNuovaModalOpen] = useState(false)
   const totalCount = counts['all'] ?? commesse.length
 
   return (
@@ -44,23 +46,6 @@ function CommesseContent() {
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
           </button>
-          {/* + Nuova commessa */}
-          <button
-            onClick={() => {/* TODO: modal nuova commessa */}}
-            style={{
-              width: 44, height: 44, borderRadius: '50%',
-              background: 'linear-gradient(160deg, var(--teal), var(--teal-deep))',
-              border: 'none', cursor: 'pointer',
-              display: 'grid', placeItems: 'center', position: 'relative',
-              boxShadow: `0 0 0 1px rgba(0,0,0,0.08), 0 6px 14px rgba(20,80,90,0.4),
-                inset 0 4px 7px rgba(255,255,255,0.2), inset 0 -3px 7px rgba(0,0,0,0.18)`,
-            }}>
-            <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', background: 'var(--teal)', filter: 'blur(7px)', opacity: 0.45, zIndex: -1 }} />
-            <div style={{ position: 'absolute', top: '14%', left: '22%', width: '34%', height: '20%', background: 'rgba(255,255,255,0.4)', borderRadius: '50%', filter: 'blur(2.5px)' }} />
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round" style={{ position: 'relative', zIndex: 2 }}>
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-          </button>
           <div style={{
             width: 46, height: 46, borderRadius: '50%',
             background: 'linear-gradient(160deg, var(--teal), var(--teal-deep))',
@@ -77,24 +62,70 @@ function CommesseContent() {
       <div className="page">
 
         {/* Hero */}
-        <div style={{ padding: '14px 26px 8px' }}>
-          <div style={{
-            fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: 2.5,
-            color: 'var(--ink-dim)', textTransform: 'uppercase', fontWeight: 600,
-            textShadow: '0 1px 0 rgba(255,255,255,0.5)', marginBottom: 6,
-          }}>
-            {'\u2014'} COMMESSE
+        <div style={{ padding: '14px 26px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <div style={{
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: 2.5,
+              color: 'var(--ink-dim)', textTransform: 'uppercase', fontWeight: 600,
+              textShadow: '0 1px 0 rgba(255,255,255,0.5)', marginBottom: 6,
+            }}>
+              {'\u2014'} COMMESSE
+            </div>
+            <h1 style={{
+              fontFamily: "'Fredoka', sans-serif", fontSize: 30, fontWeight: 600,
+              letterSpacing: -0.9, lineHeight: 1, color: 'var(--ink)',
+              textShadow: '0 1px 0 rgba(255,255,255,0.5)',
+            }}>
+              <span style={{ color: 'var(--teal)' }}>{totalCount}</span>
+              <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink-dim)', letterSpacing: 0, marginLeft: 6 }}>
+                attive
+              </span>
+            </h1>
           </div>
-          <h1 style={{
-            fontFamily: "'Fredoka', sans-serif", fontSize: 30, fontWeight: 600,
-            letterSpacing: -0.9, lineHeight: 1, color: 'var(--ink)',
-            textShadow: '0 1px 0 rgba(255,255,255,0.5)',
-          }}>
-            <span style={{ color: 'var(--teal)' }}>{totalCount}</span>
-            <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink-dim)', letterSpacing: 0, marginLeft: 6 }}>
-              attive
+
+          {/* Bottone Nuova commessa */}
+          <button
+            onClick={() => setNuovaModalOpen(true)}
+            style={{
+              border: 'none', cursor: 'pointer',
+              borderRadius: 16, padding: '10px 16px',
+              background: 'linear-gradient(160deg, var(--teal), var(--teal-deep))',
+              display: 'flex', alignItems: 'center', gap: 7,
+              position: 'relative',
+              boxShadow: `
+                0 0 0 1px rgba(0,0,0,0.08),
+                0 8px 18px rgba(20,80,90,0.4),
+                inset 0 4px 7px rgba(255,255,255,0.2),
+                inset 0 -3px 6px rgba(0,0,0,0.2)
+              `,
+            }}
+          >
+            {/* Fuzz */}
+            <div style={{
+              position: 'absolute', inset: -4, borderRadius: 18,
+              background: 'var(--teal)', filter: 'blur(8px)', opacity: 0.4, zIndex: -1,
+            }} />
+            {/* Highlight */}
+            <div style={{
+              position: 'absolute', top: '14%', left: '18%',
+              width: '28%', height: '30%',
+              background: 'rgba(255,255,255,0.35)', borderRadius: '50%', filter: 'blur(3px)',
+            }} />
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+              stroke="#fff" strokeWidth="2.8" strokeLinecap="round"
+              style={{ position: 'relative', zIndex: 1 }}>
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            <span style={{
+              fontFamily: "'Fredoka', sans-serif",
+              fontSize: 14, fontWeight: 700, color: '#fff',
+              textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+              position: 'relative', zIndex: 1,
+              whiteSpace: 'nowrap',
+            }}>
+              Nuova commessa
             </span>
-          </h1>
+          </button>
         </div>
 
         {/* View switch */}
@@ -277,6 +308,11 @@ function CommesseContent() {
         current={sort}
         onSelect={setSort}
         onClose={() => setSortSheetOpen(false)}
+      />
+      {/* Modal nuova commessa */}
+      <NuovaCommessaModal
+        isOpen={nuovaModalOpen}
+        onClose={() => setNuovaModalOpen(false)}
       />
     </div>
   )
