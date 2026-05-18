@@ -1,8 +1,8 @@
-'use client'
-// ═══════════════════════════════════════════════════════════
-// MastroProvider — fornisce tutto lo state che useMastro() si aspetta
+﻿'use client'
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// MastroProvider â€” fornisce tutto lo state che useMastro() si aspetta
 // Basato su MastroContext.tsx originale + state di VanoDetailPanel + RilieviListPanel
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { MastroContext } from './MastroContext'
 import { createClient } from '@/lib/supabase/client'
@@ -15,7 +15,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   initialRilievo?: any
   initialVano?: any
 }) {
-  // ── CORE STATE ────────────────────────────────────────────
+  // â”€â”€ CORE STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [selectedCM, setSelectedCM] = useState<any>(initialCM || null)
   const [cantieri, setCantieri] = useState<any[]>([])
   const [selectedRilievo, setSelectedRilievo] = useState<any>(initialRilievo || null)
@@ -28,7 +28,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [vanoInfoOpen, setVanoInfoOpen] = useState(false)
   const [tipCat, setTipCat] = useState<any>(null)
 
-  // ── DRAWING ───────────────────────────────────────────────
+  // â”€â”€ DRAWING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [spDrawing, setSpDrawing] = useState<any>(null)
   const [viewingPhotoId, setViewingPhotoId] = useState<string|null>(null)
   const [pendingFotoCat, setPendingFotoCat] = useState<any>(null)
@@ -46,23 +46,23 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const fotoVanoRef = useRef<any>(null)
   const videoVanoRef = useRef<any>(null)
 
-  // ── VOICE ─────────────────────────────────────────────────
+  // â”€â”€ VOICE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [voiceActive, setVoiceActive] = useState(false)
   const [voiceTranscript, setVoiceTranscript] = useState('')
   const startVoice = useCallback(() => setVoiceActive(true), [])
   const stopVoice = useCallback(() => { setVoiceActive(false); setVoiceTranscript('') }, [])
 
-  // ── STRUTTURE / TENDAGGI ──────────────────────────────────
+  // â”€â”€ STRUTTURE / TENDAGGI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showStrutture, setShowStrutture] = useState(false)
   const [showTendaggi, setShowTendaggi] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
 
-  // ── NUOVO RILIEVO ─────────────────────────────────────────
+  // â”€â”€ NUOVO RILIEVO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showNuovoRilievo, setShowNuovoRilievo] = useState(false)
   const [nuovoRilTipo, setNuovoRilTipo] = useState('semplice')
   const [nuovoRilData, setNuovoRilData] = useState<any>({ tipoRilievo: 'semplice', tipoMisure: 'provvisorie' })
 
-  // ── CENTRO COMANDO ────────────────────────────────────────
+  // â”€â”€ CENTRO COMANDO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [ccConfirm, setCcConfirm] = useState<any>(null)
   const [ccDone, setCcDone] = useState<Set<string>>(new Set())
   const [ccExpandStep, setCcExpandStep] = useState<string|null>(null)
@@ -75,7 +75,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [montFormOpen, setMontFormOpen] = useState(false)
   const [montFormData, setMontFormData] = useState<any>({})
 
-  // ── CATALOGHI (da Supabase) ───────────────────────────────
+  // â”€â”€ CATALOGHI (da Supabase) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [sistemiDB, setSistemiDB] = useState<any[]>([])
   const [coloriDB, setColoriDB] = useState<any[]>([])
   const [vetriDB, setVetriDB] = useState<any[]>([])
@@ -137,7 +137,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [fornitori, setFornitori] = useState<any[]>([])
   const [showPreventivoModal, setShowPreventivoModal] = useState(false)
 
-  // GUI tokens (T = theme, S = styles) — usati da VanoDetailPanel
+  // GUI tokens (T = theme, S = styles) â€” usati da VanoDetailPanel
   const T = {
     bg: '#ECE6D6', surface: '#F5F0E2', surface2: '#EAE3D1',
     ink: '#1F2937', inkDim: '#6B7280', inkSoft: '#9CA3AF',
@@ -156,7 +156,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const PipelineBar = () => null
   const ORDINE_STATI: any[] = []
 
-  // ── HELPERS ───────────────────────────────────────────────
+  // â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const goBack = useCallback(() => {
     setSelectedVano(null)
     setVanoStep(0)
@@ -166,11 +166,8 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     setSelectedVano((prev: any) => {
       if (!prev) return prev
       const updated = { ...prev, [field]: value }
-      // Salva su Supabase
-      const sb = createClient()
-      sb.from('vani').update({ [field]: value }).eq('id', prev.id).then(({ error }) => {
-        if (error) console.error('updateVanoField error:', error)
-      })
+      // Salva via API con mapping snake_case
+      fetch('/api/vani', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: prev.id, [field]: value }) }).catch(e => console.error('updateVanoField error:', e))
       // Aggiorna anche nel rilievo
       setSelectedRilievo((r: any) => {
         if (!r) return r
@@ -301,3 +298,4 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     </MastroContext.Provider>
   )
 }
+
