@@ -17,12 +17,17 @@ export async function POST(req: NextRequest) {
     const cliente = parti[0] || ''
     const cognome = parti.slice(1).join(' ') || ''
 
+    // Genera codice unico basato su timestamp
+    const ts = Date.now().toString(36).toUpperCase().slice(-4)
+    const rnd = Math.floor(Math.random() * 100).toString().padStart(2, '0')
+    const codiceUnico = codice || `S-${ts}${rnd}`
+
     const sb = createAdminClient()
     const { data, error } = await sb
       .from('commesse')
       .insert({
         azienda_id: 'ccca51c1-656b-4e7c-a501-55753e20da29',
-        code: codice,
+        code: codiceUnico,
         cliente,
         cognome,
         indirizzo: indirizzo || null,
