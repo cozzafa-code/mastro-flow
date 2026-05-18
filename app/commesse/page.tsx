@@ -12,6 +12,7 @@ import { CommessaTile } from './components/CommessaTile'
 import { FilterSheet, SortSheet } from './components/Sheets'
 import { NuovaCommessaModal } from './components/NuovaCommessa/NuovaCommessaModal'
 import { BottomNav } from '@/app/components/BottomNav'
+import { Topbar } from '@/app/components/Topbar'
 import { FILTER_LABEL } from '@/lib/commesse-types'
 import type { Layout } from '@/lib/commesse-types'
 
@@ -28,35 +29,12 @@ function CommesseContent() {
 
   return (
     <div className="phone-screen">
-      {/* Topbar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '16px 22px 4px', position: 'relative', zIndex: 5, flexShrink: 0,
-      }}>
-        <span style={{
-          fontFamily: "'Fredoka', sans-serif", fontSize: 26, fontWeight: 600,
-          letterSpacing: -0.6, color: 'var(--ink)',
-          textShadow: '0 1px 0 rgba(255,255,255,0.6), 0 2px 4px rgba(60,50,30,0.15)',
-        }}>
-          fliwo<span style={{ color: 'var(--teal)', textShadow: '0 1px 0 rgba(255,255,255,0.5), 0 2px 6px rgba(20,80,90,0.25)' }}>X</span>
-        </span>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button style={iconBtnStyle}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" style={{ position: 'relative', zIndex: 2 }}>
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-          </button>
-          <div style={{
-            width: 46, height: 46, borderRadius: '50%',
-            background: 'linear-gradient(160deg, var(--teal), var(--teal-deep))',
-            display: 'grid', placeItems: 'center',
-            fontFamily: "'Fredoka', sans-serif", fontSize: 17, fontWeight: 700,
-            color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-            boxShadow: '0 0 0 1px rgba(0,0,0,0.08), 0 6px 14px rgba(20,80,90,0.45), inset 0 4px 7px rgba(255,255,255,0.2)',
-            cursor: 'pointer', position: 'relative',
-          }}>T</div>
-        </div>
-      </div>
+      {/* Topbar condiviso */}
+      <Topbar
+        notificheCount={0}
+        onSearchOpen={() => {}}
+        onNuovaCommessa={() => setNuovaModalOpen(true)}
+      />
 
       {/* Scrollable content */}
       <div className="page">
