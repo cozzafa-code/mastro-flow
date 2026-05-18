@@ -140,6 +140,8 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose, onCreata }) => 
     flash('section-chi-segnala')
   }
 
+  const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29'
+
   // Salva nuova commessa via API route (bypassa RLS)
   const handleSaveNuova = async () => {
     setSaving(true)
@@ -148,18 +150,27 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose, onCreata }) => 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          codice,
-          cliente_nome: `${f.nome} ${f.cognome}`.trim(),
+          azienda_id: AZIENDA_ID,
+          code: codice,
+          cliente: f.nome,
+          cognome: f.cognome,
           indirizzo: f.indirizzo || null,
-          citta: f.citta || null,
           telefono: f.telefono || null,
           email: f.email || null,
+          fase: 'APP',
+          tipo: 'nuova',
+          difficolta_salita: f.difficoltaSalita || null,
+          piano_edificio: f.pianoEdificio || null,
+          foro_scale: f.foroScale || null,
+          mezzo_salita: f.mezzoSalita || null,
+          tipo_edificio: f.tipoEdificio || null,
           note: f.note || null,
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Errore creazione commessa')
-      onCreata ? onCreata() : onClose()
+      onClose()
+      router.refresh()
     } catch (e) {
       console.error('handleSaveNuova', e)
       alert('Errore: ' + (e as Error).message)
@@ -176,16 +187,23 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose, onCreata }) => 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          codice,
-          cliente_nome: `${rip.nome} ${rip.cognome}`.trim(),
-          note: rip.descrizione || null,
-          sotto_stato: 'riparazione',
+          azienda_id: AZIENDA_ID,
+          code: codice,
+          cliente: rip.nome,
+          cognome: rip.cognome,
+          telefono: rip.telefono || null,
+          fase: 'APP',
+          tipo: 'riparazione',
+          tipo_problema: rip.tipoProblema || null,
+          tipo_infisso: rip.tipoInfisso || null,
+          urgenza: rip.urgenza || null,
+          problema: rip.descrizione || null,
+          chi_segnala: rip.chiSegnala || null,
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Errore creazione riparazione')
       onClose()
-      router.push('/commesse')
       router.refresh()
     } catch (e) {
       console.error('handleSaveRip', e)
