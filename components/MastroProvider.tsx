@@ -6,6 +6,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { MastroContext } from './MastroContext'
 import { createClient } from '@/lib/supabase/client'
+import { SISTEMI_INIT, TIPOLOGIE_RAPIDE } from './mastro-constants'
 
 const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29'
 
@@ -76,7 +77,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [montFormData, setMontFormData] = useState<any>({})
 
   // â”€â”€ CATALOGHI (da Supabase) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const [sistemiDB, setSistemiDB] = useState<any[]>([])
+  const [sistemiDB, setSistemiDB] = useState<any[]>(SISTEMI_INIT)
   const [coloriDB, setColoriDB] = useState<any[]>([])
   const [vetriDB, setVetriDB] = useState<any[]>([])
   const [coprifiliDB, setCoprifiliDB] = useState<any[]>([])
@@ -95,7 +96,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [mezziSalita, setMezziSalita] = useState<any[]>([])
   const [aziendaInfo, setAziendaInfo] = useState<any>(null)
   const [settoriAttivi, setSettoriAttivi] = useState<string[]>(['serramenti'])
-  const [tipologieFiltrate, setTipologieFiltrate] = useState<any[]>([])
+  const [tipologieFiltrate, setTipologieFiltrate] = useState<any[]>(TIPOLOGIE_RAPIDE)
   const [aziendaId] = useState(AZIENDA_ID)
 
   // Cataloghi accessori
@@ -295,5 +296,6 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     </MastroContext.Provider>
   )
 }
+
 
 
