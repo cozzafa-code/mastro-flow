@@ -109,7 +109,7 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
   const closeAcc = (k: string) => setAccOpen(p => ({ ...p, [k]: false }))
 
   // Validazione nuova
-  const canSaveNuova = f.nome.trim().length > 0 && f.cognome.trim().length > 0 && f.telefono.trim().length > 0
+  const canSaveNuova = f.nome.trim().length > 0
 
   // Validazione riparazione
   const canSaveRip = rip.nome.trim().length > 0 && rip.cognome.trim().length > 0 && rip.tipoProblema.length > 0
@@ -705,7 +705,7 @@ const BottomActions: FC<{ codice: string; canSave: boolean; saving: boolean; onS
   <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
     {!canSave && (
       <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, color: 'var(--ink-dim)', textAlign: 'center', fontStyle: 'italic' }}>
-        Compila Nome, Cognome e Telefono per continuare
+        Inserisci almeno il Nome per continuare
       </p>
     )}
     <button onClick={onSave} disabled={!canSave || saving} style={{ ...ctaSaveStyle, opacity: (!canSave || saving) ? 0.6 : 1, cursor: (!canSave || saving) ? 'not-allowed' : 'pointer' }}>
