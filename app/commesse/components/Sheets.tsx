@@ -1,23 +1,28 @@
 'use client'
 import { FC } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { createPortal } from 'react-dom'
 import type { FilterType, SortType } from '@/lib/commesse-types'
 import { FILTER_LABEL, SORT_LABEL } from '@/lib/commesse-types'
 
-// Stile overlay — absolute rispetto al .phone-screen
+// Portal wrapper per uscire dal phone-screen
+const SheetPortal: FC<{ children: React.ReactNode }> = ({ children }) => {
+  if (typeof document === 'undefined') return null
+  return createPortal(children, document.body)
+}
+
 const overlayStyle: React.CSSProperties = {
-  position: 'absolute', inset: 0, zIndex: 200,
+  position: 'fixed', inset: 0, zIndex: 200,
   background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)',
 }
 
-// Stile sheet — absolute dal basso, larghezza 100%
 const sheetStyle: React.CSSProperties = {
-  position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 201,
+  position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 201,
   background: 'linear-gradient(160deg, var(--surface), var(--bg-soft))',
   borderRadius: '28px 28px 0 0',
   boxShadow: '0 -12px 40px rgba(0,0,0,0.2)',
   overflow: 'hidden',
-  maxHeight: '80%',
+  maxHeight: '80vh',
 }
 
 // ── FILTER SHEET ─────────────────────────────────────────────────
@@ -37,11 +42,10 @@ const FILTERS: FilterType[] = [
 export const FilterSheet: FC<FilterSheetProps> = ({ isOpen, current, counts, onSelect, onClose }) => (
   <AnimatePresence>
     {isOpen && (
-      <>
+      <SheetPortal>
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          onClick={onClose}
-          style={overlayStyle}
+          onClick={onClose} style={overlayStyle}
         />
         <motion.div
           initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
@@ -50,14 +54,10 @@ export const FilterSheet: FC<FilterSheetProps> = ({ isOpen, current, counts, onS
         >
           <Handle />
           <div style={{ padding: '14px 20px 8px', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 2, color: 'var(--ink-soft)', marginBottom: 4 }}>
-              FILTRA PER
-            </div>
-            <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, fontWeight: 600, color: 'var(--ink)' }}>
-              Tipo di commessa
-            </div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 2, color: 'var(--ink-soft)', marginBottom: 4 }}>FILTRA PER</div>
+            <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, fontWeight: 600, color: 'var(--ink)' }}>Tipo di commessa</div>
           </div>
-          <div style={{ padding: '8px 16px 32px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+          <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', maxHeight: '60vh' }}>
             {FILTERS.map(f => {
               const isActive = current === f
               const count = f === 'all' ? counts['all'] : counts[f] || 0
@@ -66,33 +66,19 @@ export const FilterSheet: FC<FilterSheetProps> = ({ isOpen, current, counts, onS
                   width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left',
                   borderRadius: 14, padding: '12px 14px',
                   background: isActive ? 'linear-gradient(160deg, var(--teal-bg), var(--teal-soft))' : 'transparent',
-                  boxShadow: isActive ? 'inset 0 2px 4px rgba(20,80,90,0.12)' : 'none',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  transition: 'all 0.15s',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{
-                      width: 10, height: 10, borderRadius: '50%',
-                      background: isActive ? 'var(--teal)' : 'transparent',
-                      border: `2px solid ${isActive ? 'var(--teal)' : 'var(--surface-3)'}`,
-                      flexShrink: 0,
-                    }} />
-                    <span style={{
-                      fontFamily: "'Nunito', sans-serif", fontSize: 15,
-                      fontWeight: isActive ? 800 : 600,
-                      color: isActive ? 'var(--teal-deep)' : 'var(--ink)',
-                    }}>{FILTER_LABEL[f]}</span>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: isActive ? 'var(--teal)' : 'transparent', border: `2px solid ${isActive ? 'var(--teal)' : 'var(--surface-3)'}`, flexShrink: 0 }} />
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: isActive ? 800 : 600, color: isActive ? 'var(--teal-deep)' : 'var(--ink)' }}>{FILTER_LABEL[f]}</span>
                   </div>
-                  <span style={{
-                    fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700,
-                    color: isActive ? 'var(--teal)' : 'var(--ink-soft)',
-                  }}>{count}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: isActive ? 'var(--teal)' : 'var(--ink-soft)' }}>{count}</span>
                 </button>
               )
             })}
           </div>
         </motion.div>
-      </>
+      </SheetPortal>
     )}
   </AnimatePresence>
 )
@@ -112,11 +98,10 @@ const SORTS: SortType[] = [
 export const SortSheet: FC<SortSheetProps> = ({ isOpen, current, onSelect, onClose }) => (
   <AnimatePresence>
     {isOpen && (
-      <>
+      <SheetPortal>
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          onClick={onClose}
-          style={overlayStyle}
+          onClick={onClose} style={overlayStyle}
         />
         <motion.div
           initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
@@ -125,11 +110,9 @@ export const SortSheet: FC<SortSheetProps> = ({ isOpen, current, onSelect, onClo
         >
           <Handle />
           <div style={{ padding: '14px 20px 8px', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, fontWeight: 600, color: 'var(--ink)' }}>
-              Ordina per
-            </div>
+            <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, fontWeight: 600, color: 'var(--ink)' }}>Ordina per</div>
           </div>
-          <div style={{ padding: '8px 16px 32px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+          <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', maxHeight: '60vh' }}>
             {SORTS.map(s => {
               const isActive = current === s
               return (
@@ -138,25 +121,15 @@ export const SortSheet: FC<SortSheetProps> = ({ isOpen, current, onSelect, onClo
                   borderRadius: 14, padding: '12px 14px',
                   background: isActive ? 'linear-gradient(160deg, var(--teal-bg), var(--teal-soft))' : 'transparent',
                   display: 'flex', alignItems: 'center', gap: 12,
-                  transition: 'all 0.15s',
                 }}>
-                  <div style={{
-                    width: 10, height: 10, borderRadius: '50%',
-                    background: isActive ? 'var(--teal)' : 'transparent',
-                    border: `2px solid ${isActive ? 'var(--teal)' : 'var(--surface-3)'}`,
-                    flexShrink: 0,
-                  }} />
-                  <span style={{
-                    fontFamily: "'Nunito', sans-serif", fontSize: 15,
-                    fontWeight: isActive ? 800 : 600,
-                    color: isActive ? 'var(--teal-deep)' : 'var(--ink)',
-                  }}>{SORT_LABEL[s]}</span>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: isActive ? 'var(--teal)' : 'transparent', border: `2px solid ${isActive ? 'var(--teal)' : 'var(--surface-3)'}`, flexShrink: 0 }} />
+                  <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: isActive ? 800 : 600, color: isActive ? 'var(--teal-deep)' : 'var(--ink)' }}>{SORT_LABEL[s]}</span>
                 </button>
               )
             })}
           </div>
         </motion.div>
-      </>
+      </SheetPortal>
     )}
   </AnimatePresence>
 )

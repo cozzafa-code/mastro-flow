@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useFlashAdvance } from './useFlashAdvance'
+import { ModalPortal } from './ModalPortal'
 
 // ── TIPI ────────────────────────────────────────────────────────
 type Tipo = 'nuova' | 'riparazione'
@@ -184,13 +185,13 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <ModalPortal>
           {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
             style={{
-              position: 'absolute', inset: 0, zIndex: 300,
+              position: 'fixed', inset: 0, zIndex: 300,
               background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)',
             }}
           />
@@ -200,7 +201,7 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0,
+              position: 'fixed', bottom: 0, left: 0, right: 0,
               zIndex: 301,
               background: 'var(--bg)',
               borderRadius: '32px 32px 0 0',
@@ -603,7 +604,7 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
               </AnimatePresence>
             </div>
           </motion.div>
-        </>
+        </ModalPortal>
       )}
     </AnimatePresence>
   )
