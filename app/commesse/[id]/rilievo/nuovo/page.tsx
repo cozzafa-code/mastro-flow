@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 export const dynamic = 'force-dynamic'
 
 import { useParams, useRouter } from 'next/navigation'
@@ -58,7 +58,7 @@ export default function NuovoRilievoPage() {
     <div className="phone-screen">
       <div className="page">
 
-        {/* ── HEADER ── */}
+        {/* â”€â”€ HEADER â”€â”€ */}
         <div style={{ padding:'14px 18px 16px', display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10, flexShrink:0 }}>
           <div style={{ flex:1 }}>
             <div style={{ fontFamily:"'Fredoka',sans-serif", fontSize:26, fontWeight:600, color:'var(--ink)', letterSpacing:-0.5, lineHeight:1.05, textShadow:'0 1px 0 rgba(255,255,255,0.55)' }}>
@@ -69,7 +69,7 @@ export default function NuovoRilievoPage() {
               {cmCode && (
                 <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:700, color:'var(--teal-deep)', background:'var(--teal-bg)', padding:'2px 7px', borderRadius:6, fontSize:10, boxShadow:'inset 0 1px 2px rgba(20,80,90,0.15)' }}>{cmCode}</span>
               )}
-              {cmCliente && <span style={{ fontWeight:700 }}>· {cmCliente.toUpperCase()}</span>}
+              {cmCliente && <span style={{ fontWeight:700 }}>Â· {cmCliente.toUpperCase()}</span>}
             </div>
           </div>
           {/* Close knob avorio fluffy */}
@@ -81,7 +81,7 @@ export default function NuovoRilievoPage() {
           </button>
         </div>
 
-        {/* ── BODY ── */}
+        {/* â”€â”€ BODY â”€â”€ */}
         <div style={{ padding:'0 16px 24px', display:'flex', flexDirection:'column', gap:18 }}>
 
           {/* TIPO RILIEVO */}
@@ -177,7 +177,7 @@ export default function NuovoRilievoPage() {
               <div style={{ position:'absolute', inset:-6, borderRadius:22, background:'var(--teal)', filter:'blur(13px)', opacity:0.5, zIndex:-1 }} />
               <button onClick={handleCrea} disabled={saving} style={{ width:'100%', background:'linear-gradient(160deg,var(--teal),var(--teal-deep))', color:'#fff', border:'none', borderRadius:16, padding:'15px 14px', fontFamily:"'Fredoka',sans-serif", fontSize:14, fontWeight:700, letterSpacing:0.3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:7, position:'relative', boxShadow:'0 0 0 1px rgba(0,0,0,0.07),0 10px 20px rgba(20,80,90,0.5),inset 0 3.5px 6px rgba(255,255,255,0.25),inset 0 -3px 5px rgba(0,0,0,0.22)', textShadow:'0 1px 2px rgba(0,0,0,0.25)', opacity: saving ? 0.7 : 1 }}>
                 <div style={{ position:'absolute', top:'14%', left:'22%', width:'30%', height:'18%', background:'rgba(255,255,255,0.3)', borderRadius:'50%', filter:'blur(4px)', pointerEvents:'none' }} />
-                <span style={{ position:'relative', zIndex:1 }}>{saving ? 'Creazione…' : 'Crea rilievo · Aggiungi vani'}</span>
+                <span style={{ position:'relative', zIndex:1 }}>{saving ? 'Creazioneâ€¦' : 'Crea rilievo Â· Aggiungi vani'}</span>
                 {!saving && (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.7" strokeLinecap="round" style={{ position:'relative', zIndex:1 }}>
                     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -207,3 +207,4 @@ const inputStyle: React.CSSProperties = {
   color: 'var(--ink)', outline: 'none',
   boxShadow: 'inset 0 3.5px 6px rgba(60,50,30,0.13), inset 0 -1px 2px rgba(255,255,255,0.45)',
 }
+
