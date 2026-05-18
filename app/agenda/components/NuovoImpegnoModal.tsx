@@ -25,6 +25,12 @@ const PRIORITA: { id: Priorita; label: string; bg: string; color: string }[] = [
 
 const today = new Date().toISOString().slice(0, 10)
 
+function getFollowUpDate(giorni: number, dataImpegno: string): string {
+  const d = new Date(dataImpegno + 'T00:00:00')
+  d.setDate(d.getDate() + giorni)
+  return d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
 export const NuovoImpegnoModal: FC<Props> = ({ isOpen, onClose, dataIniziale, onCreato }) => {
   const [tipo, setTipo] = useState<TipoImpegno>('sopralluogo')
   const [titolo, setTitolo] = useState('')
@@ -40,6 +46,11 @@ export const NuovoImpegnoModal: FC<Props> = ({ isOpen, onClose, dataIniziale, on
   const [saving, setSaving] = useState(false)
   const [newTaskText, setNewTaskText] = useState('')
   const [addingTask, setAddingTask] = useState(false)
+  // Follow-up
+  const [followUpOn, setFollowUpOn] = useState(false)
+  const [followUpGiorni, setFollowUpGiorni] = useState(3)
+  const [followUpMessaggio, setFollowUpMessaggio] = useState('')
+  const [followUpCanale, setFollowUpCanale] = useState<'whatsapp'|'chiamata'|'email'|'sms'>('whatsapp')
 
   const tipoInfo = TIPI_IMPEGNO.find(t => t.id === tipo)!
 
@@ -73,6 +84,12 @@ export const NuovoImpegnoModal: FC<Props> = ({ isOpen, onClose, dataIniziale, on
           operatori: operatori ? operatori.split(',').map(s => s.trim()).filter(Boolean) : [],
           push_reminder: pushReminder, reminder_min: reminderMin,
           commessa_id: null, commessa_codice: null, commessa_cliente: null,
+          follow_up: followUpOn ? {
+            attivo: true,
+            giorni: followUpGiorni,
+            messaggio: followUpMessaggio,
+            canale: followUpCanale,
+          } : null,
           tasks: tasks.map(t => ({
             id: t.id, testo: t.testo, priorita: t.priorita,
             assegnato_a: t.assegnato_a, data_scadenza: t.data_scadenza || null,
@@ -108,7 +125,7 @@ export const NuovoImpegnoModal: FC<Props> = ({ isOpen, onClose, dataIniziale, on
           <motion.div
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 301, background: 'var(--bg)', borderRadius: '32px 32px 0 0', maxHeight: '94svh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 -16px 50px rgba(0,0,0,0.25)' }}
+            style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 'min(100vw, 430px)', zIndex: 301, background: 'var(--bg)', borderRadius: '32px 32px 0 0', maxHeight: '94svh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 -16px 50px rgba(0,0,0,0.25)' }}
           >
             {/* Handle */}
             <div style={{ padding: '10px 0 0', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
@@ -305,6 +322,84 @@ export const NuovoImpegnoModal: FC<Props> = ({ isOpen, onClose, dataIniziale, on
                   <button onClick={() => setPushReminder(v => !v)} style={{ width: 44, height: 26, borderRadius: 999, border: 'none', cursor: 'pointer', background: pushReminder ? 'linear-gradient(160deg, var(--teal), var(--teal-deep))' : 'linear-gradient(160deg, var(--surface-3), var(--surface-2))', position: 'relative', zIndex: 2, boxShadow: pushReminder ? '0 3px 7px rgba(20,80,90,0.4)' : 'inset 0 1.5px 3px rgba(0,0,0,0.15)', transition: 'all 0.2s', flexShrink: 0 }}>
                     <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, transition: 'left 0.2s', left: pushReminder ? 21 : 3, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
                   </button>
+                </div>
+
+                {/* FOLLOW-UP */}
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', inset: -5, borderRadius: 22, background: followUpOn ? 'var(--ocra)' : 'var(--surface-2)', filter: 'blur(9px)', opacity: followUpOn ? 0.4 : 0.3, zIndex: -1 }} />
+                  <div style={{ background: 'linear-gradient(160deg, var(--surface), var(--surface-2))', borderRadius: 18, padding: '13px 14px', boxShadow: '0 0 0 1px rgba(60,50,30,0.06), 0 6px 14px rgba(60,50,30,0.13), inset 0 3px 5px rgba(255,255,255,0.55)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: '6%', left: '8%', width: '26%', height: '12%', background: 'rgba(255,255,255,0.5)', borderRadius: '50%', filter: 'blur(7px)' }} />
+
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 2 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 9, background: followUpOn ? 'linear-gradient(160deg, var(--ocra-bg), var(--ocra-mid))' : 'linear-gradient(160deg, var(--bg-soft), var(--surface-2))', color: followUpOn ? 'var(--ocra-deep)' : 'var(--ink-soft)', display: 'grid', placeItems: 'center', boxShadow: 'inset 0 1.5px 3px rgba(255,255,255,0.55), 0 1px 3px rgba(0,0,0,0.07)' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 14, fontWeight: 700, color: 'var(--ink)', textShadow: '0 1px 0 rgba(255,255,255,0.4)' }}>Follow-up</div>
+                          {followUpOn && (
+                            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: 'var(--ocra-deep)', fontWeight: 700, marginTop: 2 }}>
+                              Tra {followUpGiorni} giorni · {getFollowUpDate(followUpGiorni, data)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {/* Toggle */}
+                      <button onClick={() => setFollowUpOn(v => !v)} style={{ width: 44, height: 26, borderRadius: 999, border: 'none', cursor: 'pointer', background: followUpOn ? 'linear-gradient(160deg, var(--ocra), var(--ocra-deep))' : 'linear-gradient(160deg, var(--surface-3), var(--surface-2))', position: 'relative', zIndex: 2, boxShadow: followUpOn ? '0 3px 7px rgba(200,138,23,0.45)' : 'inset 0 1.5px 3px rgba(0,0,0,0.15)', transition: 'all 0.2s', flexShrink: 0 }}>
+                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: followUpOn ? 21 : 3, transition: 'left 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
+                      </button>
+                    </div>
+
+                    {/* Contenuto follow-up */}
+                    {followUpOn && (
+                      <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', zIndex: 2 }}>
+                        {/* Giorni picker */}
+                        <div>
+                          <div style={secLblStyle}>TRA QUANTI GIORNI</div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            {[1, 2, 3, 5, 7, 14, 30].map(g => (
+                              <button key={g} onClick={() => setFollowUpGiorni(g)} style={{ flex: 1, border: 'none', cursor: 'pointer', borderRadius: 10, padding: '8px 4px', fontFamily: "'Fredoka', sans-serif", fontSize: 12, fontWeight: 700, background: followUpGiorni === g ? 'linear-gradient(160deg, var(--ocra), var(--ocra-deep))' : 'linear-gradient(160deg, var(--bg-soft), var(--surface-2))', color: followUpGiorni === g ? '#fff' : 'var(--ink-dim)', boxShadow: followUpGiorni === g ? '0 3px 7px rgba(200,138,23,0.4), inset 0 1.5px 2px rgba(255,255,255,0.25)' : 'inset 0 1.5px 2px rgba(255,255,255,0.5)', textShadow: followUpGiorni === g ? '0 1px 1px rgba(0,0,0,0.2)' : 'none', transition: 'all 0.15s' }}>
+                                {g}g
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Messaggio */}
+                        <div>
+                          <div style={secLblStyle}>MESSAGGIO</div>
+                          <textarea
+                            style={{ ...inputStyle, resize: 'none', minHeight: 65, fontSize: 13 } as React.CSSProperties}
+                            placeholder="Es: Sentire cliente per conferma misure…"
+                            value={followUpMessaggio}
+                            onChange={e => setFollowUpMessaggio(e.target.value)}
+                          />
+                        </div>
+
+                        {/* Canale */}
+                        <div>
+                          <div style={secLblStyle}>CANALE PREFERITO</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 7 }}>
+                            {[
+                              { id: 'whatsapp', label: 'WhatsApp', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg> },
+                              { id: 'chiamata', label: 'Chiama', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.5 19.79 19.79 0 01.12 3 2 2 0 012.1 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.09a16 16 0 006 6l.66-.66a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg> },
+                              { id: 'email', label: 'Email', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> },
+                              { id: 'sms', label: 'SMS', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> },
+                            ].map(c => {
+                              const isActive = followUpCanale === c.id
+                              return (
+                                <button key={c.id} onClick={() => setFollowUpCanale(c.id as typeof followUpCanale)} style={{ border: 'none', cursor: 'pointer', borderRadius: 12, padding: '10px 4px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: isActive ? 'linear-gradient(160deg, var(--teal-bg), var(--teal-soft))' : 'linear-gradient(160deg, var(--bg-soft), var(--surface-2))', color: isActive ? 'var(--teal-deep)' : 'var(--ink-dim)', boxShadow: isActive ? '0 3px 7px rgba(20,80,90,0.2), inset 0 1.5px 2px rgba(255,255,255,0.55), 0 0 0 1.5px var(--teal-soft)' : 'inset 0 1.5px 2px rgba(255,255,255,0.5)', transition: 'all 0.15s' }}>
+                                  {c.icon}
+                                  <span style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 10, fontWeight: 700 }}>{c.label}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* NOTE */}
