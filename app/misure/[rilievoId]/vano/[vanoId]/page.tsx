@@ -44,9 +44,10 @@ export default function VanoPage() {
 
   return (
     <MastroProvider initialVano={vano} initialCM={cm} initialRilievo={rilievo}>
-      <div style={{ position:'fixed', inset:0, overflow:'auto', background:'var(--bg, #ECE6D6)' }}>
+      <div className="phone-screen" style={{ overflow:'auto' }}>
         <VanoDetailPanel />
       </div>
     </MastroProvider>
   )
 }
+
