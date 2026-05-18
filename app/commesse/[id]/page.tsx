@@ -41,25 +41,9 @@ function CentroOperativoInner({ cm, rilievi, onReload }: { cm: any, rilievi: any
   const azione = getProssimaAzione(cm, rilievi)
 
   // Ricarica i vani quando si seleziona un rilievo
-  const handleSelectRilievo = useCallback(async (r: any) => {
-    // Se il rilievo ha già i vani caricati, usalo direttamente
-    if (r.vani && r.vani.length > 0) {
-      setSelectedRilievo(r)
-      return
-    }
-    // Altrimenti carica i vani dall'API
-    try {
-      const res = await fetch(`/api/vani?rilievo_id=${r.id}`)
-      if (res.ok) {
-        const json = await res.json()
-        setSelectedRilievo({ ...r, vani: json.vani || [] })
-      } else {
-        setSelectedRilievo(r)
-      }
-    } catch {
-      setSelectedRilievo(r)
-    }
-  }, [setSelectedRilievo])
+  const handleSelectRilievo = useCallback((r: any) => {
+    router.push(`/misure/${r.id}`)
+  }, [router])
 
   // Quando si apre un vano da RilieviVaniPanel
   const handleOpenVano = useCallback((vanoId: string, rilId: string) => {
