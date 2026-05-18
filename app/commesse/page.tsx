@@ -22,6 +22,7 @@ function CommesseContent() {
     search, setSearch, commesse, counts, loading,
     filterSheetOpen, setFilterSheetOpen,
     sortSheetOpen, setSortSheetOpen,
+    ricarica,
   } = useCommesse()
 
   const [nuovaModalOpen, setNuovaModalOpen] = useState(false)
@@ -294,6 +295,7 @@ function CommesseContent() {
       <NuovaCommessaModal
         isOpen={nuovaModalOpen}
         onClose={() => setNuovaModalOpen(false)}
+        onCreata={() => { setNuovaModalOpen(false); ricarica() }}
       />
     </div>
   )

@@ -81,5 +81,6 @@ export function useCommesse() {
     commesse, counts, loading,
     filterSheetOpen, setFilterSheetOpen,
     sortSheetOpen, setSortSheetOpen,
+    ricarica: carica,
   }
 }

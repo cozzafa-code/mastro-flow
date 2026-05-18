@@ -71,9 +71,10 @@ const selectStyle: React.CSSProperties = {
 interface Props {
   isOpen: boolean
   onClose: () => void
+  onCreata?: () => void
 }
 
-export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
+export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose, onCreata }) => {
   const router = useRouter()
   const { flash } = useFlashAdvance()
   const codice = useState(genCodice)[0]
@@ -158,9 +159,7 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Errore creazione commessa')
-      onClose()
-      router.push('/commesse')
-      router.refresh()
+      onCreata ? onCreata() : onClose()
     } catch (e) {
       console.error('handleSaveNuova', e)
       alert('Errore: ' + (e as Error).message)
