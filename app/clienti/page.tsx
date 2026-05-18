@@ -221,7 +221,14 @@ function ClienteRow({ cliente: c, onClick }: { cliente: Cliente; onClick: () => 
 function EmptyState({ onNuovo }: { onNuovo: () => void }) {
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:32, gap:16 }}>
-      <div style={{ fontSize:52 }}>👥</div>
+      <div style={{ width:72, height:72, borderRadius:20, background:'linear-gradient(160deg,var(--teal-bg),var(--teal-soft))', display:'grid', placeItems:'center', boxShadow:'inset 0 3px 6px rgba(255,255,255,0.5),0 6px 14px rgba(20,80,90,0.15)' }}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+          <path d="M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+      </div>
       <div style={{ fontFamily:"'Fredoka',sans-serif", fontSize:22, fontWeight:600, color:'var(--ink)', textAlign:'center' }}>Nessun cliente</div>
       <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, letterSpacing:1.5, color:'var(--ink-dim)', textTransform:'uppercase' }}>AGGIUNGI IL PRIMO</div>
       <button onClick={onNuovo} style={{

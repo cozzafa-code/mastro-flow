@@ -46,7 +46,7 @@ export const BottomNav: FC<Props> = ({ active, mailCount }) => {
         return (
           <button key={tab.key} onClick={() => router.push(tab.href)}
             style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, background:'transparent', border:'none', cursor:'pointer', padding:'0 6px', minWidth:56 }}>
-            <div style={{ width: tab.center ? 52 : 46, height: tab.center ? 52 : 46, borderRadius: tab.center ? 16 : '50%', position:'relative', display:'grid', placeItems:'center', marginTop: tab.center ? -14 : 0,
+            <div style={{ width: tab.center ? 52 : 46, height: tab.center ? 52 : 46, borderRadius: tab.center ? 16 : '50%', position:'relative', display:'grid', placeItems:'center', marginTop: tab.center ? -6 : 0,
               background: isActive ? tab.bg : 'linear-gradient(160deg,#FCF7E8,var(--surface-2))',
               color: isActive ? '#fff' : 'var(--ink-dim)',
               boxShadow: isActive ? `0 0 0 1px rgba(0,0,0,0.06),0 6px 14px ${tab.shadow},inset 0 3px 6px rgba(255,255,255,0.22),inset 0 -3px 6px rgba(0,0,0,0.18)` : '0 0 0 1px rgba(60,50,30,0.05),0 4px 10px rgba(60,50,30,0.15),inset 0 3px 6px rgba(255,255,255,0.6)',
