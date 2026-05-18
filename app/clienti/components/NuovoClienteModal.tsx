@@ -67,7 +67,7 @@ export const NuovoClienteModal: FC<Props> = ({ isOpen, onClose, onCreato }) => {
 
           <motion.div initial={{ y:'100%' }} animate={{ y:0 }} exit={{ y:'100%' }}
             transition={{ type:'spring', damping:30, stiffness:300 }}
-            style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, zIndex:401, background:'var(--bg)', borderRadius:'28px 28px 0 0', boxShadow:'0 -20px 60px rgba(0,0,0,0.3)', maxHeight:'92svh', display:'flex', flexDirection:'column' }}>
+            style={{ position:'fixed', bottom:0, left:0, right:0, margin:'0 auto', width:'100%', maxWidth:430, zIndex:401, background:'var(--bg)', borderRadius:'28px 28px 0 0', boxShadow:'0 -20px 60px rgba(0,0,0,0.3)', maxHeight:'92svh', display:'flex', flexDirection:'column' }}>
 
             <div style={{ flexShrink:0, padding:'10px 0 0', display:'flex', justifyContent:'center' }}>
               <div style={{ width:36, height:4, borderRadius:2, background:'var(--surface-3)' }} />
