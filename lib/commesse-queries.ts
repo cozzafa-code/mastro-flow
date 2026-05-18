@@ -29,9 +29,9 @@ export async function fetchCommesse(
 
   if (filter !== 'all') {
     const faseMap: Record<string, string> = {
-      appuntamenti: 'APP', misure: 'MIS', preventivi: 'PRV',
-      conferme: 'CNF', acconti: 'ACC', ordini: 'ORD',
-      materiali: 'MAT', montaggi: 'MON',
+      appuntamenti: 'sopralluogo', misure: 'sopralluogo', preventivi: 'preventivo',
+      conferme: 'conferma_ordine', acconti: 'acconto_pagato', ordini: 'ordine',
+      materiali: 'produzione', montaggi: 'montaggio',
     }
     if (faseMap[filter]) {
       data = data.filter(c => c.fase === faseMap[filter])
@@ -74,7 +74,7 @@ export async function countCommessePerFiltro(): Promise<Record<string, number>> 
     const fase = c.fase?.toLowerCase()
     if (fase) counts[fase] = (counts[fase] || 0) + 1
   }
-  counts['appuntamenti'] = counts['app'] || 0
+  counts['appuntamenti'] = counts['sopralluogo'] || 0
   counts['misure']       = counts['mis'] || 0
   counts['preventivi']   = counts['prv'] || 0
   counts['conferme']     = counts['cnf'] || 0

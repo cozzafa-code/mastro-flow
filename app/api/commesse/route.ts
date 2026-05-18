@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         telefono: telefono || null,
         email: email || null,
         note: note || null,
-        fase: 'APP',
+        fase: 'sopralluogo',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
