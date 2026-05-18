@@ -126,13 +126,8 @@ export const DraggableFAB: FC<Props> = ({ onNuovaCommessa, onNuovoImpegno, onNuo
     setIsDragging(false)
 
     if (!hasDragged.current) {
-      if (menuOpen) {
-        // Se menu aperto → chiudi
-        setMenuOpen(false)
-      } else {
-        // Tap semplice → azione contestuale
-        handleContextAction()
-      }
+      // Tap o long press → sempre toggle menu
+      setMenuOpen(v => !v)
     } else if (pos) {
       savePos(pos.x, pos.y)
       // Snap al bordo più vicino
