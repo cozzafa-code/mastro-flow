@@ -46,7 +46,11 @@ input, select, textarea {
   -webkit-text-size-adjust: 100%;
 }
 
-button:active { opacity: 0.82; transform: scale(0.96); }
+/* Modal e sheet - solo scroll verticale, niente swipe orizzontale */
+[data-modal], .modal-sheet {
+  touch-action: pan-y !important;
+  overscroll-behavior: none;
+}
 
 /* ── PHONE SHELL ── */
 .phone-screen {

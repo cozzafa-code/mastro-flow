@@ -215,14 +215,17 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             style={{
-              position: 'fixed', bottom: 0, left: 0, right: 0,
+              position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+              width: 'min(100vw, 430px)',
               zIndex: 301,
               background: 'var(--bg)',
               borderRadius: '32px 32px 0 0',
               boxShadow: '0 -16px 50px rgba(0,0,0,0.25)',
-              maxHeight: '92dvh',
+              maxHeight: '92svh',
               display: 'flex', flexDirection: 'column',
               overflow: 'hidden',
+              touchAction: 'pan-y',
+              overscrollBehavior: 'none',
             }}
           >
             {/* Handle */}
