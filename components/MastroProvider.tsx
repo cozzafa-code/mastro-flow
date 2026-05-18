@@ -163,13 +163,11 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     setVanoStep(0)
   }, [])
 
-  const updateVanoField = useCallback((field: string, value: any) => {
+  const updateVanoField = useCallback((vanoId: string, field: string, value: any) => {
     setSelectedVano((prev: any) => {
       if (!prev) return prev
       const updated = { ...prev, [field]: value }
-      // Salva via API con mapping snake_case
-      fetch('/api/vani', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: prev.id, [field]: value }) }).catch(e => console.error('updateVanoField error:', e))
-      // Aggiorna anche nel rilievo
+      fetch('/api/vani', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: vanoId || prev.id, [field]: value }) }).catch(e => console.error('updateVanoField error:', e))
       setSelectedRilievo((r: any) => {
         if (!r) return r
         return { ...r, vani: (r.vani || []).map((v: any) => v.id === prev.id ? updated : v) }
@@ -296,6 +294,7 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     </MastroContext.Provider>
   )
 }
+
 
 
 
