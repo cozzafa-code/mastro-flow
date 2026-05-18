@@ -50,7 +50,9 @@ const inputStyle: React.CSSProperties = {
   flex: 1, minWidth: 0,
   background: 'linear-gradient(160deg, var(--bg-soft), var(--surface-2))',
   border: 'none', borderRadius: 12, padding: '11px 13px',
-  fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 600,
+  fontFamily: "'Nunito', sans-serif",
+  fontSize: 16, /* CRITICO: sotto 16px iOS fa zoom automatico */
+  fontWeight: 600,
   color: 'var(--ink)', outline: 'none',
   boxShadow: 'inset 0 3px 5px rgba(60,50,30,0.1), inset 0 -1px 2px rgba(255,255,255,0.4)',
   marginBottom: 8,

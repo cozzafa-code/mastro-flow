@@ -39,6 +39,13 @@ button, a, [role="button"] {
   -webkit-user-select: none;
 }
 
+/* CRITICO iOS: font-size minimo 16px su input/select/textarea
+   altrimenti iOS fa zoom automatico al focus */
+input, select, textarea {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: 100%;
+}
+
 button:active { opacity: 0.82; transform: scale(0.96); }
 
 /* ── PHONE SHELL ── */
