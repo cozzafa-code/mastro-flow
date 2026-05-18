@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 export const dynamic = 'force-dynamic'
 
 import { useParams, useRouter } from 'next/navigation'
