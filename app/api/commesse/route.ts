@@ -3,28 +3,30 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29'
 
+function genCode() {
+  return `S-${Math.floor(1000 + Math.random() * 9000)}`
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const sb = createAdminClient()
     const body = await req.json()
     const {
-      code, cliente, cognome,
-      indirizzo, telefono, email, note,
+      cliente, cognome, indirizzo, telefono, email, note,
       fase, tipo, difficolta_salita, piano_edificio,
       foro_scale, mezzo_salita, tipo_edificio,
       tipo_problema, tipo_infisso, urgenza, problema, chi_segnala,
     } = body
 
-    if (!cliente) {
-      return NextResponse.json({ error: 'Nome cliente obbligatorio' }, { status: 400 })
-    }
+    if (!cliente) return NextResponse.json({ error: 'Nome cliente obbligatorio' }, { status: 400 })
 
-    const sb = createAdminClient()
-
-    const { data, error } = await sb
-      .from('commesse')
-      .insert({
+    // Genera codice univoco con retry
+    let data = null, error = null
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = genCode()
+      const res = await sb.from('commesse').insert({
         azienda_id: AZIENDA_ID,
-        code: code || `S-${Date.now().toString(36).toUpperCase().slice(-4)}`,
+        code,
         cliente,
         cognome: cognome || null,
         indirizzo: indirizzo || null,
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
         email: email || null,
         note: note || null,
         fase: fase || 'sopralluogo',
-        tipo: (tipo === 'riparazione' || !tipo) ? null : tipo,
+        tipo: tipo || null,
         difficolta_salita: difficolta_salita || null,
         piano_edificio: piano_edificio || null,
         foro_scale: foro_scale || null,
@@ -45,16 +47,18 @@ export async function POST(req: NextRequest) {
         chi_segnala: chi_segnala || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
+      }).select().single()
+
+      if (!res.error) { data = res.data; break }
+      if (!res.error.message.includes('duplicate key')) { error = res.error; break }
+      error = res.error
+    }
 
     if (error) {
       console.error('[POST /api/commesse]', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    return NextResponse.json({ commessa: data })
+    return NextResponse.json({ commessa: data }, { status: 201 })
   } catch (err) {
     console.error('[POST /api/commesse] unexpected', err)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })
@@ -72,13 +76,9 @@ export async function GET() {
       .order('created_at', { ascending: false })
       .limit(200)
 
-    if (error) {
-      console.error('[GET /api/commesse]', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ commesse: data || [] })
   } catch (err) {
-    console.error('[GET /api/commesse] unexpected', err)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })
   }
 }

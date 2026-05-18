@@ -24,7 +24,10 @@ export async function GET(req: NextRequest) {
     if (q) query = query.ilike('nome', `%${q}%`)
 
     const { data, error } = await query
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[POST /api/clienti] insert error:', JSON.stringify(error))
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ clienti: data || [] })
   } catch (e) {
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })
@@ -33,6 +36,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY mancante su Vercel' }, { status: 500 })
+    }
     const sb = createAdminClient()
     const body = await req.json()
     const {
