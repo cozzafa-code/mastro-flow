@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { BottomNav } from '@/app/components/BottomNav'
 import MastroProvider from '@/components/MastroProvider'
 import RilieviVaniPanel from '@/components/RilieviVaniPanel'
@@ -28,13 +28,46 @@ function getProssimaAzione(cm: any, rilievi: any[]) {
   return { titolo:'Misure completate', desc:'Procedi con il preventivo', cta:'APRI PREVENTIVO →', tipo:'preventivo' }
 }
 
-// ── INNER — ha accesso al context MastroProvider ─────────
+// ── INNER – ha accesso al context MastroProvider ─────────────
 function CentroOperativoInner({ cm, rilievi, onReload }: { cm: any, rilievi: any[], onReload: () => void }) {
   const router = useRouter()
-  const { selectedVano, selectedRilievo, setSelectedRilievo, setSelectedVano } = useMastro()
+  const {
+    selectedVano, setSelectedVano,
+    selectedRilievo, setSelectedRilievo,
+  } = useMastro()
+
   const faseIdx = FASE_IDX[cm?.fase] ?? 0
   const nomeCompleto = [cm?.cliente, cm?.cognome].filter(Boolean).join(' ')
   const azione = getProssimaAzione(cm, rilievi)
+
+  // Ricarica i vani quando si seleziona un rilievo
+  const handleSelectRilievo = useCallback(async (r: any) => {
+    // Se il rilievo ha già i vani caricati, usalo direttamente
+    if (r.vani && r.vani.length > 0) {
+      setSelectedRilievo(r)
+      return
+    }
+    // Altrimenti carica i vani dall'API
+    try {
+      const res = await fetch(`/api/vani?rilievo_id=${r.id}`)
+      if (res.ok) {
+        const json = await res.json()
+        setSelectedRilievo({ ...r, vani: json.vani || [] })
+      } else {
+        setSelectedRilievo(r)
+      }
+    } catch {
+      setSelectedRilievo(r)
+    }
+  }, [setSelectedRilievo])
+
+  // Quando si apre un vano da RilieviVaniPanel
+  const handleOpenVano = useCallback((vanoId: string, rilId: string) => {
+    const ril = rilievi.find((r: any) => r.id === rilId) || selectedRilievo
+    const vano = ril?.vani?.find((v: any) => v.id === vanoId)
+      || selectedRilievo?.vani?.find((v: any) => v.id === vanoId)
+    if (vano) setSelectedVano(vano)
+  }, [rilievi, selectedRilievo, setSelectedVano])
 
   // Se c'è un vano selezionato → mostra VanoDetailPanel
   if (selectedVano) {
@@ -52,13 +85,7 @@ function CentroOperativoInner({ cm, rilievi, onReload }: { cm: any, rilievi: any
     return (
       <div className="phone-screen">
         <div className="page" style={{ paddingBottom: 80 }}>
-          <RilieviVaniPanel
-            onOpenVano={(vanoId: string, rilId: string) => {
-              const ril = rilievi.find((r: any) => r.id === rilId) || selectedRilievo
-              const vano = ril?.vani?.find((v: any) => v.id === vanoId)
-              if (vano) setSelectedVano(vano)
-            }}
-          />
+          <RilieviVaniPanel onOpenVano={handleOpenVano} />
         </div>
         <BottomNav active="commesse" />
       </div>
@@ -131,7 +158,7 @@ function CentroOperativoInner({ cm, rilievi, onReload }: { cm: any, rilievi: any
               <div style={{ fontFamily:"'Nunito',sans-serif", fontSize:13, color:'var(--ink-dim)', fontWeight:600, marginBottom:14, lineHeight:1.4 }}>{azione.desc}</div>
               <button onClick={() => {
                 if (azione.tipo === 'crea') router.push(`/commesse/${cm.id}/rilievo/nuovo`)
-                else if (azione.tipo === 'apri' && rilievi[0]) setSelectedRilievo(rilievi[0])
+                else if (azione.tipo === 'apri' && rilievi[0]) handleSelectRilievo(rilievi[0])
               }} style={{ width:'100%', border:'none', cursor:'pointer', borderRadius:14, padding:'13px 16px', background:'linear-gradient(160deg,var(--teal),var(--teal-deep))', color:'#fff', fontFamily:"'Fredoka',sans-serif", fontSize:15, fontWeight:700, textShadow:'0 1px 2px rgba(0,0,0,0.25)', boxShadow:'0 6px 14px rgba(20,80,90,0.45),inset 0 3px 6px rgba(255,255,255,0.22)' }}>
                 {azione.cta}
               </button>
@@ -157,7 +184,7 @@ function CentroOperativoInner({ cm, rilievi, onReload }: { cm: any, rilievi: any
           ) : (
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
               {rilievi.map((r:any) => (
-                <div key={r.id} onClick={() => setSelectedRilievo(r)} style={{ background:'linear-gradient(160deg,var(--surface),var(--surface-2))', borderRadius:16, padding:'12px 14px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', boxShadow:'0 0 0 1px rgba(60,50,30,0.05),0 5px 12px rgba(60,50,30,0.12),inset 0 3px 5px rgba(255,255,255,0.6)' }}>
+                <div key={r.id} onClick={() => handleSelectRilievo(r)} style={{ background:'linear-gradient(160deg,var(--surface),var(--surface-2))', borderRadius:16, padding:'12px 14px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', boxShadow:'0 0 0 1px rgba(60,50,30,0.05),0 5px 12px rgba(60,50,30,0.12),inset 0 3px 5px rgba(255,255,255,0.6)' }}>
                   <div style={{ width:42, height:42, borderRadius:13, background:'var(--teal-bg)', display:'grid', placeItems:'center', flexShrink:0 }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="1.8" strokeLinecap="round"><path d="M21 3L3 21M8 3v4M12 3v2M16 3v4M3 8h4M3 12h2M3 16h4"/></svg>
                   </div>
@@ -209,9 +236,10 @@ function CentroOperativoInner({ cm, rilievi, onReload }: { cm: any, rilievi: any
   )
 }
 
-// ── OUTER — carica dati e monta provider ──────────────────
+// ── OUTER – carica dati e monta provider ──────────────────────
 export default function CommessaPage() {
   const params = useParams()
+  const router = useRouter()
   const id = params.id as string
   const [cm, setCm] = useState<any>(null)
   const [rilievi, setRilievi] = useState<any[]>([])
@@ -231,7 +259,16 @@ export default function CommessaPage() {
     finally { setLoading(false) }
   }, [id])
 
-  useEffect(() => { load() }, [load])
+  // Ricarica quando si torna su questa pagina (dopo nuovo rilievo)
+  useEffect(() => {
+    load()
+  }, [load])
+
+  useEffect(() => {
+    const handleFocus = () => load()
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [load])
 
   if (loading) return (
     <div className="phone-screen" style={{ display:'grid', placeItems:'center' }}>
@@ -244,7 +281,6 @@ export default function CommessaPage() {
     </div>
   )
 
-  // Costruisce rilievi con vani per il provider
   const rilieviConVani = rilievi.map((r:any) => ({
     ...r,
     tipo_rilievo: r.complesso ? 'complesso' : 'semplice',
@@ -252,11 +288,7 @@ export default function CommessaPage() {
     vani: r.vani || [],
   }))
 
-  // Costruisce la commessa nel formato che MastroProvider si aspetta
-  const cmForProvider = {
-    ...cm,
-    rilievi: rilieviConVani,
-  }
+  const cmForProvider = { ...cm, rilievi: rilieviConVani }
 
   return (
     <MastroProvider initialCM={cmForProvider} initialRilievo={null}>
