@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +39,7 @@ export default function RilievoPage() {
     const num = vani.filter(v => v.settore === settore).length + 1
     const vano = await createVano({
       rilievo_id: rilievoId,
+      commessa_id: rilievo?.commessa_id,
       nome: `${settoreInfo?.label} ${num}`,
       settore,
       numero: vani.length + 1,
@@ -71,7 +72,7 @@ export default function RilievoPage() {
           </button>
           <div style={{ flex: 1, position: 'relative', zIndex: 2 }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.6)', letterSpacing: 1.8, textTransform: 'uppercase' }}>
-              {rilievo?.commessa_codice} · {rilievo?.tipo_misure?.toUpperCase()}
+              {rilievo?.commessa_codice} Â· {rilievo?.tipo_misure?.toUpperCase()}
             </div>
             <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, fontWeight: 600, color: '#fff', letterSpacing: -0.4, lineHeight: 1, marginTop: 2, textShadow: '0 1.5px 3px rgba(0,0,0,0.3)' }}>
               Vani rilievo
@@ -102,7 +103,7 @@ export default function RilievoPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 2 }}>
                   <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--ink)', letterSpacing: -0.2, textShadow: '0 1px 0 rgba(255,255,255,0.4)' }}>{vano.nome}</div>
-                  <div style={{ fontSize: 11, color: 'var(--ink-dim)', marginTop: 2, fontWeight: 600 }}>{settore?.label} · {vano.stato}</div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-dim)', marginTop: 2, fontWeight: 600 }}>{settore?.label} Â· {vano.stato}</div>
                 </div>
                 <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: completo ? 'linear-gradient(160deg, var(--success-bg), var(--success-mid))' : 'linear-gradient(160deg, var(--ocra-bg), var(--ocra-mid))', color: completo ? 'var(--success)' : 'var(--ocra-deep)', position: 'relative', zIndex: 2 }}>
                   {completo ? 'OK' : 'MANCA'}
@@ -121,7 +122,7 @@ export default function RilievoPage() {
               style={{ width: '100%', border: 'none', cursor: 'pointer', borderRadius: 16, padding: '14px', background: 'linear-gradient(160deg, var(--teal), var(--teal-deep))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: "'Fredoka', sans-serif", fontSize: 14, fontWeight: 700, textShadow: '0 1px 2px rgba(0,0,0,0.25)', boxShadow: '0 0 0 1px rgba(0,0,0,0.07), 0 8px 18px rgba(20,80,90,0.5), inset 0 3.5px 6px rgba(255,255,255,0.25)', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: '14%', left: '22%', width: '30%', height: '18%', background: 'rgba(255,255,255,0.3)', borderRadius: '50%', filter: 'blur(5px)', pointerEvents: 'none' }} />
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round" style={{ position: 'relative', zIndex: 1 }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span style={{ position: 'relative', zIndex: 1 }}>{addingVano ? 'Creazione vano…' : 'Aggiungi vano'}</span>
+              <span style={{ position: 'relative', zIndex: 1 }}>{addingVano ? 'Creazione vanoâ€¦' : 'Aggiungi vano'}</span>
             </button>
           </div>
         </div>
@@ -161,3 +162,4 @@ export default function RilievoPage() {
     </div>
   )
 }
+

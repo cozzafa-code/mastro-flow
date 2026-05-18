@@ -1,6 +1,6 @@
-import type { Rilievo, Vano, MisureVano, TipoRilievo, TipoMisure } from '@/lib/misure-types'
+﻿import type { Rilievo, Vano, MisureVano, TipoRilievo, TipoMisure } from '@/lib/misure-types'
 
-// ── RILIEVI ──────────────────────────────────────────────────────
+// â”€â”€ RILIEVI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createRilievo(params: {
   commessa_id: string; commessa_codice: string; commessa_cliente: string
@@ -29,11 +29,12 @@ export async function getRilieviCommessa(commessa_id: string): Promise<Rilievo[]
   return json.rilievi || []
 }
 
-// ── VANI ─────────────────────────────────────────────────────────
+// â”€â”€ VANI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createVano(params: {
   rilievo_id: string; nome: string; settore: string
   numero: number; piano?: string; zona?: string; tipo_misure: TipoMisure
+  commessa_id?: string
 }): Promise<Vano | null> {
   const res = await fetch('/api/vani', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -81,7 +82,7 @@ export async function saveVanoField(vanoId: string, field: string, value: unknow
   })
 }
 
-// ── FOTO ─────────────────────────────────────────────────────────
+// â”€â”€ FOTO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function uploadFotoVano(vanoId: string, file: File): Promise<string | null> {
   // Prima carica su Supabase Storage via API
@@ -110,3 +111,4 @@ export async function getFotoVano(vanoId: string): Promise<string[]> {
   const sb = createClient()
   return vano.foto_ids.map(path => sb.storage.from('foto-misure').getPublicUrl(path).data.publicUrl)
 }
+
