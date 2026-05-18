@@ -139,46 +139,58 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
     flash('section-chi-segnala')
   }
 
-  // Salva nuova commessa
+  // Salva nuova commessa via API route (bypassa RLS)
   const handleSaveNuova = async () => {
     setSaving(true)
     try {
-      const sb = createClient()
-      await sb.from('commesse').insert({
-        codice,
-        cliente_nome: `${f.nome} ${f.cognome}`.trim(),
-        indirizzo: f.indirizzo,
-        citta: f.citta,
-        fase: 'APP',
-        giorni_in_fase: 0,
-        valore_eur: null,
+      const res = await fetch('/api/commesse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codice,
+          cliente_nome: `${f.nome} ${f.cognome}`.trim(),
+          indirizzo: f.indirizzo || null,
+          citta: f.citta || null,
+          telefono: f.telefono || null,
+          email: f.email || null,
+          note: f.note || null,
+        }),
       })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Errore creazione commessa')
       onClose()
       router.push('/commesse')
+      router.refresh()
     } catch (e) {
-      console.error(e)
+      console.error('handleSaveNuova', e)
+      alert('Errore: ' + (e as Error).message)
     } finally {
       setSaving(false)
     }
   }
 
-  // Salva riparazione
+  // Salva riparazione via API route
   const handleSaveRip = async () => {
     setSaving(true)
     try {
-      const sb = createClient()
-      await sb.from('commesse').insert({
-        codice,
-        cliente_nome: `${rip.nome} ${rip.cognome}`.trim(),
-        fase: 'APP',
-        giorni_in_fase: 0,
-        sotto_stato: 'riparazione',
-        note: rip.descrizione,
+      const res = await fetch('/api/commesse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codice,
+          cliente_nome: `${rip.nome} ${rip.cognome}`.trim(),
+          note: rip.descrizione || null,
+          sotto_stato: 'riparazione',
+        }),
       })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Errore creazione riparazione')
       onClose()
       router.push('/commesse')
+      router.refresh()
     } catch (e) {
-      console.error(e)
+      console.error('handleSaveRip', e)
+      alert('Errore: ' + (e as Error).message)
     } finally {
       setSaving(false)
     }

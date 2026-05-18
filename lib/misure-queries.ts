@@ -1,166 +1,112 @@
-import { createClient } from '@/lib/supabase/client'
 import type { Rilievo, Vano, MisureVano, TipoRilievo, TipoMisure } from '@/lib/misure-types'
-import { emptyMisure } from '@/lib/misure-types'
 
-// ── RILIEVO ──────────────────────────────────────────────────────
+// ── RILIEVI ──────────────────────────────────────────────────────
 
 export async function createRilievo(params: {
-  commessa_id: string
-  commessa_codice: string
-  commessa_cliente: string
-  tipo: TipoRilievo
-  tipo_misure: TipoMisure
-  rilevatore: string
-  note: string
+  commessa_id: string; commessa_codice: string; commessa_cliente: string
+  tipo: TipoRilievo; tipo_misure: TipoMisure; rilevatore: string; note: string
 }): Promise<Rilievo | null> {
-  const sb = createClient()
-  const { data, error } = await sb
-    .from('rilievi')
-    .insert({
-      ...params,
-      stato: 'bozza',
-      vani: [],
-    })
-    .select()
-    .single()
-
-  if (error) { console.error('createRilievo', error); return null }
-  return data as Rilievo
+  const res = await fetch('/api/rilievi', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  })
+  const json = await res.json()
+  if (!res.ok) { console.error('createRilievo', json.error); return null }
+  return json.rilievo
 }
 
 export async function getRilievo(id: string): Promise<Rilievo | null> {
-  const sb = createClient()
-  const { data, error } = await sb
-    .from('rilievi')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error) return null
-  return data as Rilievo
+  const res = await fetch(`/api/rilievi?id=${id}`)
+  const json = await res.json()
+  if (!res.ok) return null
+  return json.rilievo
 }
 
 export async function getRilieviCommessa(commessa_id: string): Promise<Rilievo[]> {
-  const sb = createClient()
-  const { data, error } = await sb
-    .from('rilievi')
-    .select('*')
-    .eq('commessa_id', commessa_id)
-    .order('created_at', { ascending: false })
-
-  if (error) return []
-  return data as Rilievo[]
+  const res = await fetch(`/api/rilievi?commessa_id=${commessa_id}`)
+  const json = await res.json()
+  if (!res.ok) return []
+  return json.rilievi || []
 }
 
-// ── VANO ─────────────────────────────────────────────────────────
+// ── VANI ─────────────────────────────────────────────────────────
 
 export async function createVano(params: {
-  rilievo_id: string
-  nome: string
-  settore: string
-  numero: number
-  piano?: string
-  zona?: string
-  tipo_misure: TipoMisure
+  rilievo_id: string; nome: string; settore: string
+  numero: number; piano?: string; zona?: string; tipo_misure: TipoMisure
 }): Promise<Vano | null> {
-  const sb = createClient()
-  const { data, error } = await sb
-    .from('vani')
-    .insert({
-      ...params,
-      misure: emptyMisure(),
-      foto_ids: [],
-      stato: 'vuoto',
-      note: '',
-    })
-    .select()
-    .single()
-
-  if (error) { console.error('createVano', error); return null }
-  return data as Vano
+  const res = await fetch('/api/vani', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  })
+  const json = await res.json()
+  if (!res.ok) { console.error('createVano', json.error); return null }
+  return json.vano
 }
 
 export async function getVano(id: string): Promise<Vano | null> {
-  const sb = createClient()
-  const { data, error } = await sb
-    .from('vani')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error) return null
-  return data as Vano
+  const res = await fetch(`/api/vani?id=${id}`)
+  const json = await res.json()
+  if (!res.ok) return null
+  return json.vano
 }
 
 export async function getVaniRilievo(rilievo_id: string): Promise<Vano[]> {
-  const sb = createClient()
-  const { data, error } = await sb
-    .from('vani')
-    .select('*')
-    .eq('rilievo_id', rilievo_id)
-    .order('numero', { ascending: true })
-
-  if (error) return []
-  return data as Vano[]
+  const res = await fetch(`/api/vani?rilievo_id=${rilievo_id}`)
+  const json = await res.json()
+  if (!res.ok) return []
+  return json.vani || []
 }
 
 export async function saveMisure(vanoId: string, misure: MisureVano): Promise<void> {
-  const sb = createClient()
-  const { larghezza_cx, altezza_cx } = misure
-  const stato = larghezza_cx && altezza_cx ? 'completo' : Object.values(misure).some(v => v) ? 'parziale' : 'vuoto'
-
-  await sb.from('vani').update({
-    misure,
-    stato,
-    updated_at: new Date().toISOString(),
-  }).eq('id', vanoId)
+  const lC = misure.lCentro, hC = misure.hCentro
+  const stato = lC && hC ? 'completo' : Object.values(misure).some(v => v) ? 'parziale' : 'vuoto'
+  await fetch('/api/vani', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: vanoId, misure, stato }),
+  })
 }
 
 export async function saveVanoNote(vanoId: string, note: string): Promise<void> {
-  const sb = createClient()
-  await sb.from('vani').update({ note }).eq('id', vanoId)
+  await fetch('/api/vani', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: vanoId, note }),
+  })
+}
+
+export async function saveVanoField(vanoId: string, field: string, value: unknown): Promise<void> {
+  await fetch('/api/vani', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: vanoId, [field]: value }),
+  })
 }
 
 // ── FOTO ─────────────────────────────────────────────────────────
 
-export async function uploadFotoVano(
-  vanoId: string,
-  file: File
-): Promise<string | null> {
+export async function uploadFotoVano(vanoId: string, file: File): Promise<string | null> {
+  // Prima carica su Supabase Storage via API
+  const { createClient } = await import('@/lib/supabase/client')
   const sb = createClient()
   const ext = file.name.split('.').pop()
   const path = `vani/${vanoId}/${Date.now()}.${ext}`
 
-  const { error: uploadError } = await sb.storage
-    .from('foto-misure')
-    .upload(path, file)
+  const { error } = await sb.storage.from('foto-misure').upload(path, file)
+  if (error) { console.error('uploadFotoVano', error); return null }
 
-  if (uploadError) { console.error('uploadFotoVano', uploadError); return null }
+  const { data: { publicUrl } } = sb.storage.from('foto-misure').getPublicUrl(path)
 
-  const { data: { publicUrl } } = sb.storage
-    .from('foto-misure')
-    .getPublicUrl(path)
-
-  // Aggiorna foto_ids nel vano
+  // Aggiorna foto_ids
   const vano = await getVano(vanoId)
   if (vano) {
-    await sb.from('vani').update({
-      foto_ids: [...(vano.foto_ids || []), path]
-    }).eq('id', vanoId)
+    await saveVanoField(vanoId, 'foto_ids', [...(vano.foto_ids || []), path])
   }
-
   return publicUrl
 }
 
 export async function getFotoVano(vanoId: string): Promise<string[]> {
-  const sb = createClient()
   const vano = await getVano(vanoId)
   if (!vano?.foto_ids?.length) return []
-
-  return vano.foto_ids.map(path => {
-    const { data: { publicUrl } } = sb.storage
-      .from('foto-misure')
-      .getPublicUrl(path)
-    return publicUrl
-  })
+  const { createClient } = await import('@/lib/supabase/client')
+  const sb = createClient()
+  return vano.foto_ids.map(path => sb.storage.from('foto-misure').getPublicUrl(path).data.publicUrl)
 }
