@@ -1,5 +1,6 @@
 'use client'
-import { FC, useState, useRef } from 'react'
+import { FC, useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createCliente } from '@/lib/clienti-queries'
 import { useFlashAdvance } from '@/app/commesse/components/NuovaCommessa/useFlashAdvance'
@@ -46,7 +47,10 @@ export const NuovoClienteModal: FC<Props> = ({ isOpen, onClose, onCreato }) => {
     { id: 'email', label: 'Email', icon: '📧' },
   ]
 
-  return (
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
         <>
@@ -57,7 +61,7 @@ export const NuovoClienteModal: FC<Props> = ({ isOpen, onClose, onCreato }) => {
           <motion.div
             initial={{ y:'100%' }} animate={{ y:0 }} exit={{ y:'100%' }}
             transition={{ type:'spring', damping:30, stiffness:300 }}
-            style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'min(100vw,430px)', zIndex:301, background:'var(--bg)', borderRadius:'32px 32px 0 0', boxShadow:'0 -16px 50px rgba(0,0,0,0.25)', maxHeight:'92dvh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+            style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'min(100vw, 430px)', maxWidth:430, zIndex:301, background:'var(--bg)', borderRadius:'32px 32px 0 0', boxShadow:'0 -16px 50px rgba(0,0,0,0.25)', maxHeight:'92dvh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
 
             {/* Handle */}
             <div style={{ padding:'10px 0 0', display:'flex', justifyContent:'center', flexShrink:0 }}>
@@ -96,7 +100,7 @@ export const NuovoClienteModal: FC<Props> = ({ isOpen, onClose, onCreato }) => {
                     transition:'all 0.2s', position:'relative',
                   }}>
                     <div style={{ position:'absolute', top:'14%', left:'22%', width:'32%', height:'18%', background:'rgba(255,255,255,0.5)', borderRadius:'50%', filter:'blur(2.5px)', pointerEvents:'none' }} />
-                    {t === 'privato' ? '👤 Privato' : '🏢 Azienda'}
+                    {t === 'privato' ? 'Privato' : 'Azienda'}
                   </button>
                 ))}
               </div>
@@ -126,7 +130,7 @@ export const NuovoClienteModal: FC<Props> = ({ isOpen, onClose, onCreato }) => {
                   <SectionLabel label="COMPLEANNO" />
                   <div id="section-nascita">
                     <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:'var(--ink-soft)', letterSpacing:0.5, marginBottom:6 }}>
-                      ⚡ Inserisci la data di nascita — genererò un promemoria automatico!
+                      Inserisci la data di nascita — genererò un promemoria automatico
                     </div>
                     <input style={inp} type="date" value={dataNascita} onChange={e => { setDataNascita(e.target.value); if(e.target.value) flash('section-canale') }} />
                   </div>
@@ -178,13 +182,15 @@ export const NuovoClienteModal: FC<Props> = ({ isOpen, onClose, onCreato }) => {
       )}
     </AnimatePresence>
   )
+
+  return mounted ? createPortal(modalContent, document.body) : null
 }
 
 const CANALI = [
-  { id: 'whatsapp' as const, label: 'WhatsApp', icon: '💬' },
-  { id: 'call' as const, label: 'Chiamata', icon: '📞' },
-  { id: 'sms' as const, label: 'SMS', icon: '✉️' },
-  { id: 'email' as const, label: 'Email', icon: '📧' },
+  { id: 'whatsapp' as const, label: 'WhatsApp', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> },
+  { id: 'call' as const, label: 'Chiamata', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg> },
+  { id: 'sms' as const, label: 'SMS', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg> },
+  { id: 'email' as const, label: 'Email', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> },
 ]
 
 const FormCard: FC<{ children: React.ReactNode }> = ({ children }) => (
