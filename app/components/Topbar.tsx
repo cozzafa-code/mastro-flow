@@ -1,5 +1,6 @@
 'use client'
 import { FC } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface TopbarProps {
   notificheCount: number
@@ -9,6 +10,7 @@ interface TopbarProps {
 }
 
 export const Topbar: FC<TopbarProps> = ({ notificheCount, onSearchOpen, onNotificheOpen, onNuovaCommessa }) => {
+  const router = useRouter()
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -94,7 +96,7 @@ export const Topbar: FC<TopbarProps> = ({ notificheCount, onSearchOpen, onNotifi
         </button>
 
         {/* Impostazioni */}
-        <button style={{
+        <button onClick={() => router.push('/impostazioni')} style={{
           width: 44, height: 44, borderRadius: '50%', border: 'none', cursor: 'pointer',
           background: 'linear-gradient(160deg, #FCF7E8, var(--surface-2))',
           display: 'grid', placeItems: 'center', color: 'var(--ink)', position: 'relative',
