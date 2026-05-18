@@ -125,7 +125,7 @@ export const NuovoImpegnoModal: FC<Props> = ({ isOpen, onClose, dataIniziale, on
           <motion.div
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 'min(100vw, 430px)', zIndex: 301, background: 'var(--bg)', borderRadius: '32px 32px 0 0', maxHeight: '94svh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 -16px 50px rgba(0,0,0,0.25)', touchAction: 'pan-y', overscrollBehavior: 'none' }}
+            style={{ position: 'fixed', bottom: 0, left: 0, right: 0, margin: '0 auto', width: '100%', maxWidth: 430, zIndex: 301, background: 'var(--bg)', borderRadius: '32px 32px 0 0', maxHeight: '94svh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 -16px 50px rgba(0,0,0,0.25)', touchAction: 'pan-y', overscrollBehavior: 'none' }}
           >
             {/* Handle */}
             <div style={{ padding: '10px 0 0', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>

@@ -215,8 +215,8 @@ export const NuovaCommessaModal: FC<Props> = ({ isOpen, onClose }) => {
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             style={{
-              position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-              width: 'min(100vw, 430px)',
+              position: 'fixed', bottom: 0, left: 0, right: 0,
+              margin: '0 auto', width: '100%', maxWidth: 430,
               zIndex: 301,
               background: 'var(--bg)',
               borderRadius: '32px 32px 0 0',
