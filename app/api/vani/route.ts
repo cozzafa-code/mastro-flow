@@ -41,6 +41,7 @@ export async function PATCH(req: NextRequest) {
     if (!id) return NextResponse.json({ error: 'id mancante' }, { status: 400 })
     console.log('PATCH body:', JSON.stringify(body)); console.log('PATCH rest:', JSON.stringify(rest)); const patch: any = { ...rest, updated_at: new Date().toISOString() }
     if (misure !== undefined) patch.misure_json = misure
+    if (disegno !== undefined) patch.cad_json = disegno
     if (coloreInt !== undefined) patch.colore_int = coloreInt
     if (coloreEst !== undefined) patch.colore_est = coloreEst
     if (bicolore !== undefined) patch.bicolore = bicolore
@@ -70,5 +71,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Parametri mancanti' }, { status: 400 })
   } catch (err: any) { return NextResponse.json({ error: err.message }, { status: 500 }) }
 }
+
 
 
