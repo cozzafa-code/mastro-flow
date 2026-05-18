@@ -10,7 +10,7 @@ import { CommessaCard } from './components/CommessaCard'
 import { CommessaRow } from './components/CommessaRow'
 import { CommessaTile } from './components/CommessaTile'
 import { FilterSheet, SortSheet } from './components/Sheets'
-import { NuovaCommessa } from './components/NuovaCommessa/index'
+import { NuovaCommessaModal } from './components/NuovaCommessa/NuovaCommessaModal'
 import { BottomNav } from '@/app/components/BottomNav'
 import { Topbar } from '@/app/components/Topbar'
 import { FILTER_LABEL } from '@/lib/commesse-types'
@@ -292,10 +292,9 @@ function CommesseContent() {
         onClose={() => setSortSheetOpen(false)}
       />
       {/* Modal nuova commessa */}
-      <NuovaCommessa
+      <NuovaCommessaModal
         isOpen={nuovaModalOpen}
         onClose={() => setNuovaModalOpen(false)}
-        onCreata={() => { setNuovaModalOpen(false); ricarica() }}
       />
     </div>
   )
