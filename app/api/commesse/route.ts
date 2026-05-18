@@ -4,31 +4,34 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { codice, cliente_nome, note, sotto_stato } = body
+    // Nomi colonne reali della tabella commesse (da schema Supabase)
+    // code, cliente, cognome, indirizzo, telefono, email, note, fase
+    const { codice, cliente_nome, note, sotto_stato, indirizzo, telefono, email } = body
 
     if (!cliente_nome || !codice) {
       return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
     }
 
+    // Separa nome e cognome da cliente_nome
+    const parti = cliente_nome.trim().split(' ')
+    const cliente = parti[0] || ''
+    const cognome = parti.slice(1).join(' ') || ''
+
     const sb = createAdminClient()
-
-    // Legge prima le colonne esistenti per evitare errori schema
-    const insertData: Record<string, unknown> = { codice, cliente_nome }
-
-    // Aggiungi solo campi che esistono nella tabella mastro-erp
-    // I nomi esatti delle colonne vengono dalla struttura mastro-erp esistente
-    if (body.indirizzo) insertData['indirizzo'] = body.indirizzo
-    if (body.telefono)  insertData['telefono']  = body.telefono
-    if (body.email)     insertData['email']     = body.email
-    if (note)           insertData['note']      = note
-    if (sotto_stato)    insertData['sotto_stato'] = sotto_stato
-
-    // Colonne standard presenti in mastro-erp
-    insertData['fase'] = 'APP'
-
     const { data, error } = await sb
       .from('commesse')
-      .insert(insertData)
+      .insert({
+        code: codice,
+        cliente,
+        cognome,
+        indirizzo: indirizzo || null,
+        telefono: telefono || null,
+        email: email || null,
+        note: note || null,
+        fase: 'APP',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
       .select()
       .single()
 
@@ -50,6 +53,7 @@ export async function GET() {
     const { data, error } = await sb
       .from('commesse')
       .select('*')
+      .is('deleted_at', null)
       .order('updated_at', { ascending: false })
       .limit(100)
 
