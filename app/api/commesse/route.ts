@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await sb
       .from('commesse')
       .insert({
+        azienda_id: 'ccca51c1-656b-4e7c-a501-55753e20da29',
         code: codice,
         cliente,
         cognome,
