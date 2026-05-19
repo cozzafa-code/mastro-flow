@@ -18,28 +18,22 @@ const SUB = "#6B7785"; const SUB2 = "#9AA3AE";
 type Props = { onOpenVano?: (vanoId: any, rilievoId: any) => void };
 
 export default function RilieviVaniPanel({ onOpenVano }: Props) {
-  const { T, selectedCM, setSelectedCM, setCantieri, selectedRilievo, setSelectedRilievo } = useMastro();
+  const { T, selectedCM, setSelectedCM, setCantieri } = useMastro();
   const [activeRid, setActiveRid] = useState<any>(null);
   const [view, setView] = useState<"lista" | "report">("lista");
 
   if (!selectedCM) return null;
   const c = selectedCM;
-
-  // Usa selectedRilievo dal context se disponibile, altrimenti usa rilievi da selectedCM
   const rilievi = c.rilievi || [];
 
-  // Auto-select: preferisce selectedRilievo dal context
-  const currentRid = activeRid ?? selectedRilievo?.id ?? (rilievi[0]?.id ?? null);
-  const current = rilievi.find((r: any) => r.id === currentRid) || selectedRilievo || null;
+  // Auto-select primo rilievo se nessuno attivo
+  const currentRid = activeRid ?? (rilievi[0]?.id ?? null);
+  const current = rilievi.find((r: any) => r.id === currentRid) || null;
 
   const updRilievo = (rid: any, patch: any) => {
     const upd = rilievi.map((r: any) => r.id === rid ? { ...r, ...patch } : r);
-    setCantieri?.((cs: any[]) => cs.map(x => x.id === c.id ? { ...x, rilievi: upd } : x));
+    setCantieri((cs: any[]) => cs.map(x => x.id === c.id ? { ...x, rilievi: upd } : x));
     setSelectedCM((p: any) => ({ ...p, rilievi: upd }));
-    // Aggiorna anche selectedRilievo nel context
-    if (rid === currentRid) {
-      setSelectedRilievo?.((p: any) => p ? { ...p, ...patch } : p);
-    }
   };
 
   const addRilievo = () => {
@@ -52,41 +46,12 @@ export default function RilieviVaniPanel({ onOpenVano }: Props) {
       vani: [],
     };
     const upd = [...rilievi, newR];
-    setCantieri?.((cs: any[]) => cs.map(x => x.id === c.id ? { ...x, rilievi: upd } : x));
+    setCantieri((cs: any[]) => cs.map(x => x.id === c.id ? { ...x, rilievi: upd } : x));
     setSelectedCM((p: any) => ({ ...p, rilievi: upd }));
     setActiveRid(newR.id);
   };
 
-  // ── addVano: chiama API, salva su Supabase, apre VanoDetailPanel ──
-  const handleAddVano = async (rilievoId: any) => {
-    const ril = rilievi.find((r: any) => r.id === rilievoId) || current;
-    if (!ril) return;
-    try {
-      const res = await fetch("/api/vani", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rilievo_id: ril.id,
-          commessa_id: c.id,
-          nome: `Vano ${(ril.vani || []).length + 1}`,
-          numero: (ril.vani || []).length + 1,
-        }),
-      });
-      if (!res.ok) {
-        console.error("addVano failed", await res.text());
-        return;
-      }
-      const { vano } = await res.json();
-      // Aggiorna state locale
-      updRilievo(ril.id, { vani: [...(ril.vani || []), vano] });
-      // Apre VanoDetailPanel
-      onOpenVano?.(vano.id, ril.id);
-    } catch (e) {
-      console.error("addVano error", e);
-    }
-  };
-
-  if (rilievi.length === 0 && !selectedRilievo) {
+  if (rilievi.length === 0) {
     return (
       <div style={{ padding: 24, textAlign: "center" }}>
         <div style={{ fontSize: 14, color: SUB, marginBottom: 12 }}>Nessun rilievo presente.</div>
@@ -98,32 +63,30 @@ export default function RilieviVaniPanel({ onOpenVano }: Props) {
   return (
     <div style={{ paddingBottom: 80 }}>
       {/* TAB RILIEVI */}
-      {rilievi.length > 1 && (
-        <div style={{ display: "flex", gap: 6, padding: "8px 10px", background: T.card, borderBottom: `1px solid ${T.bdr}`, overflowX: "auto" }}>
-          {rilievi.map((r: any, i: number) => {
-            const active = r.id === currentRid;
-            return (
-              <div key={r.id} onClick={() => setActiveRid(r.id)}
-                style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", border: `1px solid ${active ? NAVY : T.bdr}`, background: active ? NAVY : T.card, color: active ? "#fff" : SUB, display: "flex", alignItems: "center", gap: 6 }}>
-                R{i + 1}
-                <span style={{ background: active ? "rgba(255,255,255,0.25)" : T.bg, padding: "1px 6px", borderRadius: 6, fontSize: 10, fontWeight: 700, color: active ? "#fff" : SUB }}>
-                  {(r.vani || []).length}
-                </span>
-              </div>
-            );
-          })}
-          <div onClick={addRilievo}
-            style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", border: `1.5px dashed ${NAVY}`, background: "transparent", color: NAVY }}>
-            + R{rilievi.length + 1}
-          </div>
+      <div style={{ display: "flex", gap: 6, padding: "8px 10px", background: T.card, borderBottom: `1px solid ${T.bdr}`, overflowX: "auto" }}>
+        {rilievi.map((r: any, i: number) => {
+          const active = r.id === currentRid;
+          return (
+            <div key={r.id} onClick={() => setActiveRid(r.id)}
+              style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", border: `1px solid ${active ? NAVY : T.bdr}`, background: active ? NAVY : T.card, color: active ? "#fff" : SUB, display: "flex", alignItems: "center", gap: 6 }}>
+              R{i + 1}
+              <span style={{ background: active ? "rgba(255,255,255,0.25)" : T.bg, padding: "1px 6px", borderRadius: 6, fontSize: 10, fontWeight: 700, color: active ? "#fff" : SUB }}>
+                {(r.vani || []).length}
+              </span>
+            </div>
+          );
+        })}
+        <div onClick={addRilievo}
+          style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", border: `1.5px dashed ${NAVY}`, background: "transparent", color: NAVY }}>
+          + R{rilievi.length + 1}
         </div>
-      )}
+      </div>
 
       {/* TAB VISTA */}
       <div style={{ display: "flex", background: T.card, borderBottom: `1px solid ${T.bdr}`, padding: "0 8px" }}>
         {[
-          { id: "lista", l: "Lista vani" },
-          { id: "report", l: "Report" },
+          { id: "lista", l: "Lista vani", i: "📋" },
+          { id: "report", l: "Report", i: "📊" },
         ].map(t => {
           const a = view === t.id;
           return (
@@ -137,21 +100,13 @@ export default function RilieviVaniPanel({ onOpenVano }: Props) {
 
       {/* CONTENT */}
       {current && view === "lista" && (
-        <ListaVaniView
-          rilievo={current}
-          index={rilievi.findIndex((x: any) => x.id === current.id)}
-          T={T}
-          onOpenVano={onOpenVano}
-          addVano={() => handleAddVano(current.id)}
-        />
+        <ListaVaniView rilievo={current} index={rilievi.findIndex((x: any) => x.id === current.id)} T={T} onOpenVano={onOpenVano} addVano={() => {
+          const nv = { id: Date.now(), nome: `Vano ${(current.vani || []).length + 1}`, tipo: "F2A", pezzi: 1, misure: {}, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
+          updRilievo(current.id, { vani: [...(current.vani || []), nv] });
+        }} />
       )}
       {current && view === "report" && (
-        <ReportView
-          rilievo={current}
-          index={rilievi.findIndex((x: any) => x.id === current.id)}
-          prevRilievo={rilievi.findIndex((x: any) => x.id === current.id) > 0 ? rilievi[rilievi.findIndex((x: any) => x.id === current.id) - 1] : null}
-          T={T}
-        />
+        <ReportView rilievo={current} index={rilievi.findIndex((x: any) => x.id === current.id)} prevRilievo={rilievi.findIndex((x: any) => x.id === current.id) > 0 ? rilievi[rilievi.findIndex((x: any) => x.id === current.id) - 1] : null} T={T} />
       )}
     </div>
   );
@@ -250,9 +205,11 @@ function ReportView({ rilievo, index, prevRilievo, T }: any) {
     return s + (l * h * (v.pezzi || 1));
   }, 0);
 
+  // Tipologie raggruppate
   const tipi: Record<string, number> = {};
   vani.forEach((v: any) => { const t = v.tipo || "—"; tipi[t] = (tipi[t] || 0) + 1; });
 
+  // Diff vs precedente
   const diff = prevRilievo ? calcDiff(prevRilievo.vani || [], vani) : null;
 
   const r = 42, circ = 2 * Math.PI * r;
@@ -261,6 +218,7 @@ function ReportView({ rilievo, index, prevRilievo, T }: any) {
 
   return (
     <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* HERO */}
       <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 12, textAlign: "center" }}>
         <div style={{ position: "relative", width: 96, height: 96 }}>
           <svg width="96" height="96" style={{ transform: "rotate(-90deg)" }}>
@@ -320,9 +278,13 @@ function ReportView({ rilievo, index, prevRilievo, T }: any) {
 
       <SecLabel txt="Esporta" />
       <div style={{ display: "flex", gap: 8 }}>
-        {["PDF", "Condividi", "Email"].map(b => (
-          <div key={b} style={{ flex: 1, background: T.card, border: `1px solid ${T.bdr}`, borderRadius: 8, padding: "10px 8px", fontSize: 12, fontWeight: 700, color: NAVY, cursor: "pointer", textAlign: "center" }}>
-            {b}
+        {[
+          { i: "📄", l: "PDF" },
+          { i: "🔗", l: "Condividi" },
+          { i: "✉", l: "Email" },
+        ].map(b => (
+          <div key={b.l} style={{ flex: 1, background: T.card, border: `1px solid ${T.bdr}`, borderRadius: 8, padding: "10px 8px", fontSize: 12, fontWeight: 700, color: NAVY, cursor: "pointer", textAlign: "center" }}>
+            {b.l}
           </div>
         ))}
       </div>
@@ -363,6 +325,7 @@ function Kpi({ l, v, s, c }: any) {
 
 function calcDiff(prev: any[], curr: any[]) {
   const prevNames = new Set(prev.map((v: any) => v.nome));
+  const currNames = new Set(curr.map((v: any) => v.nome));
   let added = 0, modified = 0, unchanged = 0;
   curr.forEach((v: any) => {
     if (!prevNames.has(v.nome)) { added++; return; }

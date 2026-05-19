@@ -1,0 +1,43 @@
+"use client";
+import Link from "next/link";
+import { Home, Briefcase, MessageSquare, Users, Plus } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { QuickActionsSheet } from "./QuickActionsSheet";
+
+export function BottomNav() {
+  const pathname = usePathname();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  return (
+    <>
+      <nav className="bottom-nav">
+        <Link href="/" className={`bn-item bn-1 ${pathname === "/" ? "active" : ""}`}>
+          <span className="bn-icon-circle"><Home size={18} strokeWidth={2} /></span>
+          <span className="bn-label">Home</span>
+        </Link>
+        <Link href="/commesse" className={`bn-item bn-2 ${pathname === "/commesse" ? "active" : ""}`}>
+          <span className="bn-icon-circle"><Briefcase size={18} strokeWidth={2} /></span>
+          <span className="bn-label">Commesse</span>
+        </Link>
+        <button
+          className="bn-fab"
+          aria-label="Azioni rapide"
+          onClick={() => setSheetOpen(true)}
+        >
+          <Plus size={24} strokeWidth={2.8} />
+        </button>
+        <Link href="/talk" className={`bn-item bn-4 ${pathname === "/talk" ? "active" : ""}`}>
+          <span className="bn-icon-circle"><MessageSquare size={18} strokeWidth={2} /></span>
+          <span className="bn-label">Talk</span>
+        </Link>
+        <Link href="/team" className={`bn-item bn-5 ${pathname === "/team" ? "active" : ""}`}>
+          <span className="bn-icon-circle"><Users size={18} strokeWidth={2} /></span>
+          <span className="bn-label">Team</span>
+        </Link>
+      </nav>
+
+      <QuickActionsSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+    </>
+  );
+}

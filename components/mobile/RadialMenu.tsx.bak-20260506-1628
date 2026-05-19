@@ -1,0 +1,228 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Briefcase, Calendar, MessageSquare, Users, FileText, Box } from "lucide-react";
+
+const ITEMS = [
+  { id: "commesse", label: "Commesse", labelNew: "Nuova commessa", Icon: Briefcase,    href: "/commesse",    newHref: "/commesse/nuova" },
+  { id: "agenda",   label: "Agenda",   labelNew: "Nuovo evento",   Icon: Calendar,     href: "/agenda",      newHref: "/agenda/nuovo" },
+  { id: "talk",     label: "Talk",     labelNew: "Nuovo messaggio",Icon: MessageSquare,href: "/talk",        newHref: "/talk/nuovo" },
+  { id: "team",     label: "Team",     labelNew: "Nuovo operatore",Icon: Users,        href: "/team",        newHref: "/team/nuovo" },
+  { id: "preventivo", label: "Preventivo", labelNew: "Nuovo preventivo", Icon: FileText, href: "/preventivi",  newHref: "/preventivi/nuovo" },
+  { id: "sopralluogo", label: "Sopralluogo", labelNew: "Nuovo sopralluogo", Icon: Box,    href: "/sopralluoghi", newHref: "/sopralluoghi/nuovo" },
+];
+
+const EDGE_PX = 30;
+const TRIGGER_PX = 50;
+const SOSTA_MS = 450;     // dopo tot ms di hover -> stato "sosta" (teal grande)
+const HOLD_MS  = 900;     // dopo tot ms di hover -> stato "hold" (arancio = crea)
+
+type ItemState = "idle" | "hover" | "sosta" | "hold";
+
+export function RadialMenu() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [side, setSide] = useState<"left" | "right">("right");
+  const [hover, setHover] = useState<string | null>(null);
+  const [itemState, setItemState] = useState<ItemState>("idle");
+  const [hintShown, setHintShown] = useState(false);
+
+  const drag = useRef<{ active: boolean; side: "left" | "right" | null; startX: number; startY: number }>({
+    active: false, side: null, startX: 0, startY: 0,
+  });
+  const sostaTimer = useRef<any>(null);
+  const holdTimer = useRef<any>(null);
+  const hovered = useRef<string | null>(null);
+  hovered.current = hover;
+
+  useEffect(() => {
+    const seen = typeof window !== "undefined" && localStorage.getItem("fx_radial_hint");
+    if (!seen) {
+      setTimeout(() => setHintShown(true), 600);
+      setTimeout(() => {
+        setHintShown(false);
+        localStorage.setItem("fx_radial_hint", "1");
+      }, 4000);
+    }
+  }, []);
+
+  // Apertura via gesture
+  useEffect(() => {
+    const startHandler = (clientX: number, clientY: number) => {
+      if (open) return;
+      if (clientX < EDGE_PX) {
+        drag.current = { active: true, side: "left", startX: clientX, startY: clientY };
+      } else if (clientX > window.innerWidth - EDGE_PX) {
+        drag.current = { active: true, side: "right", startX: clientX, startY: clientY };
+      }
+    };
+    const moveHandler = (clientX: number, clientY: number) => {
+      if (!drag.current.active || !drag.current.side) return;
+      const dx = clientX - drag.current.startX;
+      const dy = Math.abs(clientY - drag.current.startY);
+      if (dy > 60) { drag.current.active = false; return; }
+      if (drag.current.side === "left" && dx > TRIGGER_PX) {
+        setSide("left"); setOpen(true); drag.current.active = false;
+      }
+      if (drag.current.side === "right" && dx < -TRIGGER_PX) {
+        setSide("right"); setOpen(true); drag.current.active = false;
+      }
+    };
+    const endHandler = () => { drag.current.active = false; };
+
+    const onTS = (e: TouchEvent) => { const t = e.touches[0]; startHandler(t.clientX, t.clientY); };
+    const onTM = (e: TouchEvent) => { const t = e.touches[0]; moveHandler(t.clientX, t.clientY); };
+    const onTE = () => endHandler();
+    const onMD = (e: MouseEvent) => startHandler(e.clientX, e.clientY);
+    const onMM = (e: MouseEvent) => { if (drag.current.active) moveHandler(e.clientX, e.clientY); };
+    const onMU = () => endHandler();
+
+    document.addEventListener("touchstart", onTS, { passive: true });
+    document.addEventListener("touchmove", onTM, { passive: true });
+    document.addEventListener("touchend", onTE);
+    document.addEventListener("mousedown", onMD);
+    document.addEventListener("mousemove", onMM);
+    document.addEventListener("mouseup", onMU);
+
+    return () => {
+      document.removeEventListener("touchstart", onTS);
+      document.removeEventListener("touchmove", onTM);
+      document.removeEventListener("touchend", onTE);
+      document.removeEventListener("mousedown", onMD);
+      document.removeEventListener("mousemove", onMM);
+      document.removeEventListener("mouseup", onMU);
+    };
+  }, [open]);
+
+  const clearTimers = () => {
+    if (sostaTimer.current) { clearTimeout(sostaTimer.current); sostaTimer.current = null; }
+    if (holdTimer.current)  { clearTimeout(holdTimer.current);  holdTimer.current  = null; }
+  };
+
+  // Hover su item: gestisce 3 stati progressivi
+  const hoverItem = (id: string | null) => {
+    if (id === hover) return;
+    clearTimers();
+    setHover(id);
+    if (!id) {
+      setItemState("idle");
+      return;
+    }
+    setItemState("hover");
+    try { (navigator as any).vibrate?.(8); } catch {}
+
+    sostaTimer.current = setTimeout(() => {
+      if (hovered.current === id) {
+        setItemState("sosta");
+        try { (navigator as any).vibrate?.(15); } catch {}
+      }
+    }, SOSTA_MS);
+
+    holdTimer.current = setTimeout(() => {
+      if (hovered.current === id) {
+        setItemState("hold");
+        try { (navigator as any).vibrate?.([25, 30, 50]); } catch {}
+      }
+    }, HOLD_MS);
+  };
+
+  const handleRelease = () => {
+    if (!hover) {
+      setOpen(false); setItemState("idle"); clearTimers();
+      return;
+    }
+    const item = ITEMS.find(i => i.id === hover);
+    if (!item) {
+      setOpen(false); setHover(null); setItemState("idle"); clearTimers();
+      return;
+    }
+    if (itemState === "hold") {
+      router.push(item.newHref);
+    } else if (itemState === "sosta" || itemState === "hover") {
+      router.push(item.href);
+    }
+    setOpen(false);
+    setHover(null);
+    setItemState("idle");
+    clearTimers();
+  };
+
+  const onAreaMove = (cx: number, cy: number) => {
+    const items = document.querySelectorAll<HTMLDivElement>(".fx-rad-item");
+    let nearest: string | null = null;
+    let nearestDist = 80;
+    items.forEach(el => {
+      const r = el.getBoundingClientRect();
+      const ix = r.left + r.width / 2;
+      const iy = r.top + r.height / 2;
+      const d = Math.hypot(ix - cx, iy - cy);
+      if (d < nearestDist) { nearestDist = d; nearest = el.dataset.id || null; }
+    });
+    hoverItem(nearest);
+  };
+
+  const centerLabel = (() => {
+    if (!hover) return "Trascina sopra un cerchio";
+    const item = ITEMS.find(i => i.id === hover);
+    if (!item) return "";
+    if (itemState === "hold") return `${item.labelNew}`;
+    if (itemState === "sosta") return `Apri ${item.label}`;
+    return item.label;
+  })();
+
+  const centerSub = (() => {
+    if (!hover) return "Tieni premuto per crearne uno nuovo";
+    if (itemState === "hold") return "Rilascia per CREARE";
+    if (itemState === "sosta") return "Rilascia per aprire · Tieni per creare";
+    return "";
+  })();
+
+  return (
+    <>
+      <div className={`fx-edge-hint fx-edge-left ${hintShown ? "is-pulse" : ""}`} aria-hidden />
+      <div className={`fx-edge-hint fx-edge-right ${hintShown ? "is-pulse" : ""}`} aria-hidden />
+
+      {open && (
+        <div
+          className={`fx-radial-overlay fx-radial-${side}`}
+          onClick={() => { setOpen(false); setHover(null); setItemState("idle"); clearTimers(); }}
+          onMouseMove={(e) => onAreaMove(e.clientX, e.clientY)}
+          onMouseUp={handleRelease}
+          onTouchMove={(e) => { const t = e.touches[0]; onAreaMove(t.clientX, t.clientY); }}
+          onTouchEnd={handleRelease}
+        >
+          <div className={`fx-radial-fan fx-radial-fan-${side}`} onClick={(e) => e.stopPropagation()}>
+            {ITEMS.map((it, i) => {
+              const angle = (i / (ITEMS.length - 1)) * 140 - 70;
+              const dist = 130;
+              const x = side === "right" ? -Math.cos((angle * Math.PI) / 180) * dist : Math.cos((angle * Math.PI) / 180) * dist;
+              const y = Math.sin((angle * Math.PI) / 180) * dist;
+              const active = hover === it.id;
+              const stateClass = active ? `is-${itemState}` : "";
+              return (
+                <div
+                  key={it.id}
+                  data-id={it.id}
+                  className={`fx-rad-item ${stateClass}`}
+                  style={{
+                    transform: `translate(${x}px, ${y}px)`,
+                    animationDelay: `${i * 50}ms`
+                  } as any}
+                >
+                  <span className="fx-rad-icn">
+                    <it.Icon size={22} strokeWidth={2.2} />
+                  </span>
+                  {active && itemState === "hold" && (
+                    <span className="fx-rad-newbadge">+ CREA</span>
+                  )}
+                </div>
+              );
+            })}
+              {centerSub && <div className="fx-rad-center-sub">{centerSub}</div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

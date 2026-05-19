@@ -1,24 +1,17 @@
+// ======================================================================
 // MASTRO ERP - Vano Detail / VanoBInput
-// Usa stato locale per evitare reset durante la digitazione
-import React, { useState, useEffect, useRef } from "react";
+// Estratto da components/VanoDetailPanel.tsx (refactor S2)
+// ======================================================================
+
+import React from "react";
+import { FF } from "@/components/mastro-constants";
 
 export default function VanoBInput({ label, field, value, stepColor, textColor, subColor, bdrColor, cardBg, onUpdate }: {
   label: string; field: string; value: number;
   stepColor: string; textColor: string; subColor: string; bdrColor: string; cardBg: string;
   onUpdate: (val: number) => void;
 }) {
-  const [localVal, setLocalVal] = useState(value > 0 ? String(value) : "");
-  const isFocused = useRef(false);
-
-  // Aggiorna solo se non si sta digitando
-  useEffect(() => {
-    if (!isFocused.current) {
-      setLocalVal(value > 0 ? String(value) : "");
-    }
-  }, [value]);
-
-  const isFilled = localVal !== "" && parseInt(localVal) > 0;
-
+  const isFilled = value > 0;
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ fontSize: 10, fontWeight: 900, color: isFilled ? "#1E3A5F" : "#8A8A82", marginBottom: 5, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{label}</div>
@@ -27,15 +20,9 @@ export default function VanoBInput({ label, field, value, stepColor, textColor, 
           type="number"
           inputMode="numeric"
           pattern="[0-9]*"
-          value={localVal}
+          value={value > 0 ? value : ""}
           placeholder="—"
-          onFocus={() => { isFocused.current = true; }}
-          onChange={e => setLocalVal(e.target.value)}
-          onBlur={() => {
-            isFocused.current = false;
-            const num = parseInt(localVal) || 0;
-            onUpdate(num);
-          }}
+          onChange={e => onUpdate(parseInt(e.target.value) || 0)}
           style={{
             width: "100%", padding: "14px 16px", fontSize: 24, fontWeight: 900,
             fontFamily: "'JetBrains Mono',monospace", textAlign: "center" as const,
