@@ -1,8 +1,7 @@
-﻿'use client'
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// MastroProvider â€” fornisce tutto lo state che useMastro() si aspetta
-// Basato su MastroContext.tsx originale + state di VanoDetailPanel + RilieviListPanel
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+'use client'
+// ═══════════════════════════════════════════════════════════
+// MastroProvider – fornisce tutto lo state che useMastro() si aspetta
+// ═══════════════════════════════════════════════════════════
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { MastroContext } from './MastroContext'
 import { createClient } from '@/lib/supabase/client'
@@ -16,7 +15,6 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   initialRilievo?: any
   initialVano?: any
 }) {
-  // â”€â”€ CORE STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [selectedCM, setSelectedCM] = useState<any>(initialCM || null)
   const [cantieri, setCantieri] = useState<any[]>([])
   const [selectedRilievo, setSelectedRilievo] = useState<any>(initialRilievo || null)
@@ -26,10 +24,9 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [cmSubTab, setCmSubTab] = useState('centro')
   const [dossierTab, setDossierTab] = useState(0)
   const [vanoStep, setVanoStep] = useState(0)
-  const [vanoInfoOpen, setVanoInfoOpen] = useState(false)
+  const [vanoInfoOpen, setVanoInfoOpen] = useState<any>(null)
   const [tipCat, setTipCat] = useState<any>(null)
 
-  // â”€â”€ DRAWING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [spDrawing, setSpDrawing] = useState<any>(null)
   const [viewingPhotoId, setViewingPhotoId] = useState<string|null>(null)
   const [pendingFotoCat, setPendingFotoCat] = useState<any>(null)
@@ -47,23 +44,19 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const fotoVanoRef = useRef<any>(null)
   const videoVanoRef = useRef<any>(null)
 
-  // â”€â”€ VOICE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [voiceActive, setVoiceActive] = useState(false)
   const [voiceTranscript, setVoiceTranscript] = useState('')
   const startVoice = useCallback(() => setVoiceActive(true), [])
   const stopVoice = useCallback(() => { setVoiceActive(false); setVoiceTranscript('') }, [])
 
-  // â”€â”€ STRUTTURE / TENDAGGI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showStrutture, setShowStrutture] = useState(false)
   const [showTendaggi, setShowTendaggi] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
 
-  // â”€â”€ NUOVO RILIEVO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showNuovoRilievo, setShowNuovoRilievo] = useState(false)
   const [nuovoRilTipo, setNuovoRilTipo] = useState('semplice')
   const [nuovoRilData, setNuovoRilData] = useState<any>({ tipoRilievo: 'semplice', tipoMisure: 'provvisorie' })
 
-  // â”€â”€ CENTRO COMANDO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [ccConfirm, setCcConfirm] = useState<any>(null)
   const [ccDone, setCcDone] = useState<Set<string>>(new Set())
   const [ccExpandStep, setCcExpandStep] = useState<string|null>(null)
@@ -76,7 +69,6 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [montFormOpen, setMontFormOpen] = useState(false)
   const [montFormData, setMontFormData] = useState<any>({})
 
-  // â”€â”€ CATALOGHI (da Supabase) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [sistemiDB, setSistemiDB] = useState<any[]>(SISTEMI_INIT)
   const [coloriDB, setColoriDB] = useState<any[]>(COLORI_INIT)
   const [vetriDB, setVetriDB] = useState<any[]>(VETRI_INIT)
@@ -99,7 +91,6 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [tipologieFiltrate, setTipologieFiltrate] = useState<any[]>(TIPOLOGIE_RAPIDE)
   const [aziendaId] = useState(AZIENDA_ID)
 
-  // Cataloghi accessori
   const [zanzModelliDB, setZanzModelliDB] = useState<any[]>([])
   const [zanzRetiDB, setZanzRetiDB] = useState<any[]>([])
   const [cassModelliDB, setCassModelliDB] = useState<any[]>([])
@@ -128,7 +119,6 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [porteClasseEI, setPorteClasseEI] = useState<any[]>([])
   const [porteClasseRC, setPorteClasseRC] = useState<any[]>([])
 
-  // Misc state
   const [events, setEvents] = useState<any[]>([])
   const [msgs, setMsgs] = useState<any[]>([])
   const [fattureDB, setFattureDB] = useState<any[]>([])
@@ -138,7 +128,6 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const [fornitori, setFornitori] = useState<any[]>([])
   const [showPreventivoModal, setShowPreventivoModal] = useState(false)
 
-  // GUI tokens (T = theme, S = styles) â€” usati da VanoDetailPanel
   const T = {
     bg: '#ECE6D6', surface: '#F5F0E2', surface2: '#EAE3D1',
     ink: '#1F2937', inkDim: '#6B7280', inkSoft: '#9CA3AF',
@@ -147,9 +136,12 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     red: '#C84941', redBg: '#F4DEDC',
     success: '#2F7D57', successBg: '#D7E8DD',
     blue: '#2E3F8F', blueBg: '#DCE0EF',
+    card: '#F5F0E2', bdr: 'rgba(60,50,30,0.1)',
+    text: '#1F2937', sub: '#6B7280', acc: '#1F6F78', accLt: '#DCECED',
   }
   const S = {
     card: { background: 'linear-gradient(160deg,#F5F0E2,#EAE3D1)', borderRadius: 18, padding: 14, boxShadow: '0 6px 14px rgba(60,50,30,0.12),inset 0 3px 5px rgba(255,255,255,0.6)' },
+    input: { background: '#fff', border: '1px solid rgba(60,50,30,0.15)', borderRadius: 10, padding: '8px 12px', fontSize: 14, color: '#1F2937', outline: 'none', width: '100%' },
   }
   const isDesktop = false
   const fs = (n: number) => n
@@ -157,7 +149,6 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
   const PipelineBar = () => null
   const ORDINE_STATI: any[] = []
 
-  // â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const goBack = useCallback(() => {
     setSelectedVano(null)
     setVanoStep(0)
@@ -167,7 +158,11 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     setSelectedVano((prev: any) => {
       if (!prev) return prev
       const updated = { ...prev, [field]: value }
-      fetch('/api/vani', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: vanoId || prev.id, [field]: value }) }).catch(e => console.error('updateVanoField error:', e))
+      fetch('/api/vani', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: vanoId || prev.id, [field]: value })
+      }).catch(e => console.error('updateVanoField error:', e))
       setSelectedRilievo((r: any) => {
         if (!r) return r
         return { ...r, vani: (r.vani || []).map((v: any) => v.id === prev.id ? updated : v) }
@@ -176,12 +171,16 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     })
   }, [])
 
-  const updateMisura = useCallback((campo: string, valore: any) => {
+  const updateMisura = useCallback((vanoId: string, campo: string, valore: any) => {
     setSelectedVano((prev: any) => {
       if (!prev) return prev
       const misure = { ...(prev.misure || {}), [campo]: valore }
       const updated = { ...prev, misure }
-      fetch('/api/vani', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: prev.id, misure }) }).catch(e => console.error('updateMisura error:', e))
+      fetch('/api/vani', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: vanoId || prev.id, misure })
+      }).catch(e => console.error('updateMisura error:', e))
       setSelectedRilievo((r: any) => {
         if (!r) return r
         return { ...r, vani: (r.vani || []).map((v: any) => v.id === prev.id ? updated : v) }
@@ -190,15 +189,16 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     })
   }, [])
 
-  const updateMisureBatch = useCallback((patch: Record<string, any>) => {
+  const updateMisureBatch = useCallback((vanoId: string, patch: Record<string, any>) => {
     setSelectedVano((prev: any) => {
       if (!prev) return prev
       const misure = { ...(prev.misure || {}), ...patch }
       const updated = { ...prev, misure }
-      const sb = createClient()
-      sb.from('vani').update({ misure }).eq('id', prev.id).then(({ error }) => {
-        if (error) console.error('updateMisureBatch error:', error)
-      })
+      fetch('/api/vani', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: vanoId || prev.id, misure })
+      }).catch(e => console.error('updateMisureBatch error:', e))
       setSelectedRilievo((r: any) => {
         if (!r) return r
         return { ...r, vani: (r.vani || []).map((v: any) => v.id === prev.id ? updated : v) }
@@ -207,12 +207,89 @@ export default function MastroProvider({ children, initialCM, initialRilievo, in
     })
   }, [])
 
-  const toggleAccessorio = useCallback((acc: string, value: boolean) => {
+  const toggleAccessorio = useCallback((vanoId: string, acc: string, value: boolean) => {
     setSelectedVano((prev: any) => {
       if (!prev) return prev
       const accessori = { ...(prev.accessori || {}), [acc]: { ...(prev.accessori?.[acc] || {}), attivo: value } }
       const updated = { ...prev, accessori }
-      fetch('/api/vani', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: prev.id, accessori }) }).catch(e => console.error('toggleAccessorio error:', e))
+      fetch('/api/vani', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: vanoId || prev.id, accessori })
+      }).catch(e => console.error('toggleAccessorio error:', e))
       return updated
     })
   }, [])
+
+  const updateAccessorio = useCallback((acc: string, field: string, value: any) => {
+    setSelectedVano((prev: any) => {
+      if (!prev) return prev
+      const accessori = { ...(prev.accessori || {}), [acc]: { ...(prev.accessori?.[acc] || {}), [field]: value } }
+      return { ...prev, accessori }
+    })
+  }, [])
+
+  const compressImage = useCallback(async (file: File) => file, [])
+  const openCamera = useCallback(() => {}, [])
+  const calcolaVanoPrezzo = useCallback(() => 0, [])
+  const getVaniAttivi = useCallback(() => [], [])
+  const deleteCommessa = useCallback(async () => {}, [])
+  const setFaseTo = useCallback(async () => {}, [])
+  const generaPreventivoPDF = useCallback(async () => {}, [])
+  const generaPreventivoCondivisibile = useCallback(async () => {}, [])
+  const creaFattura = useCallback(async () => {}, [])
+  const creaOrdineFornitore = useCallback(async () => {}, [])
+  const apriInboxDocumento = useCallback(async () => {}, [])
+
+  const ctx = {
+    T, S, isDesktop, fs, PIPELINE, PipelineBar, ORDINE_STATI,
+    tipologieFiltrate, settoriAttivi, aziendaId, aziendaInfo,
+    selectedCM, setSelectedCM, cantieri, setCantieri,
+    tab, setTab, cmSubTab, setCmSubTab, dossierTab, setDossierTab,
+    selectedRilievo, setSelectedRilievo, isStorico,
+    showNuovoRilievo, setShowNuovoRilievo, nuovoRilTipo, setNuovoRilTipo,
+    nuovoRilData, setNuovoRilData,
+    selectedVano, setSelectedVano, vanoStep, setVanoStep,
+    vanoInfoOpen, setVanoInfoOpen, tipCat, setTipCat,
+    spDrawing, setSpDrawing, viewingPhotoId, setViewingPhotoId,
+    pendingFotoCat, setPendingFotoCat,
+    showAIPhoto, setShowAIPhoto, aiPhotoStep, setAiPhotoStep,
+    isDrawing, setIsDrawing, drawTool, setDrawTool,
+    drawPages, setDrawPages, drawPageIdx, setDrawPageIdx,
+    drawFullscreen, setDrawFullscreen,
+    penColor, setPenColor, penSize, setPenSize,
+    spCanvasRef, canvasRef, fotoVanoRef, videoVanoRef, openCamera,
+    voiceActive, voiceTranscript, startVoice, stopVoice,
+    showStrutture, setShowStrutture, showTendaggi, setShowTendaggi, fabOpen,
+    ccConfirm, setCcConfirm, ccDone, setCcDone, ccExpandStep, setCcExpandStep,
+    confSett, setConfSett, firmaStep, setFirmaStep,
+    firmaFileUrl, setFirmaFileUrl, firmaFileName, setFirmaFileName,
+    fattPerc, setFattPerc, montGiorni, setMontGiorni,
+    montFormOpen, setMontFormOpen, montFormData, setMontFormData,
+    sistemiDB, coloriDB, vetriDB, coprifiliDB, lamiereDB, libreriaDB,
+    tipoMisuraDB, tipoMisuraTappDB, tipoMisuraZanzDB, tipoCassonettoDB,
+    posPersianaDB, telaiPersianaDB, ctProfDB, ctSezioniDB, ctCieliniDB, ctOffset,
+    mezziSalita,
+    zanzModelliDB, zanzRetiDB, cassModelliDB, cassIspezioneDB, cassTappoDB, cassSpallDB,
+    tdSoleModelliDB, tdSoleMontaggioDB, tdSoleComandoDB,
+    tdIntCategorieDB, tdIntTessutoDB, tdIntMontaggioDB, tdIntFinituraDB,
+    bxDocAperturaDB, bxDocVetroDB, bxDocProfiloDB,
+    cancSistemaDB, cancAutoDB,
+    porteMaterialeDB, porteAperturaDB, porteFinituraDB, porteVetroDB,
+    porteColoreDB, porteControtelaioDB, porteManiglia, porteClasseEI, porteClasseRC,
+    events, setEvents, msgs, fattureDB, setFattureDB,
+    ordiniFornDB, setOrdiniFornDB, montaggiDB, setMontaggiDB,
+    squadreDB, fornitori, setShowPreventivoModal,
+    goBack, updateMisura, updateMisureBatch, updateVanoField,
+    toggleAccessorio, updateAccessorio, compressImage,
+    calcolaVanoPrezzo, getVaniAttivi, deleteCommessa, setFaseTo,
+    generaPreventivoPDF, generaPreventivoCondivisibile,
+    creaFattura, creaOrdineFornitore, apriInboxDocumento,
+  }
+
+  return (
+    <MastroContext.Provider value={ctx}>
+      {children}
+    </MastroContext.Provider>
+  )
+}
